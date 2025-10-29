@@ -860,6 +860,15 @@ type po_predicate_t =
   | PDistinctRegion of exp * int
   (** memref index is distinct from the region pointed to by exp *)
 
+  | PLocallyInitialized of varinfo * lval
+  (** lval is initialized locally or distinct from the region pointed to by varinfo *)
+
+  | POutputParameterInitialized of varinfo
+  (** the memory region pointed to by varinfo is fully initialized *)
+
+  | POutputParameterUnaltered of varinfo
+    (** the memory region pointed to by varinfo is unaltered *)
+
 
 type violation_severity_t =
   | UndefinedBehavior

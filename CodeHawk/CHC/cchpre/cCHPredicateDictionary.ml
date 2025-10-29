@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,10 @@ open CCHPreTypes
 module H = Hashtbl
 
 
+let cdecls = CCHDeclarations.cdeclarations
 let cd = CCHDictionary.cdictionary
 let id = CCHInterfaceDictionary.interface_dictionary
+
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
@@ -95,6 +97,8 @@ object (self)
       | PIndexLowerBound e -> (tags,[cd#index_exp e])
       | PIndexUpperBound (e1,e2) -> (tags,[cd#index_exp e1; cd#index_exp e2])
       | PInitialized v -> (tags,[cd#index_lval v])
+      | PLocallyInitialized (vinfo, v) ->
+         (tags, [cdecls#index_varinfo vinfo; cd#index_lval v])
       | PInitializedRange (e1, e2) -> (tags,[cd#index_exp e1; cd#index_exp e2])
       | PCast (tfrom, tto, e)
         | PPointerCast(tfrom, tto, e)
@@ -143,6 +147,8 @@ object (self)
       | PBuffer (e1, e2) -> (tags, [cd#index_exp e1; cd#index_exp e2])
       | PRevBuffer (e1, e2) -> (tags, [cd#index_exp e1; cd#index_exp e2])
       | PDistinctRegion (e, i) -> (tags, [cd#index_exp e; i])
+      | POutputParameterInitialized vinfo -> (tags, [cdecls#index_varinfo vinfo])
+      | POutputParameterUnaltered vinfo -> (tags, [cdecls#index_varinfo vinfo])
     in
     po_predicate_table#add key
 
@@ -167,6 +173,7 @@ object (self)
     | "ilb" -> PIndexLowerBound (cd#get_exp (a 0))
     | "iub" -> PIndexUpperBound (cd#get_exp (a 0), cd#get_exp (a 1))
     | "i" -> PInitialized (cd#get_lval (a 0))
+    | "li" -> PLocallyInitialized (cdecls#get_varinfo (a 0), cd#get_lval (a 1))
     | "ir" -> PInitializedRange (cd#get_exp (a 0), cd#get_exp (a 1))
     | "c" -> PCast (cd#get_typ (a 0), cd#get_typ (a 1), cd#get_exp (a 2))
     | "fc" ->
@@ -258,6 +265,8 @@ object (self)
     | "rb" -> PRevBuffer (cd#get_exp (a  0), cd#get_exp (a 1))
     | "nm" -> PNewMemory (cd#get_exp (a 0))
     | "dr" -> PDistinctRegion (cd#get_exp (a 0), a 1)
+    | "opi" -> POutputParameterInitialized (cdecls#get_varinfo (a 0))
+    | "opu" -> POutputParameterUnaltered (cdecls#get_varinfo (a 0))
     | s -> raise_tag_error name s po_predicate_mcts#tags
 
 

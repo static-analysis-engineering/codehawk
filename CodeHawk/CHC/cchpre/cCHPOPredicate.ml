@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,7 @@ let po_predicate_tag p =
   | PIndexLowerBound _ -> "index-lower-bound"
   | PIndexUpperBound _ -> "index-upper-bound"
   | PInitialized _ -> "initialized"
+  | PLocallyInitialized _ -> "locally-initialized"
   | PInitializedRange _ -> "initialized-range"
   | PInScope _ -> "in-scope"
   | PIntOverflow _ -> "int-overflow"
@@ -92,11 +93,15 @@ let po_predicate_tag p =
   | PValidMem _ -> "valid-mem"
   | PPreservedAllMemory -> "preserved-all-memory"
   | PPreservedAllMemoryX _ -> "preserved-all-memory-x"
+  | POutputParameterInitialized _ -> "outputparameter-initialized"
+  | POutputParameterUnaltered _ -> "outputparameter-unaltered"
   | _ -> "misc"
 
 
 class po_predicate_walker_t =
 object (self)
+
+  method walk_varinfo (_index: int) (_v: varinfo) = ()
 
   method walk_exp (_index:int) (_e:exp) = ()
 
@@ -119,6 +124,7 @@ object (self)
     let we = self#walk_exp in
     let wt = self#walk_type in
     let wl = self#walk_lval in
+    let wv = self#walk_varinfo in
     match p with
     | PNotNull e | PNull e | PValidMem e | PInScope e
       | PControlledResource (_, e)
@@ -138,6 +144,11 @@ object (self)
          we 2 e2
        end
     | PInitialized l -> wl 1 l
+    | PLocallyInitialized (v, l) ->
+       begin
+         wv 1 v;
+         wl 2 l;
+       end
     | PStackAddressEscape (None,e) -> we 2 e
     | PStackAddressEscape (Some l,e) ->
        begin
@@ -235,6 +246,8 @@ object (self)
     | PPreservedAllMemory -> ()
     | PPreservedAllMemoryX l -> List.iteri (fun i e -> we (i+1) e) l
     | PContractObligation _ -> ()
+    | POutputParameterInitialized v -> wv 1 v
+    | POutputParameterUnaltered v -> wv 1 v
 
 end
 
@@ -364,7 +377,14 @@ let po_predicate_to_full_pretty p =
   | PIndexUpperBound (e1, e2) ->
     LBLOCK [exp_to_pretty e1; STR " < "; exp_to_pretty e2]
   | PInitialized lval ->
-    LBLOCK [STR "initialized("; lval_to_pretty lval; STR ")"]
+     LBLOCK [STR "initialized("; lval_to_pretty lval; STR ")"]
+  | PLocallyInitialized (vinfo, lval) ->
+     LBLOCK [
+         STR "locally-initialized(";
+         STR vinfo.vname;
+         STR ",";
+         lval_to_pretty lval;
+         STR ")"]
   | PInitializedRange (base, len) ->
      LBLOCK [
          STR "initialized-range(";
@@ -615,6 +635,10 @@ let po_predicate_to_full_pretty p =
          STR "preserved-all-memory-x";
          pretty_print_list l exp_to_pretty "(" "," ")"]
   | PContractObligation s -> LBLOCK [STR  "contract-obligation:"; STR s]
+  | POutputParameterInitialized vinfo ->
+     LBLOCK [STR "outputparameter-initialized("; STR vinfo.vname; STR ")"]
+  | POutputParameterUnaltered vinfo ->
+     LBLOCK [STR "outputparameter-unaltered("; STR vinfo.vname; STR ")"]
 
 
 let pr_expr op e1 e2 t = exp_to_pretty (BinOp (op, e1, e2,t ))
@@ -659,6 +683,9 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
     | PIndexUpperBound (e1, e2) ->
        LBLOCK [STR "index-upperbound("; pe e1; STR ","; pe e2; STR ")"]
     | PInitialized lval -> LBLOCK [STR "initialized("; pl lval; STR ")"]
+  | PLocallyInitialized (vinfo, lval) ->
+     LBLOCK [
+         STR "locally-initialized("; STR vinfo.vname; STR ","; pl lval; STR ")"]
     | PInitializedRange (base, len) ->
       LBLOCK [STR "initialized-range("; pe base; STR ", "; pe len; STR ")"]
     | PCast (fromt, tot, e) ->
@@ -837,6 +864,10 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
            STR "preserved-all-memory-x";
            pretty_print_list l exp_to_pretty "(" "," ")"]
     | PContractObligation s -> LBLOCK [STR "contract-obligation:"; STR s]
+  | POutputParameterInitialized vinfo ->
+     LBLOCK [STR "outputparameter-initialized("; STR vinfo.vname; STR ")"]
+  | POutputParameterUnaltered vinfo ->
+     LBLOCK [STR "outputparameter-unaltered("; STR vinfo.vname; STR ")"]
 
 
 let get_global_vars_in_exp (env:cfundeclarations_int) (e:exp) =
