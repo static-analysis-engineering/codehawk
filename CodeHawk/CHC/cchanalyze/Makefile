@@ -61,6 +61,7 @@ MLIS := \
 	cCHPOCheckIndexLowerBound \
 	cCHPOCheckIndexUpperBound \
 	cCHPOCheckInitialized \
+	cCHPOCheckLocallyInitialized \
 	cCHPOCheckInitializedRange \
 	cCHPOCheckIntUtil \
 	cCHPOCheckIntOverflow \
@@ -72,6 +73,8 @@ MLIS := \
 	cCHPOCheckNotNull \
 	cCHPOCheckNotZero \
 	cCHPOCheckNonNegative \
+	cCHPOCheckOutputParameterInitialized \
+	cCHPOCheckOutputParameterUnaltered \
 	cCHPOCheckPreservedAllMemory \
 	cCHPOCheckStackAddressEscape \
 	cCHPOCheckWidthOverflow \
@@ -126,6 +129,7 @@ SOURCES := \
 	cCHPOCheckIndexLowerBound \
 	cCHPOCheckIndexUpperBound \
 	cCHPOCheckInitialized \
+	cCHPOCheckLocallyInitialized \
 	cCHPOCheckInitializedRange \
 	cCHPOCheckIntUtil \
 	cCHPOCheckIntOverflow \
@@ -138,6 +142,8 @@ SOURCES := \
 	cCHPOCheckNotZero \
 	cCHPOCheckNonNegative \
 	cCHPOCheckWidthOverflow \
+	cCHPOCheckOutputParameterInitialized \
+	cCHPOCheckOutputParameterUnaltered \
 	cCHPOCheckNullTerminated \
 	cCHPOCheckPointerCast \
 	cCHPOCheckPreservedAllMemory \

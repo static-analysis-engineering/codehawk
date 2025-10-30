@@ -45,15 +45,17 @@ let _fenv = CCHFileEnvironment.file_environment
 
 
 class locally_initialized_checker_t
-        (_poq: po_query_int)
+        (poq: po_query_int)
         (vinfo: varinfo)
         (_lval: lval)
         (_invs: invariant_int list) =
-object
+object (self)
 
   method private vinfo = vinfo
 
-  method check_safe = false
+  method check_safe =
+    let _ = poq#set_vinfo_diagnostic_invariants self#vinfo in
+    false
 
   method check_violation = false
 
