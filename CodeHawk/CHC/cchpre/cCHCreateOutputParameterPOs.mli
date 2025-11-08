@@ -27,3 +27,10 @@
 
 
 val output_parameter_po_process_file: unit -> unit
+
+
+val output_parameter_analysis_is_active:
+  string
+  -> CCHBasicTypes.varinfo list
+  -> CCHPreTypes.proof_obligation_int list
+  -> bool

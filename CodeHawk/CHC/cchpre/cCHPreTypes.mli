@@ -863,11 +863,11 @@ type po_predicate_t =
   | PLocallyInitialized of varinfo * lval
   (** lval is initialized locally or distinct from the region pointed to by varinfo *)
 
-  | POutputParameterInitialized of varinfo
-  (** the memory region pointed to by varinfo is fully initialized *)
+  | POutputParameterInitialized of varinfo * offset
+  (** the memory region pointed to by varinfo with [offset] is fully initialized *)
 
-  | POutputParameterUnaltered of varinfo
-    (** the memory region pointed to by varinfo is unaltered *)
+  | POutputParameterUnaltered of varinfo * offset
+    (** the memory region pointed to by varinfo with [offset] is unaltered *)
 
 
 type violation_severity_t =
@@ -1469,6 +1469,11 @@ class type user_assumptions_int =
 
 (** {1 Proof scaffolding}*)
 
+type analysis_info_t =
+  | UndefinedBehaviorInfo
+  | OutputParameterInfo of varinfo list
+
+
 class type proof_scaffolding_int =
   object
 
@@ -1477,6 +1482,9 @@ class type proof_scaffolding_int =
     method initialize_pod: string -> cfundeclarations_int -> unit
     method retrieve_contract_preconditions:
              cfundeclarations_int -> string -> unit
+
+    method set_analysis_info: string -> analysis_info_t -> unit
+    method get_analysis_info: string -> analysis_info_t
 
     method get_function_api: string -> function_api_int
 

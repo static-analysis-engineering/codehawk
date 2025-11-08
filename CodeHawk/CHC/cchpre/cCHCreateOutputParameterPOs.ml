@@ -48,6 +48,8 @@ open CCHPreFileIO
 open CCHPreTypes
 open CCHProofScaffolding
 
+module H = Hashtbl
+
 
 let fenv = CCHFileEnvironment.file_environment
 
@@ -60,7 +62,7 @@ object (self)
   method private ftype = self#f.svar.vtype
 
   method private fname = self#f.svar.vname
-                       
+
   method private pointer_parameters = pointer_parameters
 
   method private env = self#f.sdecls
@@ -142,16 +144,39 @@ object (self)
     let _ = self#spomanager#add_return loc context#add_return e in
     begin
       (match e with
-       | Some x -> self#create_po_exp context#add_return x loc
+       | Some x ->
+          begin
+            self#create_po_exp context#add_return x loc;
+            (match type_of_exp self#env x with
+             | TPtr _ -> self#add_ppo (PValidMem x) loc context
+             | _ -> ())
+          end
        | _ -> ());
       (List.iter (fun vinfo ->
-           begin
-             self#add_ppo
-               (POutputParameterInitialized vinfo) loc context#add_return;
-             self#add_ppo
-               (POutputParameterUnaltered vinfo) loc context#add_return
-           end)
-         self#pointer_parameters)
+           let vty = fenv#get_type_unrolled vinfo.vtype in
+           (match vty with
+            | TPtr (ty, _) ->
+               if is_integral_type ty then
+                 begin
+                   self#add_ppo
+                     (POutputParameterInitialized (vinfo, NoOffset))
+                     loc context#add_return;
+                   self#add_ppo
+                     (POutputParameterUnaltered (vinfo, NoOffset))
+                     loc context#add_return
+                 end
+               else if is_scalar_struct_type ty then
+                 let offsets = get_scalar_struct_offsets ty in
+                 List.iter (fun offset ->
+                     begin
+                       self#add_ppo
+                         (POutputParameterInitialized (vinfo, offset))
+                         loc context#add_return;
+                       self#add_ppo
+                         (POutputParameterUnaltered (vinfo, offset))
+                         loc context#add_return
+                     end) offsets
+            | _ -> ())) self#pointer_parameters)
     end
 
   method private create_po_instr (context: program_context_int) (i: instr) =
@@ -192,7 +217,10 @@ object (self)
           end);
       (List.iteri (fun i x ->
            let newcontext = context#add_arg (i + 1) in
-           self#create_po_exp newcontext x loc) el)
+           begin
+             self#create_po_exp newcontext x loc;
+             self#add_ppo (PValidMem x) loc newcontext
+           end) el)
     end
 
   method private create_po_exp
@@ -215,12 +243,20 @@ object (self)
             let cinfo = fenv#get_comp tckey in
             begin
               List.iter (fun f ->
-                  self#add_ppo
-                    (PInitialized
-                       (Var (vname, vid), Field ((f.fname, f.fckey), NoOffset)))
-                    loc
-                    context)
-                cinfo.cfields;
+                  begin
+                    self#add_ppo
+                      (PInitialized
+                         (Var (vname, vid), Field ((f.fname, f.fckey), NoOffset)))
+                      loc
+                      context;
+                    (List.iter (fun pvinfo ->
+                         self#add_ppo
+                           (PLocallyInitialized
+                              (pvinfo,
+                               (Var (vname, vid),
+                                Field ((f.fname, f.fckey), NoOffset)))) loc context)
+                       self#pointer_parameters)
+                  end) cinfo.cfields;
               self#create_po_lval context#add_lval (Var (vname, vid), NoOffset) loc
             end
          | _ -> ()
@@ -231,6 +267,7 @@ object (self)
 
     | Lval lval ->
        begin
+         self#add_ppo (PInitialized lval) loc context;
          (List.iter (fun vinfo ->
              self#add_ppo (PLocallyInitialized (vinfo, lval)) loc context)
             self#pointer_parameters);
@@ -275,7 +312,21 @@ object (self)
     | Var (_vname, vid) ->
        let ty = (self#env#get_varinfo_by_vid vid).vtype in
        self#create_po_offset context#add_var offset ty loc
-    | Mem e -> self#create_po_exp context#add_mem e loc
+    | Mem e ->
+       let tgttyp =
+         let t = type_of_exp self#env e in
+         match t with
+         | TPtr (tt, _) -> tt
+         | _ -> TVoid [] in
+       begin
+         self#create_po_exp context#add_mem e loc;
+         self#create_po_dereference context#add_mem e loc;
+         self#create_po_offset context#add_mem offset tgttyp loc
+       end
+
+  method private create_po_dereference
+                   (context: program_context_int) (e: exp) (loc: location) =
+      self#add_ppo (PValidMem e) loc context
 
   method private create_po_offset
                    (context: program_context_int)
@@ -294,7 +345,7 @@ object (self)
            else
              ()
         | _ -> ())
-      
+
     | Index (exp, oo) ->
        (match fenv#get_type_unrolled hosttyp with
         | TArray (tt, Some _len, _) ->
@@ -303,7 +354,7 @@ object (self)
              self#create_po_offset context#add_index_offset oo tt loc
            end
         | _ -> ())
-            
+
   method private create_po_binop
                    (_context: program_context_int)
                    (_binop: binop)
@@ -314,7 +365,7 @@ object (self)
     ()
 
 end
- 
+
 
 let process_function (fname:string) =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
@@ -337,6 +388,8 @@ let process_function (fname:string) =
     if (List.length pointer_parameters) > 0 then
       begin
         read_proof_files fname fdecls;
+        CCHProofScaffolding.proof_scaffolding#set_analysis_info
+          fname (OutputParameterInfo pointer_parameters);
         (new po_creator_t fundec pointer_parameters)#create_proof_obligations;
         CCHCheckValid.process_function fname;
         save_proof_files fname;
@@ -384,3 +437,63 @@ let output_parameter_po_process_file () =
   with
   | CHXmlReader.IllFormed ->
       ch_error_log#add "ill-formed content" (STR system_settings#get_cfilename)
+
+
+let output_parameter_analysis_is_active
+      (fname: string)
+      (vinfos: varinfo list)
+      (po_s: proof_obligation_int list): bool =
+  let vinfo_po_s = H.create (List.length vinfos) in
+  let _ = List.iter (fun vinfo -> H.add vinfo_po_s vinfo.vname []) vinfos in
+  let _ =
+    List.iter (fun po ->
+        match po#get_predicate with
+        | PLocallyInitialized (vinfo, _)
+          | POutputParameterInitialized (vinfo, _)
+          | POutputParameterUnaltered (vinfo, _) ->
+           let entry =
+             try
+               H.find vinfo_po_s vinfo.vname
+             with
+             | Not_found ->
+                raise (CCHFailure (LBLOCK [STR __FILE__; STR ":"; INT __LINE__])) in
+           H.replace vinfo_po_s vinfo.vname (po :: entry)
+        | _ -> ()) po_s in
+  let vinfo_is_active (vname: string): bool =
+    let vpo_s = H.find vinfo_po_s vname in
+    let read_violation =
+      List.exists (fun po ->
+          match po#get_predicate with
+          | PLocallyInitialized _ -> po#is_violation
+          | _ -> false) vpo_s in
+    let op_violation =
+      let op_ctxts = H.create 3 in
+      let add_ctxt (index: int) (po: proof_obligation_int) =
+        let entry =
+          if H.mem op_ctxts index then
+            H.find op_ctxts index
+          else
+            begin
+              H.add op_ctxts index [];
+              []
+            end in
+        H.replace op_ctxts index (po :: entry) in
+      let _ =
+        List.iter (fun po ->
+            match po#get_predicate with
+            | POutputParameterInitialized _
+              | POutputParameterUnaltered _ ->
+               add_ctxt po#get_context#get_cfg_context#index po
+            | _ -> ()) vpo_s in
+      List.exists (fun index ->
+          List.for_all (fun po -> po#is_violation) (H.find op_ctxts index))
+        (H.fold (fun k _ a -> k :: a) op_ctxts []) in
+    (not read_violation)
+    && (not op_violation)
+    && (List.exists (fun po -> not po#is_closed) vpo_s) in
+  let active =
+    List.exists vinfo_is_active (List.map (fun vinfo -> vinfo.vname) vinfos) in
+  let _ =
+    if not active then
+      CHTiming.pr_timing [STR "deactivating analysis of "; STR fname] in
+  active

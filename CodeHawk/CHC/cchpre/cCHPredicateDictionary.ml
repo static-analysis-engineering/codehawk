@@ -147,8 +147,10 @@ object (self)
       | PBuffer (e1, e2) -> (tags, [cd#index_exp e1; cd#index_exp e2])
       | PRevBuffer (e1, e2) -> (tags, [cd#index_exp e1; cd#index_exp e2])
       | PDistinctRegion (e, i) -> (tags, [cd#index_exp e; i])
-      | POutputParameterInitialized vinfo -> (tags, [cdecls#index_varinfo vinfo])
-      | POutputParameterUnaltered vinfo -> (tags, [cdecls#index_varinfo vinfo])
+      | POutputParameterInitialized (vinfo, offset) ->
+         (tags, [cdecls#index_varinfo vinfo; cd#index_offset offset])
+      | POutputParameterUnaltered (vinfo, offset) ->
+         (tags, [cdecls#index_varinfo vinfo; cd#index_offset offset])
     in
     po_predicate_table#add key
 
@@ -265,8 +267,12 @@ object (self)
     | "rb" -> PRevBuffer (cd#get_exp (a  0), cd#get_exp (a 1))
     | "nm" -> PNewMemory (cd#get_exp (a 0))
     | "dr" -> PDistinctRegion (cd#get_exp (a 0), a 1)
-    | "opi" -> POutputParameterInitialized (cdecls#get_varinfo (a 0))
-    | "opu" -> POutputParameterUnaltered (cdecls#get_varinfo (a 0))
+    | "opi" ->
+       POutputParameterInitialized
+         (cdecls#get_varinfo (a 0), cd#get_offset (a 1))
+    | "opu" ->
+       POutputParameterUnaltered
+         (cdecls#get_varinfo (a 0), cd#get_offset (a 1))
     | s -> raise_tag_error name s po_predicate_mcts#tags
 
 
