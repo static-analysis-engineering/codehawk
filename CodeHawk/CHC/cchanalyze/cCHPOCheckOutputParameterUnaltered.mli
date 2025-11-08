@@ -32,4 +32,4 @@ open CCHBasicTypes
 open CCHAnalysisTypes
 
 
-val check_outputparameter_unaltered: po_query_int -> varinfo -> bool
+val check_outputparameter_unaltered: po_query_int -> varinfo -> offset -> bool

@@ -25,6 +25,12 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHLanguage
+
+(* xprlib *)
+open XprTypes
+
 (* cchlib *)
 open CCHBasicTypes
 
@@ -37,7 +43,7 @@ open CCHAnalysisTypes
 
 let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
-let _x2s x = p2s (x2p x)
+let x2s x = p2s (x2p x)
 let _e2s e = p2s (CCHTypesToPretty.exp_to_pretty e)
 
 
@@ -45,22 +51,99 @@ let _fenv = CCHFileEnvironment.file_environment
 
 
 class outputparameter_unaltered_checker_t
-        (_poq: po_query_int)
+        (poq: po_query_int)
         (vinfo: varinfo)
-        (_invs: invariant_int list) =
-object
+        (_offset: offset)
+        (invs: invariant_int list) =
+object (self)
 
   method private vinfo = vinfo
 
-  method check_safe = false
+  method private get_symbol_name (s: symbol_t) =
+    s#getBaseName
+    ^ (match s#getAttributes with
+       | [] -> ""
+       | l  -> "(" ^ (String.concat "" l) ^ ")")
 
-  method check_violation = false
+  method private xpr_implies_safe (invindex: int) (xpr: xpr_t) =
+    let numv = poq#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
+    match xpr with
+    | XVar v when poq#env#is_initial_parameter_deref_value v ->
+       let paramvar = poq#env#get_initial_value_variable v in
+       if poq#env#is_memory_variable paramvar then
+         let (memref, _offset) = poq#env#get_memory_variable paramvar in
+         (match memref#get_base with
+          | CBaseVar base ->
+             let basevar = poq#env#get_initial_value_variable base in
+             if basevar#equal numv then
+               let deps = DLocal ([invindex]) in
+               let msg =
+                 ("value of " ^ (x2s xpr) ^ "is equal to initial value of "
+                  ^ "memory pointed to by parameter " ^ vinfo.vname) in
+               Some (deps, msg)
+             else
+               None
+          | _ -> None)
+       else None
+    | _ -> None
+
+  method private inv_implies_safe (inv: invariant_int) =
+    match inv#get_fact with
+    | NonRelationalFact (_, FSymbolicExpr x) ->
+       self#xpr_implies_safe inv#index x
+    | _ -> None
+
+  method private check_invs_safe =
+    match invs with
+    | [] -> false
+    | _ ->
+       List.fold_left (fun acc inv ->
+           acc ||
+             match self#inv_implies_safe inv with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_safe_result deps msg;
+                  true
+                end
+             | _ -> false) false invs
+
+  method private inv_implies_violation (inv: invariant_int) =
+    match inv#get_fact with
+    | NonRelationalFact (_, FInitializedSet l) ->
+       let localAssigns =
+         List.filter (fun s -> not (s#getBaseName = "parameter")) l in
+       begin
+         match localAssigns with
+         | [] -> None
+         | _ ->
+            let deps = DLocal [inv#index] in
+            let msg =
+              (String.concat
+                 "_xx_" (List.map self#get_symbol_name localAssigns)) in
+            Some (deps, msg)
+       end
+    | _ -> None
+
+  method check_safe =
+    self#check_invs_safe
+
+  method check_violation =
+    List.fold_left (fun acc inv ->
+        acc
+        || (match self#inv_implies_violation inv with
+            | Some (deps, msg) ->
+               begin
+                 poq#record_violation_result deps msg;
+                 true
+               end
+            | _ -> false)) false invs
 
 end
 
 
-let check_outputparameter_unaltered (poq:po_query_int) (vinfo: varinfo) =
-  let invs = poq#get_invariants 1 in
-  let _ = poq#set_diagnostic_invariants 1 in
-  let checker = new outputparameter_unaltered_checker_t poq vinfo invs in
-  checker#check_safe || checker#check_violation
+let check_outputparameter_unaltered
+      (poq:po_query_int) (vinfo: varinfo) (offset: offset) =
+  let invs = poq#get_init_vinfo_mem_invariants vinfo offset in
+  let _ = poq#set_init_vinfo_mem_diagnostic_invariants vinfo offset in
+  let checker = new outputparameter_unaltered_checker_t poq vinfo offset invs in
+  checker#check_violation || checker#check_safe

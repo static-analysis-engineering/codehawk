@@ -51,6 +51,7 @@ open CCHFileContract
 open CCHFileEnvironment
 open CCHFunctionSummary
 open CCHLibTypes
+open CCHTypesCompare
 open CCHTypesToPretty
 open CCHTypesUtil
 open CCHUtilities
@@ -347,7 +348,57 @@ object (self)
                          acc ^ "; " ^ s#getBaseName) "" l in
                  self#set_diagnostic ("[" ^ v#getName#getBaseName ^ ":calls]" ^ lst)
             end
-         | _ -> ()) callinvs
+        | _ -> ()) callinvs
+
+  method set_all_diagnostic_invariants =
+    let locinv = invio#get_location_invariant cfgcontext in
+    let invs = locinv#get_invariants in
+    List.iter (fun inv -> po#add_diagnostic_msg (p2s (inv#toPretty))) invs
+
+  method get_init_vinfo_mem_invariants
+           (vinfo: varinfo) (offset: offset): invariant_int list =
+    let numv = self#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
+    List.fold_left (fun acc inv ->
+        match inv#get_fact with
+        | NonRelationalFact (v, _) ->
+           if self#env#is_memory_variable v then
+             let (memref, memoffset) = self#env#get_memory_variable v in
+             (match memref#get_base with
+              | CBaseVar base when self#env#is_initial_parameter_value base ->
+                 let basevar = self#env#get_initial_value_variable base in
+                 if numv#equal basevar
+                    && (offset_compare offset memoffset) = 0 then
+                   inv :: acc
+                 else
+                   acc
+              | _ -> acc)
+           else
+             acc
+        | _ -> acc) [] (invio#get_location_invariant cfgcontext)#get_invariants
+
+  method set_init_vinfo_mem_diagnostic_invariants
+           (vinfo: varinfo) (offset: offset) =
+    let numv = self#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
+    let ctxtinvs = (invio#get_location_invariant cfgcontext)#get_invariants in
+    let invs =
+      List.fold_left (fun acc inv ->
+          match inv#get_fact with
+          | NonRelationalFact (v, _) ->
+             if self#env#is_memory_variable v then
+               let (memref, memoffset) = self#env#get_memory_variable v in
+               (match memref#get_base with
+                | CBaseVar base when self#env#is_initial_parameter_value base ->
+                   let basevar = self#env#get_initial_value_variable base in
+                   if numv#equal basevar
+                      && (offset_compare offset memoffset) = 0 then
+                     inv :: acc
+                   else
+                     acc
+                | _ -> acc)
+             else
+               acc
+          | _ -> acc) [] ctxtinvs in
+    List.iter (fun inv -> po#add_diagnostic_msg (p2s (inv#toPretty))) invs
 
   method set_vinfo_diagnostic_invariants (vinfo:varinfo) =
     let vinfovalues = self#get_vinfo_offset_values vinfo in

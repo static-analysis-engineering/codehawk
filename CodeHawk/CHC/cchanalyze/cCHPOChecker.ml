@@ -186,8 +186,10 @@ object
     | PValueConstraint e -> check_value_constraint poq e
     | PValuePreserved e -> check_value_preserved poq e
     | PPreservedAllMemory -> check_preserved_all_memory poq
-    | POutputParameterInitialized v -> check_outputparameter_initialized poq v
-    | POutputParameterUnaltered v -> check_outputparameter_unaltered poq v
+    | POutputParameterInitialized (v, offset) ->
+       check_outputparameter_initialized poq v offset
+    | POutputParameterUnaltered (v, offset) ->
+       check_outputparameter_unaltered poq v offset
     | _ -> false
 
 end
