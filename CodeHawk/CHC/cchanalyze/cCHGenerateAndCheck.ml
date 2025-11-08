@@ -160,6 +160,15 @@ let make_invariant_generation_spec t =
 			    STR " not recognized"]))
 
 
+let analysis_is_active (fname: string): bool =
+  match proof_scaffolding#get_analysis_info fname with
+  | UndefinedBehaviorInfo -> true
+  | OutputParameterInfo vinfos ->
+     let proof_obligations = proof_scaffolding#get_proof_obligations fname in
+     CCHCreateOutputParameterPOs.output_parameter_analysis_is_active
+       fname vinfos proof_obligations
+
+
 let process_function gspecs fname =
   let cfilename = system_settings#get_cfilename in
   try
@@ -181,7 +190,7 @@ let process_function gspecs fname =
           (List.length proofObligations)
           (List.length openpos)
           __FILE__ __LINE__ in
-      if (List.length openpos) > 0 then
+      if (List.length openpos) > 0 && (analysis_is_active fname) then
         let _ =
           pr_timing [
               STR cfilename; STR ": ===analyze function=== "; STR fname;
@@ -304,7 +313,9 @@ let process_function gspecs fname =
         save_api fname;
       end
     else
-      ()
+      pr_timing [
+          STR cfilename; STR ":"; STR fname;
+          STR ": Skip analysis; analysis is not active"]
   with
   | CCHFailure p ->
      begin

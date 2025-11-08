@@ -517,6 +517,10 @@ class type po_query_int =
         all values that variable [vinfo] may have in this PO.*)
     method set_vinfo_diagnostic_invariants: varinfo -> unit
 
+    method set_all_diagnostic_invariants: unit
+
+    method set_init_vinfo_mem_diagnostic_invariants: varinfo -> offset -> unit
+
     method add_local_spo: location -> program_context_int -> po_predicate_t -> unit
 
     (** {1 Checks} *)
@@ -665,6 +669,8 @@ class type po_query_int =
         with name [name] if the file contract has such upper bound, otherwise it
         returns None.*)
     method get_gv_upperbound: string -> int option
+
+    method get_init_vinfo_mem_invariants: varinfo -> offset -> invariant_int list
 
 
     (** {2 Function summary} *)
