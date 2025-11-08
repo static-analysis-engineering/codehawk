@@ -788,6 +788,11 @@ class type global_contract_int =
 (** {1 System settings} *)
 
 
+type analysis_kind_t =
+  | UndefinedBehaviorAnalysis
+  | OutputParameterAnalysis
+
+
 type analysis_level_t =
   | UndefinedBehavior
   (** only indicate undefined behavior (Red) *)
@@ -866,6 +871,10 @@ class type system_settings_int =
     method is_undefined_only: bool
     method is_implementation_defined: bool
     method is_value_wrap_around: bool
+
+    method set_output_parameter_analysis: unit
+    method is_undefined_behavior_analysis: bool
+    method is_output_parameter_analysis: bool
 
     (** {1 Other settings} *)
 
