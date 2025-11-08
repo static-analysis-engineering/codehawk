@@ -32,12 +32,15 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
 open CCHFileContract
 open CCHLibTypes
+open CCHTypesToPretty
+open CCHTypesUtil
 open CCHUtilities
 
 (* cchpre *)
@@ -51,11 +54,14 @@ module H = Hashtbl
 
 
 let id = CCHInterfaceDictionary.interface_dictionary
+let cd = CCHDictionary.cdictionary
+let fenv = CCHFileEnvironment.file_environment
 
 
 class proof_scaffolding_t:proof_scaffolding_int =
 object (self)
 
+  val analysis_info = H.create 3            (* fname -> analysis_info_t *)
   val apis = H.create 3                     (* fname -> api_assumption_int *)
   val ppos = H.create 3                     (* fname -> ppo_manager_int *)
   val spos = H.create 3                     (* fname -> spo_manager_int *)
@@ -63,11 +69,21 @@ object (self)
 
   method reset =
     begin
+      H.clear analysis_info;
       H.clear apis;
       H.clear ppos;
       H.clear spos;
       H.clear pods;
     end
+
+  method set_analysis_info (fname: string) (info: analysis_info_t) =
+    H.replace analysis_info fname info
+
+  method get_analysis_info (fname: string): analysis_info_t =
+    if H.mem analysis_info fname then
+      H.find analysis_info fname
+    else
+      UndefinedBehaviorInfo
 
   method get_function_api (fname:string):function_api_int =
     if H.mem apis fname then
@@ -217,15 +233,80 @@ object (self)
   method read_xml_api (node:xml_element_int) (fname:string) =
     (self#get_function_api fname)#read_xml (node#getTaggedChild "api")
 
+  method private write_xml_analysis_info (node: xml_element_int) (fname: string) =
+    let info =
+      if H.mem analysis_info fname then
+        H.find analysis_info fname
+      else
+        UndefinedBehaviorInfo in
+    match info with
+    | UndefinedBehaviorInfo ->
+       node#setAttribute "name" "undefined-behavior"
+    | OutputParameterInfo vinfos ->
+       let ppnode = xmlElement "candidate-parameters" in
+       begin
+         node#setAttribute "name" "output-parameters";
+         List.iter (fun vinfo ->
+             let offsets =
+               match fenv#get_type_unrolled vinfo.vtype with
+               | TPtr (tt, _) when is_integral_type tt ->
+                  string_of_int( cd#index_offset NoOffset)
+               | TPtr (tt,_) when is_scalar_struct_type tt ->
+                  let offsets = get_scalar_struct_offsets tt in
+                  String.concat
+                    ","
+                    (List.map (fun o -> string_of_int (cd#index_offset o)) offsets)
+               | ty ->
+                  begin
+                    ch_error_log#add
+                      "output parameter type not recognized"
+                      (LBLOCK [STR "type: "; typ_to_pretty ty]);
+                    ""
+                  end in
+             let pnode = xmlElement "vinfo" in
+             begin
+               pnode#setAttribute "vname" vinfo.vname;
+               pnode#setIntAttribute
+                 "xid" (CCHDeclarations.cdeclarations#index_varinfo vinfo);
+               pnode#setAttribute "offsets" offsets;
+               ppnode#appendChildren [pnode]
+             end) vinfos;
+         node#appendChildren [ppnode]
+       end
+
+
   method write_xml_ppos (node:xml_element_int) (fname:string) =
+    let inode = xmlElement "analysis-info" in
     let pnode = xmlElement "ppos" in
     begin
+      (self#write_xml_analysis_info inode fname);
       (self#get_ppo_manager fname)#write_xml pnode;
-      node#appendChildren [ pnode ]
+      node#appendChildren [inode; pnode]
     end
 
+  method private read_xml_analysis_info (node: xml_element_int) (fname: string) =
+    let name = node#getAttribute "name" in
+    let info =
+      match name with
+      | "undefined-behavior" -> UndefinedBehaviorInfo
+      | "output-parameters" ->
+         let ppnode = node#getTaggedChild "candidate-parameters" in
+         let vinfos =
+           List.map (fun pnode ->
+               let xid = pnode#getIntAttribute "xid" in
+               CCHDeclarations.cdeclarations#get_varinfo xid)
+             (ppnode#getTaggedChildren "vinfo") in
+         OutputParameterInfo vinfos
+      | _ ->
+         raise (CCHFailure (LBLOCK [STR "name not recognized: "; STR name])) in
+    H.replace analysis_info fname info
+
   method read_xml_ppos (node:xml_element_int) (fname:string) =
-    (self#get_ppo_manager fname)#read_xml (node#getTaggedChild "ppos")
+    begin
+      (if node#hasOneTaggedChild "analysis-info" then
+         self#read_xml_analysis_info (node#getTaggedChild "analysis-info") fname);
+      (self#get_ppo_manager fname)#read_xml (node#getTaggedChild "ppos")
+    end
 
   method write_xml_spos (node:xml_element_int) (fname:string) =
     let snode = xmlElement "spos" in
