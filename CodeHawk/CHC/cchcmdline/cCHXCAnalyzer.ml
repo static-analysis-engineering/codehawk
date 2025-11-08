@@ -187,6 +187,7 @@ let main () =
 
     else if !cmd = "outputparameters-primary" then
       begin
+        system_settings#set_output_parameter_analysis;
 	CCHCreateOutputParameterPOs.output_parameter_po_process_file ();
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";

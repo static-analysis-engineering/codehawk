@@ -50,6 +50,7 @@ object
   val mutable wordsize = Some 32
   val mutable use_unreachability = false
   val mutable analysis_level = ImplementationDefinedBehavior
+  val mutable analysis_kind = UndefinedBehaviorAnalysis
 
   method set_projectpath (p: string) = projectpath <- p
   method get_projectpath = projectpath
@@ -96,6 +97,14 @@ object
     analysis_level = ImplementationDefinedBehavior
 
   method is_value_wrap_around = analysis_level = ValueWrapAround
+
+  method set_output_parameter_analysis = analysis_kind <- OutputParameterAnalysis
+
+  method is_undefined_behavior_analysis =
+    analysis_kind = UndefinedBehaviorAnalysis
+
+  method is_output_parameter_analysis =
+    analysis_kind = OutputParameterAnalysis
 
   method use_unreachability = use_unreachability
   method verbose = verbose
