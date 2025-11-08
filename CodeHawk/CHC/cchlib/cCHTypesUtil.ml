@@ -831,6 +831,46 @@ let is_volatile_type (t:typ) =
     (get_typ_attributes t)
 
 
+let rec is_scalar_struct_type (t: typ): bool =
+  match fenv#get_type_unrolled t with
+  | TComp (ckey, _) ->
+     let cinfo = fenv#get_comp ckey in
+     List.for_all (fun finfo ->
+         match finfo.ftype with
+         | TInt _
+           | TFloat _
+           | TPtr _ -> true
+         | TComp _ -> is_scalar_struct_type finfo.ftype
+         | _ -> false) cinfo.cfields
+  | _ -> false
+
+
+let rec get_scalar_struct_offsets (t: typ): offset list =
+  if is_scalar_struct_type t then
+    match fenv#get_type_unrolled t with
+    | TComp (ckey, _) ->
+       let cinfo = fenv#get_comp ckey in
+       List.fold_left (fun acc finfo ->
+           match finfo.ftype with
+           | TInt _
+             | TFloat _
+             | TPtr _ -> (Field ((finfo.fname, finfo.fckey), NoOffset)) :: acc
+           | TComp _ ->
+              let suboffsets = get_scalar_struct_offsets finfo.ftype in
+              let suboffsets =
+                List.map (fun suboffset ->
+                    Field ((finfo.fname, finfo.fckey), suboffset))
+                  (List.rev suboffsets) in
+              suboffsets @ acc
+           | _ -> acc) [] cinfo.cfields
+    | _ -> []
+  else
+    raise
+      (CCHFailure
+         (LBLOCK [
+              STR "Type is not a scalar struct: "; typ_to_pretty t]))
+
+
 let constant_value (c:constant) =
   match c with
   | CInt (i64, _, _) ->

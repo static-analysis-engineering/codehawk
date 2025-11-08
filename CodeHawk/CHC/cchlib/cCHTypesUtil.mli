@@ -110,6 +110,8 @@ val is_void_type: typ -> bool
 
 val is_struct_type: typ -> bool
 
+val is_scalar_struct_type: typ -> bool
+
 val is_void_ptr_type: typ -> bool
 
 val is_function_type: typ -> bool
@@ -125,6 +127,8 @@ val is_constant_string: exp -> bool
 val is_enum_constant: string -> exp -> bool
 
 val get_field_offset: offset -> string * int
+
+val get_scalar_struct_offsets: typ -> offset list
 
 val add_offset: offset -> offset -> offset
 
