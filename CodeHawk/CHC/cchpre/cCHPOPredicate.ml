@@ -125,6 +125,7 @@ object (self)
     let wt = self#walk_type in
     let wl = self#walk_lval in
     let wv = self#walk_varinfo in
+    let wo = self#walk_offset in
     match p with
     | PNotNull e | PNull e | PValidMem e | PInScope e
       | PControlledResource (_, e)
@@ -246,8 +247,16 @@ object (self)
     | PPreservedAllMemory -> ()
     | PPreservedAllMemoryX l -> List.iteri (fun i e -> we (i+1) e) l
     | PContractObligation _ -> ()
-    | POutputParameterInitialized v -> wv 1 v
-    | POutputParameterUnaltered v -> wv 1 v
+    | POutputParameterInitialized (v, o) ->
+       begin
+         wv 1 v;
+         wo 2 o
+       end
+    | POutputParameterUnaltered (v, o) ->
+       begin
+         wv 1 v;
+         wo 2 o
+       end
 
 end
 
@@ -635,10 +644,20 @@ let po_predicate_to_full_pretty p =
          STR "preserved-all-memory-x";
          pretty_print_list l exp_to_pretty "(" "," ")"]
   | PContractObligation s -> LBLOCK [STR  "contract-obligation:"; STR s]
-  | POutputParameterInitialized vinfo ->
-     LBLOCK [STR "outputparameter-initialized("; STR vinfo.vname; STR ")"]
-  | POutputParameterUnaltered vinfo ->
-     LBLOCK [STR "outputparameter-unaltered("; STR vinfo.vname; STR ")"]
+  | POutputParameterInitialized (vinfo, offset) ->
+     LBLOCK [
+         STR "outputparameter-initialized(";
+         STR vinfo.vname;
+         STR ", ";
+         offset_to_pretty offset;
+         STR ")"]
+  | POutputParameterUnaltered (vinfo, offset) ->
+     LBLOCK [
+         STR "outputparameter-unaltered(";
+         STR vinfo.vname;
+         STR ", ";
+         offset_to_pretty offset;
+         STR ")"]
 
 
 let pr_expr op e1 e2 t = exp_to_pretty (BinOp (op, e1, e2,t ))
@@ -864,10 +883,20 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
            STR "preserved-all-memory-x";
            pretty_print_list l exp_to_pretty "(" "," ")"]
     | PContractObligation s -> LBLOCK [STR "contract-obligation:"; STR s]
-  | POutputParameterInitialized vinfo ->
-     LBLOCK [STR "outputparameter-initialized("; STR vinfo.vname; STR ")"]
-  | POutputParameterUnaltered vinfo ->
-     LBLOCK [STR "outputparameter-unaltered("; STR vinfo.vname; STR ")"]
+  | POutputParameterInitialized (vinfo, offset) ->
+     LBLOCK [
+         STR "outputparameter-initialized(";
+         STR vinfo.vname;
+         STR ", ";
+         offset_to_pretty offset;
+         STR ")"]
+  | POutputParameterUnaltered (vinfo, offset) ->
+     LBLOCK [
+         STR "outputparameter-unaltered(";
+         STR vinfo.vname;
+         STR ", ";
+         offset_to_pretty offset;
+         STR ")"]
 
 
 let get_global_vars_in_exp (env:cfundeclarations_int) (e:exp) =

@@ -780,8 +780,14 @@ object (self)
     if self#is_initial_value index then
       (self#get_variable index)#get_initial_value_variable
     else
+      let var = self#get_variable index in
       raise
-        (CCHFailure (LBLOCK [STR "No an initial value variable: "; INT index]))
+        (CCHFailure (
+             LBLOCK [
+                 STR "No an initial value variable: ";
+                 INT index;
+                 STR ": ";
+                 var#toPretty]))
 
   method is_symbolic_value (index:int) =
     index >= 0 &&
