@@ -99,16 +99,20 @@ module ExpCollections = CHCollections.Make
     let toPretty = exp_to_pretty
   end)
 
-let make_record p m evtxt status =
+let make_record
+      (p: proof_obligation_int)
+      (m: dependencies_t)
+      (evtxt: string)
+      (status: po_status_t) =
   begin
     p#set_status status;
-    p#set_explanation evtxt;
+    p#set_explanation ~site:None evtxt;
     p#set_dependencies m;
     true
   end
 
 
-let make_unreachable p domain =
+let make_unreachable (p: proof_obligation_int) (domain: string) =
   let _ = chlog#add "unreachable" (STR domain) in
   make_record p (DUnreachable domain) "unreachable" Grey
 

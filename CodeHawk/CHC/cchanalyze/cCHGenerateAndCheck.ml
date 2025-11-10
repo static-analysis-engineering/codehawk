@@ -370,6 +370,7 @@ let generate_and_check_process_file (domains: string list) =
     let _ = read_cfile_context () in
     let _ = read_cfile_predicate_dictionary () in
     let _ = read_cfile_interface_dictionary () in
+    let _ = read_cfile_dictionary () in
     let _ = read_cfile_assignment_dictionary () in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
