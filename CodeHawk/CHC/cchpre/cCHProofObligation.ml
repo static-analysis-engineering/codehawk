@@ -46,6 +46,9 @@ open CCHPreTypes
 module H = Hashtbl
 
 
+let cd = CCHDictionary.cdictionary
+
+
 let join_invs (invs1:int list) (invs2:int list):int list =
   let s = new IntCollections.set_t in
   begin
@@ -175,13 +178,32 @@ let get_po_type_predicate (pt:po_type_t) =
     | SPO (LocalSPO (_, _, pred)) -> pred
 
 
+let situated_msg_to_pretty (m: situated_msg_t) =
+  match m.smsg_loc with
+  | Some c ->
+     LBLOCK [
+         STR m.smsg_msg;
+         STR " ("; INT c.ocode_line; STR ", "; STR c.ocode_detail; STR ")"]
+  | _ ->
+     LBLOCK [STR m.smsg_msg]
+
+
+module SituatedMsgCollections =
+  CHCollections.Make
+    (struct
+      type t = situated_msg_t
+      let compare = (fun m1 m2 -> Stdlib.compare m1.smsg_msg m2.smsg_msg)
+      let toPretty = situated_msg_to_pretty
+    end)
+
+
 class diagnostic_t =
 object (self)
 
   val invarianttable = H.create 1
-  val argmessages = H.create 1          (* arg index -> msg list *)
-  val keymessages = H.create 1          (* key -> msg list *)
-  val messages = new StringCollections.set_t
+  val argmessages = H.create 1          (* arg index -> situated_msg_t list *)
+  val keymessages = H.create 1          (* key -> situated_msg_t list *)
+  val messages = new SituatedMsgCollections.set_t
 
   method clear =
     begin
@@ -195,27 +217,27 @@ object (self)
   method get_invariants =
     H.fold (fun k v acc -> (k,v) :: acc) invarianttable []
 
-  method add_msg (s:string): unit =
+  method add_msg (s: situated_msg_t): unit =
     messages#add s
 
-  method add_arg_msg (index:int) (s:string): unit =
+  method add_arg_msg (index:int) (s: situated_msg_t): unit =
     let entry =
       if H.mem argmessages index then
         H.find argmessages index
       else
-        let entry = new StringCollections.set_t in
+        let entry = new SituatedMsgCollections.set_t in
         begin
           H.add argmessages index entry;
           entry
         end in
     entry#add s
 
-  method add_key_msg (key:string) (s:string): unit =
+  method add_key_msg (key:string) (s: situated_msg_t): unit =
     let entry =
       if H.mem keymessages key then
         H.find keymessages key
       else
-        let entry = new StringCollections.set_t in
+        let entry = new SituatedMsgCollections.set_t in
         begin
           H.add keymessages key entry;
           entry
@@ -232,18 +254,48 @@ object (self)
     let arg_messages = self#get_arg_messages in
     let flat_messages = List.map ( fun(_, x) -> x) arg_messages in
     let flat_messages = List.flatten flat_messages in
-    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) flat_messages)
+    LBLOCK (
+        List.map (fun s -> LBLOCK [situated_msg_to_pretty s; NL]) flat_messages)
 
   method key_messages_to_pretty: pretty_t =
     let key_messages = self#get_key_messages in
     let flat_messages = List.map ( fun(_, x) -> x) key_messages in
     let flat_messages = List.flatten flat_messages in
-    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) flat_messages)
+    LBLOCK (
+        List.map (fun s -> LBLOCK [situated_msg_to_pretty s; NL]) flat_messages)
 
   method is_empty =
     (H.length invarianttable) = 0
     && (H.length argmessages = 0)
     && messages#isEmpty
+
+  method private write_xml_situated_msg
+                   (node: xml_element_int) (m: situated_msg_t) =
+    begin
+      node#setAttribute "t" m.smsg_msg;
+      (match m.smsg_loc with
+       | Some c ->
+          begin
+            node#setIntAttribute "file" (cd#index_string c.ocode_file);
+            node#setIntAttribute "line" c.ocode_line;
+            node#setIntAttribute "detail" (cd#index_string c.ocode_detail)
+          end
+       | _ -> ())
+    end
+
+  method private read_xml_situated_msg (node: xml_element_int): situated_msg_t =
+    let get = node#getAttribute in
+    let geti = node#getIntAttribute in
+    let ocode =
+      if node#hasNamedAttribute "file" then
+        Some {
+            ocode_file = cd#get_string (geti "file");
+            ocode_line = geti "linenr";
+            ocode_detail = cd#get_string (geti "detail")
+          }
+      else
+        None in
+    { smsg_msg = get "t"; smsg_loc = ocode }
 
   method write_xml (node:xml_element_int) =
     let inode = xmlElement "invs" in
@@ -269,7 +321,7 @@ object (self)
                   (List.map (fun msg ->
                        let snode = xmlElement "msg" in
                        begin
-                         snode#setAttribute "t" msg;
+                         self#write_xml_situated_msg snode msg;
                          snode
                        end) msgs);
                 xnode
@@ -283,16 +335,16 @@ object (self)
                   (List.map (fun msg ->
                        let snode = xmlElement "msg" in
                        begin
-                         snode#setAttribute "t" msg;
+                         self#write_xml_situated_msg snode msg;
                          snode
                        end) msgs);
                 xnode
               end) self#get_key_messages));
       (mnode#appendChildren
-         (List.map (fun s ->
+         (List.map (fun msg ->
               let snode = xmlElement "msg" in
               begin
-                snode#setAttribute "t" s;
+                self#write_xml_situated_msg snode msg;
                 snode
               end) messages#toList));
       node#appendChildren [inode; mnode; anode; knode]
@@ -311,21 +363,22 @@ object (self)
          (inode#getTaggedChildren "arg"));
       (List.iter (fun n ->
            let amsgs =
-             List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
+             List.map self#read_xml_situated_msg (n#getTaggedChildren "msg") in
            List.iter (self#add_arg_msg (n#getIntAttribute "a")) amsgs)
          (anode#getTaggedChildren "arg"));
       (List.iter (fun n ->
            let kmsgs =
-             List.map (fun k -> k#getAttribute "t") (n#getTaggedChildren "msg") in
+             List.map self#read_xml_situated_msg (n#getTaggedChildren "msg") in
            List.iter (self#add_key_msg (n#getAttribute "k")) kmsgs)
          (knode#getTaggedChildren "key"));
       (List.iter
-         (fun n -> self#add_msg (n#getAttribute "t"))
+         (fun n -> self#add_msg (self#read_xml_situated_msg n))
          (mnode#getTaggedChildren "msg"))
     end
 
   method toPretty =
-    LBLOCK (List.map (fun s -> LBLOCK [STR s; NL]) messages#toList)
+    LBLOCK (
+        List.map (fun s -> LBLOCK [situated_msg_to_pretty s; NL]) messages#toList)
 
 
 end
@@ -354,15 +407,63 @@ object (self)
 
   method set_dependencies d = dependencies <- Some d
 
-  method set_explanation e = explanation <- Some e
+  method set_explanation
+           ?(site: (string * int * string) option = None) (e: string) =
+    let ocode =
+      match site with
+      | Some (file, linenr, detail) -> Some {
+          ocode_file = file;
+          ocode_line = linenr;
+          ocode_detail = detail
+        }
+      | _ -> None in
+    let smsg = { smsg_msg = e; smsg_loc = ocode } in
+    explanation <- Some smsg
 
-  method add_diagnostic_msg = diagnostic#add_msg
+  method add_diagnostic_msg
+           ?(site: (string * int * string) option = None) (msg: string) =
+    let ocode =
+      match site with
+      | Some (file, linenr, detail) -> Some {
+          ocode_file = file;
+          ocode_line = linenr;
+          ocode_detail = detail
+        }
+      | _ -> None in
+    let smsg = { smsg_msg = msg; smsg_loc = ocode } in
+    diagnostic#add_msg smsg
 
   method set_diagnostic_invariants = diagnostic#set_invariants
 
-  method add_diagnostic_arg_msg = diagnostic#add_arg_msg
+  method add_diagnostic_arg_msg
+           ?(site: (string * int * string) option = None)
+           (argnr: int)
+           (msg: string) =
+    let ocode =
+      match site with
+      | Some (file, linenr, detail) -> Some {
+          ocode_file = file;
+          ocode_line = linenr;
+          ocode_detail = detail
+        }
+      | _ -> None in
+    let smsg = { smsg_msg = msg; smsg_loc = ocode } in
+    diagnostic#add_arg_msg argnr smsg
 
-  method add_diagnostic_key_msg = diagnostic#add_key_msg
+  method add_diagnostic_key_msg
+           ?(site: (string * int * string) option = None)
+           (key: string)
+           (msg: string) =
+    let ocode =
+      match site with
+      | Some (file, linenr, detail) -> Some {
+          ocode_file = file;
+          ocode_line = linenr;
+          ocode_detail = detail
+        }
+      | _ -> None in
+    let smsg = { smsg_msg = msg; smsg_loc = ocode } in
+    diagnostic#add_key_msg key smsg
 
   method set_resolution_timestamp t = timestamp <- Some t
 
@@ -380,8 +481,7 @@ object (self)
 
   method get_predicate = get_po_type_predicate pt
 
-  method get_explanation =
-    match explanation with Some t -> t | _ -> "none"
+  method get_explanation = explanation
 
   method get_diagnostic = diagnostic
 
@@ -397,6 +497,20 @@ object (self)
 
   method is_ppo =
     match pt with | PPO _ -> true | _ -> false
+
+  method private write_xml_situated_msg
+                   (node: xml_element_int) (m: situated_msg_t) =
+    begin
+      node#setAttribute "txt" m.smsg_msg;
+      (match m.smsg_loc with
+       | Some c ->
+          begin
+            node#setIntAttribute "file" (cd#index_string c.ocode_file);
+            node#setIntAttribute "line" c.ocode_line;
+            node#setIntAttribute "detail" (cd#index_string c.ocode_detail)
+          end
+       | _ -> ())
+    end
 
   method write_xml (node:xml_element_int) =
     begin
@@ -415,7 +529,7 @@ object (self)
        | Some e ->
           let enode = xmlElement "e" in
           begin
-            enode#setAttribute "txt" e;
+            self#write_xml_situated_msg enode e;
             node#appendChildren [enode]
           end
        | _ -> ());
@@ -539,6 +653,20 @@ end
 let mk_local_spo = new local_spo_t
 
 
+let read_xml_explanation (node: xml_element_int) (po: proof_obligation_int)=
+    let get = node#getAttribute in
+    let geti = node#getIntAttribute in
+    let site =
+      if node#hasNamedAttribute "file" then
+        Some (
+            cd#get_string (geti "file"),
+            geti "linenr",
+            cd#get_string (geti "detail"))
+      else
+        None in
+    po#set_explanation ~site (get "txt")
+
+
 let read_xml_proof_obligation
       (node:xml_element_int)
       (pod:podictionary_int)
@@ -552,7 +680,7 @@ let read_xml_proof_obligation
        let status = po_status_mfts#fs (get "s") in
        po#set_status status);
     (if hasc "e" then
-       po#set_explanation ((getc "e")#getAttribute "txt"));
+       read_xml_explanation (getc "e") po);
     (if hasc "d" then
        po#get_diagnostic#read_xml (getc "d"));
     (if has "deps" then
