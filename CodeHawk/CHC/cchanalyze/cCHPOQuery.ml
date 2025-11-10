@@ -285,43 +285,59 @@ object (self)
       None
 
   method private record_proof_result
+                   ?(site: (string * int * string) option = None)
                    (status:po_status_t)
                    (deps:dependencies_t)
                    (expl:string) =
     begin
       po#set_status status;
       po#set_dependencies deps;
-      po#set_explanation expl;
+      po#set_explanation ~site expl;
       po#set_resolution_timestamp (current_time_to_string ())
     end
 
-  method set_diagnostic (msg: string) = po#add_diagnostic_msg msg
+  method set_diagnostic
+           ?(site: (string * int * string) option = None)
+           (msg: string) =
+    po#add_diagnostic_msg ~site msg
 
-  method set_key_diagnostic (key: string) (msg: string) =
-    po#add_diagnostic_key_msg key msg
+  method set_key_diagnostic
+           ?(site: (string * int * string) option = None)
+           (key: string)
+           (msg: string) =
+    po#add_diagnostic_key_msg ~site key msg
 
-  method set_ref_diagnostic (fname: string) =
+  method set_ref_diagnostic
+           ?(site: (string * int * string) option = None) (fname: string) =
     match self#get_summary fname with
     | Some s ->
        begin
          match s.fs_domainref with
          | Some (ref, desc) ->
-            po#add_diagnostic_key_msg ("DomainRef:" ^ ref ^ ":" ^ fname) desc
+            po#add_diagnostic_key_msg ~site ("DomainRef:" ^ ref ^ ":" ^ fname) desc
          | _ -> ()
        end
     | _ -> ()
 
-  method set_diagnostic_arg (index: int) (txt: string) =
+  method set_diagnostic_arg
+           ?(site: (string * int * string) option = None)
+           (index: int)
+           (txt: string) =
     let txt = "[" ^ (string_of_int) index ^ "]:" ^ txt in
-    po#add_diagnostic_arg_msg index txt
+    po#add_diagnostic_arg_msg ~site index txt
 
-  method set_exp_diagnostic ?(lb=false) ?(ub=false) (e:exp) (s:string) =
+  method set_exp_diagnostic
+           ?(site: (string * int * string) option = None)
+           ?(lb=false)
+           ?(ub=false)
+           (e:exp)
+           (s:string) =
     match e with
     | Const (CInt _) -> ()
     | _ ->
        let prefix =
          if lb then "lb-exp" else if ub then "ub-exp" else "exp" in
-       self#set_diagnostic ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
+       self#set_diagnostic ~site ("[" ^ prefix ^  ":" ^ (e2s e) ^ "]: " ^ s)
 
   method set_diagnostic_invariants (index:int) =
     let invs = List.map (fun inv -> inv#index) (self#get_invariants index) in
@@ -329,7 +345,8 @@ object (self)
     | [] -> ()
     | _ -> po#set_diagnostic_invariants index invs
 
-  method set_diagnostic_call_invariants =
+  method set_diagnostic_call_invariants
+           ?(site: (string * int * string) option = None) () =
     let callinvs = self#get_call_invariants in
     let entrysym = env#get_p_entry_sym in
     List.iter (fun inv ->
@@ -338,7 +355,8 @@ object (self)
            begin
              match l with
              | [s] when s#equal entrysym ->
-                self#set_diagnostic ("[" ^ v#getName#getBaseName ^ ":calls]:none")
+                self#set_diagnostic
+                  ~site ("[" ^ v#getName#getBaseName ^ ":calls]:none")
               | _ ->
                  let lst =
                    List.fold_left (fun acc s ->
@@ -346,14 +364,16 @@ object (self)
                          acc
                        else
                          acc ^ "; " ^ s#getBaseName) "" l in
-                 self#set_diagnostic ("[" ^ v#getName#getBaseName ^ ":calls]" ^ lst)
+                 self#set_diagnostic
+                   ~site("[" ^ v#getName#getBaseName ^ ":calls]" ^ lst)
             end
         | _ -> ()) callinvs
 
-  method set_all_diagnostic_invariants =
+  method set_all_diagnostic_invariants
+           ?(site: (string * int * string) option = None) () =
     let locinv = invio#get_location_invariant cfgcontext in
     let invs = locinv#get_invariants in
-    List.iter (fun inv -> po#add_diagnostic_msg (p2s (inv#toPretty))) invs
+    List.iter (fun inv -> po#add_diagnostic_msg ~site (p2s (inv#toPretty))) invs
 
   method get_init_vinfo_mem_invariants
            (vinfo: varinfo) (offset: offset): invariant_int list =
@@ -377,6 +397,7 @@ object (self)
         | _ -> acc) [] (invio#get_location_invariant cfgcontext)#get_invariants
 
   method set_init_vinfo_mem_diagnostic_invariants
+           ?(site: (string * int * string) option = None)
            (vinfo: varinfo) (offset: offset) =
     let numv = self#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
     let ctxtinvs = (invio#get_location_invariant cfgcontext)#get_invariants in
@@ -398,12 +419,14 @@ object (self)
              else
                acc
           | _ -> acc) [] ctxtinvs in
-    List.iter (fun inv -> po#add_diagnostic_msg (p2s (inv#toPretty))) invs
+    List.iter (fun inv -> po#add_diagnostic_msg ~site (p2s (inv#toPretty))) invs
 
-  method set_vinfo_diagnostic_invariants (vinfo:varinfo) =
+  method set_vinfo_diagnostic_invariants
+           ?(site: (string * int * string) option = None) (vinfo:varinfo) =
     let vinfovalues = self#get_vinfo_offset_values vinfo in
     List.iter (fun (inv, offset) ->
         po#add_diagnostic_msg
+          ~site
           ("["
            ^ vinfo.vname
            ^ "]: "
@@ -416,7 +439,10 @@ object (self)
   method private record_unevaluated (x:xpr_t) =
     fApi#add_unevaluated po#get_predicate (xd#index_xpr x)
 
-  method record_safe_result (deps:dependencies_t) (expl:string) =
+  method record_safe_result
+           ?(site: (string * int * string) option = None)
+           (deps: dependencies_t)
+           (expl: string) =
     let _ = match deps with
       | DEnvC (_, assumptions) ->
          let (ppos, spos) = self#get_ppos_spos in
@@ -434,12 +460,16 @@ object (self)
                   (fApi#add_api_assumption ~isglobal:true ~ppos ~spos pred)
            ) assumptions
       | _ -> () in
-    self#record_proof_result Green deps expl
+    self#record_proof_result ~site Green deps expl
 
-  method record_violation_result (deps:dependencies_t) (expl:string) =
-    self#record_proof_result Red deps expl
+  method record_violation_result
+           ?(site: (string * int * string) option = None)
+           (deps:dependencies_t)
+           (expl:string) =
+    self#record_proof_result ~site Red deps expl
 
   method delegate_to_api
+           ?(site: (string * int * string) option = None)
            ?(isfile=false)
            ?(isglobal=false)
            (pred:po_predicate_t)
@@ -454,12 +484,13 @@ object (self)
          ^ (p2s (po_predicate_to_pretty apred))
          ^ " delegated to api" in
        begin
-         self#record_proof_result Green deps expl;
+         self#record_proof_result ~site Green deps expl;
          true
        end
     | _ ->
        begin
          self#set_diagnostic
+           ~site
            ("condition " ^ (p2s (po_predicate_to_pretty pred)) ^ " not delegated");
          false
        end

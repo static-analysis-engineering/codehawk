@@ -440,13 +440,25 @@ class type po_query_int =
     (** [record_safe_result deps expl] adds the assumptions in [deps] to the
         function api or global environment with PO as a dependent, sets the
         status of PO to safe (Green), and records the dependencies and
-        explanation [expl] in PO.*)
-    method record_safe_result: dependencies_t -> string -> unit
+        explanation [expl] in PO. Optionally a [site] can be added that
+        records the location in the ocaml code that provided the decision
+     *)
+    method record_safe_result:
+             ?site:(string * int * string) option
+             -> dependencies_t
+             -> string
+             -> unit
 
     (** [record_violation_result deps expl] sets the status of PO to violated
         (Red), and records the dependencies [deps] and explanation [expl]
-        in PO.*)
-    method record_violation_result: dependencies_t -> string -> unit
+        in PO. Optionally a [site] can be added that records the location in
+        the ocaml code that provided the decision
+     *)
+    method record_violation_result:
+             ?site:(string * int * string) option
+             -> dependencies_t
+             -> string
+             -> unit
 
     (** [delegate_to_api isfile isglobal ppred invindices] checks if the local
         predicate [ppred] can be converted to an external (api) predicate. If so,
@@ -454,12 +466,19 @@ class type po_query_int =
         api assumption, justified by the invariants indicated by [invindices].
         It sets the status to safe (Green) and adds an explanation stating that the
         PO has been delegated to the api. In this case [true] is returned.
+        Optionally a [site] can be added that records the location in the ocaml
+        code that provided the decision.
 
         If [ppred] cannot be converted to an api predicate a diagnostic is set
         to this effect, and [false] is returned.
      *)
     method delegate_to_api:
-             ?isfile:bool -> ?isglobal:bool -> po_predicate_t -> int list -> bool
+             ?site:(string * int * string) option
+             -> ?isfile:bool
+             -> ?isglobal:bool
+             -> po_predicate_t
+             -> int list
+             -> bool
 
     (** {1 Make requests} *)
 
@@ -479,30 +498,49 @@ class type po_query_int =
     (** {1 Set diagnostics} *)
 
     (** [set_diagnostic msg] adds message [msg] to the list of general diagnostics
-        of PO.*)
-    method set_diagnostic: string -> unit
+        of PO. Optionally a [site] can be added that records the location of the
+        generation of the diagnostic message.*)
+    method set_diagnostic: ?site: (string * int * string) option -> string -> unit
 
     (** [set_key_diagnostic key msg] adds message [msg] as a key diagnostic to
-        PO with key [key].
+        PO with key [key] Optionally a [site] can be added that records the
+        location of the generation of the diagnostic message..
 
         A key diagnostic is a diagnostic that refers to a particular as yet
         unsolved challenge in the analysis such as the analysis of
         null-termination that prevents the proof obligation to be discharged.
      *)
-    method set_key_diagnostic: string -> string -> unit
+    method set_key_diagnostic:
+             ?site:(string * int * string) option -> string -> string -> unit
 
     (** [set_ref_diagnostic fname] adds a key diagnostic to PO for a challenge
-        in the analysis associated with the function summary for [fname].*)
-    method set_ref_diagnostic: string -> unit
+        in the analysis associated with the function summary for [fname].
+        Optionally a [site] can be added that records the location of the
+        generation of the diagnoatic message.
+     *)
+    method set_ref_diagnostic:
+             ?site:(string * int * string) option -> string -> unit
 
     (** [set_diagnostic_arg argindex msg] adds a diagnostic message [msg] to
-        PO associated with the PO argument with (1-based) index [argindex].*)
-    method set_diagnostic_arg: int -> string -> unit
+        PO associated with the PO argument with (1-based) index [argindex].
+        Optionally a [site] can be added that records the location of the
+        generation of the diagnostic message.
+     *)
+    method set_diagnostic_arg:
+             ?site:(string * int * string) option -> int -> string -> unit
 
     (** [set_exp_diagnostic lb ub exp msg] adds a diagnostic msg [msg] to PO for
         the expression [exp] prefixed by lb-exp if [lb], ub-exp if [ub] or exp
-        if neither of these is true.*)
-    method set_exp_diagnostic: ?lb:bool -> ?ub:bool -> exp -> string -> unit
+        if neither of these is true. Optionally a [site] can be added that records
+        the location of the generation of the diagnostic message.
+     *)
+    method set_exp_diagnostic:
+             ?site:(string * int * string) option
+             -> ?lb:bool
+             -> ?ub:bool
+             -> exp
+             -> string
+             -> unit
 
     (** [set_diagnostic_invariants argindex] adds the invariants associated with
         the argument with (1-based) index [argindex] to the diagnostic invariant
@@ -510,16 +548,25 @@ class type po_query_int =
     method set_diagnostic_invariants: int -> unit
 
     (** Adds a message to PO that contains all calls that separate this PO from
-        an entry symbol.*)
-    method set_diagnostic_call_invariants: unit
+        an entry symbol. Optionally a [site] can be added that records the
+        location of the generation of the diagnostic message.
+     *)
+    method set_diagnostic_call_invariants:
+             ?site:(string * int * string) option -> unit -> unit
 
     (** [set_vinfo_diagnostic vinfo] adds a diagnostic message to PO that lists
-        all values that variable [vinfo] may have in this PO.*)
-    method set_vinfo_diagnostic_invariants: varinfo -> unit
+        all values that variable [vinfo] may have in this PO. Optionally a [site]
+        can be added that records the location of the generation of the diagnostic
+        message.
+     *)
+    method set_vinfo_diagnostic_invariants:
+             ?site:(string * int * string) option -> varinfo -> unit
 
-    method set_all_diagnostic_invariants: unit
+    method set_all_diagnostic_invariants:
+             ?site:(string * int * string) option -> unit -> unit
 
-    method set_init_vinfo_mem_diagnostic_invariants: varinfo -> offset -> unit
+    method set_init_vinfo_mem_diagnostic_invariants:
+             ?site:(string * int * string) option -> varinfo -> offset -> unit
 
     method add_local_spo: location -> program_context_int -> po_predicate_t -> unit
 
