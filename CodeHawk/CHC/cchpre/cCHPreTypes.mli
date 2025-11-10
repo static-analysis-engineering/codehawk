@@ -1009,14 +1009,35 @@ class type podictionary_int =
   end
 
 
+(** Diagnostic information
+
+    Proof obligations that cannot (yet) be proven valid are annotated with
+    diagnostic messages that contain relevant information about the state
+    where the proof obligation is situated, including invariants, both
+    general invariants applicable to the state, and invariants specific to
+    the arguments of the proof obligation predicate.
+ *)
+type ocode_location_t = {
+    ocode_file: string;
+    ocode_line: int;
+    ocode_detail: string
+  }
+
+
+type situated_msg_t = {
+    smsg_msg: string;
+    smsg_loc: ocode_location_t option
+  }
+
+
 class type diagnostic_int =
   object
     method clear: unit
     method set_invariants: int -> int list -> unit   (* expression index *)
     method get_invariants: (int * int list) list
-    method add_msg: string -> unit
-    method add_arg_msg: int -> string -> unit
-    method add_key_msg: string -> string -> unit
+    method add_msg: situated_msg_t -> unit
+    method add_arg_msg: int -> situated_msg_t -> unit
+    method add_key_msg: string -> situated_msg_t -> unit
     method is_empty: bool
     method write_xml: xml_element_int -> unit
     method read_xml: xml_element_int -> unit
@@ -1041,13 +1062,17 @@ class type proof_obligation_int =
 
     method set_dependencies: dependencies_t -> unit
 
-    method set_explanation: string -> unit
+    method set_explanation:
+             ?site:(string * int * string) option -> string -> unit
 
-    method add_diagnostic_msg: string -> unit
+    method add_diagnostic_msg:
+             ?site:(string * int * string) option -> string -> unit
 
-    method add_diagnostic_arg_msg: int -> string -> unit
+    method add_diagnostic_arg_msg:
+             ?site:(string * int * string) option -> int -> string -> unit
 
-    method add_diagnostic_key_msg: string -> string -> unit
+    method add_diagnostic_key_msg:
+             ?site:(string * int * string) option -> string -> string -> unit
 
     method set_diagnostic_invariants: int -> int list -> unit
 
@@ -1061,7 +1086,7 @@ class type proof_obligation_int =
 
     method get_dependencies: dependencies_t option
 
-    method get_explanation: string
+    method get_explanation: situated_msg_t option
 
     method get_diagnostic: diagnostic_int
 
