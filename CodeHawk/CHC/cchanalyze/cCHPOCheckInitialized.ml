@@ -151,8 +151,19 @@ object (self)
     (self#memref_to_string memref) ^ (self#offset_to_string offset)
 
   (* ----------------------------- safe ------------------------------------- *)
+  (* check_safe
+     - inv_implies_safe
+     - check_safe_command_line_argument
+     - check_safe_lval
+       - check_safe_memlval
+         - check_safe_functionpointer
+         - memlval_vinv_implies_safe
+           - memlval_vinv_memref_implies_safe
+             - memlval_vinv_memref_basevar_implies_safe
+   *)
 
   method private inv_implies_safe (inv: invariant_int) =
+    let mname = "inv_implies_safe" in
     match inv#get_fact with
     | NonRelationalFact (_, FInitializedSet l) ->
        let localAssigns =
@@ -165,7 +176,8 @@ object (self)
             let msg =
               (String.concat
                  "_xx_" (List.map self#get_symbol_name localAssigns)) in
-            Some (deps,msg)
+            let site = Some (__FILE__, __LINE__, mname) in
+            Some (deps,msg, site)
        end
     | _ -> None
 
@@ -219,12 +231,16 @@ object (self)
                false
              end) false vinfovalues
 
-  method private basevar_implies_deref_offset_safe
+  method private memlval_vinv_memref_basevar_implies_safe
                    (invindex: int) (v: variable_t) (memoffset: offset) =
+    let mname = "memlval_vinv_memref_basevar_implies_safe" in
     if poq#env#is_function_return_value v then
       let callee = poq#env#get_callvar_callee v in
       let (pcs,_) = poq#get_postconditions v in
-      let _ = poq#set_diagnostic_arg 1 ("return value from: " ^ callee.vname) in
+      let _ =
+        poq#set_diagnostic_arg
+          ~site:(Some (__FILE__, __LINE__, mname))
+          1 ("return value from: " ^ callee.vname) in
       let request () =
         match memoffset with
         | NoOffset | Field _ ->
@@ -233,11 +249,14 @@ object (self)
                (ArgAddressedValue (ReturnValue, offset_to_s_offset memoffset)) in
            if List.mem callee.vname ["malloc"; "calloc"; "realloc"] then
              poq#set_diagnostic
+               ~site:(Some (__FILE__, __LINE__, mname))
                "[action]:identify side effects of intervening calls"
            else
              poq#mk_postcondition_request xpred callee
         | _ -> poq#set_diagnostic_arg
-                 1 ("rv:memoffset: " ^ (p2s (offset_to_pretty memoffset))) in
+                 ~site:(Some (__FILE__, __LINE__, mname))
+                 1
+                 ("rv:memoffset: " ^ (p2s (offset_to_pretty memoffset))) in
       let returntype =
         match file_environment#get_type_unrolled callee.vtype with
         | TFun (t, _, _, _) -> t
@@ -289,7 +308,8 @@ object (self)
                        ^ callee.vname
                        ^ (offsetstring memoffset)
                        ^ " is initialized" in
-                     Some (deps, msg)
+                     let site = Some (__FILE__, __LINE__, mname) in
+                     Some (deps, msg, site)
                   | _ -> None) None pcs in
          match r with
          | Some _ -> r
@@ -301,17 +321,18 @@ object (self)
     else
       None
 
-  method private memref_implies_deref_offset_safe
+  method private memlval_vinv_memref_implies_safe
                    (invindex: int)
                    (memref: memory_reference_int)
                    (offset: offset)
                    (memoffset: offset) =
+    let mname = "memlval_vinv_memref_implies_safe" in
     match offset with
     | NoOffset ->
        begin
          match memref#get_base with
          | CGlobalAddress gvar ->
-            let (gvinfo,goffset) = poq#env#get_global_variable gvar in
+            let (gvinfo, goffset) = poq#env#get_global_variable gvar in
             begin
               match goffset with
               | NoOffset ->
@@ -326,7 +347,8 @@ object (self)
                       let msg =
                         "initialized implied by global assumption: "
                         ^ (p2s  (po_predicate_to_pretty pred)) in
-                      Some (deps, msg)
+                      let site = Some (__FILE__, __LINE__, mname) in
+                      Some (deps, msg, site)
                    | _ ->
                       let xpred = po_predicate_to_xpredicate poq#fenv pred in
                       begin
@@ -337,9 +359,10 @@ object (self)
               | _ -> None
             end
          | CStackAddress svar ->
-            let (vinfo,voffset) = poq#env#get_local_variable svar in
+            let (vinfo, voffset) = poq#env#get_local_variable svar in
             let _ =
               poq#set_diagnostic_arg
+                ~site:(Some (__FILE__, __LINE__, mname))
                 1
                 ("stack variable: "
                  ^ vinfo.vname
@@ -347,11 +370,13 @@ object (self)
             None
          | CBaseVar v ->
             (try
-               self#basevar_implies_deref_offset_safe invindex v memoffset
+               self#memlval_vinv_memref_basevar_implies_safe invindex v memoffset
              with
              | CCHFailure p ->
                 begin
-                  poq#set_diagnostic ("E:basevar: " ^ v#getName#getBaseName);
+                  poq#set_diagnostic
+                    ~site:(Some (__FILE__, __LINE__, mname))
+                    ("E:basevar: " ^ v#getName#getBaseName);
                   ch_error_log#add "initialized-basevar" p;
                   None
                 end
@@ -361,8 +386,9 @@ object (self)
     | _ ->
        None
 
-  method private vinv_implies_deref_offset_safe
+  method private memlval_vinv_implies_safe
                    (inv: invariant_int) (memoffset: offset) =
+    let mname = "memlval_vinv_implies_safe" in
     let is_field_offset offset =
       match offset with
       | NoOffset -> true
@@ -377,11 +403,12 @@ object (self)
          begin
            match poq#check_implied_by_assumptions pred with
            | Some pred ->
-              let deps = DEnvC ([inv#index],[GlobalApiAssumption pred]) in
+              let deps = DEnvC ([inv#index], [GlobalApiAssumption pred]) in
               let msg =
                 "initialized property implied by global assumption: "
                 ^ (p2s (po_predicate_to_pretty pred)) in
-              Some (deps, msg)
+              let site = Some (__FILE__, __LINE__, mname) in
+              Some (deps, msg, site)
            | _ ->
               let xpred = po_predicate_to_xpredicate poq#fenv pred in
               begin
@@ -390,29 +417,34 @@ object (self)
               end
          end
        else
+         let site = Some (__FILE__, __LINE__, mname) in
          begin
            poq#set_diagnostic
-             ("mem-offset: " ^ (p2s (offset_to_pretty memoffset)));
+             ~site ("mem-offset: " ^ (p2s (offset_to_pretty memoffset)));
            None
          end
     | Some (XVar v) when poq#env#is_memory_address v ->
-       let (memref,offset) = poq#env#get_memory_address v in
+       let (memref, offset) = poq#env#get_memory_address v in
        let _ =
          poq#set_diagnostic_arg
+           ~site:(Some (__FILE__, __LINE__, mname))
            1
            ("D:memory address: " ^ (self#memaddr_to_string memref offset)) in
        let _ =
          poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
            ("mem-offset: " ^ (p2s (offset_to_pretty memoffset))) in
-       self#memref_implies_deref_offset_safe inv#index memref offset memoffset
+       self#memlval_vinv_memref_implies_safe inv#index memref offset memoffset
     | Some x ->
        begin
-         poq#set_diagnostic_arg 1 ("[deref] " ^ (x2s x));
+         poq#set_diagnostic_arg
+           ~site:(Some (__FILE__, __LINE__, mname)) 1 ("[deref] " ^ (x2s x));
          None
        end
     | _ -> None
 
-  method private check_safe_deref (memlval: lval) (memoffset: offset) =
+  method private check_safe_memlval (memlval: lval) (memoffset: offset) =
+    let mname = "check_safe_memlval" in
     match (memlval, memoffset) with
     | ((Var (_vname, vid), NoOffset), NoOffset)
          when self#is_function_pointer memlval && vid > 0 ->
@@ -420,18 +452,22 @@ object (self)
     | ((Var (_vname, vid), NoOffset), _) when vid > 0 ->
        let vinfo = poq#env#get_varinfo vid in
        let vinfovalues = poq#get_vinfo_offset_values vinfo in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo in
        let _ =
-         poq#set_diagnostic ("[offset]: " ^ (p2s (offset_to_pretty memoffset))) in
+         poq#set_vinfo_diagnostic_invariants
+           ~site:(Some (__FILE__, __LINE__, mname)) vinfo in
+       let _ =
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[offset]: " ^ (p2s (offset_to_pretty memoffset))) in
        List.fold_left (fun acc (inv, offset) ->
            acc ||
              match offset with
              | NoOffset ->
                 begin
-                  match self#vinv_implies_deref_offset_safe inv memoffset with
-                  | Some (deps, msg) ->
+                  match self#memlval_vinv_implies_safe inv memoffset with
+                  | Some (deps, msg, site) ->
                      begin
-                       poq#record_safe_result deps msg;
+                       poq#record_safe_result ~site deps msg;
                        true
                      end
                   | _ -> false
@@ -439,6 +475,7 @@ object (self)
              | _ ->
                 begin
                   poq#set_diagnostic
+                    ~site:(Some (__FILE__, __LINE__, mname))
                     ("[deref offset]: " ^  (p2s (offset_to_pretty offset)));
                   false
                 end) false vinfovalues
@@ -447,7 +484,7 @@ object (self)
   method private check_safe_lval =
     match lval with
     | (Mem (Lval memlval), memoffset) ->
-       self#check_safe_deref memlval memoffset
+       self#check_safe_memlval memlval memoffset
     | _ -> false
 
   method check_safe =
@@ -455,23 +492,31 @@ object (self)
     || (List.fold_left (fun acc inv ->
             acc ||
               match self#inv_implies_safe inv with
-              | Some (deps,msg) ->
+              | Some (deps, msg, site) ->
                  begin
-                   poq#record_safe_result deps msg;
+                   poq#record_safe_result ~site deps msg;
                    true
                  end
               | _ -> false) false invs)
     || self#check_safe_lval
 
   (* ----------------------- violation -------------------------------------- *)
+  (* check_violation
+     - inv_implies_violation
+       - xprlist_implies_violation
+         - xpr_implies_violation
+           - var_implies_violation
+   *)
 
   method private var_implies_violation (invindex: int) (v: variable_t) =
+    let mname = "var_implies_violation" in
     if poq#env#is_byte_sequence v then
       let bsv = poq#env#get_byte_sequence_origin v in
       let callee = poq#env#get_callvar_callee bsv in
       let deps = DLocal [invindex] in
       let msg = "value may be tainted by " ^ callee.vname in
-      Some (deps, msg)
+      let site = Some (__FILE__, __LINE__, mname) in
+      Some (deps, msg, site)
     else
       None
 
@@ -511,29 +556,43 @@ object (self)
     List.fold_left (fun acc inv ->
         acc ||
           match self#inv_implies_violation inv with
-          | Some (deps,msg) ->
+          | Some (deps, msg, site) ->
              begin
-               poq#record_violation_result deps msg;
+               poq#record_violation_result ~site deps msg;
                true
              end
           |  _ -> false) false invs
 
   (* ----------------------- delegation ------------------------------------- *)
+  (* check_delegation
+     - check_delegation_lval
+       - memlval_implies_delegation
+         - memlval_vinv_implies_delegation
+           - memlval_var_implies_delegation
+
+     - check_delegation_invs
+       - inv_implies_delegation
+         - xpr_implies_delegation
+   *)
 
   method private xpr_implies_delegation (invindex: int) (x: xpr_t) =
+    let mname = "xpr_implies_delegation" in
     if poq#is_api_expression x then
       let _ =
         poq#set_diagnostic_arg
-          1 ("api expression: " ^ (e2s (poq#get_api_expression x))) in
+          ~site:(Some (__FILE__, __LINE__, mname))
+          1
+          ("api expression: " ^ (e2s (poq#get_api_expression x))) in
       match poq#get_api_expression x with
       | Lval apilval ->
          let pred = PInitialized apilval in
-         let deps = DEnvC ([invindex],[ApiAssumption pred]) in
+         let deps = DEnvC ([invindex], [ApiAssumption pred]) in
+         let site = Some (__FILE__, __LINE__, mname) in
          let msg =
            "condition "
            ^ (p2s (po_predicate_to_pretty pred))
-           ^ " delegated to the api (xpr)" in
-         Some (deps,msg)
+           ^ " delegated to the api" in
+         Some (deps, msg, site)
       | _ -> None
     else
       None
@@ -543,22 +602,23 @@ object (self)
     | Some x -> self#xpr_implies_delegation inv#index x
     | _ -> None
 
-  method private check_invs_delegation =
+  method private check_delegation_invs =
     match invs with
     | [] -> false
     | _ ->
        List.fold_left (fun acc inv ->
            acc ||
              match self#inv_implies_delegation inv with
-             | Some (deps,msg) ->
+             | Some (deps, msg, site) ->
                 begin
-                  poq#record_safe_result deps msg;
+                  poq#record_safe_result ~site deps msg;
                   true
                 end
              | _ -> false) false invs
 
-  method private var_memoffset_deref_delegation
+  method private memlval_var_implies_delegation
                    (invindex: int) (lval: lval) (memoffset: offset) =
+    let mname = "memlval_var_implies_delegation" in
     match memoffset with
     | Field ((fname,fid),
              Index (Lval (Var (_vname, vid), NoOffset),
@@ -571,11 +631,12 @@ object (self)
          let memlval = (Mem (Lval lval), noffset) in
          let pred = PInitialized memlval  in
          let deps = DEnvC ([invindex],[ApiAssumption pred]) in
+         let site = Some (__FILE__, __LINE__, mname) in
          let msg =
            "delegate condition "
            ^ (p2s (po_predicate_to_pretty pred))
            ^ " to the api" in
-         (deps, msg) in
+         (deps, msg, site) in
        List.fold_left (fun acc (inv, _offset) ->
            match acc with
            | Some _ -> acc
@@ -588,13 +649,14 @@ object (self)
                    match numrange with
                    | [] -> None
                    | h::tl ->
-                      let (deps, msg) =
-                        List.fold_left (fun (d, m) n ->
-                            let (dd, mm) = mkdeps n in
+                      let (deps, msg, _) =
+                        List.fold_left (fun (d, m, _) n ->
+                            let (dd, mm, _) = mkdeps n in
                             let d = join_dependencies d dd in
                             let m = m ^ "; " ^ mm in
-                            (d, m)) (mkdeps h) tl in
-                      Some (deps, msg)
+                            (d, m, None)) (mkdeps h) tl in
+                      let site = Some (__FILE__, __LINE__, mname) in
+                      Some (deps, msg, site)
                  end
               | _ -> None) None vinfovalues
     | _ ->
@@ -603,8 +665,9 @@ object (self)
          None
        end
 
-  method private vinv_implies_deref_offset_delegation
+  method private memlval_vinv_implies_delegation
                    (inv: invariant_int) (memoffset: offset) =
+    let mname = "memlval_vinv_implies_delegation" in
     match inv#expr with
     | Some x when poq#is_api_expression x ->
        begin
@@ -613,23 +676,25 @@ object (self)
             if is_constant_offset memoffset then
               let memlval =  (Mem (Lval lval),memoffset) in
               let pred = PInitialized memlval in
-              let deps = DEnvC ([inv#index],[ApiAssumption  pred]) in
+              let deps = DEnvC ([inv#index], [ApiAssumption  pred]) in
+              let site = Some (__FILE__, __LINE__, mname) in
               let msg =
                 "condition "
                 ^ (p2s (po_predicate_to_pretty pred))
                 ^ " delegated to the api (vinv)" in
-              Some (deps,msg)
+              Some (deps, msg, site)
             else
-              self#var_memoffset_deref_delegation inv#index lval memoffset
+              self#memlval_var_implies_delegation inv#index lval memoffset
          | _ ->
             begin
-              poq#set_diagnostic_arg 1 ("[api] " ^ (x2s x));
+              poq#set_diagnostic_arg
+                ~site:(Some (__FILE__, __LINE__, mname)) 1 ("[api] " ^ (x2s x));
               None
             end
        end
     | _ -> None
 
-  method private check_lval_deref_delegation (memlval: lval) (memoffset: offset) =
+  method private memlval_implies_delegation (memlval: lval) (memoffset: offset) =
     match memlval with
     | (Var (_vname, vid), NoOffset) when vid > 0 ->
        let vinfo  = poq#env#get_varinfo vid in
@@ -639,11 +704,11 @@ object (self)
              match offset with
              | NoOffset ->
                 begin
-                  match self#vinv_implies_deref_offset_delegation
+                  match self#memlval_vinv_implies_delegation
                           inv memoffset  with
-                  | Some (deps, msg) ->
+                  | Some (deps, msg, site) ->
                      begin
-                       poq#record_safe_result deps msg;
+                       poq#record_safe_result ~site deps msg;
                        true
                      end
                   | _ -> false
@@ -651,10 +716,10 @@ object (self)
              | _ -> false) false vinfovalues
     | _ -> false
 
-  method  private check_lval_delegation =
+  method private check_delegation_lval =
     match lval with
     | (Mem (Lval memlval), memoffset) ->
-       self#check_lval_deref_delegation memlval memoffset
+       self#memlval_implies_delegation memlval memoffset
     | (Mem
          (BinOp
             (_,
@@ -675,7 +740,7 @@ object (self)
     if self#check_program_name then
       false
     else
-      self#check_invs_delegation || self#check_lval_delegation
+      self#check_delegation_invs || self#check_delegation_lval
 
 end
 

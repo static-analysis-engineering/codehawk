@@ -161,6 +161,6 @@ end
 
 let check_preserved_all_memory (poq:po_query_int) =
   let callinvs = poq#get_call_invariants in
-  let _ = poq#set_diagnostic_call_invariants in
+  let _ = poq#set_diagnostic_call_invariants () in
   let checker = new preserved_all_memory_checker_t poq callinvs in
   checker#check_safe || checker#check_violation || checker#check_delegation

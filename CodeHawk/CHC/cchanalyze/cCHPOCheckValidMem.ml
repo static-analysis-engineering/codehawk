@@ -513,7 +513,9 @@ object (self)
            "condition "
            ^ (p2s (po_predicate_to_pretty pred))
            ^ " is delegated to the api" in
-         Some (deps, msg)
+         let site =
+           Some (__FILE__, __LINE__, "initial_value_implies_delegation") in
+         Some (deps, msg, site)
       | _ -> None
     else
       None
@@ -547,9 +549,9 @@ object (self)
        List.fold_left (fun acc inv ->
            acc ||
              match self#inv_implies_delegation inv with
-             | Some (deps, msg) ->
+             | Some (deps, msg, site) ->
                 begin
-                  poq#record_safe_result deps msg;
+                  poq#record_safe_result ~site deps msg;
                   true
                 end
              | _ -> false) false invs
@@ -562,6 +564,6 @@ let check_valid_mem (poq:po_query_int) (e:exp) =
   let invs = poq#get_invariants 1 in
   let callinvs = poq#get_call_invariants in
   let _ = poq#set_diagnostic_invariants 1 in
-  let _ = poq#set_diagnostic_call_invariants in
+  let _ = poq#set_diagnostic_call_invariants () in
   let checker = new valid_mem_checker_t poq e invs callinvs in
   checker#check_safe || checker#check_violation || checker#check_delegation
