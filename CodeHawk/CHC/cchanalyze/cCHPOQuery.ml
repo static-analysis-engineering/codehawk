@@ -398,7 +398,8 @@ object (self)
 
   method set_init_vinfo_mem_diagnostic_invariants
            ?(site: (string * int * string) option = None)
-           (vinfo: varinfo) (offset: offset) =
+           (vinfo: varinfo)
+           (offset: offset) =
     let numv = self#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
     let ctxtinvs = (invio#get_location_invariant cfgcontext)#get_invariants in
     let invs =
