@@ -1,0 +1,9 @@
+(tests
+  (names
+        cCHPOCheckInitializedTest)
+  (deps
+        testinputs/gl_inv_001.cch.tar.gz
+        testinputs/gl_inv_002.cch.tar.gz
+        testinputs/gl_inv_003.cch.tar.gz
+        )
+  (libraries chlib chutil cchlib cchpre cchanalyze tchlib tcchanalyze))

@@ -13,3 +13,5 @@ make -C CHB_tests/bchlibmips32_tests/txbchlibmips32 clean
 make -C CHB_tests/bchlibpower32_tests/txbchlibpower32 clean
 make -C CHB_tests/bchlibx86_tests/tbchlibx86 clean
 make -C CHB_tests/bchlibx86_tests/txbchlibx86 clean
+make -C CHC_tests/cchanalyze_tests/tcchanalyze clean
+make -C CHC_tests/cchanalyze_tests/txcchanalyze clean
