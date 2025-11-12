@@ -124,11 +124,14 @@ end
 
 let progress_timer = new progress_timer_t
 
+let timing_enabled = ref true
+let disable_timing () = timing_enabled := false
 
 let pr_timing (l: pretty_t list) =
-  let pp = new pretty_printer_t stderr in
-  let timing = [STR "["; STR progress_timer#time_elapsed_str; STR "] "] in
-  pp#print (LBLOCK (timing @ l @ [NL]))
+  if !timing_enabled then
+    let pp = new pretty_printer_t stderr in
+    let timing = [STR "["; STR progress_timer#time_elapsed_str; STR "] "] in
+    pp#print (LBLOCK (timing @ l @ [NL]))
 
 
 let pr_interval_timing (l: pretty_t list) (interval: float) =
