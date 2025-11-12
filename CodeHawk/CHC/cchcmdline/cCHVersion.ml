@@ -63,4 +63,4 @@ end
 
 let version = new version_info_t
   ~version:"0.3.0"
-  ~date:"2025-10-28"
+  ~date:"2025-11-12"
