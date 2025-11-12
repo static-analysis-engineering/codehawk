@@ -744,3 +744,14 @@ let get_invariant_messages
           let inv = invio#get_invariant invindex in
           let p = LBLOCK [STR "["; INT k; STR "] "; inv#value_to_pretty] in
           p::acci) acc ilist) [] l
+
+
+let prioritize_invariants (f: invariant_int -> bool) (invs: invariant_int list) =
+  List.stable_sort
+    (fun inv1 inv2 ->
+      if f inv1 && f inv2 then
+        0
+      else if f inv1 then
+        -1
+      else
+        1) invs
