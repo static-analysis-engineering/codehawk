@@ -13,3 +13,5 @@ make -C CHB_tests/bchlibmips32_tests/txbchlibmips32
 make -C CHB_tests/bchlibpower32_tests/txbchlibpower32
 make -C CHB_tests/bchlibx86_tests/tbchlibx86
 make -C CHB_tests/bchlibx86_tests/txbchlibx86
+make -C CHC_tests/cchanalyze_tests/tcchanalyze
+make -C CHC_tests/cchanalyze_tests/txcchanalyze

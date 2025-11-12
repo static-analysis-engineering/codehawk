@@ -1,0 +1,5 @@
+(library
+  (name tcchanalyze)
+  (libraries chlib chutil cchlib cchpre cchanalyze tchlib)
+  (public_name codehawk.tcchanalyze)
+  (wrapped false))
