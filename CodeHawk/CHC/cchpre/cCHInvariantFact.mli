@@ -72,3 +72,15 @@ val mk_invariant_io:
 
 val get_invariant_messages:
   invariant_io_int -> (int * int list) list -> pretty_t list
+
+
+(** [prioritize_invariants f invs] returns the invariants in [invs]
+    sorted such that the invariants for which [(f inv)] is true are
+    listed before other invariants.
+
+    This is useful in the application of invariants in the checkers,
+    where multiple invariants apply to discharge a proof obligation,
+    but some invariants may be preferred over others.
+ *)
+val prioritize_invariants:
+  (invariant_int -> bool) -> invariant_int list -> invariant_int list
