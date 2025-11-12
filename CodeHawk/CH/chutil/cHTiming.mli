@@ -44,6 +44,8 @@ end
 
 val mk_task_timer: unit -> timing_int
 
+val disable_timing: unit -> unit
+
 val pr_timing: pretty_t list -> unit
 
 val pr_interval_timing: pretty_t list -> float -> unit
