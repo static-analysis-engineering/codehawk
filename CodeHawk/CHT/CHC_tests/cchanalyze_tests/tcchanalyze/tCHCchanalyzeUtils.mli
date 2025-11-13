@@ -27,7 +27,11 @@
    ============================================================================= *)
 
 
-val analysis_setup: ?domains:string list -> string -> unit
+val analysis_setup: ?domains:string list -> string -> string -> unit
+
+
+val analysis_take_down: string -> unit
+
 
 val select_target_po:
   ?reqargs:string list
