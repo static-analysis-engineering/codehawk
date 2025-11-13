@@ -25,21 +25,3 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-
-val expect_safe_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string
-  -> expl:string
-  -> unit
-  -> unit
-
-
-val expect_violation_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string
-  -> expl:string
-  -> unit
-  -> unit

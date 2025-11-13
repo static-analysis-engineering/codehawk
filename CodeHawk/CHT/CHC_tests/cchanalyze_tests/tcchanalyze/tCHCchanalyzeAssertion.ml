@@ -53,3 +53,30 @@ let expect_safe_detail
      A.fail_msg
        ("Received proof obligation with status "
         ^ (CCHPreSumTypeSerializer.po_status_mfts#ts s))
+
+
+let expect_violation_detail
+      ?(msg="")
+      ~(po: CCHPreTypes.proof_obligation_int)
+      ~(xdetail: string)
+      ~(expl: string)
+      () =
+  match po#get_status with
+  | Red ->
+     (match po#get_explanation with
+      | Some x ->
+         let dmatch = (expl = "") || (expl = x.smsg_msg) in
+         if not dmatch then
+           A.equal_string ~msg:"Explanation is different" expl x.smsg_msg
+         else
+           (match x.smsg_loc with
+            | Some ocode ->
+               A.equal_string ~msg xdetail ocode.ocode_detail
+            | _ ->
+               A.fail_msg "Received explanation without location detail")
+      | _ ->
+         A.fail_msg "Received proof obligation without explanation")
+  | s ->
+     A.fail_msg
+       ("Received proof obligation with status "
+        ^ (CCHPreSumTypeSerializer.po_status_mfts#ts s))

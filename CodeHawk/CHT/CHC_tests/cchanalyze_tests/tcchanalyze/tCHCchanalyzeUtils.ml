@@ -48,8 +48,9 @@ let default_domains = [
   ]
 
 
-let unpack_tar_gz (filename: string) =
-  let targzname = Filename.concat "testinputs" (filename ^ ".cch.tar.gz") in
+let unpack_tar_gz (predicate: string) (filename: string) =
+  let subdir = Filename.concat "testinputs" predicate in
+  let targzname = Filename.concat subdir (filename ^ ".cch.tar.gz") in
   let cchdirname = filename ^ ".cch" in
   let rmcmd = Filename.quote_command "rm" ["-rf"; cchdirname] in
   let xtarcmd = Filename.quote_command "tar" ["xfz"; targzname] in
@@ -58,18 +59,29 @@ let unpack_tar_gz (filename: string) =
   ()
 
 
-let analysis_setup ?(domains=default_domains) (filename: string) =
+let analysis_setup ?(domains=default_domains) (predicate: string) (filename: string) =
   begin
-    unpack_tar_gz filename;
+    unpack_tar_gz predicate filename;
     system_settings#set_projectname filename;
     system_settings#set_cfilename filename;
-    CCHCreatePrimaryProofObligations.primary_process_file ();
+    (if system_settings#is_output_parameter_analysis then
+       CCHCreateOutputParameterPOs.output_parameter_po_process_file ()
+     else
+       CCHCreatePrimaryProofObligations.primary_process_file ());
     CCHProofScaffolding.proof_scaffolding#reset;
     CCHGenerateAndCheck.generate_and_check_process_file domains
   end
 
 
+let analysis_take_down (filename: string) =
+  let cchdirname = filename ^ ".cch" in
+  let rmcmd = Filename.quote_command "rm" ["-rf"; cchdirname] in
+  let _ = Sys.command rmcmd in
+  ()
+
+
 let exp_to_string (exp: exp) = p2s (exp_to_pretty exp)
+
 
 let located_po_to_string (po: proof_obligation_int) =
   let loc = po#get_location in
