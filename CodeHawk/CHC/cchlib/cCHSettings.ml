@@ -98,7 +98,11 @@ object
 
   method is_value_wrap_around = analysis_level = ValueWrapAround
 
-  method set_output_parameter_analysis = analysis_kind <- OutputParameterAnalysis
+  method set_output_parameter_analysis =
+    analysis_kind <- OutputParameterAnalysis
+
+  method set_undefined_behavior_analysis =
+    analysis_kind <- UndefinedBehaviorAnalysis
 
   method is_undefined_behavior_analysis =
     analysis_kind = UndefinedBehaviorAnalysis
