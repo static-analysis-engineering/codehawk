@@ -873,6 +873,7 @@ class type system_settings_int =
     method is_value_wrap_around: bool
 
     method set_output_parameter_analysis: unit
+    method set_undefined_behavior_analysis: unit
     method is_undefined_behavior_analysis: bool
     method is_output_parameter_analysis: bool
 

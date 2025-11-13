@@ -249,7 +249,12 @@ end
 
 
 let check_locally_initialized (poq:po_query_int) (vinfo: varinfo) (lval:lval) =
-  let invs = poq#get_invariants 2 in
+  let f_priority (inv: invariant_int) =
+    match inv#get_fact with
+    | NonRelationalFact (_, FInitializedSet _) -> true
+    | _ -> false in
+  let invs =
+    CCHInvariantFact.prioritize_invariants f_priority (poq#get_invariants 2) in
   let _ = poq#set_diagnostic_invariants 2 in
   let _ =
     poq#set_init_vinfo_mem_diagnostic_invariants

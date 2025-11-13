@@ -278,7 +278,7 @@ object (self)
                | _ ->
                   let deps = DLocal [invindex; vinv#index] in
                   let msg =
-                    "local assignment(s) to "
+                    "assignment(s) to "
                     ^ vinfo.vname
                     ^ ": "
                     ^ (String.concat
