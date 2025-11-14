@@ -194,14 +194,17 @@ let get_cch_root ():xml_element_int =
   let appname = system_settings#get_projectname in
   let root = xmlElement "c-analysis" in
   let hNode = xmlElement "header" in
+  let vNode = xmlElement "ocaml-chc-version" in
   let aNode = xmlElement "application" in
   begin
     aNode#setAttribute "file" system_settings#get_cfilename;
     (if (String.length appname) > 0 then aNode#setAttribute "app" appname);
     hNode#setAttribute "time" (current_time_to_string ());
     hNode#setAttribute "origin" "c-analyzer";
+    vNode#setAttribute "chc-version" (CCHVersion.version#get_version);
+    vNode#setAttribute "chc-date" (CCHVersion.version#get_date);
     root#appendChildren [hNode];
-    hNode#appendChildren [aNode];
+    hNode#appendChildren [vNode; aNode];
     root
   end
 
