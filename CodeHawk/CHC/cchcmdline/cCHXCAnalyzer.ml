@@ -38,6 +38,7 @@ open CHTimingLog
 open CHXmlDocument
 
 (* cchlib *)
+open CCHVersion
 open CCHFunctionSummary
 open CCHSettings
 open CCHUtilities
@@ -52,9 +53,6 @@ open CCHCheckValidity
 open CCHGenerateAndCheck
 open CCHGenerateLocalInvariants
 
-
-(* cchcmdline *)
-open CCHVersion
 
 let _ = CHPretty.set_trace_level 0
 

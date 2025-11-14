@@ -8,6 +8,6 @@
 (executable
   (name cCHXCAnalyzer)
   (libraries cchlib cchpre cchanalyze chlib chutil)
-  (modules cCHXCAnalyzer cCHVersion)
+  (modules cCHXCAnalyzer)
   (package exes)
   (public_name canalyzer))

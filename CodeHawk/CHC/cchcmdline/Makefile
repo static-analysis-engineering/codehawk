@@ -51,14 +51,14 @@ dirs:
 inspectsummaries: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa cmx/cCHXInspectSummaries.cmx
 	$(CAMLBUILD) -o $@ cmx/cCHXInspectSummaries.cmx
 
-canalyzer: $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
-	$(CAMLBUILD) -o $@ cmx/cCHVersion.cmx cmx/cCHXCAnalyzer.cmx
+canalyzer: $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
+	$(CAMLBUILD) -o $@ cmx/cCHXCAnalyzer.cmx
 
-capplication: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCApplication.cmx
-	$(CAMLBUILD) -o capplication cmx/cCHVersion.cmx cmx/cCHXCApplication.cmx
+capplication: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHXCAnalyzer.cmi cmx/cCHXCApplication.cmx
+	$(CAMLBUILD) -o capplication cmx/cCHXCApplication.cmx
 
-canalyzer_object: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHVersion.cmi cmx/cCHVersion.cmx cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
-	$(CAMLBUILD) -output-obj -o $(COBJ)/canalyzer.o cmx/cCHVersion.cmx cmx/cCHXCAnalyzer.cmx
+canalyzer_object: dirs $(CHLIB)/chlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHXCAnalyzer.cmi cmx/cCHXCAnalyzer.cmx
+	$(CAMLBUILD) -output-obj -o $(COBJ)/canalyzer.o cmx/cCHXCAnalyzer.cmx
 
 cmi/%.cmi: %.mli dirs
 	$(CAMLC) -o $@ -c $<
