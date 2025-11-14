@@ -1,7 +1,9 @@
 (tests
   (names
         cCHPOCheckInitializedTest
-        cCHPOCheckLocallyInitializedTest)
+        cCHPOCheckLocallyInitializedTest
+        cCHPOCheckOutputParameterInitializedTest
+        )
   (deps
         testinputs/PInitialized/gl_inv_001.cch.tar.gz
         testinputs/PInitialized/gl_inv_002.cch.tar.gz
@@ -12,6 +14,10 @@
         testinputs/PInitialized/gl_inv_bounded_xpr_001.cch.tar.gz
         testinputs/PInitialized/gl_stackvar_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_gl_inv_001.cch.tar.gz
+        testinputs/PLocallyInitialized/locally_initialized_gl_memlval_memref_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_rl_xpr_001.cch.tar.gz
-        testinputs/PLocallyInitialized/locally_initialized_rl_xpr_002.cch.tar.gz        )
+        testinputs/PLocallyInitialized/locally_initialized_rl_xpr_002.cch.tar.gz
+        testinputs/PLocallyInitialized/locally_initialized_rl_memlval_001.cch.tar.gz
+        testinputs/POutputParameterInitialized/output_parameter_initialized_rl_inv_xpr_001.cch.tar.gz
+        )
   (libraries chlib chutil cchlib cchpre cchanalyze tchlib tcchanalyze))
