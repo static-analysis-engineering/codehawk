@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,40 +27,20 @@
    SOFTWARE.
    ============================================================================= *)
 
-(* chlib *)
-open CHPretty
-
-(* chutil *)
-open CHPrettyUtil
 
 class type version_info_int =
-object
-  method get_version: string
-  method get_description: string
-  method get_date: string
-  method toPretty:pretty_t
-end
-
-
-class version_info_t
-  ~(version:string)
-  ~(date:string) =
-object (self)
-
-  method get_version = version
-
-  method get_date = date
-
-  method toPretty =
-    LBLOCK [
-        STR (string_repeat "=" 80); NL;
-	STR "* CodeHawk C Analyzer. Version ";
-        STR self#get_version; NL;
-	STR "* Date: "; STR self#get_date; NL;
-	STR (string_repeat "=" 80); NL]
-
-end
-
-let version = new version_info_t
-  ~version:"0.3.0"
-  ~date:"2025-11-12"
+  object
+    method get_date : string
+    method get_description : string
+    method get_version : string
+    method toPretty : CHPretty.pretty_t
+  end
+class version_info_t :
+  version:string ->
+  date:string ->
+  object
+    method get_date : string
+    method get_version : string
+    method toPretty : CHPretty.pretty_t
+  end
+val version : version_info_t

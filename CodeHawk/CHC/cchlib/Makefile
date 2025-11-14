@@ -26,6 +26,7 @@ CAMLLINK := ocamlopt  \
 OCAMLDEP = ocamldep
 
 MLIS := \
+	cCHVersion \
 	cCHBasicTypes \
 	cCHLibTypes \
 	cCHIndexedCollections \
@@ -55,6 +56,7 @@ MLIS := \
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
 SOURCES := \
+	cCHVersion \
 	cCHUtilities \
 	cCHIndexedCollections \
 	cCHSettings \
