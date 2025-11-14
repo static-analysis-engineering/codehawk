@@ -101,9 +101,9 @@ let select_target_po
       ?(line:int = -1)
       ?(byte:int = -1)
       (po_s: proof_obligation_int list):
-      (proof_obligation_int option * string list) =
-  let (po_match, po_no_match) =
-    List.fold_left (fun (po_match, po_no_match) po ->
+      proof_obligation_int option =
+  let po_match =
+    List.fold_left (fun po_match po ->
         let p = po#get_predicate in
         let p_args = CCHPOPredicate.collect_indexed_predicate_expressions p in
         let p_args = List.map snd p_args in
@@ -119,9 +119,9 @@ let select_target_po
         let pomatch = pomatch && (line = (-1) || line = po#get_location.line) in
         let pomatch = pomatch && (byte = (-1) || byte = po#get_location.byte) in
         if pomatch then
-          (po :: po_match, po_no_match)
+          po :: po_match
         else
-          (po_match, po :: po_no_match)) ([], []) po_s in
+          po_match) [] po_s in
   match po_match with
-  | [po] -> (Some po, List.map located_po_to_string po_no_match)
-  | _ -> (None, List.map located_po_to_string po_s)
+  | [po] -> Some po
+  | _ -> None

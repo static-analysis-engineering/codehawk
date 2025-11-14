@@ -45,30 +45,8 @@ let po_filter (po: proof_obligation_int): proof_obligation_int option =
   | _ -> None
 
 
-(* Test specifications contain the following information:
-   title: name of the test
-
-   - file/function identification
-   ------------------------------
-   filename: name of the c-file to be loaded
-   funname: name of the function to be checked
-
-   - selection of proof obligation to check
-   ----------------------------------------
-   reqargs: list of strings that represent the arguments to the
-     proof obligation predicate; this may be an empty list or a list
-     that has the right length, but individual arguments may be omitted
-     by specifying the empty string ("")
-   line: the line number to which the proof obligation applies (can be
-     left unspecified by giving -1)
-   byte: the byte number at which the proof obligation is located (can
-     be left unspecified by giving -1)
-
-   - check that proof obligation is discharged as expected
-   -------------------------------------------------------
-   xdetail: identification of the discharge method in the checker
-   expl: explanation given for the discharge (can be left unspecified
-      by giving the empty string)
+(* See CHT/CHC_tests/cchanalyze_tests/tcchanalyze/tCHCchanalyzeUtils.mli
+   for a description and example of how to specify the tests.
 
    Tests:
 
@@ -173,17 +151,17 @@ let check_safe () =
             let _ = CU.analysis_setup "PInitialized" filename in
             let po_s = proof_scaffolding#get_proof_obligations funname in
             let po_s = List.filter_map po_filter po_s in
-            let (tgtpo_o, other_po_s) =
-              CU.select_target_po ~reqargs ~line ~byte po_s in
+            let tgtpo_o = CU.select_target_po ~reqargs ~line ~byte po_s in
             begin
               CU.analysis_take_down filename;
               match tgtpo_o with
               | Some po -> CA.expect_safe_detail ~po ~xdetail ~expl ()
               | _ ->
+                 let s_po_s = List.map CU.located_po_to_string po_s in
                  A.fail_msg
                    ("Unable to uniquely select target proof obligation: "
                     ^ "["
-                    ^ (String.concat "; " other_po_s)
+                    ^ (String.concat "; " s_po_s)
                     ^ "]")
             end
           )
