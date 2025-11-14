@@ -290,7 +290,7 @@ object (self)
       if node#hasNamedAttribute "file" then
         Some {
             ocode_file = cd#get_string (geti "file");
-            ocode_line = geti "linenr";
+            ocode_line = geti "line";
             ocode_detail = cd#get_string (geti "detail")
           }
       else

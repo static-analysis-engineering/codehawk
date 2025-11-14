@@ -39,6 +39,7 @@ open CCHTypesToPretty
 open CCHTypesUtil
 
 (* cchpre *)
+open CCHMemoryBase
 open CCHPreTypes
 
 (* cchanalyze *)
@@ -47,7 +48,7 @@ open CCHAnalysisTypes
 
 let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
-let _x2s x = p2s (x2p x)
+let x2s x = p2s (x2p x)
 let e2s e = p2s (CCHTypesToPretty.exp_to_pretty e)
 
 
@@ -73,10 +74,96 @@ object (self)
   (* check_safe
      - check_safe_invs
        - inv_implies_safe
-         - xpr_implies_safe
+         - inv_xpr_implies_safe
+     - check_safe_lval
+       - check_safe_memlval
+         - memlval_implies_safe
    *)
 
-  method private xpr_implies_safe (invindex: int) (x: xpr_t) =
+  method private memlval_memref_implies_safe
+                   (invindex: int)
+                   (memlval: lval)
+                   (memref: memory_reference_int) =
+    let mname = "memlval_memref_implies_safe" in
+    match memref#get_base with
+    | CStackAddress svar ->
+       let (svinfo, _) = poq#env#get_local_variable svar in
+       let deps = DLocal [invindex] in
+       let msg =
+         "pointer variable "
+         ^ (p2s (lval_to_pretty memlval))
+         ^ " points at stack variable "
+         ^ svinfo.vname
+         ^ " which is distinct from the memory pointed at by "
+         ^ vinfo.vname in
+       let site = Some (__FILE__, __LINE__, mname) in
+       Some (deps, msg, site)
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[memref-base]: "
+            ^ (p2s (memory_base_to_pretty memref#get_base)));
+         None
+       end
+
+  method private memlval_implies_safe (memlval: lval) (inv: invariant_int) =
+    let mname = "memlval_vinv_implies_safe" in
+    match inv#expr with
+    | Some (XVar v) when poq#env#is_memory_address v ->
+       let (memref, _) = poq#env#get_memory_address v in
+       self#memlval_memref_implies_safe inv#index memlval memref
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv]: " ^ (p2s inv#toPretty));
+         None
+       end
+
+  method private check_safe_memlval (memlval: lval) (memoffset: offset) =
+    let mname = "check_safe_memlval" in
+    match (memlval, memoffset) with
+    | ((Var (_vname, vid), NoOffset), _) ->
+       let vinfo = poq#env#get_varinfo vid in
+       let vinfovalues = poq#get_vinfo_offset_values vinfo in
+       List.fold_left (fun acc (inv, offset) ->
+           acc
+           || (match offset with
+               | NoOffset ->
+                  (match self#memlval_implies_safe memlval inv with
+                   | Some (deps, msg, site) ->
+                      begin
+                        poq#record_safe_result ~site deps msg;
+                        true
+                      end
+                   | _ ->
+                      false)
+               | _ ->
+                  begin
+                    poq#set_diagnostic
+                      ~site:(Some (__FILE__, __LINE__, mname))
+                      ("[memlval, memoffset, vinfo, inv, offset]: "
+                       ^ (p2s (lval_to_pretty memlval))
+                       ^ ", "
+                       ^ (p2s (offset_to_pretty memoffset))
+                       ^ ", "
+                       ^ vinfo.vname
+                       ^ ", "
+                       ^ (p2s inv#toPretty)
+                       ^ ", "
+                       ^ (p2s (offset_to_pretty offset)));
+                    false
+                  end)) false vinfovalues
+    | _ -> false
+
+  method private check_safe_lval =
+    match lval with
+    | (Mem (Lval memlval), memoffset) ->
+       self#check_safe_memlval memlval memoffset
+    | _ -> false
+
+  method private inv_xpr_implies_safe (invindex: int) (x: xpr_t) =
     let mname = "xpr_implies_safe" in
     if poq#is_api_expression x then
       let _ =
@@ -96,14 +183,24 @@ object (self)
             ^ (fst vpar)) in
          let site = Some (__FILE__, __LINE__, mname) in
          Some (deps, msg, site)
-      | _ -> None
+      | api_e ->
+         begin
+           poq#set_diagnostic
+             ~site:(Some (__FILE__, __LINE__, mname))
+             ("[api_e]: " ^ (e2s api_e));
+           None
+         end
     else
-      None
+      begin
+        poq#set_diagnostic
+          ~site:(Some (__FILE__, __LINE__, mname)) ("[xpr]: " ^ (x2s x));
+        None
+      end
 
   method private inv_implies_safe (inv: invariant_int) =
     let mname = "inv_implies_safe" in
     match inv#expr with
-    | Some x -> self#xpr_implies_safe inv#index x
+    | Some x -> self#inv_xpr_implies_safe inv#index x
     | _ ->
        match inv#get_fact with
        | NonRelationalFact (_, FInitializedSet l) ->
@@ -119,21 +216,24 @@ object (self)
                      "_xx_" (List.map self#get_symbol_name localAssigns)) in
               let site = Some (__FILE__, __LINE__, mname) in
               Some (deps, msg, site))
-       | _ -> None
+       | _ ->
+          begin
+            poq#set_diagnostic
+              ~site:(Some (__FILE__, __LINE__, mname))
+              ("[inv]: " ^ (p2s inv#toPretty));
+            None
+          end
 
   method private check_safe_invs =
-    match invs with
-    | [] -> false
-    | _ ->
-       List.fold_left (fun acc inv ->
-           acc ||
-             match self#inv_implies_safe inv with
-             | Some (deps, msg, site) ->
-                begin
-                  poq#record_safe_result ~site deps msg;
-                  true
-                end
-             | _ -> false) false invs
+    List.fold_left (fun acc inv ->
+        acc ||
+          match self#inv_implies_safe inv with
+          | Some (deps, msg, site) ->
+             begin
+               poq#record_safe_result ~site deps msg;
+               true
+             end
+          | _ -> false) false invs
 
   (* --------------------------- violation ---------------------------------- *)
   (* check_violation
@@ -164,14 +264,31 @@ object (self)
             ^ (fst vpar)) in
          let site = Some (__FILE__, __LINE__, mname) in
          Some (deps, msg, site)
-      | _ -> None
+      | api_e ->
+         begin
+           poq#set_diagnostic
+             ~site:(Some (__FILE__, __LINE__, mname))
+             ("[api_e]: " ^ (e2s api_e));
+           None
+         end
     else
-      None
+      begin
+        poq#set_diagnostic
+          ~site:(Some (__FILE__, __LINE__, mname)) ("[xpr]: " ^ (x2s x));
+        None
+      end
 
   method private inv_implies_violation (inv: invariant_int) =
+    let mname = "inv_implies_violation" in
     match inv#expr with
     | Some x -> self#xpr_implies_violation inv#index x
-    | _ -> None
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv]: " ^ (p2s inv#toPretty));
+         None
+       end
 
   method private memlval_vinv_implies_violation
                    (inv: invariant_int) (memoffset: offset) =
@@ -192,11 +309,33 @@ object (self)
               let site = Some (__FILE__, __LINE__, mname) in
               Some (deps, msg, site)
             else
+              begin
+                poq#set_diagnostic
+                  ~site:(Some (__FILE__, __LINE__, mname))
+                  ("[api-lval, memoffset]: "
+                   ^ (p2s (lval_to_pretty lval))
+                   ^ ", "
+                   ^ (p2s (offset_to_pretty memoffset)));
+                None
+              end
+         | api_e ->
+            begin
+              poq#set_diagnostic
+                ~site:(Some (__FILE__, __LINE__, mname))
+                ("[api_e]: " ^ (e2s api_e));
               None
-         | _ ->
-            None
+            end
        end
-    | _ -> None
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv, memoffset]: "
+            ^ (p2s inv#toPretty)
+            ^ ", "
+            ^ (p2s (offset_to_pretty memoffset)));
+         None
+       end
 
   method private check_violation_memlval (memlval: lval) (memoffset: offset) =
     match memlval with
@@ -240,7 +379,7 @@ object (self)
              | _ -> false) false invs
 
   method check_safe =
-    self#check_safe_invs
+    self#check_safe_invs || self#check_safe_lval
 
   method check_violation =
     self#check_violation_invs || self#check_violation_lval
@@ -261,5 +400,11 @@ let check_locally_initialized (poq:po_query_int) (vinfo: varinfo) (lval:lval) =
       ~site:(Some (__FILE__, __LINE__, "check_locally_initialized"))
       vinfo
       (snd lval) in
+  let _ =
+    if (List.length invs) = 0 then
+      poq#set_diagnostic
+        ~site:(Some (__FILE__, __LINE__, "check_locally_initialized"))
+        ("no invariants available at this location for lval "
+         ^ (p2s (lval_to_pretty lval))) in
   let checker = new locally_initialized_checker_t poq vinfo lval invs in
   checker#check_safe || checker#check_violation

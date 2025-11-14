@@ -219,7 +219,9 @@ object (self)
            let newcontext = context#add_arg (i + 1) in
            begin
              self#create_po_exp newcontext x loc;
-             self#add_ppo (PValidMem x) loc newcontext
+             (match fenv#get_type_unrolled (type_of_exp self#env x) with
+              | TPtr _ -> self#add_ppo (PValidMem x) loc newcontext
+              | _ -> ())
            end) el)
     end
 

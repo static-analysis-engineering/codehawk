@@ -65,7 +65,15 @@ object (self)
        | [] -> ""
        | l  -> "(" ^ (String.concat "" l) ^ ")")
 
-  method private xpr_implies_safe (invindex: int) (xpr: xpr_t) =
+  (* ------------------------------- safe ----------------------------------- *)
+  (* check_safe
+     - check_invs_safe
+       - inv_implies_safe
+         - inv_xpr_implies_safe
+   *)
+
+  method private inv_xpr_implies_safe (invindex: int) (xpr: xpr_t) =
+    let mname = "inv_xpr_implies_safe" in
     let numv = poq#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
     match xpr with
     | XVar v when poq#env#is_initial_parameter_deref_value v ->
@@ -78,20 +86,52 @@ object (self)
              if basevar#equal numv then
                let deps = DLocal ([invindex]) in
                let msg =
-                 ("value of " ^ (x2s xpr) ^ "is equal to initial value of "
+                 ("value of " ^ (x2s xpr) ^ " is equal to initial value of "
                   ^ "memory pointed to by parameter " ^ vinfo.vname) in
-               Some (deps, msg)
+               let site = Some (__FILE__, __LINE__, mname) in
+               Some (deps, msg, site)
              else
+               begin
+                 poq#set_diagnostic
+                   ~site:(Some (__FILE__, __LINE__, mname))
+                   ("value of " ^ " is not equal to initial value of "
+                    ^ "memory pointed to by parameter " ^ vinfo.vname);
+                 None
+               end
+          | memrefbase ->
+             begin
+               poq#set_diagnostic
+                 ~site:(Some (__FILE__, __LINE__, mname))
+                 ("[memory-base]: "
+                  ^ (CCHMemoryBase.memory_base_to_string memrefbase));
                None
-          | _ -> None)
-       else None
-    | _ -> None
+             end)
+       else
+         begin
+           poq#set_diagnostic
+             ~site:(Some (__FILE__, __LINE__, mname))
+             ("[paramvar]: " ^ (p2s paramvar#toPretty));
+           None
+         end
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname)) ("[xpr]: " ^ (x2s xpr));
+         None
+       end
 
   method private inv_implies_safe (inv: invariant_int) =
+    let mname = "inv_implies_safe" in
     match inv#get_fact with
     | NonRelationalFact (_, FSymbolicExpr x) ->
-       self#xpr_implies_safe inv#index x
-    | _ -> None
+       self#inv_xpr_implies_safe inv#index x
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv]: " ^ (p2s inv#toPretty));
+         None
+       end
 
   method private check_invs_safe =
     match invs with
@@ -100,14 +140,20 @@ object (self)
        List.fold_left (fun acc inv ->
            acc ||
              match self#inv_implies_safe inv with
-             | Some (deps, msg) ->
+             | Some (deps, msg, site) ->
                 begin
-                  poq#record_safe_result deps msg;
+                  poq#record_safe_result ~site deps msg;
                   true
                 end
              | _ -> false) false invs
 
+  (* --------------------------- violation ---------------------------------- *)
+  (* check_violation
+     - inv_implies_violation
+   *)
+
   method private inv_implies_violation (inv: invariant_int) =
+    let mname = "inv_implies_violation" in
     match inv#get_fact with
     | NonRelationalFact (_, FInitializedSet l) ->
        let localAssigns =
@@ -120,9 +166,16 @@ object (self)
             let msg =
               (String.concat
                  "_xx_" (List.map self#get_symbol_name localAssigns)) in
-            Some (deps, msg)
+            let site = Some (__FILE__, __LINE__, mname) in
+            Some (deps, msg, site)
        end
-    | _ -> None
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv]: " ^ (p2s inv#toPretty));
+         None
+       end
 
   method check_safe =
     self#check_invs_safe
@@ -131,9 +184,9 @@ object (self)
     List.fold_left (fun acc inv ->
         acc
         || (match self#inv_implies_violation inv with
-            | Some (deps, msg) ->
+            | Some (deps, msg, site) ->
                begin
-                 poq#record_violation_result deps msg;
+                 poq#record_violation_result ~site deps msg;
                  true
                end
             | _ -> false)) false invs
@@ -144,6 +197,15 @@ end
 let check_outputparameter_unaltered
       (poq:po_query_int) (vinfo: varinfo) (offset: offset) =
   let invs = poq#get_init_vinfo_mem_invariants vinfo offset in
-  let _ = poq#set_init_vinfo_mem_diagnostic_invariants vinfo offset in
+  let _ =
+    poq#set_init_vinfo_mem_diagnostic_invariants
+      ~site:(Some (__FILE__, __LINE__, "check_outputparameter_unaltered"))
+      vinfo
+      offset in
+  let _ =
+    if (List.length invs) = 0 then
+      poq#set_diagnostic
+        ~site:(Some (__FILE__, __LINE__, "check_outputparameter_unaltered"))
+        ("no invariants available at this location for " ^ vinfo.vname) in
   let checker = new outputparameter_unaltered_checker_t poq vinfo offset invs in
   checker#check_violation || checker#check_safe
