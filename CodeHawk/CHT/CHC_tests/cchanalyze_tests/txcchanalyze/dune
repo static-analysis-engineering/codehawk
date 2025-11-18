@@ -18,6 +18,7 @@
         testinputs/PLocallyInitialized/locally_initialized_rl_xpr_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_rl_xpr_002.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_rl_memlval_001.cch.tar.gz
+        testinputs/PLocallyInitialized/locally_initialized_rl_memlval_002.cch.tar.gz
         testinputs/POutputParameterInitialized/output_parameter_initialized_rl_inv_xpr_001.cch.tar.gz
         )
   (libraries chlib chutil cchlib cchpre cchanalyze tchlib tcchanalyze))
