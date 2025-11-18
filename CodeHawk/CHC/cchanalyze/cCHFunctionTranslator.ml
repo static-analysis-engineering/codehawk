@@ -60,6 +60,10 @@ open CCHExpTranslator
 module EU = CCHEngineUtil
 module H = Hashtbl
 
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+
 let fenv = CCHFileEnvironment.file_environment
 
 
@@ -94,8 +98,16 @@ object (self)
         let ttyp = fenv#get_type_unrolled vinfo.vtype in
         match ttyp with
         | TPtr ((TInt _ | TFloat _), _) ->
-           let (v,vInit,vm,vmInit) =
+           let (v, vInit, vm, vmInit) =
              env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
+           let _ =
+             log_diagnostics_result
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["v: " ^ (p2s v#toPretty);
+                "vInit: " ^ (p2s vInit#toPretty);
+                "vm: " ^ (p2s vm#toPretty);
+                "vmInit: " ^ (p2s vmInit#toPretty)] in
            (ASSIGN_NUM (v, NUM_VAR vInit))
            :: (ASSIGN_NUM (vm, NUM_VAR vmInit))
            :: acc
