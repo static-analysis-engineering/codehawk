@@ -300,14 +300,12 @@ object (self)
            if rvar#isTmp then
              let memoryvars = env#get_memory_variables in
              let _ =
-               chlog#add
-                 "abstract memory variables (call lhs)"
-                 (LBLOCK [
-                      STR "callee: ";
-                      STR fname;
-                      STR "; ";
-                      pretty_print_list
-                        memoryvars (fun v -> v#toPretty) "" ", " ""]) in
+               log_diagnostics_result
+                 ~tag:"abstract memory variables"
+                 ~msg:env#get_functionname
+                 __FILE__ __LINE__
+                 (("callee: " ^ fname)
+                  :: (List.map (fun v -> p2s v#toPretty) memoryvars)) in
              [make_c_cmd (ABSTRACT_VARS memoryvars)]
            else
              let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
@@ -322,18 +320,15 @@ object (self)
                   match optbasevar with
                   | Some (XVar v) -> env#get_memory_variables_with_base v
                   | _ -> env#get_memory_variables_with_base rvar in
-                let fieldcode = make_c_cmd (ABSTRACT_VARS memoryvars) in
                 let _ =
-                  chlog#add
-                    "abstract memory variables with base (call lhs)"
-                    (LBLOCK [
-                         STR "callee: ";
-                         STR fname;
-                         STR "; base: ";
-                         rvar#toPretty;
-                         STR "; ";
-                         pretty_print_list
-                           memoryvars (fun v -> v#toPretty) "[" ", " "]"]) in
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    (("callee: " ^ fname)
+                     :: ("base: " ^ (p2s rvar#toPretty))
+                     :: (List.map (fun v -> p2s v#toPretty) memoryvars)) in
+                let fieldcode = make_c_cmd (ABSTRACT_VARS memoryvars) in
                 let (rcode, rval) =
                   self#get_arg_post_value postconditions fnargs frVar returntype in
                 let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
@@ -617,6 +612,12 @@ object (self)
              match arg with
              | AddrOf lval | StartOf lval ->
                 let v = exp_translator#translate_lhs context lval in
+                let _ =
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    [p2s v#toPretty] in
                 (make_c_cmd (ABSTRACT_VARS [v])) :: acc
              | _ -> acc) [] fnargs in
        make_c_cmd_block argabstracts
@@ -631,6 +632,12 @@ object (self)
                   exp_translator#translate_lhs context (Mem arg,NoOffset) in
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
+                  let _ =
+                    log_diagnostics_result
+                      ~tag:"abstract memory variables"
+                      ~msg:env#get_functionname
+                      __FILE__ __LINE__
+                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
                   [CCMD (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
@@ -782,12 +789,24 @@ object (self)
                 let rvar = exp_translator#translate_lhs ctxt lval in
                 if rvar#isTmp then
                   let memoryvars = env#get_memory_variables in
+                  let _ =
+                    log_diagnostics_result
+                      ~tag:"abstract memory variables"
+                      ~msg:env#get_functionname
+                      __FILE__ __LINE__
+                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
                   [make_c_cmd (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
                   match ty with
                   | TComp _ ->
                      let memoryvars = env#get_memory_variables_with_base rvar in
+                     let _ =
+                       log_diagnostics_result
+                         ~tag:"abstract memory variables"
+                         ~msg:env#get_functionname
+                         __FILE__ __LINE__
+                         (List.map (fun v -> p2s v#toPretty) memoryvars) in
                      [make_c_cmd (ABSTRACT_VARS memoryvars)]
                   | _  ->
                      let (rcode, rval) =
@@ -1016,6 +1035,12 @@ object (self)
              match arg with
              | AddrOf lval | StartOf lval ->
                 let v = exp_translator#translate_lhs context lval in
+                let _ =
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    [p2s v#toPretty] in
                 (make_c_cmd (ABSTRACT_VARS [v])) :: acc
              | _ -> acc) [] fnargs in
        make_c_cmd_block argabstracts
@@ -1030,6 +1055,12 @@ object (self)
                   exp_translator#translate_lhs context (Mem arg,NoOffset) in
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
+                  let _ =
+                    log_diagnostics_result
+                      ~tag:"abstract memory variables"
+                      ~msg:env#get_functionname
+                      __FILE__ __LINE__
+                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
                   [CCMD (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
@@ -1159,12 +1190,24 @@ object (self)
             let rvar = exp_translator#translate_lhs context lval in
             if rvar#isTmp then
               let memoryvars = env#get_memory_variables in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"abstract memory variables"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  (List.map (fun v -> p2s v#toPretty) memoryvars) in
               [make_c_cmd (ABSTRACT_VARS memoryvars)]
             else
               let ty = fenv#get_type_unrolled (env#get_variable_type rvar)  in
               match ty with
               | TComp _ ->
                  let memoryvars = env#get_memory_variables_with_base rvar in
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"abstract memory variables"
+                     ~msg:env#get_functionname
+                     __FILE__ __LINE__
+                     (List.map (fun v -> p2s v#toPretty) memoryvars) in
                  [make_c_cmd (ABSTRACT_VARS memoryvars)]
               | _ ->
                   let atts = ["rv:"; fname] in
@@ -1311,9 +1354,21 @@ object (self)
           let lhs = exp_translator#translate_lhs context (Mem arg,offset) in
           if lhs#isTmp then
             let memoryvars = env#get_memory_variables in
+            let _ =
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                (List.map (fun v -> p2s v#toPretty) memoryvars) in
             [ make_c_cmd (ABSTRACT_VARS memoryvars)]
           else
             let cancel = make_c_cmd (ABSTRACT_VARS [lhs]) in
+            let _ =
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                [p2s lhs#toPretty] in
             let subcancels =
               match fenv#get_type_unrolled f.ftype with
               | TComp (ckey,_) ->
@@ -1330,10 +1385,22 @@ object (self)
               let lhs = exp_translator#translate_lhs context (Mem arg,NoOffset) in
               if lhs#isTmp  then
                 let memoryvars = env#get_memory_variables in
+                let _ =
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    (List.map (fun v -> p2s v#toPretty) memoryvars) in
                 [make_c_cmd (ABSTRACT_VARS memoryvars)]
               else
                 let ty = fenv#get_type_unrolled (env#get_variable_type lhs)  in
                 let cancel = make_c_cmd  (ABSTRACT_VARS [lhs]) in
+                let _ =
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    [p2s lhs#toPretty] in
                 let subcancels =
                   match ty with
                   | TComp (ckey, _) ->
@@ -1676,9 +1743,21 @@ object (self)
           let lhs = exp_translator#translate_lhs context (Mem arg, offset) in
           if lhs#isTmp then
             let memoryvars = env#get_memory_variables in
+            let _ =
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                (List.map (fun v -> p2s v#toPretty) memoryvars) in
             [make_c_cmd (ABSTRACT_VARS memoryvars)]
           else
             let cancel = make_c_cmd (ABSTRACT_VARS [lhs]) in
+            let _ =
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                [p2s lhs#toPretty] in
             let subcancels =
               match fenv#get_type_unrolled f.ftype with
               | TComp (ckey,_) ->
@@ -1696,10 +1775,22 @@ object (self)
                   exp_translator#translate_lhs context (Mem arg, NoOffset) in
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
+                  let _ =
+                    log_diagnostics_result
+                      ~tag:"abstract memory variables"
+                      ~msg:env#get_functionname
+                      __FILE__ __LINE__
+                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
                   [make_c_cmd (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
                   let cancel = make_c_cmd (ABSTRACT_VARS [lhs]) in
+                  let _ =
+                    log_diagnostics_result
+                      ~tag:"abstract memory variables"
+                      ~msg:env#get_functionname
+                      __FILE__ __LINE__
+                      [p2s lhs#toPretty] in
                   let subcancels =
                     match ty with
                     | TComp (ckey, _) ->

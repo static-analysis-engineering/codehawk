@@ -84,25 +84,22 @@ object (self)
 	  if chifVar#isTmp then
             let memoryvars = env#get_memory_variables in
             let _ =
-              chlog#add
-                "abstract memory variables"
-                (LBLOCK [
-                     pretty_print_list
-                       memoryvars (fun v -> v#toPretty) "" ", " ""]) in
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars)
 	  else if env#has_constant_offset chifVar then
 	    make_c_cmd (ASSIGN_NUM (chifVar, numExp))
           else
             let memoryvars = env#get_memory_variables_with_base chifVar in
             let _ =
-              chlog#add
-                "abstract memory variables with base"
-                (LBLOCK [
-                     STR "base: ";
-                     chifVar#toPretty;
-                     STR "; ";
-                     pretty_print_list
-                       memoryvars (fun v -> v#toPretty) "[" ", " "]"]) in
+              log_diagnostics_result
+                ~tag:"abstract memory variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars) in
         [rhsCode; assign]
       with
@@ -255,6 +252,12 @@ object (self)
         if chifVar#isTmp then
           if is_pointer_type (type_of_lval fdecls lhs) then
             let ptrvars = env#get_pointer_variables SYM_VAR_TYPE in
+            let _ =
+              log_diagnostics_result
+                ~tag:"abstract pointer variables"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                (List.map (fun v -> p2s v#toPretty) ptrvars) in
             make_c_cmd (ABSTRACT_VARS ptrvars)
           else
             make_c_cmd SKIP
