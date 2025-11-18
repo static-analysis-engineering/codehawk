@@ -310,10 +310,16 @@ object (self)
            else
              let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
              match ty with
-             | TPtr _ ->
+             | TPtr _ when not (fname = "__errno_location") ->
                 (* problem: rvar is not a registered memory variable, so env will
                    return all memory variables, which will all be abstracted,
-                   causing loss of precision *)
+                   causing loss of precision
+                   Note: all errno interactions involve an assignment to a
+                   pointer variable. To avoid having all memory variables
+                   abstracted when errno is used, errno is excluded, as it
+                   seems unlikely that the errno variable is aliased within
+                   the function.
+                 *)
                 let optbasevar =
                   self#get_external_post_value postconditions fnargs in
                 let memoryvars =
