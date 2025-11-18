@@ -53,11 +53,13 @@ let _fenv = CCHFileEnvironment.file_environment
 class outputparameter_initialized_checker_t
         (poq: po_query_int)
         (vinfo: varinfo)
-        (_offset: offset)
+        (offset: offset)
         (invs: invariant_int list) =
 object (self)
 
   method private vinfo = vinfo
+
+  method private offset = offset
 
   method private get_symbol_name (s: symbol_t) =
     s#getBaseName
@@ -147,9 +149,13 @@ object (self)
                 end
              | _ -> false) false invs
 
+  method check_violation =
+    self#check_invs_violation
+
   (* --------------------------------- safe --------------------------------- *)
   (* check_safe
-     - inv_implies_safe
+     - check_safe_invs
+       - inv_implies_safe
    *)
 
   method private inv_implies_safe (inv: invariant_int) =
@@ -177,7 +183,7 @@ object (self)
          None
        end
 
-  method check_safe =
+  method private check_safe_invs =
     List.fold_left (fun acc inv ->
         acc
         || (match self#inv_implies_safe inv with
@@ -188,8 +194,7 @@ object (self)
                end
             | _ -> false)) false invs
 
-  method check_violation =
-    self#check_invs_violation
+  method check_safe = self#check_safe_invs
 
 end
 

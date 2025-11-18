@@ -33,8 +33,10 @@ open XprTypes
 
 (* cchlib *)
 open CCHBasicTypes
+open CCHTypesToPretty
 
 (* cchpre *)
+open CCHMemoryBase
 open CCHPreTypes
 
 (* cchanalyze *)
@@ -67,10 +69,75 @@ object (self)
 
   (* ------------------------------- safe ----------------------------------- *)
   (* check_safe
-     - check_invs_safe
+     - check_safe_invs
        - inv_implies_safe
          - inv_xpr_implies_safe
+     - check_safe_lval
+       - check_safe_memlval
+         - memlval_implies_safe
+           -memlval_memref_implies_safe
    *)
+
+  method private memlval_memref_basevar_implies_safe
+                   (_invindex: int) (basevar: variable_t) =
+    let mname = "memlval_memref_basevar_implies_safe" in
+    begin
+      poq#set_diagnostic
+        ~site:(Some (__FILE__, __LINE__, mname))
+        ("[memref-basevar]: " ^ (p2s basevar#toPretty));
+      None
+    end
+
+  method private memlval_memref_implies_safe
+                   (invindex: int) (memref: memory_reference_int) =
+    let mname = "memlval_memref_implies_safe" in
+    match memref#get_base with
+    | CBaseVar bvar ->
+       self#memlval_memref_basevar_implies_safe invindex bvar
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[memref-base]: "
+            ^ (p2s (memory_base_to_pretty memref#get_base)));
+         None
+       end
+
+  method private memlval_implies_safe (inv: invariant_int) (offset: offset) =
+    let mname = "memlval_implies_safe" in
+    match inv#expr with
+    | Some (XVar v) when poq#env#is_memory_address v ->
+       let (memref, _) = poq#env#get_memory_address v in
+       self#memlval_memref_implies_safe inv#index memref
+    | Some x ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname)) ("[xpr]: " ^ (x2s x));
+         None
+       end
+    | _ ->
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[inv,offset]: "
+            ^ (p2s inv#toPretty)
+            ^ ", "
+            ^ (p2s (offset_to_pretty offset)));
+         None
+       end
+
+  method private check_safe_lval =
+    let vinfovalues = poq#get_vinfo_offset_values self#vinfo in
+    List.fold_left (fun acc (inv, offset) ->
+        acc
+        || (match self#memlval_implies_safe inv offset with
+            | Some (deps, msg, site) ->
+               begin
+                 poq#record_safe_result ~site deps msg;
+                 true
+               end
+            | _ ->
+               false)) false vinfovalues
 
   method private inv_xpr_implies_safe (invindex: int) (xpr: xpr_t) =
     let mname = "inv_xpr_implies_safe" in
@@ -133,7 +200,7 @@ object (self)
          None
        end
 
-  method private check_invs_safe =
+  method private check_safe_invs =
     match invs with
     | [] -> false
     | _ ->
@@ -146,6 +213,9 @@ object (self)
                   true
                 end
              | _ -> false) false invs
+
+  method check_safe =
+    self#check_safe_invs || self#check_safe_lval
 
   (* --------------------------- violation ---------------------------------- *)
   (* check_violation
@@ -176,9 +246,6 @@ object (self)
            ("[inv]: " ^ (p2s inv#toPretty));
          None
        end
-
-  method check_safe =
-    self#check_invs_safe
 
   method check_violation =
     List.fold_left (fun acc inv ->

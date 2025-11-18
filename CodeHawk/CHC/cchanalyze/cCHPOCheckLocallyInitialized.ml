@@ -78,7 +78,33 @@ object (self)
      - check_safe_lval
        - check_safe_memlval
          - memlval_implies_safe
+           - memlval_memref_implies_safe
+             -memlval_memref_basevar_implies_safe
    *)
+
+  method private memlval_memref_basevar_implies_safe
+                   (invindex: int) (basevar: variable_t) =
+    let mname = "memlval_memref_basevar_implies_safe" in
+    if poq#env#is_function_return_value basevar then
+      let callee = poq#env#get_callvar_callee basevar in
+      let apilval = Lval (Var (self#vinfo.vname, self#vinfo.vid), NoOffset) in
+      let pred = PUniquePointer apilval in
+      let deps = DEnvC ([invindex], [ApiAssumption pred]) in
+      let msg =
+        "assumption on the environment that the memory region "
+        ^ " pointed at by the return value from "
+        ^ callee.vname
+        ^ " does not overlap with the memory region pointed at by "
+        ^ self#vinfo.vname in
+      let site = Some (__FILE__, __LINE__, mname) in
+      Some (deps, msg, site)
+    else
+       begin
+         poq#set_diagnostic
+           ~site:(Some (__FILE__, __LINE__, mname))
+           ("[memlval:basevar]: " ^ (p2s basevar#toPretty));
+         None
+       end
 
   method private memlval_memref_implies_safe
                    (invindex: int)
@@ -98,6 +124,8 @@ object (self)
          ^ vinfo.vname in
        let site = Some (__FILE__, __LINE__, mname) in
        Some (deps, msg, site)
+    | CBaseVar bvar ->
+       self#memlval_memref_basevar_implies_safe invindex bvar
     | _ ->
        begin
          poq#set_diagnostic
@@ -339,23 +367,24 @@ object (self)
 
   method private check_violation_memlval (memlval: lval) (memoffset: offset) =
     match memlval with
-    | (Var (vname, vid), NoOffset) when vid > 0 && vinfo.vname = vname ->
-       let vinfovalues = poq#get_vinfo_offset_values vinfo in
+    | (Var (_, vid), _) when vid > 0 ->
+       let lvinfo = poq#env#get_varinfo vid in
+       let vinfovalues = poq#get_vinfo_offset_values lvinfo in
        List.fold_left (fun acc (inv, offset) ->
            acc
-           || match offset with
-              | NoOffset ->
-                 begin
-                   match self#memlval_vinv_implies_violation
-                           inv memoffset with
-                   | Some (deps, msg, site) ->
-                      begin
-                        poq#record_violation_result ~site deps msg;
-                        true
-                      end
-                   | _ -> false
-                 end
-              | _ -> false) false vinfovalues
+           || (match offset with
+               | NoOffset ->
+                  begin
+                    match self#memlval_vinv_implies_violation
+                            inv memoffset with
+                    | Some (deps, msg, site) ->
+                       begin
+                         poq#record_violation_result ~site deps msg;
+                         true
+                       end
+                    | _ -> false
+                  end
+               | _ -> false)) false vinfovalues
     | _ -> false
 
   method private check_violation_lval =

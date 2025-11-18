@@ -660,7 +660,7 @@ let read_xml_explanation (node: xml_element_int) (po: proof_obligation_int)=
       if node#hasNamedAttribute "file" then
         Some (
             cd#get_string (geti "file"),
-            geti "linenr",
+            geti "line",
             cd#get_string (geti "detail"))
       else
         None in
