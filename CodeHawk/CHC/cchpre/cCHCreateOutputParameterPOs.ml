@@ -139,6 +139,35 @@ object (self)
                    (context: program_context_int) (e: exp) (loc: location) =
     self#create_po_exp context#add_goto e loc
 
+  method private create_output_parameter_po_s
+                   (context: program_context_int)
+                   (loc: location) =
+    (List.iter (fun vinfo ->
+         let vty = fenv#get_type_unrolled vinfo.vtype in
+         (match vty with
+          | TPtr (ty, _) ->
+             if is_integral_type ty then
+               begin
+                 self#add_ppo
+                   (POutputParameterInitialized (vinfo, NoOffset))
+                   loc context;
+                 self#add_ppo
+                   (POutputParameterUnaltered (vinfo, NoOffset))
+                   loc context
+               end
+             else if is_scalar_struct_type ty then
+               let offsets = get_scalar_struct_offsets ty in
+               List.iter (fun offset ->
+                   begin
+                     self#add_ppo
+                       (POutputParameterInitialized (vinfo, offset))
+                       loc context;
+                     self#add_ppo
+                       (POutputParameterUnaltered (vinfo, offset))
+                       loc context
+                   end) offsets
+          | _ -> ())) self#pointer_parameters)
+
   method private create_po_return
                    (context: program_context_int) (e:exp option) (loc: location) =
     let _ = self#spomanager#add_return loc context#add_return e in
@@ -148,35 +177,11 @@ object (self)
           begin
             self#create_po_exp context#add_return x loc;
             (match type_of_exp self#env x with
-             | TPtr _ -> self#add_ppo (PValidMem x) loc context
+             | TPtr _ -> self#add_ppo (PValidMem x) loc context#add_return
              | _ -> ())
           end
        | _ -> ());
-      (List.iter (fun vinfo ->
-           let vty = fenv#get_type_unrolled vinfo.vtype in
-           (match vty with
-            | TPtr (ty, _) ->
-               if is_integral_type ty then
-                 begin
-                   self#add_ppo
-                     (POutputParameterInitialized (vinfo, NoOffset))
-                     loc context#add_return;
-                   self#add_ppo
-                     (POutputParameterUnaltered (vinfo, NoOffset))
-                     loc context#add_return
-                 end
-               else if is_scalar_struct_type ty then
-                 let offsets = get_scalar_struct_offsets ty in
-                 List.iter (fun offset ->
-                     begin
-                       self#add_ppo
-                         (POutputParameterInitialized (vinfo, offset))
-                         loc context#add_return;
-                       self#add_ppo
-                         (POutputParameterUnaltered (vinfo, offset))
-                         loc context#add_return
-                     end) offsets
-            | _ -> ())) self#pointer_parameters)
+      self#create_output_parameter_po_s context#add_return loc
     end
 
   method private create_po_instr (context: program_context_int) (i: instr) =
@@ -222,7 +227,8 @@ object (self)
              (match fenv#get_type_unrolled (type_of_exp self#env x) with
               | TPtr _ -> self#add_ppo (PValidMem x) loc newcontext
               | _ -> ())
-           end) el)
+           end) el);
+      self#create_output_parameter_po_s context loc
     end
 
   method private create_po_exp
