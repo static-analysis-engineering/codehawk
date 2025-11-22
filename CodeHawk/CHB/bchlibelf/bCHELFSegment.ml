@@ -87,6 +87,8 @@ object (self)
         if Char.code s.[offset+len] = 0 then
           let str = String.sub s offset len in
           let new_s = string_replace '\n' "\\n" str in
+          let new_s = string_replace '\r' "\\r" new_s in
+          let new_s = string_replace '"' "\\\"" new_s in
           begin
             string_table#add_string va new_s ;
             Some new_s
