@@ -64,6 +64,8 @@ module ProgramContextCollections =
     end)
 
 
+let p2s = CHPrettyUtil.pretty_to_string
+
 let ccontexts = CCHContext.ccontexts
 
 let pr_expr = xpr_formatter#pr_expr
@@ -566,7 +568,11 @@ object (self)
   method private integrate_fact (inv:invariant_int) =
     match inv#get_fact with
     | NonRelationalFact (v, _) ->
-       let _ = chlog#add "integrate fact" (LBLOCK [v#toPretty; STR "; "; inv#toPretty]) in
+       let _ =
+         log_diagnostics_result
+           ~tag:"integrate fact"
+           __FILE__ __LINE__
+           [p2s v#toPretty; p2s inv#toPretty] in
        let vindex = v#getName#getSeqNumber in
        let entry =
          if H.mem table vindex then
