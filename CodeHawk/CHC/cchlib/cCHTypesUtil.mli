@@ -98,6 +98,8 @@ val type_of_offset: cfundeclarations_int -> typ -> offset -> typ
 
 val returntype_of_exp: cfundeclarations_int -> exp -> typ
 
+val is_system_struct: typ -> bool
+
 val is_integral_type: typ -> bool
 
 val is_pointer_type : typ -> bool
@@ -113,6 +115,8 @@ val is_struct_type: typ -> bool
 val is_scalar_struct_type: typ -> bool
 
 val is_void_ptr_type: typ -> bool
+
+val is_char_star_type: typ -> bool
 
 val is_function_type: typ -> bool
 
