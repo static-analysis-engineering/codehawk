@@ -762,6 +762,21 @@ let is_safe_int_cast (fromi:ikind) (toi:ikind)	=
   | _ -> false
 
 
+let is_system_struct_name (s: string): bool =
+  List.mem s ["FILE"; "__IO_FILE"]
+
+
+let is_system_struct (t: typ): bool =
+    match t with
+    | TNamed (s, _) -> is_system_struct_name s
+    | tt ->
+       match fenv#get_type_unrolled tt with
+       | TComp (ckey, _) ->
+          let cinfo = fenv#get_comp ckey in
+          is_system_struct_name cinfo.cname
+       | _ -> false
+
+
 let is_integral_type (t:typ) =
   match fenv#get_type_unrolled t with
   | TInt _ -> true
@@ -772,6 +787,14 @@ let is_unsigned_integral_type (t:typ) =
   match fenv#get_type_unrolled t with
   | TInt (ik,_) -> is_unsigned_type ik
   | _ -> false
+
+
+let is_char_star_type (t: typ): bool =
+  match fenv#get_type_unrolled t with
+  | TPtr (TInt (ik, _), _) ->
+     (match ik with IChar | IUChar | ISChar -> true | _ -> false)
+  | _ -> false
+
 
 let is_pointer_type (t:typ) =
   match fenv#get_type_unrolled t with
@@ -803,7 +826,7 @@ let is_array_type (t:typ) =
 
 let is_void_ptr_type (t:typ) =
   match fenv#get_type_unrolled t with
-  | TPtr (TVoid [], []) -> true
+  | TPtr (TVoid _, _) -> true
   | _ -> false
 
 
@@ -839,7 +862,8 @@ let rec is_scalar_struct_type (t: typ): bool =
          match finfo.ftype with
          | TInt _
            | TFloat _
-           | TPtr _ -> true
+           | TPtr _
+           | TVoid _ -> true
          | TComp _ -> is_scalar_struct_type finfo.ftype
          | _ -> false) cinfo.cfields
   | _ -> false
