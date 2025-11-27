@@ -241,6 +241,19 @@ let log_error_result
     (LBLOCK [STR msg; STR (String.concat "; " error)])
 
 
+let log_error_result_default
+      ?(msg="")
+      ?(tag="")
+      (filename: string)
+      (linenumber: int)
+      (error: string list)
+      (defaultvalue: 'a): 'a =
+  begin
+    log_error_result ~msg ~tag filename linenumber error;
+    defaultvalue
+  end
+
+
 let log_result
       ?(msg="")
       ?(tag="")

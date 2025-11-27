@@ -122,6 +122,10 @@ val log_error_result:
   ?msg:string -> ?tag:string -> string -> int -> string list -> unit
 
 
+val log_error_result_default:
+  ?msg:string -> ?tag:string -> string -> int -> string list -> 'c -> 'c
+
+
 (** [log_result msg tag filename linenumber error] writes an entry to
     [chlog] with a tag that combines [tag], [filename], and [linenumber].
     The entry is the concatenation of [msg] and the list of error messages
