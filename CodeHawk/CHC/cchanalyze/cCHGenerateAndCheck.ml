@@ -63,7 +63,14 @@ open CCHPOChecker
 open CCHPostCondition
 
 module H = Hashtbl
+module TR = CHTraceResult
 
+let (let*) x f = CHTraceResult.tbind f x
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let fenv = CCHFileEnvironment.file_environment
 
@@ -160,15 +167,6 @@ let make_invariant_generation_spec t =
 			    STR " not recognized"]))
 
 
-let analysis_is_active (fname: string): bool =
-  match proof_scaffolding#get_analysis_info fname with
-  | UndefinedBehaviorInfo -> true
-  | OutputParameterInfo vinfos ->
-     let proof_obligations = proof_scaffolding#get_proof_obligations fname in
-     CCHCreateOutputParameterPOs.output_parameter_analysis_is_active
-       fname vinfos proof_obligations
-
-
 let process_function gspecs fname =
   let cfilename = system_settings#get_cfilename in
   try
@@ -177,6 +175,7 @@ let process_function gspecs fname =
       let fundec = read_function_semantics fname in
       let fdecls = fundec.sdecls in
       let _ = read_proof_files fname fdecls in
+      let* _ = read_analysis_digests fname in
       let _ = read_api fname fdecls in
       let varmgr = read_vars fname fdecls in
       let invio = read_invs fname varmgr#vard in
@@ -190,7 +189,8 @@ let process_function gspecs fname =
           (List.length proofObligations)
           (List.length openpos)
           __FILE__ __LINE__ in
-      if (List.length openpos) > 0 && (analysis_is_active fname) then
+      if (List.length openpos) > 0
+         && (proof_scaffolding#is_analysis_active fname) then
         let _ =
           pr_timing [
               STR cfilename; STR ": ===analyze function=== "; STR fname;
@@ -309,55 +309,38 @@ let process_function gspecs fname =
         log_info "checked proof obligations [%s:%d]" __FILE__ __LINE__;
         save_invs fname invio;
         save_vars fname varmgr;
+        save_analysis_digests fname;
         save_proof_files fname;
-        save_api fname;
+        Ok (save_api fname)
       end
     else
-      pr_timing [
-          STR cfilename; STR ":"; STR fname;
-          STR ": Skip analysis; analysis is not active"]
+      Ok (pr_timing [
+              STR cfilename; STR ":"; STR fname;
+              STR ": Skip analysis; analysis is not active"])
+    else
+      Ok (pr_timing [
+              STR cfilename; STR ":"; STR fname;
+              STR ": Skip analysis: function is excluded"])
   with
   | CCHFailure p ->
-     begin
-       ch_error_log#add
-         "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; p ]);
-       ()
-     end
+     Error [(elocm __LINE__) ^ "CCHFailure in function: " ^ fname ^ ": " ^ (p2s p)]
+
   | Invalid_argument s ->
-     begin
-       ch_error_log#add
-         "invalid argument"
-         (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]);
-       ()
-     end
+     Error
+       [(elocm __LINE__) ^ "Invalid_argument in function: " ^ fname ^ ": " ^ s]
+
   | Not_found ->
-     begin
-       ch_error_log#add
-         "not-found" (LBLOCK [ STR "function "; STR fname ]);
-       ()
-     end
+     Error [(elocm __LINE__) ^ "Not_found in function: " ^ fname]
+
   | Failure s ->
-     begin
-       ch_error_log#add
-         "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]);
-       raise (CCHFailure
-                (LBLOCK [ STR "function "; STR fname; STR ": "; STR s ]))
-     end
+     Error [(elocm __LINE__) ^ "Failure in function: " ^ fname ^ ": " ^ s]
+
   | CHXmlReader.XmlParseError(line,col,p)
     | CHXmlDocument.XmlDocumentError(line,col,p) ->
-     begin
-       pr_debug [ STR "Xml error while generating invariants for function ";
-                  STR fname; STR " ("; INT line; STR ","; INT col;
-                  STR "): "; p; NL ];
-       ch_error_log#add
-         "xml error"
-         (LBLOCK [ STR fname; STR " (";
-                   INT line; STR ", "; INT col; STR "): "; p ]);
-       raise (CHXmlDocument.XmlDocumentError(
-                  line,col,
-                  LBLOCK [ STR "xml error in function ";
-                           STR fname; STR ": "; p ]))
-     end
+     Error [(elocm __LINE__)
+            ^ "Xml error whilte generating invariants for function: " ^ fname
+            ^ ": (" ^ (string_of_int line) ^ ", " ^ (string_of_int col) ^ "): "
+            ^ (p2s p)]
 
 
 let generate_and_check_process_file (domains: string list) =
@@ -386,7 +369,8 @@ let generate_and_check_process_file (domains: string list) =
     let _ =
       log_info "Processing %d functions [%s:%d]"
         (List.length functions) __FILE__ __LINE__ in
-    let _ = List.iter (fun f -> process_function gspecs f.vname) functions in
+    let* _ =
+      TR.tbind_iter_list (fun f -> process_function gspecs f.vname) functions in
     let _ = save_cfile_assignment_dictionary () in
     let _ = save_cfile_dictionary () in
     let _ = save_cfile_context () in
@@ -394,48 +378,22 @@ let generate_and_check_process_file (domains: string list) =
     let _ = save_cfile_predicate_dictionary () in
     let _ = log_info "Saved file-level xml files [%s:%d]" __FILE__ __LINE__ in
     let _ = pr_timing [STR cfilename; STR ": finished saving files"] in
-    ()
+    Ok ()
   with
   | CHXmlReader.IllFormed ->
-     ch_error_log#add
-       "ill-formed xml content for " (STR system_settings#get_cfilename)
+     Error [(elocm __LINE__)
+            ^ "Ill-formed context for " ^ system_settings#get_cfilename]
+
   | CHXmlReader.XmlParseError(line, col, p)
     | CHXmlDocument.XmlDocumentError(line,col,p) ->
-     begin
-       pr_debug [
-           STR "Xml error while generating invariants in file ";
-           STR system_settings#get_cfilename;
-           STR " (";
-           INT line;
-           STR ",";
-           INT col; STR "): ";
-           p;
-           NL];
-       ch_error_log#add
-         "xml error"
-         (LBLOCK [
-              STR system_settings#get_cfilename;
-              STR " (";
-              INT line;
-              STR ",";
-              INT col;
-              STR "): ";
-              p]);
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Xml error while generating invariants in file ";
-                 STR system_settings#get_cfilename;
-                 STR " (";
-                 INT line;
-                 STR ",";
-                 INT col;
-                 STR "): ";
-                 p;
-                 NL]))
-     end
+     Error [(elocm __LINE__)
+            ^ "Xml error whilte generating invariants in file: "
+            ^ system_settings#get_cfilename
+            ^ ": (" ^ (string_of_int line) ^ ", " ^ (string_of_int col) ^ "): "
+            ^ (p2s p)]
+
   | CCHFailure p ->
-     begin
-       pr_debug [STR "Failure: "; p; NL];
-       ch_error_log#add "failure" p
-     end
+     Error [(elocm __LINE__)
+            ^ "Failure while generating invariants in file: "
+            ^  system_settings#get_cfilename
+            ^ ": " ^ (p2s p)]
