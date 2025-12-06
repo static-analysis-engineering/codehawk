@@ -293,7 +293,15 @@ object (self)
       po#set_status status;
       po#set_dependencies deps;
       po#set_explanation ~site expl;
-      po#set_resolution_timestamp (current_time_to_string ())
+      po#set_resolution_timestamp (current_time_to_string ());
+      (match proof_scaffolding#record_proof_obligation_result self#fname po with
+       | Ok _ -> ()
+       | Error e ->
+          raise
+            (CCHFailure
+               (LBLOCK [
+                    STR "Error in record-proof-result: ";
+                    STR (String.concat "; " e)])))
     end
 
   method set_diagnostic
