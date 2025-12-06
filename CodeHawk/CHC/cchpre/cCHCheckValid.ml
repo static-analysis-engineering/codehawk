@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -749,6 +749,24 @@ let check_ppo_validity
 	  make "address of a variable is a valid memory region"
        | _ -> ()
      end
+
+  | POutputParameterArgument e when is_null_pointer e ->
+     make "null pointer"
+
+  | POutputParameterArgument e when is_absolute_memory_address env e ->
+     (match get_absolute_memory_address env e with
+      | Some s -> make_violation ("absolute address in memory: " ^ s)
+      | _ -> ())
+
+  | POutputParameterArgument e ->
+     (match e with
+      | AddrOf (Var (vname, vid), _)
+        | CastE (_, AddrOf (Var (vname, vid), _)) when env#is_local vid ->
+         make ("address of local variable: " ^ vname)
+      | AddrOf (Var (vname, _), _)
+        | CastE (_, AddrOf (Var (vname, _), _)) ->
+         make_violation ("address of non-local variable: " ^ vname)
+      | _ -> ())
 
   | PStackAddressEscape (_,e) when is_null_pointer e ->
      make "null pointer can leave the local scope"

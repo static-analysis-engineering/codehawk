@@ -151,6 +151,11 @@ object (self)
          (tags, [cdecls#index_varinfo vinfo; cd#index_offset offset])
       | POutputParameterUnaltered (vinfo, offset) ->
          (tags, [cdecls#index_varinfo vinfo; cd#index_offset offset])
+      | POutputParameterArgument exp -> (tags, [cd#index_exp exp])
+      | POutputParameterScalar (v, e) ->
+         (tags, [cdecls#index_varinfo v; cd#index_exp e])
+      | POutputParameterNoEscape (v, e) ->
+         (tags, [cdecls#index_varinfo v; cd#index_exp e])
     in
     po_predicate_table#add key
 
@@ -273,6 +278,10 @@ object (self)
     | "opu" ->
        POutputParameterUnaltered
          (cdecls#get_varinfo (a 0), cd#get_offset (a 1))
+    | "opa" -> POutputParameterArgument (cd#get_exp (a 0))
+    | "ops" -> POutputParameterScalar (cdecls#get_varinfo (a 0), cd#get_exp (a 1))
+    | "opne" ->
+       POutputParameterNoEscape (cdecls#get_varinfo (a 0), cd#get_exp (a 1))
     | s -> raise_tag_error name s po_predicate_mcts#tags
 
 

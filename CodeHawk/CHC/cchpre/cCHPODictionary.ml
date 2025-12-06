@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHIndexTable
 open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* cchlib *)
@@ -47,9 +48,25 @@ module H = Hashtbl
 
 
 let cdecls = CCHDeclarations.cdeclarations
+let cd = CCHDictionary.cdictionary
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
 let contexts = CCHContext.ccontexts
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+
+let elocm
+      (line: int)
+      (table: string)
+      (tag: string)
+      (available_tags: string list): string =
+  (eloc line)
+  ^ ": podictionary. invalid tag in table: "
+  ^ table
+  ^ ": "
+  ^ tag
+  ^ " (available tags: "
+  ^ (String.concat ", " available_tags)
 
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
@@ -70,6 +87,7 @@ class podictionary_t
         (_fname:string) (fdecls:cfundeclarations_int):podictionary_int =
 object (self)
 
+  val output_parameter_status_table = mk_index_table "output-parameter-status-table"
   val assumption_table = mk_index_table "assumption-table"
   val ppo_type_table = mk_index_table "ppo-type-table"
   val spo_type_table = mk_index_table "spo-type-table"
@@ -78,12 +96,36 @@ object (self)
 
   initializer
     tables <- [
+      output_parameter_status_table;
       assumption_table;
       ppo_type_table;
       spo_type_table
    ]
 
   method fdecls = fdecls
+
+  method index_output_parameter_status (s: output_parameter_status_t) =
+    let tags = [output_parameter_status_mcts#ts s] in
+    let key = match s with
+      | OpUnknown -> (tags, [])
+      | OpRejected rs -> (tags, (List.map cd#index_string rs))
+      | OpViable -> (tags, [])
+      | OpWritten -> (tags, [])
+      | OpUnaltered -> (tags, []) in
+    output_parameter_status_table#add key
+
+  method get_output_parameter_status (index: int):
+           output_parameter_status_t traceresult =
+    let name = "output_parameter_status" in
+    let (tags, args) = output_parameter_status_table#retrieve index in
+    let t = t name tags in
+    match (t 0) with
+    | "u" -> Ok OpUnknown
+    | "v" -> Ok OpViable
+    | "w" -> Ok OpWritten
+    | "a" -> Ok OpUnaltered
+    | "r" -> Ok (OpRejected (List.map cd#get_string args))
+    | s -> Error [elocm __LINE__ name s output_parameter_status_mcts#tags]
 
   method index_assumption (a:assumption_type_t) =
     let tags = [assumption_type_mcts#ts a] in
@@ -190,6 +232,15 @@ object (self)
            pd#get_po_predicate (a 2),
            id#get_xpredicate (a 3))
     | s -> raise_tag_error name s spo_type_mcts#tags
+
+  method write_xml_output_parameter_status
+           ?(tag="icops") (node: xml_element_int) (s: output_parameter_status_t) =
+    node#setIntAttribute tag (self#index_output_parameter_status s)
+
+  method read_xml_output_parameter_status
+           ?(tag="icops") (node: xml_element_int):
+           output_parameter_status_t traceresult =
+    self#get_output_parameter_status (node#getIntAttribute tag)
 
   method write_xml_assumption
            ?(tag="iast") (node:xml_element_int) (a:assumption_type_t) =

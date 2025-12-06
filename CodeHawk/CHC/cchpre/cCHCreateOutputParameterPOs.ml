@@ -29,8 +29,8 @@
 open CHPretty
 
 (* chutil *)
-open CHLogger
 open CHTimingLog
+open CHTraceResult
 
 (* cchlib *)
 open CCHBasicTypes
@@ -40,8 +40,8 @@ open CCHDeclarations
 open CCHFileContract
 open CCHLibTypes
 open CCHSettings
+open CCHTypesToPretty
 open CCHTypesUtil
-open CCHUtilities
 
 (* cchpre *)
 open CCHPreFileIO
@@ -50,12 +50,18 @@ open CCHProofScaffolding
 
 module H = Hashtbl
 
+let (let* ) x f = CHTraceResult.tbind f x
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 let fenv = CCHFileEnvironment.file_environment
 
 
-class po_creator_t (f:fundec) (pointer_parameters: varinfo list) =
+class po_creator_t
+        (f:fundec) (analysisdigest: output_parameter_analysis_digest_int) =
 object (self)
+
+  method private analysisdigest = analysisdigest
 
   method private f = f
 
@@ -63,7 +69,8 @@ object (self)
 
   method private fname = self#f.svar.vname
 
-  method private pointer_parameters = pointer_parameters
+  method private active_params =
+    analysisdigest#active_parameter_varinfos
 
   method private env = self#f.sdecls
 
@@ -166,11 +173,12 @@ object (self)
                        (POutputParameterUnaltered (vinfo, offset))
                        loc context
                    end) offsets
-          | _ -> ())) self#pointer_parameters)
+          | _ -> ())) self#active_params)
 
   method private create_po_return
                    (context: program_context_int) (e:exp option) (loc: location) =
     let _ = self#spomanager#add_return loc context#add_return e in
+    let _ = self#analysisdigest#add_returnsite loc context#add_return  e in
     begin
       (match e with
        | Some x ->
@@ -207,6 +215,12 @@ object (self)
                    (e: exp)
                    (el: exp list)
                    (loc: location) =
+    let is_ref_arg (arg: exp) =
+      is_pointer_type (fenv#get_type_unrolled (type_of_exp self#env arg)) in
+    let is_library_call =
+      match e with
+      | Lval (Var (vname, _), _) -> fenv#has_external_header vname
+      | _ -> false in
     begin
       (match lval_o with
        | Some lval -> self#create_po_lval context#add_lhs lval loc
@@ -220,16 +234,37 @@ object (self)
             self#create_po_exp context#add_ftarget e loc;
             self#spomanager#add_indirect_call loc context e el
           end);
+      (if List.exists is_ref_arg el then
+         begin
+           self#create_output_parameter_po_s context loc;
+           self#analysisdigest#add_call_dependency loc context e;
+           (if not is_library_call then
+              self#analysisdigest#add_callee_callsite loc context e);
+         end);
       (List.iteri (fun i x ->
            let newcontext = context#add_arg (i + 1) in
            begin
              self#create_po_exp newcontext x loc;
              (match fenv#get_type_unrolled (type_of_exp self#env x) with
-              | TPtr _ -> self#add_ppo (PValidMem x) loc newcontext
+              | TPtr _ ->
+                 begin
+                   self#add_ppo (PValidMem x) loc newcontext;
+                   (if not is_library_call then
+                      begin
+                        self#add_ppo (POutputParameterArgument x) loc newcontext;
+                        (List.iter (fun vinfo ->
+                             self#add_ppo
+                               (POutputParameterNoEscape (vinfo, x)) loc newcontext)
+                           self#active_params);
+                        self#analysisdigest#add_callee_callsite_arg
+                          loc context newcontext x;
+                        self#analysisdigest#add_call_dependency_arg
+                          loc context newcontext x
+                      end)
+                 end
               | _ -> ())
-           end) el);
-      self#create_output_parameter_po_s context loc
-    end
+           end) el)
+      end
 
   method private create_po_exp
                    (context: program_context_int)
@@ -240,6 +275,10 @@ object (self)
       match fenv#get_type_unrolled vinfo.vtype with
       | TComp _ -> true
       | _ -> false in
+    let _ =
+      List.iter (fun vinfo ->
+          self#add_ppo (POutputParameterScalar (vinfo, x)) loc context)
+        self#active_params in
     match x with
     | Const _ -> ()
 
@@ -263,7 +302,7 @@ object (self)
                               (pvinfo,
                                (Var (vname, vid),
                                 Field ((f.fname, f.fckey), NoOffset)))) loc context)
-                       self#pointer_parameters)
+                       self#active_params)
                   end) cinfo.cfields;
               self#create_po_lval context#add_lval (Var (vname, vid), NoOffset) loc
             end
@@ -278,7 +317,7 @@ object (self)
          self#add_ppo (PInitialized lval) loc context;
          (List.iter (fun vinfo ->
              self#add_ppo (PLocallyInitialized (vinfo, lval)) loc context)
-            self#pointer_parameters);
+            self#active_params);
          self#create_po_lval context#add_lval lval loc
        end
 
@@ -375,48 +414,92 @@ object (self)
 end
 
 
-let process_function (fname:string) =
+let get_pointer_parameters (fundec: fundec): varinfo list =
+  let fdecls = fundec.sdecls in
+  match fundec.svar.vtype with
+  | TFun (_, Some funargs, _, _) | TPtr (TFun (_, Some funargs, _, _), _) ->
+     List.fold_left (fun acc (vname, ty, _) ->
+         match ty with
+         | TPtr _ -> (fdecls#get_varinfo_by_name vname) :: acc
+         | _ -> acc) [] funargs
+  | _ -> []
+
+
+(* exclude pointer parameters that can be syntactically shown to not satisfy
+   the conditions posed on output parameters based on their types.*)
+let initialize_output_parameters
+      (analysisdigest: output_parameter_analysis_digest_int)
+      (ptrparams: varinfo list): unit traceresult =
+  List.fold_left (fun acc ptrparam ->
+      match acc with
+      | Error _ -> acc
+      | _ ->
+         let* _ = analysisdigest#add_new_parameter ptrparam in
+         let pname = ptrparam.vname in
+         let ptype = fenv#get_type_unrolled ptrparam.vtype in
+         if has_const_attribute ptype then
+           (* parameter is read-only *)
+           analysisdigest#reject_parameter pname "parameter has const qualifier"
+         else if has_deref_const_attribute ptype then
+           (* pointed-to object is read-only *)
+           analysisdigest#reject_parameter
+             pname "deref parameter has const qualifier"
+         else if is_char_star_type ptype then
+           (* parameter is probably an array, excluded for now *)
+           analysisdigest#reject_parameter pname "parameter is a char-star"
+         else if is_void_ptr_type ptype then
+           (* parameter target has undetermined type, excluded for now *)
+           analysisdigest#reject_parameter pname "parameter is void-star"
+         else
+           match ptype with
+           | TPtr (tgt, _) ->
+              (match tgt with
+               | TPtr _ ->
+                  (* parameter is pointer to pointer, excluded for now *)
+                  analysisdigest#reject_parameter pname "parameter is double reference"
+               | TComp (ckey, _) when is_system_struct tgt ->
+                  (* structs created by a system library, such as _IO__FILE_ *)
+                  let compinfo = fenv#get_comp ckey in
+                  analysisdigest#reject_parameter
+                    pname
+                    ("parameter is pointer to system struct: " ^ compinfo.cname)
+               | TComp (ckey, _) when not (is_scalar_struct_type tgt) ->
+                  (* struct has embedded arrays, excluded for now *)
+                  let compinfo = fenv#get_comp ckey in
+                  analysisdigest#reject_parameter
+                    pname
+                    ("parameter is pointer to struct with embedded array: " ^
+                       compinfo.cname)
+               | _ -> (* accept *) Ok ())
+           | _ ->
+              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
+                     "validate output parameters: unexpected non-pointer type: ";
+                     (p2s (typ_to_pretty ptype))]) (Ok ()) ptrparams
+
+
+let (let*) x f = CHTraceResult.tbind f x;;
+
+
+let process_function (fname:string): unit traceresult =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
-  try
-    let fundec = read_function_semantics fname in
-    let fdecls = fundec.sdecls in
-    let ftype = fundec.svar.vtype in
-    let pointer_parameters =
-      match ftype with
-      | TFun (_, Some funargs, _, _) | TPtr (TFun (_, Some funargs, _, _), _) ->
-         List.filter (fun (_, ty, _) ->
-             (not (has_const_attribute ty))
-             && (match ty with
-                 | TPtr (tgt, _) -> not (has_const_attribute tgt)
-                 | _ -> false)) funargs
-      | _ -> [] in
-    let pointer_parameters =
-      List.map (fun (vname, _, _) ->
-          fdecls#get_varinfo_by_name vname) pointer_parameters in
-    if (List.length pointer_parameters) > 0 then
-      begin
-        read_proof_files fname fdecls;
-        CCHProofScaffolding.proof_scaffolding#set_analysis_info
-          fname (OutputParameterInfo pointer_parameters);
-        (new po_creator_t fundec pointer_parameters)#create_proof_obligations;
-        CCHCheckValid.process_function fname;
-        save_proof_files fname;
-        save_api fname;
-      end
-  with
-  | CCHFailure p ->
-     begin
-       pr_debug [
-           STR "Error in processing function "; STR fname; STR ": "; p; NL];
-       ch_error_log#add
-         "failure" (LBLOCK [STR "function "; STR fname; STR ": "; p])
-     end
-  | Invalid_argument s ->
-     ch_error_log#add
-       "failure" (LBLOCK [ STR "function "; STR fname; STR ": "; STR s])
+  let fundec = read_function_semantics fname in
+  let ptrparams = get_pointer_parameters fundec in
+  if (List.length ptrparams) > 0 then
+    let _ = read_proof_files fname fundec.sdecls in
+    let* _ = proof_scaffolding#initialize_output_parameter_analysis fname in
+    let* analysisdigest = proof_scaffolding#get_output_parameter_analysis fname in
+    let* _ = initialize_output_parameters analysisdigest ptrparams in
+    let _ = (new po_creator_t fundec analysisdigest)#create_proof_obligations in
+    let _ = CCHCheckValid.process_function fname in
+    let _ = save_analysis_digests fname in
+    let _ = save_proof_files fname in
+    let _ = save_api fname in
+    Ok ()
+  else
+    Ok ()
 
 
-let output_parameter_po_process_file () =
+let output_parameter_po_process_file (): unit traceresult =
   try
     let cfilename = system_settings#get_cfilename in
     let _ = read_cfile_dictionary () in
@@ -433,75 +516,20 @@ let output_parameter_po_process_file () =
         __FILE__ __LINE__ in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
-    begin
-      List.iter (fun f -> process_function f.vname) functions;
+    let u_r =
+      List.fold_left (fun acc f ->
+          tbind (fun () -> process_function f.vname) acc) (Ok ()) functions in
       (*  List.iter process_global cfile.globals; *)
-      save_cfile_assignment_dictionary ();
-      save_cfile_predicate_dictionary ();
-      save_cfile_interface_dictionary();
-      save_cfile_dictionary ();
-      save_cfile_context ();
-    end
+    tbind (fun () ->
+        begin
+          save_cfile_assignment_dictionary ();
+          save_cfile_predicate_dictionary ();
+          save_cfile_interface_dictionary();
+          save_cfile_dictionary ();
+          Ok (save_cfile_context ())
+        end)
+      u_r
   with
   | CHXmlReader.IllFormed ->
-      ch_error_log#add "ill-formed content" (STR system_settings#get_cfilename)
-
-
-let output_parameter_analysis_is_active
-      (fname: string)
-      (vinfos: varinfo list)
-      (po_s: proof_obligation_int list): bool =
-  let vinfo_po_s = H.create (List.length vinfos) in
-  let _ = List.iter (fun vinfo -> H.add vinfo_po_s vinfo.vname []) vinfos in
-  let _ =
-    List.iter (fun po ->
-        match po#get_predicate with
-        | PLocallyInitialized (vinfo, _)
-          | POutputParameterInitialized (vinfo, _)
-          | POutputParameterUnaltered (vinfo, _) ->
-           let entry =
-             try
-               H.find vinfo_po_s vinfo.vname
-             with
-             | Not_found ->
-                raise (CCHFailure (LBLOCK [STR __FILE__; STR ":"; INT __LINE__])) in
-           H.replace vinfo_po_s vinfo.vname (po :: entry)
-        | _ -> ()) po_s in
-  let vinfo_is_active (vname: string): bool =
-    let vpo_s = H.find vinfo_po_s vname in
-    let read_violation =
-      List.exists (fun po ->
-          match po#get_predicate with
-          | PLocallyInitialized _ -> po#is_violation
-          | _ -> false) vpo_s in
-    let op_violation =
-      let op_ctxts = H.create 3 in
-      let add_ctxt (index: int) (po: proof_obligation_int) =
-        let entry =
-          if H.mem op_ctxts index then
-            H.find op_ctxts index
-          else
-            begin
-              H.add op_ctxts index [];
-              []
-            end in
-        H.replace op_ctxts index (po :: entry) in
-      let _ =
-        List.iter (fun po ->
-            match po#get_predicate with
-            | POutputParameterInitialized _
-              | POutputParameterUnaltered _ ->
-               add_ctxt po#get_context#get_cfg_context#index po
-            | _ -> ()) vpo_s in
-      List.exists (fun index ->
-          List.for_all (fun po -> po#is_violation) (H.find op_ctxts index))
-        (H.fold (fun k _ a -> k :: a) op_ctxts []) in
-    (not read_violation)
-    && (not op_violation)
-    && (List.exists (fun po -> not po#is_closed) vpo_s) in
-  let active =
-    List.exists vinfo_is_active (List.map (fun vinfo -> vinfo.vname) vinfos) in
-  let _ =
-    if not active then
-      CHTiming.pr_timing [STR "deactivating analysis of "; STR fname] in
-  active
+     Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
+            "ill-formed content: " ^ system_settings#get_cfilename]

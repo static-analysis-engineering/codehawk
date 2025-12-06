@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 HennyB.  Sipma
-   Coprygith (c) 2023-2024 Aarno Labs LLC
+   Coprygith (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* cchlib *)
 open CCHBasicTypes
@@ -155,6 +156,10 @@ val save_chif: string -> pretty_t -> unit
 val read_proof_files: string -> cfundeclarations_int -> unit
 
 val save_proof_files: string -> unit
+
+val save_analysis_digests: string -> unit
+
+val read_analysis_digests: string -> unit traceresult
 
 val save_api: string -> unit
 

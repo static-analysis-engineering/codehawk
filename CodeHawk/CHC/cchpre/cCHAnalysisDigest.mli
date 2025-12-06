@@ -4,9 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,44 +24,28 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-(* chlib *)
-open CHPretty
 
-(* cchlib *)
-open CCHBasicTypes
-open CCHLibTypes
+
+(* chutil *)
+open CHTraceResult
+open CHXmlDocument
 
 (* cchpre *)
 open CCHPreTypes
 
 
-val po_predicate_tag: po_predicate_t -> string
+val analysis_digest_name: analysis_digest_kind_t -> string
 
-val po_predicate_to_pretty: ?full:bool -> po_predicate_t -> pretty_t
 
-val collect_indexed_predicate_expressions: po_predicate_t -> (int * exp) list
+val mk_undefined_behavior_analysis_digest:
+  string -> podictionary_int -> analysis_digest_int   
 
-val has_global_vars_in_exp: cfundeclarations_int -> exp -> bool
+val mk_output_parameter_analysis_digest:
+  string -> podictionary_int -> analysis_digest_int
 
-val is_opaque: po_predicate_t -> bool
 
-val check_assumption_predicates:
-  po_predicate_t list -> po_predicate_t -> po_predicate_t option
-
-val offset_to_s_offset: offset -> s_offset_t
-
-val exp_to_sterm: cfundeclarations_int -> exp -> s_term_t
-
-val po_predicate_to_xpredicate:
-  cfundeclarations_int -> po_predicate_t -> xpredicate_t
-
-val s_offset_to_offset: typ -> s_offset_t -> offset
-
-val sterm_to_exp:
-  ?returnexp:exp option -> cfundeclarations_int -> s_term_t -> exp
-
-val xpredicate_to_po_predicate:
-  ?returnexp:exp option
-  -> cfundeclarations_int
-  -> xpredicate_t
-  -> po_predicate_t
+val read_xml_analysis_digest:
+  xml_element_int
+  -> string
+  -> podictionary_int
+  -> analysis_digest_int traceresult
