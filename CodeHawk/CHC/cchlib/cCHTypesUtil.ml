@@ -385,8 +385,19 @@ let is_bool_type (ik:ikind) =
 
 let has_const_attribute (t:typ) =
   List.exists
-    (fun a -> match a with | Attr ("const",_) -> true | _ -> false)
+    (fun a ->
+      match a with
+      | Attr ("const", _) -> true
+      | Attr ("pconst", _) -> true
+      | _ -> false)
     (get_typ_attributes t)
+
+
+let has_deref_const_attribute (t: typ) =
+  match t with
+  | TPtr (tgt, _) -> has_const_attribute tgt
+  | _ -> false
+
 
 let is_char ik =
   match ik with IChar | ISChar | IUChar -> true | _ -> false

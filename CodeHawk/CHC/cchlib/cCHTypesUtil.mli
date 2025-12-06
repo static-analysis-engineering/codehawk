@@ -76,6 +76,8 @@ val enum_fits_kind: string -> ikind -> bool
 
 val has_const_attribute: typ -> bool
 
+val has_deref_const_attribute: typ -> bool
+
 val is_not_zero: exp -> bool
 
 val is_safe_int_cast: ikind -> ikind -> bool
