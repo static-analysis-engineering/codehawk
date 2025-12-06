@@ -161,6 +161,13 @@ let tfold_list_fail
          | Ok v -> Ok (ok accv v)) initacc rl
 
 
+let tbind_iter_list (f: 'a -> unit traceresult) (args: 'a list): unit traceresult =
+  List.fold_left (fun acc_r a ->
+      match acc_r with
+      | Error _ -> acc_r
+      | _ -> f a) (Ok ()) args
+
+
 let to_bool (f: 'a -> bool) (r: 'a traceresult) =
   match r with
   | Ok v -> f v
