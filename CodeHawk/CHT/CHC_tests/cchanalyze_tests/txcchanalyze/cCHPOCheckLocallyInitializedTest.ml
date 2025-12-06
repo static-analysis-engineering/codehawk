@@ -110,12 +110,12 @@ let check_violation () =
       ("rl-memlval-001",
        "locally_initialized_rl_memlval_001", "rl_memlval_001",
        [], -1, -1,
-       "memlval_vinv_implies_violation",
+       "memlval_implies_violation",
        "initialized from parameter p->fld1 with offset .fld1");
       ("rl-memlval-002",
        "locally_initialized_rl_memlval_002", "rl_memlval_002",
        [], -1, -1,
-       "memlval_vinv_implies_violation",
+       "memlval_implies_violation",
        "initialized from parameter p->fld1 with offset .fld1")
     ] in
   begin
