@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,11 +33,12 @@ open CHNumerical
 open CHPEPRTypes
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+open CHXmlDocument
+
 (* xprt *)
 open XprTypes
-
-(* chutil *)
-open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
@@ -867,7 +868,16 @@ type po_predicate_t =
   (** the memory region pointed to by varinfo with [offset] is fully initialized *)
 
   | POutputParameterUnaltered of varinfo * offset
-    (** the memory region pointed to by varinfo with [offset] is unaltered *)
+  (** the memory region pointed to by varinfo with [offset] is unaltered *)
+
+  | POutputParameterArgument of exp
+  (** e is the address of a local variable *)
+
+  | POutputParameterNoEscape of varinfo * exp
+  (** parameter vinfo does not escape through call argument exp *)
+
+  | POutputParameterScalar of varinfo * exp
+(** exp is not an expression that involves pointer arithmetic on varinfo *)
 
 
 type violation_severity_t =
@@ -973,18 +983,34 @@ type counterexample_t =
   | TaintedValue of numerical_t
 
 
+type output_parameter_status_t =
+  | OpUnknown
+  | OpRejected of string list
+  | OpViable
+  | OpWritten
+  | OpUnaltered
+
+
 class type podictionary_int =
   object
 
     method fdecls: cfundeclarations_int
 
+    method index_output_parameter_status: output_parameter_status_t -> int
     method index_assumption: assumption_type_t -> int
     method index_ppo_type: ppo_type_t -> int
     method index_spo_type: spo_type_t -> int
+    method get_output_parameter_status:
+             int -> output_parameter_status_t traceresult
 
     method get_assumption: int -> assumption_type_t
     method get_ppo_type: int -> ppo_type_t
     method get_spo_type: int -> spo_type_t
+
+    method write_xml_output_parameter_status:
+             ?tag:string -> xml_element_int -> output_parameter_status_t -> unit
+    method read_xml_output_parameter_status:
+             ?tag:string -> xml_element_int -> output_parameter_status_t traceresult
 
     method write_xml_assumption:
              ?tag:string -> xml_element_int -> assumption_type_t -> unit
@@ -1097,6 +1123,8 @@ class type proof_obligation_int =
     method is_closed: bool
 
     method is_violation: bool
+
+    method is_safe: bool
 
     method is_opaque: bool
 
@@ -1492,24 +1520,122 @@ class type user_assumptions_int =
     method read_xml: xml_element_int -> unit
   end
 
-(** {1 Proof scaffolding}*)
 
-type analysis_info_t =
-  | UndefinedBehaviorInfo
-  | OutputParameterInfo of varinfo list
+(** {1 Analysis digest} *)
+
+class type candidate_output_parameter_int =
+  object
+    method parameter: varinfo
+    method add_returnsite: location -> program_context_int -> exp option -> unit
+    method add_call_dependency: location -> program_context_int -> exp -> unit
+    method add_call_dependency_arg:
+             location -> program_context_int -> program_context_int -> exp -> unit
+    method reject: string -> unit
+    method record_proof_obligation_result: proof_obligation_int -> unit
+    method status: output_parameter_status_t
+    method is_active: proof_obligation_int list -> bool
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit traceresult
+  end
+
+class type output_parameter_analysis_digest_int =
+  object
+
+    method fname: string
+
+    method is_active: proof_obligation_int list -> bool
+
+    method add_new_parameter: varinfo -> unit traceresult
+
+    method add_parameter: candidate_output_parameter_int -> unit traceresult
+
+    method add_returnsite: location -> program_context_int -> exp option -> unit
+
+    method add_call_dependency:
+             location -> program_context_int -> exp -> unit
+
+    method add_call_dependency_arg:
+             location -> program_context_int -> program_context_int -> exp -> unit
+
+    method add_callee_callsite:
+             location -> program_context_int -> exp -> unit
+
+    method add_callee_callsite_arg:
+             location -> program_context_int -> program_context_int -> exp -> unit
+
+    method active_parameters: candidate_output_parameter_int list
+
+    method active_parameter_varinfos: varinfo list
+
+    method reject_parameter: string -> string -> unit traceresult
+
+    method record_proof_obligation_result: proof_obligation_int -> unit traceresult
+
+    method write_xml: xml_element_int -> unit
+    method read_xml: xml_element_int -> unit traceresult
+  end
+
+
+type analysis_digest_kind_t =
+  | UndefinedBehaviorAnalysis
+  | OutputParameterAnalysis of output_parameter_analysis_digest_int
+
+
+class type analysis_digest_int =
+  object
+    method is_active: proof_obligation_int list -> bool
+
+    method kind: analysis_digest_kind_t
+
+    method write_xml: xml_element_int -> unit
+
+    method read_xml: xml_element_int -> unit traceresult
+  end
+
+
+(** {1 Proof scaffolding} *)
 
 
 class type proof_scaffolding_int =
   object
 
+    (** Resets all data held by this data structure: analysis-digests:
+        api's, ppo's, spo's, and pod's (proof-obligation dictionary). *)
     method reset: unit
 
+    (** [initialize_pod fnname fndeclarations] initializes the proof
+        obligation dictionary for function fnname using its local declarations.*)
     method initialize_pod: string -> cfundeclarations_int -> unit
+
+    (** {1 Analysis digests} *)
+
+    (** {2 Output parameter analysis} *)
+
+    (** [initialize_output_parameter_analysis fname parameters] creates a
+        new analysis structure for output-parameter-analysis for function
+        [fname] with pointer parameters [parameters] to keep track of the
+        analysis' progress. It returns the new analysis structure. *)
+    method initialize_output_parameter_analysis: string -> unit traceresult
+
+    (** [get_output_parameter_analysis fname] returns the existing analysis
+        structure for function [fname]. If no such structure exists for [fname]
+        an error is returned.
+
+        The analysis structure is mutable. All updates in the analysis are to
+        be made directly to this structure.
+     *)
+    method get_output_parameter_analysis:
+             string -> output_parameter_analysis_digest_int traceresult
+
+    method has_output_parameter_analysis: string -> bool
+
+    method is_analysis_active: string -> bool
+
+    method record_proof_obligation_result:
+             string -> proof_obligation_int -> unit traceresult
+
     method retrieve_contract_preconditions:
              cfundeclarations_int -> string -> unit
-
-    method set_analysis_info: string -> analysis_info_t -> unit
-    method get_analysis_info: string -> analysis_info_t
 
     method get_function_api: string -> function_api_int
 
@@ -1529,6 +1655,9 @@ class type proof_scaffolding_int =
 
     method has_direct_callsite: string -> program_context_int -> bool
     method has_indirect_callsite: string -> program_context_int -> bool
+
+    method write_xml_analysis_digests: xml_element_int -> string -> unit
+    method read_xml_analysis_digests: xml_element_int -> string -> unit traceresult
 
     method write_xml_api: xml_element_int -> string -> unit
     method read_xml_api : xml_element_int -> string -> unit

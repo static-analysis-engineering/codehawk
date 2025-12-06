@@ -95,6 +95,8 @@ let po_predicate_tag p =
   | PPreservedAllMemoryX _ -> "preserved-all-memory-x"
   | POutputParameterInitialized _ -> "outputparameter-initialized"
   | POutputParameterUnaltered _ -> "outputparameter-unaltered"
+  | POutputParameterScalar _ -> "outputparameter-scalar"
+  | POutputParameterNoEscape _ -> "outputparameter-no-escape"
   | _ -> "misc"
 
 
@@ -256,6 +258,17 @@ object (self)
        begin
          wv 1 v;
          wo 2 o
+       end
+    | POutputParameterArgument e -> we 1 e
+    | POutputParameterScalar (v, e) ->
+       begin
+         wv 1 v;
+         we 2 e
+       end
+    | POutputParameterNoEscape (v, e) ->
+       begin
+         wv 1 v;
+         we 2 e
        end
 
 end
@@ -658,6 +671,23 @@ let po_predicate_to_full_pretty p =
          STR ", ";
          offset_to_pretty offset;
          STR ")"]
+  | POutputParameterArgument e ->
+     LBLOCK [STR "outputparameter-argument("; exp_to_pretty e; STR ")"]
+  | POutputParameterScalar (v, e) ->
+     LBLOCK [
+         STR "outputparameter-scalar";
+         STR v.vname;
+         STR ", ";
+         exp_to_pretty e;
+         STR ")"]
+  | POutputParameterNoEscape (v, e) ->
+     LBLOCK [
+         STR "outputparameter-no-escape";
+         STR v.vname;
+         STR ", ";
+         exp_to_pretty e;
+         STR ")"]
+
 
 
 let pr_expr op e1 e2 t = exp_to_pretty (BinOp (op, e1, e2,t ))
@@ -896,6 +926,22 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
          STR vinfo.vname;
          STR ", ";
          offset_to_pretty offset;
+         STR ")"]
+  | POutputParameterArgument e ->
+     LBLOCK [STR "outputparameter-argument("; exp_to_pretty e; STR ")"]
+  | POutputParameterScalar (v, e) ->
+     LBLOCK [
+         STR "outputparameter-scalar";
+         STR v.vname;
+         STR ", ";
+         exp_to_pretty e;
+         STR ")"]
+  | POutputParameterNoEscape (v, e) ->
+     LBLOCK [
+         STR "outputparameter-no-escape";
+         STR v.vname;
+         STR ", ";
+         exp_to_pretty e;
          STR ")"]
 
 

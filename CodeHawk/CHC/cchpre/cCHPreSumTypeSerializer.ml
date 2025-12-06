@@ -58,6 +58,27 @@ let address_type_mfts: address_type_t mfts_int =
   mk_mfts  "address_type_t" [(Heap, "h"); (Stack, "s"); (External, "x")]
 
 
+class output_parameter_status_mcts_t: [output_parameter_status_t] mfts_int =
+object
+
+  inherit [output_parameter_status_t] mcts_t "output_parameter_status_t"
+
+  method! ts (s: output_parameter_status_t) =
+    match s with
+    | OpUnknown -> "u"
+    | OpRejected _ -> "r"
+    | OpViable  -> "v"
+    | OpWritten -> "w"
+    | OpUnaltered -> "a"
+
+  method! tags = ["a"; "r"; "u"; "v"; "w"]
+
+end
+
+let output_parameter_status_mcts: output_parameter_status_t mfts_int =
+  new output_parameter_status_mcts_t
+
+
 class assignment_mcts_t: [assignment_t] mfts_int =
 object
 
@@ -182,12 +203,15 @@ object
     | PLocallyInitialized _ -> "li"
     | POutputParameterInitialized _ -> "opi"
     | POutputParameterUnaltered _ -> "opu"
+    | POutputParameterArgument _ -> "opa"
+    | POutputParameterScalar _ -> "ops"
+    | POutputParameterNoEscape _ -> "opne"
 
   method! tags = [
       "ab"; "b"; "c"; "cb"; "cbt"; "cf"; "cob"; "cr"; "cssl"; "cssu"; "csul";
       "csuu"; "ctt"; "cus"; "cuu"; "dr"; "ds"; "fc"; "ft"; "ga"; "ha"; "ilb";
       "i"; "io"; "ir"; "is"; "iu"; "iub"; "li"; "lb"; "nm"; "nn"; "nneg"; "no";
-      "nt"; "null"; "opi"; "opu";
+      "nt"; "null"; "opa"; "opi"; "opne"; "ops"; "opu";
       "pc"; "plb"; "pm"; "prm";  "prmx"; "pub"; "pubd"; "pv";
       "rb"; "sae"; "tao"; "ub"; "uio"; "uiu"; "up"; "va"; "vc"; "vm"; "w";
       "z"]

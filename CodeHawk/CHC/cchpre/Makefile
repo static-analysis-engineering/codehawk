@@ -60,6 +60,9 @@ MLIS := \
 	cCHCallsite \
 	cCHReturnsite \
 	cCHSPO \
+	cCHCandidateOutputParameter \
+	cCHOutputParameterAnalysis \
+	cCHAnalysisDigest \
 	cCHProofScaffolding \
 	cCHPreFileIO \
 	cCHPrimaryProofObligations \
@@ -96,6 +99,9 @@ SOURCES := \
 	cCHCallsite \
 	cCHReturnsite \
 	cCHSPO \
+	cCHCandidateOutputParameter \
+	cCHOutputParameterAnalysis \
+	cCHAnalysisDigest \
 	cCHProofScaffolding \
 	cCHPreFileIO \
 	cCHPrimaryProofObligations \

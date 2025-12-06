@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,8 @@ open CCHPreTypes
 val bound_type_mfts: bound_type_t mfts_int
 
 val dependencies_mcts: dependencies_t mfts_int
+
+val output_parameter_status_mcts: output_parameter_status_t mfts_int
 
 val po_status_mfts: po_status_t mfts_int
 

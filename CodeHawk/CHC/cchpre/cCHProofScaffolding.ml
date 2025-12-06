@@ -32,18 +32,17 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
-open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
 open CCHFileContract
 open CCHLibTypes
-open CCHTypesToPretty
-open CCHTypesUtil
 open CCHUtilities
 
 (* cchpre *)
+open CCHAnalysisDigest
 open CCHFunctionAPI
 open CCHPODictionary
 open CCHPPO
@@ -51,17 +50,22 @@ open CCHPreTypes
 open CCHSPO
 
 module H = Hashtbl
+module TR = CHTraceResult
+
+
+let (let*) x f = CHTraceResult.tbind f x
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let id = CCHInterfaceDictionary.interface_dictionary
-let cd = CCHDictionary.cdictionary
-let fenv = CCHFileEnvironment.file_environment
 
 
 class proof_scaffolding_t:proof_scaffolding_int =
 object (self)
 
-  val analysis_info = H.create 3            (* fname -> analysis_info_t *)
+  val analysis_digests = H.create 3         (* fname -> analysis_digest_int *)
   val apis = H.create 3                     (* fname -> api_assumption_int *)
   val ppos = H.create 3                     (* fname -> ppo_manager_int *)
   val spos = H.create 3                     (* fname -> spo_manager_int *)
@@ -69,21 +73,88 @@ object (self)
 
   method reset =
     begin
-      H.clear analysis_info;
+      H.clear analysis_digests;
       H.clear apis;
       H.clear ppos;
       H.clear spos;
       H.clear pods;
     end
 
-  method set_analysis_info (fname: string) (info: analysis_info_t) =
-    H.replace analysis_info fname info
-
-  method get_analysis_info (fname: string): analysis_info_t =
-    if H.mem analysis_info fname then
-      H.find analysis_info fname
+  method private add_analysis_digest
+                   (fname: string) (digest: analysis_digest_int): unit traceresult =
+    let fndigests =
+      if H.mem analysis_digests fname then
+        H.find analysis_digests fname
+      else
+        [] in
+    if List.exists (fun d ->
+           (analysis_digest_name d#kind) = (analysis_digest_name digest#kind))
+         fndigests then
+      Error [(elocm __LINE__)
+             ^ "Analysis for "
+             ^ (analysis_digest_name digest#kind)
+             ^ " already exists for function "
+             ^ fname]
     else
-      UndefinedBehaviorInfo
+      Ok (H.replace analysis_digests fname (digest :: fndigests))
+
+  method private get_function_analysis_digests
+                   (fname: string): analysis_digest_int list =
+    try
+      H.find analysis_digests fname
+    with
+    | Not_found -> []
+
+  method get_output_parameter_analysis
+           (fname: string): output_parameter_analysis_digest_int traceresult =
+    if H.mem analysis_digests fname then
+      List.fold_left (fun acc d ->
+          match acc with
+          | Ok _ -> acc
+          | _ ->
+             match d#kind with
+             | OutputParameterAnalysis digest -> Ok digest
+             | _ -> acc)
+        (Error [(elocm __LINE__)
+                ^ "No output-parameter analysis found for function "
+                ^ fname])
+        (H.find analysis_digests fname)
+    else
+      Error [(elocm __LINE__)
+             ^ "No analysis digests found for function " ^ fname]
+
+  method initialize_output_parameter_analysis
+           (fname: string): unit traceresult =
+    let pod = self#get_pod fname in
+    let digest =
+      CCHAnalysisDigest.mk_output_parameter_analysis_digest fname  pod in
+      self#add_analysis_digest fname digest
+
+  method has_output_parameter_analysis (fname): bool =
+    List.exists (fun d ->
+        match d#kind with
+        | OutputParameterAnalysis _ -> true
+        | _ -> false) (self#get_function_analysis_digests fname)
+
+  method record_proof_obligation_result
+           (fname: string) (po: proof_obligation_int): unit traceresult =
+    let digests = self#get_function_analysis_digests fname in
+    if (List.length digests) > 0 then
+      tbind_iter_list (fun d ->
+          match d#kind with
+          | OutputParameterAnalysis digest ->
+             digest#record_proof_obligation_result po
+          | _ -> Ok ()) digests
+    else
+      Ok ()
+      (* Error [(elocm __LINE__)
+             ^ "No analysis digests found for function " ^ fname] *)
+
+  method is_analysis_active (fname: string): bool =
+    let po_s = self#get_proof_obligations fname in
+    match self#get_function_analysis_digests fname with
+    | [] -> true
+    | digests -> List.exists (fun d -> d#is_active po_s) digests
 
   method get_function_api (fname:string):function_api_int =
     if H.mem apis fname then
@@ -233,80 +304,45 @@ object (self)
   method read_xml_api (node:xml_element_int) (fname:string) =
     (self#get_function_api fname)#read_xml (node#getTaggedChild "api")
 
-  method private write_xml_analysis_info (node: xml_element_int) (fname: string) =
-    let info =
-      if H.mem analysis_info fname then
-        H.find analysis_info fname
-      else
-        UndefinedBehaviorInfo in
-    match info with
-    | UndefinedBehaviorInfo ->
-       node#setAttribute "name" "undefined-behavior"
-    | OutputParameterInfo vinfos ->
-       let ppnode = xmlElement "candidate-parameters" in
-       begin
-         node#setAttribute "name" "output-parameters";
-         List.iter (fun vinfo ->
-             let offsets =
-               match fenv#get_type_unrolled vinfo.vtype with
-               | TPtr (tt, _) when is_integral_type tt ->
-                  string_of_int( cd#index_offset NoOffset)
-               | TPtr (tt,_) when is_scalar_struct_type tt ->
-                  let offsets = get_scalar_struct_offsets tt in
-                  String.concat
-                    ","
-                    (List.map (fun o -> string_of_int (cd#index_offset o)) offsets)
-               | ty ->
-                  begin
-                    ch_error_log#add
-                      "output parameter type not recognized"
-                      (LBLOCK [STR "type: "; typ_to_pretty ty]);
-                    ""
-                  end in
-             let pnode = xmlElement "vinfo" in
-             begin
-               pnode#setAttribute "vname" vinfo.vname;
-               pnode#setIntAttribute
-                 "xid" (CCHDeclarations.cdeclarations#index_varinfo vinfo);
-               pnode#setAttribute "offsets" offsets;
-               ppnode#appendChildren [pnode]
-             end) vinfos;
-         node#appendChildren [ppnode]
-       end
+  method write_xml_analysis_digests (node: xml_element_int) (fname: string) =
+    let digests =
+      try
+        H.find analysis_digests fname
+      with
+      | Not_found -> [] in
+    let aanode = xmlElement "analysis-digests" in
+    let _ = node#appendChildren [aanode] in
+    aanode#appendChildren
+      (List.map (fun d ->
+           let dnode = xmlElement "analysis-digest" in
+           begin
+             d#write_xml dnode;
+             dnode
+           end) digests)
 
+  method read_xml_analysis_digests
+           (node: xml_element_int) (fname: string): unit traceresult =
+    let pod = self#get_pod fname in
+    let aanode = node#getTaggedChild "analysis-digests" in
+    let* digests =
+      List.fold_left (fun acc_r anode ->
+          match acc_r with
+          | Error _ -> acc_r
+          | Ok acc  ->
+             let* digest = read_xml_analysis_digest anode fname pod in
+             Ok (digest :: acc))
+        (Ok []) (aanode#getTaggedChildren "analysis-digest") in
+    Ok (H.replace analysis_digests fname digests)
 
   method write_xml_ppos (node:xml_element_int) (fname:string) =
-    let inode = xmlElement "analysis-info" in
     let pnode = xmlElement "ppos" in
     begin
-      (self#write_xml_analysis_info inode fname);
       (self#get_ppo_manager fname)#write_xml pnode;
-      node#appendChildren [inode; pnode]
+      node#appendChildren [pnode]
     end
-
-  method private read_xml_analysis_info (node: xml_element_int) (fname: string) =
-    let name = node#getAttribute "name" in
-    let info =
-      match name with
-      | "undefined-behavior" -> UndefinedBehaviorInfo
-      | "output-parameters" ->
-         let ppnode = node#getTaggedChild "candidate-parameters" in
-         let vinfos =
-           List.map (fun pnode ->
-               let xid = pnode#getIntAttribute "xid" in
-               CCHDeclarations.cdeclarations#get_varinfo xid)
-             (ppnode#getTaggedChildren "vinfo") in
-         OutputParameterInfo vinfos
-      | _ ->
-         raise (CCHFailure (LBLOCK [STR "name not recognized: "; STR name])) in
-    H.replace analysis_info fname info
 
   method read_xml_ppos (node:xml_element_int) (fname:string) =
-    begin
-      (if node#hasOneTaggedChild "analysis-info" then
-         self#read_xml_analysis_info (node#getTaggedChild "analysis-info") fname);
       (self#get_ppo_manager fname)#read_xml (node#getTaggedChild "ppos")
-    end
 
   method write_xml_spos (node:xml_element_int) (fname:string) =
     let snode = xmlElement "spos" in

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open CHFileIO
 open CHLogger
 open CHPrettyUtil
 open CHTimingLog
+open CHTraceResult
 open CHXmlDocument
 open CHXmlReader
 
@@ -60,6 +61,8 @@ open CCHVariable
 
 module H = Hashtbl
 
+let p2s = CHPrettyUtil.pretty_to_string
+let (let*) x f = CHTraceResult.tbind f x
 
 let _ =
   set_attribute_format
@@ -416,6 +419,10 @@ let get_api_filename (fname:string) =
   get_function_filename fname "api"
 
 
+let get_analysis_digest_filename (fname: string) =
+  get_function_filename fname "adg"
+
+
 let get_pod_filename (fname:string) =
   get_function_filename fname "pod"
 
@@ -585,6 +592,47 @@ let read_podictionary (fname:string) (fdecls:cfundeclarations_int) =
        end
   else
     proof_scaffolding#initialize_pod fname fdecls
+
+
+let save_analysis_digests (fname: string) =
+  let filename = get_analysis_digest_filename fname in
+  let doc = xmlDocument () in
+  let root = get_cch_root () in
+  let fnode = xmlElement "function" in
+  begin
+    proof_scaffolding#write_xml_analysis_digests fnode fname;
+    fnode#setAttribute "fname" fname;
+    doc#setNode root;
+    root#appendChildren [fnode];
+    file_output#saveFile filename doc#toPretty
+  end
+
+
+let read_analysis_digests (fname: string): unit traceresult =
+  let filename = get_analysis_digest_filename fname in
+  if Sys.file_exists filename then
+    try
+      let doc = readXmlDocument filename in
+      let root  = doc#getRoot in
+      let fnode = root#getTaggedChild "function" in
+      let* _ = proof_scaffolding#read_xml_analysis_digests fnode fname in
+      Ok ()
+    with
+    | XmlDocumentError (line, col, p)
+      | XmlParseError (line, col, p) ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
+              "Xml parse error in " ^ filename ^ ": ("
+              ^ (string_of_int line) ^ ", "
+              ^ (string_of_int col) ^ "): "
+              ^ (p2s p)]
+    | Failure s ->
+       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
+              "Failure in reading analysis digest file for "
+              ^ fname
+              ^ " with filename "
+              ^ filename ^ ": " ^ s]
+  else
+    Ok ()
 
 
 let read_proof_files (fname:string) (fdecls:cfundeclarations_int) =
