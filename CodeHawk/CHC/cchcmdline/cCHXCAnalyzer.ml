@@ -125,6 +125,8 @@ let speclist = [
    "path relative to project path");
   ("-diagnostics", Arg.Unit (fun () -> activate_diagnostics ()),
    "collect diagnostics messages and save in diagnostics log");
+  ("-disable_timing", Arg.Unit (fun () -> CHTiming.disable_timing ()),
+   "disable printing timing log messages");
   ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose true),
    "print status on proof obligations and invariants");
   ("-projectname", Arg.String system_settings#set_projectname,
@@ -186,7 +188,8 @@ let main () =
     else if !cmd = "outputparameters-primary" then
       begin
         system_settings#set_output_parameter_analysis;
-	CCHCreateOutputParameterPOs.output_parameter_po_process_file ();
+	let _ =
+          CCHCreateOutputParameterPOs.output_parameter_po_process_file () in
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";
         log_info
@@ -214,18 +217,26 @@ let main () =
       end
 
     else if !cmd = "generate_and_check" then
-      begin
-        generate_and_check_process_file (List.rev !domains);
-        pr_timing [STR cfilename; STR ": finished generate_and_check"];
-        log_info
-          "Invariants generated and proof obligations checked [%s:%d]"
-          __FILE__ __LINE__;
-        save_log_files "gencheck";
-        log_info
-          "Invariant generation and proof obligation check log files saved [%s:%d]"
-          __FILE__ __LINE__;
-        pr_timing [STR cfilename; STR ": finished saving log files"]
-      end
+      match generate_and_check_process_file (List.rev !domains) with
+      | Error e ->
+         let msg = STR (String.concat "; " e) in
+         begin
+           ch_error_log#add "generate-and-check-failure" msg;
+           pr_debug [msg; NL];
+           exit 1
+         end
+      | _ ->
+         begin
+           pr_timing [STR cfilename; STR ": finished generate_and_check"];
+           log_info
+             "Invariants generated and proof obligations checked [%s:%d]"
+             __FILE__ __LINE__;
+           save_log_files "gencheck";
+           log_info
+             ("Invariant generation and proof obligation check log files saved [%s:%d]")
+             __FILE__ __LINE__;
+           pr_timing [STR cfilename; STR ": finished saving log files"]
+         end
 
     else
       begin
