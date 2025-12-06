@@ -36,7 +36,6 @@ open XprTypes
 (* cchlib *)
 open CCHBasicTypes
 open CCHTypesToPretty
-open CCHTypesUtil
 
 (* cchpre *)
 open CCHMemoryBase
@@ -136,7 +135,7 @@ object (self)
        end
 
   method private memlval_implies_safe (memlval: lval) (inv: invariant_int) =
-    let mname = "memlval_vinv_implies_safe" in
+    let mname = "memlval_implies_safe" in
     match inv#expr with
     | Some (XVar v) when poq#env#is_memory_address v ->
        let (memref, _) = poq#env#get_memory_address v in
@@ -318,41 +317,29 @@ object (self)
          None
        end
 
-  method private memlval_vinv_implies_violation
-                   (inv: invariant_int) (memoffset: offset) =
-    let mname = "memlval_vinv_implies_violation" in
+  method private memlval_implies_violation (memoffset: offset) (inv: invariant_int) =
+    let mname = "memlval_implies_violation" in
     match inv#expr with
     | Some x when poq#is_api_expression x ->
        begin
          match poq#get_api_expression x with
-         | Lval lval ->
-            if is_constant_offset memoffset then
-              let memlval = (Mem (Lval lval), memoffset) in
-              let deps = DLocal ([inv#index]) in
-              let msg =
-                "initialized from parameter "
-                ^ (p2s (lval_to_pretty memlval))
-                ^ " with offset "
-                ^ (p2s (offset_to_pretty memoffset)) in
-              let site = Some (__FILE__, __LINE__, mname) in
-              Some (deps, msg, site)
-            else
-              begin
-                poq#set_diagnostic
-                  ~site:(Some (__FILE__, __LINE__, mname))
-                  ("[api-lval, memoffset]: "
-                   ^ (p2s (lval_to_pretty lval))
-                   ^ ", "
-                   ^ (p2s (offset_to_pretty memoffset)));
-                None
-              end
-         | api_e ->
-            begin
-              poq#set_diagnostic
-                ~site:(Some (__FILE__, __LINE__, mname))
-                ("[api_e]: " ^ (e2s api_e));
-              None
-            end
+         | Lval ((Var ((_, vid)), NoOffset) as lval) when vid = self#vinfo.vid ->
+            let apimemlval = (Mem (Lval lval), memoffset) in
+            let deps = DLocal ([inv#index]) in
+            let msg =
+              "initialized from parameter "
+              ^ (p2s (lval_to_pretty apimemlval))
+              ^ " with offset "
+              ^ (p2s (offset_to_pretty memoffset)) in
+            let site = Some (__FILE__, __LINE__, mname) in
+            Some (deps, msg, site)
+       | api_e ->
+          begin
+            poq#set_diagnostic
+              ~site:(Some (__FILE__, __LINE__, mname))
+              ("[api_e]: " ^ (e2s api_e));
+            None
+          end
        end
     | _ ->
        begin
@@ -367,7 +354,7 @@ object (self)
 
   method private check_violation_memlval (memlval: lval) (memoffset: offset) =
     match memlval with
-    | (Var (_, vid), _) when vid > 0 ->
+    | (Var (_, vid), _) ->
        let lvinfo = poq#env#get_varinfo vid in
        let vinfovalues = poq#get_vinfo_offset_values lvinfo in
        List.fold_left (fun acc (inv, offset) ->
@@ -375,8 +362,7 @@ object (self)
            || (match offset with
                | NoOffset ->
                   begin
-                    match self#memlval_vinv_implies_violation
-                            inv memoffset with
+                    match self#memlval_implies_violation memoffset inv with
                     | Some (deps, msg, site) ->
                        begin
                          poq#record_violation_result ~site deps msg;
