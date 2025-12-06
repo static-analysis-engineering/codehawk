@@ -76,7 +76,8 @@
     - generate invariants and run the proof obligation checkers for the proof
       obligation present.
  *)
-val analysis_setup: ?domains:string list -> string -> string -> unit
+val analysis_setup:
+  ?domains:string list -> string -> string -> unit CHTraceResult.traceresult
 
 
 (** [analysis_take_down filename] removes the directory [filename.cch] from

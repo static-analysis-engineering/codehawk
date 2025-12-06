@@ -59,13 +59,15 @@ let unpack_tar_gz (predicate: string) (filename: string) =
   ()
 
 
-let analysis_setup ?(domains=default_domains) (predicate: string) (filename: string) =
+let analysis_setup
+      ?(domains=default_domains) (predicate: string) (filename: string) =
   begin
     unpack_tar_gz predicate filename;
     system_settings#set_projectname filename;
     system_settings#set_cfilename filename;
     (if system_settings#is_output_parameter_analysis then
-       CCHCreateOutputParameterPOs.output_parameter_po_process_file ()
+       CHTraceResult.tget_ok
+         (CCHCreateOutputParameterPOs.output_parameter_po_process_file ())
      else
        CCHCreatePrimaryProofObligations.primary_process_file ());
     CCHProofScaffolding.proof_scaffolding#reset;
