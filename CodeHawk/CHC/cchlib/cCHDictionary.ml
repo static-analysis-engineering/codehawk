@@ -563,6 +563,14 @@ object (self)
     else
       None
 
+  method write_xml_exp_list ?(tag="iexpl") (node: xml_element_int) (l: exp list) =
+    node#setAttribute tag
+      (String.concat "," (List.map string_of_int (List.map self#index_exp l)))
+
+  method read_xml_exp_list ?(tag="iexpl") (node: xml_element_int): exp list =
+    List.map self#get_exp
+      (List.map int_of_string (String.split_on_char ',' (node#getAttribute tag)))
+
   method read_xml_funarg_list
            ?(tag="ifunargs") (node:xml_element_int):funarg list =
     self#get_funargs (node#getIntAttribute tag)

@@ -159,8 +159,10 @@ class type cdictionary_int =
 
     method write_xml_exp: ?tag:string -> xml_element_int -> exp -> unit
     method write_xml_exp_opt: ?tag:string -> xml_element_int -> exp option -> unit
+    method write_xml_exp_list: ?tag:string -> xml_element_int -> exp list -> unit
     method read_xml_exp : ?tag:string -> xml_element_int -> exp
     method read_xml_exp_opt: ?tag:string -> xml_element_int -> exp option
+    method read_xml_exp_list: ?tag:string -> xml_element_int -> exp list
 
     method read_xml_funarg_list: ?tag:string -> xml_element_int -> funarg list
 
