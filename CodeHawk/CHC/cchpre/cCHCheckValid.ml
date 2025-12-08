@@ -766,6 +766,9 @@ let check_ppo_validity
       | AddrOf (Var (vname, _), _)
         | CastE (_, AddrOf (Var (vname, _), _)) ->
          make_violation ("address of non-local variable: " ^ vname)
+      | StartOf (Var (vname, _), _)
+        | CastE (_, StartOf (Var (vname, _), _)) ->
+         make_violation ("address of array: " ^ vname)
       | _ -> ())
 
   | PStackAddressEscape (_,e) when is_null_pointer e ->
@@ -1337,6 +1340,20 @@ let check_ppo_validity
                 ^ ") cannot lead to integer overflow")
           | _ -> ()
      end
+
+  | POutputParameterScalar (_, e) when not (is_pointer_type (type_of_exp env e)) ->
+     make ("expression " ^ (e2s e) ^ " is not a pointer type")
+
+  | POutputParameterScalar (_, e) when is_null_pointer e ->
+     make ("expression " ^ (e2s e) ^ " is a null pointer")
+
+  | POutputParameterScalar (_, e)
+       when (match e with
+             | Lval _ | CastE (_, Lval _) -> true | _ -> false) ->
+     make ("expression " ^ (e2s e) ^ " is an lval expression")
+
+  | POutputParameterScalar (_, e) when is_string_literal e ->
+     make ("expression " ^ (e2s e) ^ " is a string literal")
 
   | PWidthOverflow (e, ik) ->
      let safeBitWidth = mkNumerical (get_safe_bit_width ik) in
