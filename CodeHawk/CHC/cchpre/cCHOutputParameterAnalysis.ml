@@ -222,7 +222,9 @@ object (self)
   method private callee_callsites =
     H.fold (fun _ v a -> v :: a) callee_callsites []
 
-  method reject_parameter (vname: string) (reason: string): unit traceresult =
+  method reject_parameter
+           (vname: string)
+           (reason: output_parameter_rejection_reason_t): unit traceresult =
     if H.mem params vname then
       Ok ((H.find params vname)#reject reason)
     else

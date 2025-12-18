@@ -168,6 +168,16 @@ let tbind_iter_list (f: 'a -> unit traceresult) (args: 'a list): unit traceresul
       | _ -> f a) (Ok ()) args
 
 
+let tbind_map_list (f: 'a -> 'b traceresult) (args: 'a list): 'b list traceresult =
+  List.fold_left (fun acc_r a ->
+      match acc_r with
+      | Error _ -> acc_r
+      | Ok vl ->
+         match f a with
+         | Error e -> Error e
+         | Ok v -> Ok (vl @ [v])) (Ok []) args
+
+
 let to_bool (f: 'a -> bool) (r: 'a traceresult) =
   match r with
   | Ok v -> f v

@@ -983,9 +983,20 @@ type counterexample_t =
   | TaintedValue of numerical_t
 
 
+type output_parameter_rejection_reason_t =
+  | OpConstQualifier of typ
+  | OpSystemStruct of compinfo
+  | OpArrayStruct of compinfo
+  | OpArrayType of typ
+  | OpVoidPointer
+  | OpPointerPointer of typ
+  | OpParameterRead of int   (* source line number *)
+  | OpOtherReason of string
+
+
 type output_parameter_status_t =
   | OpUnknown
-  | OpRejected of string list
+  | OpRejected of output_parameter_rejection_reason_t list
   | OpViable
   | OpWritten
   | OpUnaltered
@@ -996,10 +1007,15 @@ class type podictionary_int =
 
     method fdecls: cfundeclarations_int
 
+    method index_output_parameter_rejection_reason:
+             output_parameter_rejection_reason_t -> int
     method index_output_parameter_status: output_parameter_status_t -> int
     method index_assumption: assumption_type_t -> int
     method index_ppo_type: ppo_type_t -> int
     method index_spo_type: spo_type_t -> int
+
+    method get_output_parameter_rejection_reason:
+             int -> output_parameter_rejection_reason_t traceresult
     method get_output_parameter_status:
              int -> output_parameter_status_t traceresult
 
@@ -1530,7 +1546,7 @@ class type candidate_output_parameter_int =
     method add_call_dependency: location -> program_context_int -> exp -> unit
     method add_call_dependency_arg:
              location -> program_context_int -> program_context_int -> exp -> unit
-    method reject: string -> unit
+    method reject: output_parameter_rejection_reason_t -> unit
     method record_proof_obligation_result: proof_obligation_int -> unit
     method status: output_parameter_status_t
     method is_active: proof_obligation_int list -> bool
@@ -1567,7 +1583,8 @@ class type output_parameter_analysis_digest_int =
 
     method active_parameter_varinfos: varinfo list
 
-    method reject_parameter: string -> string -> unit traceresult
+    method reject_parameter:
+             string -> output_parameter_rejection_reason_t -> unit traceresult
 
     method record_proof_obligation_result: proof_obligation_int -> unit traceresult
 

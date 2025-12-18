@@ -240,13 +240,17 @@ let save_xml_file f =
       List.fold_left (fun a g ->
           match g with
           | GFun (fdec, _loc) -> fdec :: a | _ -> a) [] f.globals in
+    let _ =
+      log_info "Found %d function(s) [%s:%d]" (List.length fns) __FILE__ __LINE__ in
+    let _ =
+      List.iter (fun fn -> log_info "Decl: %s" fn.svar.vdecl.file) fns in
     let fns =
       if !keep_system_includes then
         fns
       else
         (* filter out functions with an absolute path names *)
         List.filter (fun fdec ->
-            not ((String.get fdec.svar.vdecl.file 0) = '/')) fns in
+            not ((String.sub fdec.svar.vdecl.file 0 4) = "/usr")) fns in
     let fnsTarget = Filename.concat (Filename.dirname absoluteTarget) "functions" in
     begin
       List.iter (fun f -> cil_function_to_file target f fnsTarget) fns;
