@@ -39,7 +39,7 @@ open CCHPreTypes
 
 module H = Hashtbl
 
-let (let* ) x f = CHTraceResult.tbind f x   
+let (let* ) x f = CHTraceResult.tbind f x
 
 let ccontexts = CCHContext.ccontexts
 let cdictionary = CCHDictionary.cdictionary
@@ -150,7 +150,7 @@ object (self)
       fdecls#write_xml_location node self#loc;
       ccontexts#write_xml_context node self#ctxt;
       cdictionary#write_xml_exp_opt node self#rv;
-    end    
+    end
 
 end
 
@@ -163,11 +163,11 @@ object (self)
   val mutable status: output_parameter_status_t = OpUnknown
   val returnsites = H.create 3 (* ictxt -> copparam_returnsite_t *)
   val calldeps = H.create 3  (* ictxt ->  copparam_call_dependency_t *)
-  val mutable reject_reasons: string list = []
+  val mutable reject_reasons: output_parameter_rejection_reason_t list = []
 
   method parameter = vinfo
 
-  method reject (reason: string) =
+  method reject (reason: output_parameter_rejection_reason_t) =
     begin
       reject_reasons <- reason :: reject_reasons;
       status <- OpRejected reject_reasons
@@ -177,15 +177,17 @@ object (self)
     match po#get_predicate with
     | PLocallyInitialized _ ->
        if po#is_violation then
-         self#reject
-           ("parameter is read at line " ^ (string_of_int po#get_location.line))
+         self#reject (OpParameterRead po#get_location.line)
+    | POutputParameterScalar (vinfo, _) ->
+       if po#is_violation then
+         self#reject (OpArrayType vinfo.vtype)
     | POutputParameterInitialized _
       | POutputParameterUnaltered _ ->
        let ictxt = ccontexts#index_context po#get_context in
        if H.mem returnsites ictxt then
          (H.find returnsites ictxt)#record_proof_obligation_result po
     | _ -> ()
-       
+
 
   method is_active (_po_s: proof_obligation_int list) =
     match status with

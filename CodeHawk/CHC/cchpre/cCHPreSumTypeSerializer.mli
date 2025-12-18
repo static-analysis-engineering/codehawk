@@ -41,6 +41,9 @@ val bound_type_mfts: bound_type_t mfts_int
 
 val dependencies_mcts: dependencies_t mfts_int
 
+val output_parameter_rejection_reason_mcts:
+  output_parameter_rejection_reason_t mfts_int
+
 val output_parameter_status_mcts: output_parameter_status_t mfts_int
 
 val po_status_mfts: po_status_t mfts_int

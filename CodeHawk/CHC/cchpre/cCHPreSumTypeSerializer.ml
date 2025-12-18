@@ -58,6 +58,33 @@ let address_type_mfts: address_type_t mfts_int =
   mk_mfts  "address_type_t" [(Heap, "h"); (Stack, "s"); (External, "x")]
 
 
+class output_parameter_rejection_reason_mcts_t:
+        [output_parameter_rejection_reason_t] mfts_int =
+object
+
+  inherit [output_parameter_rejection_reason_t] mcts_t
+            "output_parameter_rejection_reason_t"
+
+  method! ts (r: output_parameter_rejection_reason_t) =
+    match r with
+    | OpConstQualifier _ -> "c"
+    | OpSystemStruct _ -> "s"
+    | OpArrayStruct _ -> "a"
+    | OpArrayType _ -> "at"
+    | OpVoidPointer -> "v"
+    | OpPointerPointer _ -> "p"
+    | OpParameterRead _ -> "r"
+    | OpOtherReason _ -> "o"
+
+  method! tags = ["a"; "at"; "c"; "p"; "r"; "s"; "v"]
+
+end
+
+let output_parameter_rejection_reason_mcts:
+      output_parameter_rejection_reason_t mfts_int =
+  new output_parameter_rejection_reason_mcts_t
+
+
 class output_parameter_status_mcts_t: [output_parameter_status_t] mfts_int =
 object
 

@@ -45,7 +45,9 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
+let (let* ) x f = CHTraceResult.tbind f x
 
 let cdecls = CCHDeclarations.cdeclarations
 let cd = CCHDictionary.cdictionary
@@ -87,6 +89,8 @@ class podictionary_t
         (_fname:string) (fdecls:cfundeclarations_int):podictionary_int =
 object (self)
 
+  val output_parameter_rejection_reason_table =
+    mk_index_table "output-parameter-rejection-reason-table"
   val output_parameter_status_table = mk_index_table "output-parameter-status-table"
   val assumption_table = mk_index_table "assumption-table"
   val ppo_type_table = mk_index_table "ppo-type-table"
@@ -96,6 +100,7 @@ object (self)
 
   initializer
     tables <- [
+      output_parameter_rejection_reason_table;
       output_parameter_status_table;
       assumption_table;
       ppo_type_table;
@@ -104,11 +109,43 @@ object (self)
 
   method fdecls = fdecls
 
+  method index_output_parameter_rejection_reason
+           (r: output_parameter_rejection_reason_t) =
+    let tags = [output_parameter_rejection_reason_mcts#ts r] in
+    let key = match r with
+      | OpConstQualifier ty -> (tags, [cd#index_typ ty])
+      | OpSystemStruct cinfo -> (tags, [cdecls#index_compinfo cinfo])
+      | OpArrayStruct cinfo -> (tags, [cdecls#index_compinfo cinfo])
+      | OpArrayType ty -> (tags, [cd#index_typ ty])
+      | OpVoidPointer -> (tags, [])
+      | OpPointerPointer ty -> (tags, [cd#index_typ ty])
+      | OpParameterRead linenumber -> (tags, [linenumber])
+      | OpOtherReason reason -> (tags, [cd#index_string reason]) in
+    output_parameter_rejection_reason_table#add key
+
+  method get_output_parameter_rejection_reason (index: int):
+           output_parameter_rejection_reason_t traceresult =
+    let name = "output_parameter_rejection_reason" in
+    let (tags, args) = output_parameter_rejection_reason_table#retrieve index in
+    let t = t name tags in
+    let a = a name args in
+    match (t 0) with
+    | "a" -> Ok (OpArrayStruct (cdecls#get_compinfo (a 0)))
+    | "at" -> Ok (OpArrayType (cd#get_typ (a 0)))
+    | "c" -> Ok (OpConstQualifier (cd#get_typ (a 0)))
+    | "o" -> Ok (OpOtherReason (cd#get_string (a 0)))
+    | "p" -> Ok (OpPointerPointer (cd#get_typ (a 0)))
+    | "r" -> Ok (OpParameterRead (a 0))
+    | "s" -> Ok (OpSystemStruct (cdecls#get_compinfo (a 0)))
+    | "v" -> Ok OpVoidPointer
+    | s -> Error [elocm __LINE__ name s output_parameter_rejection_reason_mcts#tags]
+
   method index_output_parameter_status (s: output_parameter_status_t) =
     let tags = [output_parameter_status_mcts#ts s] in
     let key = match s with
       | OpUnknown -> (tags, [])
-      | OpRejected rs -> (tags, (List.map cd#index_string rs))
+      | OpRejected rs ->
+         (tags, (List.map self#index_output_parameter_rejection_reason rs))
       | OpViable -> (tags, [])
       | OpWritten -> (tags, [])
       | OpUnaltered -> (tags, []) in
@@ -124,7 +161,10 @@ object (self)
     | "v" -> Ok OpViable
     | "w" -> Ok OpWritten
     | "a" -> Ok OpUnaltered
-    | "r" -> Ok (OpRejected (List.map cd#get_string args))
+    | "r" ->
+       let* reasons =
+         TR.tbind_map_list self#get_output_parameter_rejection_reason args in
+       Ok (OpRejected reasons)
     | s -> Error [elocm __LINE__ name s output_parameter_status_mcts#tags]
 
   method index_assumption (a:assumption_type_t) =

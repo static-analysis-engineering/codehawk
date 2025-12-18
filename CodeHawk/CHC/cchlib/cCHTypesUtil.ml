@@ -870,7 +870,7 @@ let rec is_scalar_struct_type (t: typ): bool =
   | TComp (ckey, _) ->
      let cinfo = fenv#get_comp ckey in
      List.for_all (fun finfo ->
-         match finfo.ftype with
+         match fenv#get_type_unrolled finfo.ftype with
          | TInt _
            | TFloat _
            | TPtr _

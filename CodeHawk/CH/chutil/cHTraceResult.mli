@@ -143,6 +143,9 @@ val tfold_list_fail:
 val tbind_iter_list: ('a -> unit traceresult) -> 'a list -> unit traceresult
 
 
+val tbind_map_list: ('a -> 'b traceresult) -> 'a list -> 'b list traceresult
+
+
 (** [to_bool f r] is [f v] if [r] is [Ok v] and [false] otherwise.*)
 val to_bool: ('a -> bool) -> 'a traceresult -> bool
 

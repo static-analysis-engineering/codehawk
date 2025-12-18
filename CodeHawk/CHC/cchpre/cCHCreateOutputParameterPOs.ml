@@ -439,37 +439,31 @@ let initialize_output_parameters
          let ptype = fenv#get_type_unrolled ptrparam.vtype in
          if has_const_attribute ptype then
            (* parameter is read-only *)
-           analysisdigest#reject_parameter pname "parameter has const qualifier"
+           analysisdigest#reject_parameter pname (OpConstQualifier ptype)
          else if has_deref_const_attribute ptype then
            (* pointed-to object is read-only *)
-           analysisdigest#reject_parameter
-             pname "deref parameter has const qualifier"
+           analysisdigest#reject_parameter pname (OpConstQualifier ptype)
          else if is_char_star_type ptype then
            (* parameter is probably an array, excluded for now *)
-           analysisdigest#reject_parameter pname "parameter is a char-star"
+           analysisdigest#reject_parameter pname (OpArrayType ptype)
          else if is_void_ptr_type ptype then
            (* parameter target has undetermined type, excluded for now *)
-           analysisdigest#reject_parameter pname "parameter is void-star"
+           analysisdigest#reject_parameter pname OpVoidPointer
          else
            match ptype with
            | TPtr (tgt, _) ->
               (match tgt with
                | TPtr _ ->
                   (* parameter is pointer to pointer, excluded for now *)
-                  analysisdigest#reject_parameter pname "parameter is double reference"
+                  analysisdigest#reject_parameter pname (OpPointerPointer ptype)
                | TComp (ckey, _) when is_system_struct tgt ->
                   (* structs created by a system library, such as _IO__FILE_ *)
                   let compinfo = fenv#get_comp ckey in
-                  analysisdigest#reject_parameter
-                    pname
-                    ("parameter is pointer to system struct: " ^ compinfo.cname)
+                  analysisdigest#reject_parameter pname (OpSystemStruct compinfo)
                | TComp (ckey, _) when not (is_scalar_struct_type tgt) ->
                   (* struct has embedded arrays, excluded for now *)
                   let compinfo = fenv#get_comp ckey in
-                  analysisdigest#reject_parameter
-                    pname
-                    ("parameter is pointer to struct with embedded array: " ^
-                       compinfo.cname)
+                  analysisdigest#reject_parameter pname (OpArrayStruct compinfo)
                | _ -> (* accept *) Ok ())
            | _ ->
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
@@ -484,7 +478,7 @@ let process_function (fname:string): unit traceresult =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
   let fundec = read_function_semantics fname in
   let ptrparams = get_pointer_parameters fundec in
-  if (List.length ptrparams) > 0 then
+  (* if (List.length ptrparams) > 0 then *)
     let _ = read_proof_files fname fundec.sdecls in
     let* _ = proof_scaffolding#initialize_output_parameter_analysis fname in
     let* analysisdigest = proof_scaffolding#get_output_parameter_analysis fname in
@@ -495,8 +489,8 @@ let process_function (fname:string): unit traceresult =
     let _ = save_proof_files fname in
     let _ = save_api fname in
     Ok ()
-  else
-    Ok ()
+  (* else
+    Ok () *)
 
 
 let output_parameter_po_process_file (): unit traceresult =
@@ -508,7 +502,7 @@ let output_parameter_po_process_file (): unit traceresult =
     let _ = fenv#initialize cfile in
     let _ = cdeclarations#index_location call_sink in
     let functions = fenv#get_application_functions in
-    let functions = List.filter (fun f -> not (f.vname = "main")) functions in
+    (* let functions = List.filter (fun f -> not (f.vname = "main")) functions in *)
     let _ =
       log_info
         "Cfile %s initialized with %d functions [%s:%d]"
