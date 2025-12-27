@@ -53,11 +53,24 @@ let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
 
+let x2s_r x_r =
+  match x_r with
+  | Ok x -> x2s x
+  | Error e -> "Error: " ^ (String.concat "; " e)
+
+
+(* Emit log message only in the last run of the analyzer. *)
+let log_dc_error_result
+      ?(msg="")
+      ?(tag="")
+      (filename: string)
+      (linenumber: int)
+      (msgs: string list) =
+  if BCHSystemSettings.system_settings#collect_data then
+    log_error_result ~msg ~tag filename linenumber msgs
+
+
 let mmap = BCHGlobalMemoryMap.global_memory_map
-
-
-let log_error (tag: string) (msg: string) =
-  mk_tracelog_spec ~tag:("memoryrecorder:" ^ tag) msg
 
 
 class memory_recorder_t
@@ -83,24 +96,42 @@ object (self)
     match x with
     | XConst (IntConst n) -> GConstant n
     | XVar v when self#env#is_return_value v ->
-       log_tfold
-         (log_error "get_gvalue" "invalid call site")
+       TR.tfold
          ~ok:(fun callSite ->
            GReturnValue (ctxt_string_to_location self#faddr callSite))
-         ~error:(fun _ -> GUnknownValue)
+         ~error:(fun e ->
+           begin
+             log_diagnostics_result
+               ~msg:(p2s self#loc#toPretty)
+               ~tag:"memrecorder:get_gvalue"
+               __FILE__ __LINE__ (e @ ["invalid callsite"]);
+             GUnknownValue
+           end)
          (self#env#get_call_site v)
     | XVar v when self#env#is_sideeffect_value v ->
-       log_tfold
-         (log_error "get_gvalue" "invalid call site (2)")
+       TR.tfold
          ~ok: (fun callSite ->
-           log_tfold
-             (log_error "get_gvalue" "invalid se descriptor")
+           TR.tfold
              ~ok:(fun argdescr ->
                GSideeffectValue
                  (ctxt_string_to_location self#faddr callSite, argdescr))
-             ~error:(fun _ -> GUnknownValue)
+             ~error:(fun e ->
+               begin
+                 log_diagnostics_result
+                   ~msg:(p2s self#loc#toPretty)
+                   ~tag:"memrecorder:get_gvalue"
+                   __FILE__ __LINE__ (e @ ["invalide side-effect descriptor"]);
+                 GUnknownValue
+               end)
              (self#env#get_se_argument_descriptor v))
-         ~error:(fun _ -> GUnknownValue)
+         ~error:(fun e ->
+           begin
+             log_diagnostics_result
+               ~msg:(p2s self#loc#toPretty)
+               ~tag:"memrecorder:get_gvalue"
+               __FILE__ __LINE__ (e @ ["invalide side-effect value"]);
+             GUnknownValue
+           end)
          (self#env#get_call_site v)
     | XVar v when self#env#is_stack_parameter_variable v ->
        (match self#env#get_stack_parameter_index v with
@@ -137,16 +168,19 @@ object (self)
                    (vtype: btype_t) =
     if self#env#is_global_variable lhs
        && (self#env#has_global_variable_address lhs) then
-      log_tfold
-        (log_error "record_assignment_lhs" "invalid global address")
+      TR.tfold
         ~ok:(fun gaddr ->
           global_system_state#add_writer
             ~ty:vtype ~size (self#get_gvalue rhs) gaddr self#loc)
-        ~error:(fun _ -> ())
+        ~error:(fun e ->
+          log_error_result
+            ~tag:"record_assignment_lhs"
+            ~msg:(p2s self#loc#toPretty)
+            __FILE__ __LINE__
+            (["invalid global address for: " ^ (p2s lhs#toPretty)] @ e))
         (self#env#get_global_variable_address lhs)
     else if self#env#is_stack_variable lhs then
-      log_tfold
-        (log_error "record_assignment_lhs" "invalid offset")
+      TR.tfold
         ~ok:(fun stackoffset ->
           match stackoffset with
           | ConstantOffset (n, offset) ->
@@ -159,15 +193,27 @@ object (self)
                lhs
                iaddr
           | _ ->
-             chlog#add
-               "stack assignment lhs not recorded"
-               (LBLOCK [self#loc#toPretty; STR ": "; lhs#toPretty]))
-        ~error:(fun _ -> ())
+             log_diagnostics_result
+               ~tag:"record_assignment_lhs"
+               ~msg:(p2s self#loc#toPretty)
+               __FILE__ __LINE__
+               ["stack assignment lhs not recorded";
+                "lhs: " ^ (p2s lhs#toPretty)])
+        ~error:(fun e ->
+          log_error_result
+            ~tag:"record_assignment_lhs"
+            ~msg:(p2s self#loc#toPretty)
+            __FILE__ __LINE__
+            (["invalid offset for: " ^ (p2s lhs#toPretty)] @ e))
         (self#env#get_memvar_offset lhs)
     else
-      chlog#add
-        "assignment lhs not recorded"
-        (LBLOCK [self#loc#toPretty; STR ": "; lhs#toPretty; STR " := "; x2p rhs])
+      log_diagnostics_result
+        ~tag:"record_assignment_lhs"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["assignment lhs not recorded";
+         "lhs: " ^ (p2s lhs#toPretty);
+         "rhs: " ^ (x2s rhs)]
 
   method private record_assignment_rhs
                    (rhs: xpr_t) (size: int option) (vtype: btype_t) =
@@ -175,15 +221,18 @@ object (self)
     List.iter (fun v ->
         if self#env#is_global_variable v
            && (self#env#has_global_variable_address v) then
-          log_tfold
-            (log_error "record_assignment_rhs" "invalid global address")
+          TR.tfold
             ~ok:(fun gaddr ->
               global_system_state#add_reader ~ty:vtype ~size gaddr self#loc)
-            ~error:(fun _ -> ())
+            ~error:(fun e ->
+              log_error_result
+                ~tag:"record_assignment_rhs"
+                ~msg:(p2s self#loc#toPretty)
+                __FILE__ __LINE__
+                (["invalid global address for: " ^ (x2s rhs)] @ e))
             (self#env#get_global_variable_address v)
         else if self#env#is_stack_variable v then
-          log_tfold
-            (log_error "record_assignment_rhs" "invalid offset")
+          TR.tfold
             ~ok:(fun stackoffset ->
               match stackoffset with
               | ConstantOffset (n, offset) ->
@@ -195,15 +244,28 @@ object (self)
                    v
                    iaddr
               | _ ->
-                 chlog#add
-                   "stack assignment rhs not recorded"
-                   (LBLOCK [self#loc#toPretty; STR ": "; v#toPretty]))
-            ~error:(fun _ -> ())
+                 log_diagnostics_result
+                   ~tag:"record_assignment_rhs"
+                   ~msg:(p2s self#loc#toPretty)
+                   __FILE__ __LINE__
+                   ["stack assignment rhs not recorded";
+                    "v: " ^ (p2s v#toPretty);
+                    "rhs: " ^ (x2s rhs)])
+            ~error:(fun e ->
+              log_error_result
+                ~tag:"record_assignment_rhs"
+                ~msg:(p2s self#loc#toPretty)
+                __FILE__ __LINE__
+                (["invalid offset for: " ^ (x2s rhs)] @ e))
             (self#env#get_memvar_offset v)
         else
-          chlog#add
-            "assignment rhs not recorded"
-            (LBLOCK [self#loc#toPretty; STR ": "; v#toPretty])) vars
+          log_diagnostics_result
+            ~tag:"record_assignment_rhs"
+            ~msg:(p2s self#loc#toPretty)
+            __FILE__ __LINE__
+            ["assignment not recorded";
+             "v: " ^ (p2s v#toPretty);
+             "rhs: " ^ (x2s rhs)]) vars
 
   method record_load
            ~(signed: bool)
@@ -212,45 +274,49 @@ object (self)
            ~(size: int)
            ~(vtype: btype_t) =
     if self#env#is_stack_variable var then
-      log_tfold
-        (log_error "record_load" "invalid offset")
-        ~ok:(fun stackoffset ->
-          match stackoffset with
-          | ConstantOffset (n, offset) ->
-             self#finfo#stackframe#add_load
-               ~baseoffset:n#toInt
-               ~offset
-               ~size:(Some size)
-               ~typ:(Some vtype)
-               var
-               iaddr
-          | _ ->
-             chlog#add
-               "stack load not recorded"
-               (LBLOCK [
-                    self#loc#toPretty;
-                    STR ": ";
-                    x2p addr;
-                    STR " (";
-                    var#toPretty;
-                    STR ")"]))
-        ~error:(fun _ -> ())
-        (self#env#get_memvar_offset var)
+      self#record_stack_variable_load ~signed ~var ~size ~vtype
+    else if self#env#is_basevar_memory_variable var then
+      log_dc_error_result
+        ~msg:(p2s self#loc#toPretty)
+        ~tag:"record memory load"
+        __FILE__ __LINE__
+        ["Recording of basevar loads not yet supported. Var: "
+         ^ (p2s var#toPretty)
+         ^ ". Addr: " ^ (x2s addr)]
     else
-      match addr with
-      | XConst (IntConst n)
-           when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
-         mmap#add_gload self#faddr iaddr addr size signed
-      | _ ->
-         chlog#add
-           "memory load not recorded"
-           (LBLOCK [
-                self#loc#toPretty;
-                STR "; ";
-                x2p addr;
-                STR " (";
-                var#toPretty;
-                STR ")"])
+      match mmap#add_gload self#faddr iaddr addr size signed with
+      | Ok () -> ()
+      | Error e ->
+         log_dc_error_result
+           ~msg:(p2s self#loc#toPretty)
+           ~tag:"record_load"
+           __FILE__ __LINE__ e
+
+  method private record_stack_variable_load
+                   ~(signed: bool)
+                   ~(var: variable_t)
+                   ~(size: int)
+                   ~(vtype: btype_t) =
+    TR.tfold
+      ~ok:(fun stackoffset ->
+        match stackoffset with
+        | ConstantOffset (n, offset) ->
+           self#finfo#stackframe#add_load
+             ~baseoffset:n#toInt
+             ~offset
+             ~size:(Some size)
+             ~typ:(Some vtype)
+             var
+             iaddr
+        | _ ->
+           log_dc_error_result
+             ~tag:"record_stack_variable_load"
+             ~msg:(p2s self#loc#toPretty)
+             __FILE__ __LINE__
+             ["offset: " ^ (BCHMemoryReference.memory_offset_to_string stackoffset);
+              "signed: " ^ (if signed then "yes" else "no")])
+      ~error:(fun e -> log_dc_error_result __FILE__ __LINE__ e)
+      (self#env#get_memvar_offset var)
 
   method record_load_r
            ~(signed: bool)
@@ -261,45 +327,28 @@ object (self)
     TR.tfold
       ~ok:(fun var ->
         if self#env#is_stack_variable var then
-          TR.tfold
-            ~ok:(fun stackoffset ->
-              match stackoffset with
-              | ConstantOffset (n, offset) ->
-                 self#finfo#stackframe#add_load
-                   ~baseoffset:n#toInt
-                   ~offset
-                   ~size:(Some size)
-                   ~typ:(Some vtype)
-                   var
-                   iaddr
-              | _ ->
-                 log_error_result __FILE__ __LINE__
-                   ["memrecorder:stack-load";
-                    p2s self#loc#toPretty;
-                    "offset: "
-                    ^ (BCHMemoryReference.memory_offset_to_string stackoffset)])
-            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
-            (self#env#get_memvar_offset var)
+          self#record_stack_variable_load ~signed ~var ~size ~vtype
+        else if self#env#is_basevar_memory_variable var then
+          log_dc_error_result
+            ~msg:(p2s self#loc#toPretty)
+            ~tag:"record memory load"
+            __FILE__ __LINE__
+            ["Recording of basevar loads not yet supported. Var: "
+             ^ (p2s var#toPretty)
+             ^ ". Addr: " ^ (x2s_r addr_r)]
         else
           TR.tfold
             ~ok:(fun addr ->
-              match addr with
-              | XConst (IntConst n)
-                   when mmap#is_global_data_address
-                          (numerical_mod_to_doubleword n) ->
-                 mmap#add_gload self#faddr iaddr addr size signed
-              | XConst (IntConst n) ->
-                 log_result __FILE__ __LINE__
-                   ["memrecorder:literal load not recorded";
-                    p2s self#loc#toPretty;
-                    p2s (numerical_mod_to_doubleword n)#toPretty]
-              | _ ->
-                 log_result __FILE__ __LINE__
-                   ["memrecorder:load not recorded";
-                    p2s self#loc#toPretty; (x2s addr)])
+              match mmap#add_gload self#faddr iaddr addr size signed with
+              | Ok () -> ()
+              | Error e ->
+                 log_dc_error_result
+                   ~msg:(p2s self#loc#toPretty)
+                   ~tag:"record_load"
+                   __FILE__ __LINE__ e)
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             addr_r)
-      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      ~error:(fun e -> log_dc_error_result __FILE__ __LINE__ e)
       var_r
 
   method record_store
@@ -309,52 +358,55 @@ object (self)
            ~(vtype: btype_t)
            ~(xpr: xpr_t) =
     if self#env#is_stack_variable var then
-      log_tfold
-        (log_error "record_store" "invalid offset")
-        ~ok:(fun stackoffset ->
-          match stackoffset with
-          | ConstantOffset (n, offset) ->
-             self#finfo#stackframe#add_store
-               ~baseoffset:n#toInt
-               ~offset
-               ~size:(Some size)
-               ~typ:(Some vtype)
-               ~xpr:(Some xpr)
-               var
-               iaddr
-          | _ ->
-             chlog#add
-               "stack store not recorded"
-               (LBLOCK [
-                    self#loc#toPretty;
-                    STR ": ";
-                    x2p addr;
-                    STR " (";
-                    var#toPretty;
-                    STR "): ";
-                    x2p xpr]))
-        ~error:(fun _ -> ())
-        (self#env#get_memvar_offset var)
+      self#record_stack_variable_store ~var ~size ~vtype ~xpr_r:(Ok xpr)
+    else if self#env#is_basevar_memory_variable var then
+      log_dc_error_result
+        ~msg:(p2s self#loc#toPretty)
+        ~tag:"record memory store"
+        __FILE__ __LINE__
+        ["Recording of basevar loads not yet supported. Var: "
+         ^ (p2s var#toPretty)
+         ^ ". Addr: " ^ (x2s addr)]
     else
-      match addr with
-      | XConst (IntConst n)
-           when mmap#is_global_data_address (numerical_mod_to_doubleword n) ->
-         let optvalue =
-           match xpr with
-           | XConst (IntConst n) -> Some n
-           | _ -> None in
-         mmap#add_gstore self#faddr iaddr addr size optvalue
-      | _ ->
-         chlog#add
-           "memory store not recorded"
-           (LBLOCK [
-                self#loc#toPretty;
-                STR ": ";
-                x2p addr;
-                STR " (";
-                var#toPretty;
-                STR "): ";
-                x2p xpr])
+      let optvalue =
+        match xpr with
+        | XConst (IntConst n) -> Some n
+        | _ -> None in
+      match mmap#add_gstore self#faddr iaddr addr size optvalue with
+      | Ok () -> ()
+      | Error e ->
+         log_dc_error_result
+           ~msg:(p2s self#loc#toPretty)
+           ~tag:"record store"
+           __FILE__ __LINE__ e
+
+  method private record_stack_variable_store
+                   ~(var: variable_t)
+                   ~(size: int)
+                   ~(vtype: btype_t)
+                   ~(xpr_r: xpr_t traceresult) =
+    TR.tfold
+      ~ok:(fun stackoffset ->
+        match stackoffset with
+        | ConstantOffset (n, offset) ->
+           self#finfo#stackframe#add_store
+             ~baseoffset:n#toInt
+             ~offset
+             ~size:(Some size)
+             ~typ:(Some vtype)
+             ~xpr:(TR.tfold_default (fun x -> Some x) None xpr_r)
+             var
+             iaddr
+        | _ ->
+           log_dc_error_result
+             ~msg:(p2s self#loc#toPretty)
+             ~tag:"record_store"
+             __FILE__ __LINE__
+             ["var: " ^ (p2s var#toPretty);
+              "stack offset: "
+              ^ BCHMemoryReference.memory_offset_to_string stackoffset])
+      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      (self#env#get_memvar_offset var)
 
   method record_store_r
            ~(addr_r: xpr_t traceresult)
@@ -365,51 +417,33 @@ object (self)
     TR.tfold
       ~ok:(fun var ->
         if self#env#is_stack_variable var then
-          TR.tfold
-            ~ok:(fun stackoffset ->
-              match stackoffset with
-              | ConstantOffset (n, offset) ->
-                 self#finfo#stackframe#add_store
-                   ~baseoffset:n#toInt
-                   ~offset
-                   ~size:(Some size)
-                   ~typ:(Some vtype)
-                   ~xpr:(TR.tfold_default (fun x -> Some x) None xpr_r)
-                   var
-                   iaddr
-              | _ ->
-                 log_error_result __FILE__ __LINE__
-                   ["memrecorder:stack-store";
-                    p2s self#loc#toPretty;
-                    "offset: "
-                    ^ BCHMemoryReference.memory_offset_to_string stackoffset])
-            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
-            (self#env#get_memvar_offset var)
+          self#record_stack_variable_store ~var ~size ~vtype ~xpr_r
+        else if self#env#is_basevar_memory_variable var then
+          log_dc_error_result
+            ~msg:(p2s self#loc#toPretty)
+            ~tag:"record memory store"
+            __FILE__ __LINE__
+            ["Recording of basevar loads not yet supported. Var: "
+             ^ (p2s var#toPretty)
+             ^ ". Addr: " ^ (x2s_r addr_r)]
         else
           TR.tfold
             ~ok:(fun addr ->
-              match addr with
-              | XConst (IntConst n)
-                   when mmap#is_global_data_address
-                          (numerical_mod_to_doubleword n) ->
-                 let optvalue =
-                   TR.tfold_default
-                     (fun xpr ->
-                       match xpr with
-                       | XConst (IntConst n) -> Some n
-                       | _ -> None)
-                     None
-                     xpr_r in
-                 mmap#add_gstore self#faddr iaddr addr size optvalue
-              | _ ->
-                 log_error_result __FILE__ __LINE__
-                   ["memrecorder: store not recorded";
-                    p2s self#loc#toPretty; (x2s addr)])
+              let optvalue =
+                match xpr_r with
+                | Ok (XConst (IntConst n)) -> Some n
+                | _ -> None in
+              match mmap#add_gstore self#faddr iaddr addr size optvalue with
+              | Ok () -> ()
+              | Error e ->
+                 log_dc_error_result
+                   ~msg:(p2s self#loc#toPretty)
+                   ~tag:"record store"
+                   __FILE__ __LINE__ e)
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             addr_r)
-      ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+      ~error:(fun e -> log_dc_error_result __FILE__ __LINE__ e)
       var_r
-
 
 end
 
