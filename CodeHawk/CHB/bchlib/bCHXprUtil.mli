@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2025 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,20 @@ open XprTypes
 
 
 (** returns the largest constant term in the given expression, taking into
-    account the sign. *)
+    account the sign. If there are no constant terms, zero is returned.*)
 val largest_constant_term : xpr_t -> numerical_t
+
+
+(** returns the smallest constant term in the given expression, taking into
+    account the sign. If there are no constant terms, zero is returned.*)
+val smallest_constant_term: xpr_t -> numerical_t
+
+(** returns the smallest constant term in the given expression, while
+    wrapping constants larger than 2^31 into negative numbers. The pair
+    returned is the term as appearing in the expression and the corresponding
+    negative value.
+*)
+val smallest_wrapped_constant_term: xpr_t -> numerical_t * numerical_t
 
 val normalize_offset_expr: xpr_t -> xpr_t
 

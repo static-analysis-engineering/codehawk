@@ -62,6 +62,33 @@ let rec largest_constant_term (x:xpr_t): numerical_t =
   | _ -> numerical_zero
 
 
+let smallest_constant_term (x: xpr_t): numerical_t =
+  let rec aux (x: xpr_t) (polarity: bool) =
+    match x, polarity with
+    | XConst (IntConst n), true -> n
+    | XConst (IntConst n), false -> n#neg
+    | XOp (XPlus, [x1; x2]), _ ->
+       let c1 = aux x1 polarity in
+       let c2 = aux x2 polarity in
+       if c1#lt c2 then c1 else c2
+    | XOp (XMinus, [x1; x2]), _ ->
+       let c1 = aux x1 polarity in
+       let c2 = aux x2 (not polarity) in
+       if c1#lt c2 then c1 else c2
+    | _ -> numerical_zero in
+  aux x true
+
+
+let smallest_wrapped_constant_term (x: xpr_t): numerical_t * numerical_t =
+  let x = simplify_xpr x in
+  let l = largest_constant_term x in
+  let s = smallest_constant_term x in
+  if l#gt (mkNumericalPowerOf2 31) then
+    (l, l#sub (mkNumericalPowerOf2 32))
+  else
+    (s, s)
+
+
 (* rewrites the expression in a form with scaled terms first, followed by a
    constant term. *)
 let normalize_offset_expr (x:xpr_t) =
@@ -98,7 +125,6 @@ let normalize_scaled_ivar_expr (xpr: xpr_t) (ivar: variable_t): xpr_t option =
        None
   in
   aux xpr
-
 
 
 let rec vars_as_positive_terms (x:xpr_t) =
