@@ -40,11 +40,13 @@ open XprTypes
 
 (* bchlib *)
 open BCHBCTypes
+open BCHBCTypePretty
 open BCHBCTypeUtil
 open BCHDoubleword
 open BCHGlobalState
 open BCHLibTypes
 open BCHLocation
+open BCHMemoryReference
 
 module TR = CHTraceResult
 
@@ -273,6 +275,18 @@ object (self)
            ~(var: variable_t)
            ~(size: int)
            ~(vtype: btype_t) =
+    log_dc_error_result
+      ~msg:(p2s self#loc#toPretty)
+      ~tag:"deprecated: record_load"
+      __FILE__ __LINE__
+      ["memory_recorder#record_load is deprecated. ";
+       "To be replaced with record_load_r";
+       "signed: " ^ (if signed then "T" else "F");
+       "addr: " ^ (x2s addr);
+       "var: " ^ (p2s var#toPretty);
+       "size: " ^ (string_of_int size);
+       "vtype: " ^ (btype_to_string vtype)]
+      (*
     if self#env#is_stack_variable var then
       self#record_stack_variable_load ~signed ~var ~size ~vtype
     else if self#env#is_basevar_memory_variable var then
@@ -291,6 +305,7 @@ object (self)
            ~msg:(p2s self#loc#toPretty)
            ~tag:"record_load"
            __FILE__ __LINE__ e
+       *)
 
   method private record_stack_variable_load
                    ~(signed: bool)
@@ -318,6 +333,31 @@ object (self)
       ~error:(fun e -> log_dc_error_result __FILE__ __LINE__ e)
       (self#env#get_memvar_offset var)
 
+  method private record_global_variable_load
+                   ~(signed: bool)
+                   ~(var: variable_t)
+                   ~(size: int) =
+    TR.tfold
+      ~ok:(fun globaloffset ->
+        match globaloffset with
+        | ConstantOffset (n, offset) ->
+           let gaddr = numerical_mod_to_doubleword n in
+           mmap#add_location_gload self#faddr iaddr gaddr offset size signed t_unknown
+        | _ ->
+           log_error_result
+             ~msg:(p2s self#loc#toPretty)
+             ~tag:"record_global_variable_load"
+             __FILE__ __LINE__
+             ["Unexpected offset for global variable " ^ (p2s var#toPretty)
+              ^ ": " ^ (memory_offset_to_string globaloffset)])
+      ~error:(fun e ->
+        log_dc_error_result
+          ~msg:(p2s self#loc#toPretty)
+          ~tag:"record_global_variable_load"
+          __FILE__ __LINE__
+          (e @ ["Unable to obtain offset from variable " ^ (p2s var#toPretty)]))
+    (self#env#get_memvar_offset var)
+
   method record_load_r
            ~(signed: bool)
            ~(addr_r: xpr_t traceresult)
@@ -328,15 +368,33 @@ object (self)
       ~ok:(fun var ->
         if self#env#is_stack_variable var then
           self#record_stack_variable_load ~signed ~var ~size ~vtype
+        else if self#env#is_global_variable var then
+          self#record_global_variable_load ~signed ~var ~size
         else if self#env#is_basevar_memory_variable var then
           log_dc_error_result
             ~msg:(p2s self#loc#toPretty)
-            ~tag:"record memory load"
+            ~tag:"record_load_r"
             __FILE__ __LINE__
             ["Recording of basevar loads not yet supported. Var: "
              ^ (p2s var#toPretty)
              ^ ". Addr: " ^ (x2s_r addr_r)]
         else
+          TR.tfold
+            ~ok:(fun addr ->
+              log_dc_error_result
+                ~msg:(p2s self#loc#toPretty)
+                ~tag:"record_load_r"
+                __FILE__ __LINE__
+                ["Unable to record memory load for variable " ^ (p2s var#toPretty)
+                 ^ " with address " ^ (x2s addr)])
+            ~error:(fun e ->
+              log_dc_error_result
+                ~msg:(p2s self#loc#toPretty)
+                ~tag:"record_load_r"
+                __FILE__ __LINE__
+                (["Unable to record memory load for variable " ^ (p2s var#toPretty)]
+                 @ e))
+                (*
           TR.tfold
             ~ok:(fun addr ->
               match mmap#add_gload self#faddr iaddr addr size signed with
@@ -346,7 +404,7 @@ object (self)
                    ~msg:(p2s self#loc#toPretty)
                    ~tag:"record_load"
                    __FILE__ __LINE__ e)
-            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)*)
             addr_r)
       ~error:(fun e -> log_dc_error_result __FILE__ __LINE__ e)
       var_r
