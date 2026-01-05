@@ -63,12 +63,15 @@ open BCHARMTypes
 
 module TR = CHTraceResult
 
+let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 
-let log_error (tag: string) (msg: string): tracelogspec_t =
-  mk_tracelog_spec ~tag:("FnARMTypeConstraints:" ^ tag) msg
-
+(*
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+ *)
 
 class arm_fn_type_constraints_t
         (store: type_constraint_store_int)
@@ -162,41 +165,28 @@ object (self)
     let get_variable_rdefs_r (v_r: variable_t traceresult): symbol_t list =
       TR.tfold_default get_variable_rdefs [] v_r in
 
-    (*
-    let getopt_initial_argument_value (x: xpr_t): (register_t * int) option =
-      match (rewrite_expr x) with
-      | XVar v when floc#f#env#is_initial_arm_argument_value v ->
-         Some (TR.tget_ok (floc#f#env#get_initial_register_value_register v), 0)
-      | XOp (XPlus, [XVar v; XConst (IntConst n)])
-           when floc#f#env#is_initial_arm_argument_value v ->
-         Some
-           (TR.tget_ok (floc#f#env#get_initial_register_value_register v),
-            n#toInt)
-      | _ -> None in
-     *)
-
-    (*
-    let getopt_initial_argument_value_r
-          (x_r: xpr_t traceresult): (register_t * int) option =
-      TR.tfold_default getopt_initial_argument_value None x_r in
-     *)
-
     let getopt_stackaddress (x: xpr_t): int option =
       match (rewrite_expr x) with
       | XOp (xop, [XVar v; XConst (IntConst n)])
            when floc#f#env#is_initial_register_value v ->
          let optoffset =
            match xop with
-           | XMinus when n#toInt > 0 -> Some n#toInt
-           | XPlus when n#toInt < 0 -> Some n#neg#toInt
+           | XMinus when n#toInt > 0 -> Some n#neg#toInt
+           | XPlus when n#toInt < 0 -> Some n#toInt
            | _ -> None in
-         log_tfold
-           (log_error "getopt_stackaddress" "invalid register")
+         TR.tfold
            ~ok:(fun reg ->
              match (optoffset, reg) with
               | (Some n, ARMRegister ARSP) -> Some n
               | _ -> None)
-           ~error:(fun _ -> None)
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:"getopt_stackaddress"
+                 ~msg:("x: " ^ (x2s x))
+                 __FILE__ __LINE__ e;
+               None
+             end)
            (floc#f#env#get_initial_register_value_register v)
       | _ -> None in
 

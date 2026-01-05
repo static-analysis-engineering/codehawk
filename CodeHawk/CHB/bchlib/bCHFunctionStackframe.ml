@@ -39,6 +39,7 @@ open CHXmlDocument
 (* xprlib *)
 open Xprt
 open XprTypes
+open Xsimplify
 
 (* bchlib *)
 open BCHBasicTypes
@@ -47,6 +48,7 @@ open BCHBCTypes
 open BCHBCTypeUtil
 open BCHCPURegisters
 open BCHLibTypes
+open BCHMemoryReference
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -55,6 +57,20 @@ module TR = CHTraceResult
 let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
+let s2i = string_of_int
+
+let opti2s (i: int option) =
+  if Option.is_some i then string_of_int (Option.get i) else "?"
+
+let ty2s (ty: btype_t) =
+  if is_unknown_type ty then "?" else btype_to_string ty
+
+(* let optty2s (ty: btype_t option) =
+  if Option.is_some ty then btype_to_string (Option.get ty) else "?"
+ *)
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let bcd = BCHBCDictionary.bcdictionary
@@ -88,7 +104,25 @@ object (self)
 
   method is_typed: bool = not (btype_equal self#btype t_unknown)
 
+  method offset_type (offset: memory_offset_t) =
+    if self#is_typed then
+      match offset with
+      | NoOffset -> Ok self#btype
+      | _ ->
+         Error [(elocm __LINE__);
+                "offset_type not yet implemented for offset "
+                ^ (memory_offset_to_string offset)
+                ^ " and type " ^ (ty2s self#btype)]
+    else
+      Error [(elocm __LINE__);
+             "Stackslot at offset " ^ (s2i self#offset) ^ " does not have a type"]
+
   method spill: register_t option = sslot.sslot_spill
+
+  method is_compatible_with_spill: bool =
+    self#is_spill
+    || ((match self#size with | Some 4 | None -> true | _ -> false)
+        && (String.sub self#name 0 4) = "var_")
 
   method is_spill: bool = Option.is_some self#spill
 
@@ -119,12 +153,12 @@ object (self)
       | _ -> 4 in
     offset >= self#offset && offset < self#offset + size
 
-  method frame2object_offset_value (xpr: xpr_t) =
-    match xpr with
-    | XConst (IntConst n) ->
-       let numoffset = mkNumerical self#offset in
-       Ok (num_constant_expr (n#sub numoffset))
-    | _ ->
+  method frame2object_offset_value (xpr: xpr_t): xpr_t traceresult =
+    let (t, coffset) = BCHXprUtil.smallest_wrapped_constant_term xpr in
+    if coffset#lt numerical_zero then
+      let xoff = simplify_xpr (XOp (XMinus, [xpr; num_constant_expr t])) in
+       Ok xoff
+    else
        Error [
            __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
            ^ "Offset expression "
@@ -134,15 +168,32 @@ object (self)
   method frame_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
+           (loc: location_int)
            (xpr: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s loc#toPretty)
+        ~tag:"stackframe:frame_offset_memory_offset"
+        __FILE__ __LINE__
+        ["xpr: " ^ (x2s xpr)] in
     TR.tbind
-      (self#object_offset_memory_offset ~tgtsize ~tgtbtype)
+      (self#object_offset_memory_offset ~tgtsize ~tgtbtype loc)
       (self#frame2object_offset_value xpr)
 
   method object_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
+           (loc: location_int)
            (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s loc#toPretty)
+        ~tag:"stackframe:object_offset_memory_offset"
+        __FILE__ __LINE__
+        ["stackslot: " ^ (string_of_int self#offset);
+         "xoffset: " ^ (x2s xoffset);
+         "tgtsize: " ^ (opti2s tgtsize);
+         "tgtbtype: " ^ (ty2s tgtbtype)] in
     match xoffset with
     | XConst (IntConst n)
          when n#equal CHNumerical.numerical_zero
@@ -169,6 +220,13 @@ object (self)
                    ~(tgtbtype: btype_t option)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~tag:"stackframe:arrayvar_memory_offset"
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "type: " ^ (ty2s btype);
+         "offset: " ^ (x2s xoffset)] in
     let iszero x =
       match x with
       | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
@@ -191,8 +249,8 @@ object (self)
                        ^ "Unable to extract index from " ^ (x2s xoffset)]
              | Some (indexxpr, xrem) when
                     iszero xrem
-                    && Option.is_none tgtsize
-                    && Option.is_none tgtbtype ->
+           (* && Option.is_none tgtsize
+                    && Option.is_none tgtbtype *) ->
                 Ok (ArrayIndexOffset (indexxpr, NoOffset))
              | Some (indexxpr, xrem) ->
                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
@@ -351,19 +409,21 @@ object (self)
 
   (* val saved_registers = H.create 3   (* reg -> saved_register_t *) *)
   val accesses = H.create 3      (* offset -> (iaddr, stack_access_t) list *)
+
+  (* Initialized with the stack-variable introductions from userdata.*)
   val stackslots =
     let slots = H.create 3 in    (* offset -> stackslot *)
     begin
       (match fndata#get_function_annotation with
        | Some fnannot ->
           List.iter (fun svintro ->
-              let negoffset = -svintro.svi_offset in
+              let offset = svintro.svi_offset in
               let ty = match svintro.svi_vartype with
                 | Some ty -> ty
                 | _ -> t_unknown in
               let size = TR.to_option (size_of_btype ty) in
               let sslot = {
-                  sslot_offset = negoffset;
+                  sslot_offset = offset;
                   sslot_name = svintro.svi_name;
                   sslot_btype = ty;
                   sslot_spill = None;
@@ -373,7 +433,7 @@ object (self)
               let stackslot = new stackslot_t sslot in
               let _ =
                 chlog#add "stack slot added" (stackslot_rec_to_pretty sslot) in
-              H.add slots negoffset stackslot) fnannot.stackvarintros
+              H.add slots offset stackslot) fnannot.stackvarintros
        | _ -> ());
       slots
     end
@@ -391,12 +451,26 @@ object (self)
         [] in
     H.replace accesses offset ((iaddr, acc) :: entry)
 
+  method has_stackslot (offset: int): bool =
+    H.mem stackslots offset
+
   method containing_stackslot (offset: int): stackslot_int option =
     H.fold (fun _ sslot acc ->
         match acc with
         | Some _ -> acc
         | _ -> if sslot#contains_offset offset then Some sslot else None)
       stackslots None
+
+  method xpr_containing_stackslot (xpr: xpr_t): stackslot_int option =
+    let is_stack =
+      List.fold_left
+        (fun acc v -> acc || varmgr#is_initial_stackpointer_value v)
+        false (BCHXprUtil.vars_as_positive_terms xpr) in
+    if is_stack then
+      let (_, coffset) = BCHXprUtil.smallest_wrapped_constant_term xpr in
+      self#containing_stackslot coffset#toInt
+    else
+      None
 
   method add_stackslot
            ?(name = None)
@@ -445,7 +519,7 @@ object (self)
          let sname =
            match name with
            | Some name -> name
-           | _ -> "var_" ^ (string_of_int offset) in
+           | _ -> "var_" ^ (string_of_int (-offset)) in
          let ssrec = {
              sslot_name = sname;
              sslot_offset = offset;
@@ -473,36 +547,42 @@ object (self)
       ()
     else
       let spill = RegisterSpill (offset, reg) in
+      let mk_stackslot () =
+        let ssrec = {
+            sslot_name = (register_to_string reg) ^ "_spill";
+            sslot_offset = offset;
+            sslot_btype = t_unknown;
+            sslot_spill = Some reg;
+            sslot_size = Some 4;
+            sslot_loopcounter = false;
+            sslot_desc = Some "register spill"
+          } in
+        new stackslot_t ssrec in
       begin
         (if H.mem stackslots offset then
            if (H.find stackslots offset)#is_spill then
              ()
            else
              let sslot = H.find stackslots offset in
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Add register spill at address ";
-                       STR iaddr;
-                       STR " for register ";
-                       STR (register_to_string reg);
-                       STR " at offset ";
-                       INT offset;
-                       STR " cannot be completed, because another stackslot ";
-                       STR "at this offset, with name: ";
-                       STR sslot#name;
-                       STR " already exists"]))
+             if sslot#is_compatible_with_spill then
+               let sslot = mk_stackslot () in
+               H.replace stackslots offset sslot
+             else
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Add register spill at address ";
+                         STR iaddr;
+                         STR " for register ";
+                         STR (register_to_string reg);
+                         STR " at offset ";
+                         INT offset;
+                         STR " cannot be completed, because another stackslot ";
+                         STR "at this offset, with name: ";
+                         STR sslot#name;
+                         STR " already exists"]))
          else
-           let ssrec = {
-               sslot_name = (register_to_string reg) ^ "_spill";
-               sslot_offset = offset;
-               sslot_btype = t_unknown;
-               sslot_spill = Some reg;
-               sslot_size = Some 4;
-               sslot_loopcounter = false;
-               sslot_desc = Some "register spill"
-             } in
-           let sslot = new stackslot_t ssrec in
+           let sslot = mk_stackslot () in
            H.add stackslots offset sslot);
         self#add_access offset iaddr spill
       end
@@ -577,6 +657,7 @@ object (self)
            (iaddr:ctxt_iaddress_t) =
     let ty = match typ with Some t -> t | _ -> t_unknown in
     let blread = StackBlockRead (offset, size, ty) in
+    (*
     let ssrec = {
         sslot_name = "localvar_" ^ (string_of_int (-offset));
         sslot_offset = offset;
@@ -585,11 +666,11 @@ object (self)
         sslot_spill = None;
         sslot_loopcounter = false;
         sslot_desc = None
-      } in
-    let sslot = new stackslot_t ssrec in
+      } in *)
+    (* let sslot = new stackslot_t ssrec in *)
     begin
       self#add_access offset iaddr blread;
-      H.add stackslots offset sslot
+      (* H.add stackslots offset sslot *)
     end
 
   method add_block_write

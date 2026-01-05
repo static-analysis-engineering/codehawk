@@ -236,6 +236,13 @@ object (self)
          None a.regvarintros
     | _ -> None
 
+  method has_stackvar_intro (offset: int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.fold_left (fun acc svi ->
+           acc || svi.svi_offset = offset) false a.stackvarintros
+    | _ -> false
+
   method get_stackvar_intro (offset: int): stackvar_intro_t option =
     match self#get_function_annotation with
     | Some a ->
@@ -693,7 +700,7 @@ let read_xml_stackvar_intro (node: xml_element_int): stackvar_intro_t traceresul
   else if not (has "name") then
     Error ["stackvar intro without name"]
   else
-    let svi_offset = (-(geti "offset")) in
+    let svi_offset = (geti "offset") in
     let svi_name = get "name" in
     let svi_loopcounter = has "loopcounter" && (get "loopcounter") = "yes" in
     let (svi_vartype, svi_cast) =

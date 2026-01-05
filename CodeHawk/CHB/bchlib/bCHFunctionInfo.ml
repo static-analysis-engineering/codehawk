@@ -893,40 +893,28 @@ object (self)
        let _ = memmap#add_location ~size:(Some size) ~btype dw in
        Ok (self#mk_variable (self#varmgr#make_global_variable dw#to_numerical))
 
-  method mk_stack_variable
-           ?(size=4)
-           (stackframe: stackframe_int)
-           (offset: numerical_t): variable_t traceresult =
-    match stackframe#containing_stackslot offset#toInt with
-    | Some stackslot ->
-       tmap
-         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:stack")
-         (fun memoffset ->
-           let atts: string list = if stackslot#is_loopcounter then ["lc"] else [] in
-           let svar =
-             self#mk_variable
-               ~atts
-               (self#varmgr#make_local_stack_variable
-                  ~offset:memoffset (mkNumerical stackslot#offset)) in
-           let name = stackslot#name ^ (memory_offset_to_string memoffset) in
-           let _ =
-             match atts with
-             | [] -> ()
-             | _ ->
-                ch_diagnostics_log#add
-                  "loopcounter variable on the stack"
-                  (LBLOCK [STR "Offset: "; offset#toPretty; STR ": "; STR name;
-                           STR "; "; svar#toPretty]) in
-           begin
-             self#set_variable_name svar name;
-             svar
-           end)
-         (stackslot#frame_offset_memory_offset
-            ~tgtsize:(Some size) (num_constant_expr offset))
-    | _ ->
-       Error [
-           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-           ^ "No stack slot found at offset " ^ offset#toString]
+  method mk_stackslot_variable
+           (stackslot: stackslot_int) (offset: memory_offset_t): variable_t =
+    let atts: string list = if stackslot#is_loopcounter then ["lc"] else [] in
+    let svar =
+      self#mk_variable
+        ~atts
+        (self#varmgr#make_local_stack_variable
+           ~offset (mkNumerical stackslot#offset)) in
+    let name = stackslot#name ^ (memory_offset_to_string offset) in
+    let _ =
+      match atts with
+      | [] -> ()
+      | _ ->
+         log_diagnostics_result
+           ~msg:name
+           ~tag:"loop-counter variable"
+           __FILE__ __LINE__
+           ["offset: " ^ (memory_offset_to_string offset); p2s svar#toPretty] in
+    begin
+      self#set_variable_name svar name;
+      svar
+    end
 
   method mk_register_variable (register:register_t) =
     self#mk_variable (varmgr#make_register_variable register)
