@@ -1507,6 +1507,13 @@ type regvar_intro_t = {
     rvi_cast: bool
   }
 
+(** Local stack variable introduced via userdata.
+
+    Note: For user convenience the offset in the userdata is positive. This
+    value is negated by the CLI when it converts the json input to xml.
+    Within the analyzer the offsets of local stack variables are always
+    negative, as the stack grows down.
+ *)
 type stackvar_intro_t = {
     svi_offset: int;
     svi_name: string;
@@ -1539,19 +1546,47 @@ type function_annotation_t = {
 class type function_data_int =
   object
 
-    (* setters *)
+    (** {1 General function information} *)
+
+    (** {2 Function type} *)
+
+    (** Set only from call-back tables.*)
     method set_function_type: btype_t -> unit
+    method has_function_type: bool
+
+    (** Never called.*)
+    method get_function_type: btype_t
+
+    (** {2 Non-returning} *)
+
     method set_non_returning: unit
+    method is_non_returning: bool
+
+    (** {2 Function names} *)
+
     method add_name: string -> unit
+    method get_function_name: string  (* demangled or combination of all names *)
+    method get_names: string list  (* raw names *)
+    method has_name: bool
+
+    (** {2 Function entry origin} *)
+
     method set_ida_provided: unit
+    method is_ida_provided: bool
+
     method set_user_provided: unit
+    method is_user_provided: bool
+
+    method set_by_preamble: unit
+
+
     method set_incomplete: unit
     method set_virtual: unit
     method set_inlined: unit
     method set_library_stub: unit
-    method set_by_preamble: unit
+
     method set_class_info: classname:string -> isstatic:bool -> unit
-    method set_function_annotation: function_annotation_t -> unit
+
     method add_inlined_block: doubleword_int -> unit
 
     (** [add_path_context startaddr sentinels] causes path contexts to
@@ -1570,16 +1605,30 @@ class type function_data_int =
 
     method set_stack_offset_types: ((int * btype_t option) list) -> unit
 
-    (* accessors *)
-    method get_names: string list  (* raw names *)
-    method get_function_name: string  (* demangled or combination of all names *)
+    (** {1 Function annotations} *)
+
+    method set_function_annotation: function_annotation_t -> unit
+    method has_function_annotation: bool
     method get_function_annotation: function_annotation_t option
+
+    (** {2 Register-variable introductions} *)
+
+    method has_regvar_type_annotation: doubleword_int -> bool
     method get_regvar_type_annotation: doubleword_int -> btype_t traceresult
-    method get_stackvar_type_annotation: int -> btype_t traceresult
+    method has_regvar_type_cast: doubleword_int -> bool
     method get_regvar_intro: doubleword_int -> regvar_intro_t option
+
+    (** {2 Stack-variable introductions} *)
+
+    method has_stackvar_intro: int -> bool
     method get_stackvar_intro: int -> stackvar_intro_t option
+    method has_stackvar_type_annotation: int -> bool
+    method get_stackvar_type_annotation: int -> btype_t traceresult
+    method has_stackvar_type_cast: int -> bool
+
+    (* accessors *)
+
     method get_inlined_blocks: doubleword_int list
-    method get_function_type: btype_t
     method get_path_contexts: (string * string list) list
     method get_reglhs_types: (register_t * string * btype_t option) list
     method get_reglhs_type: register_t -> string -> btype_t option
@@ -1587,23 +1636,17 @@ class type function_data_int =
     method get_stack_offset_type: int -> btype_t option
 
     (* predicates *)
-    method has_function_type: bool
-    method has_name: bool
-    method has_function_annotation: bool
-    method has_regvar_type_annotation: doubleword_int -> bool
-    method has_regvar_type_cast: doubleword_int -> bool
-    method has_stackvar_type_annotation: int -> bool
-    method has_stackvar_type_cast: int -> bool
+
     method is_const_global_variable: string -> bool
     method filter_deflocs: string -> variable_t -> symbol_t list -> symbol_t list
     method is_typing_rule_enabled: ?rdef:string option -> string -> string -> bool
     method has_class_info: bool
     method has_callsites: bool
     method has_path_contexts: bool
-    method is_non_returning: bool
+
     method is_incomplete: bool
-    method is_ida_provided: bool
-    method is_user_provided: bool
+
+
     method is_virtual: bool
     method is_inlined: bool
     method is_library_stub: bool
@@ -4375,12 +4418,22 @@ type globalvalue_t =
 
 (** Reference to a global location*)
 type global_location_ref_t =
-  | GLoad of doubleword_int * ctxt_iaddress_t * xpr_t * int * bool
+  | GLoad of doubleword_int             (* global location address *)
+             * ctxt_iaddress_t          (* instruction address *)
+             * memory_offset_t          (* offset within global location *)
+             * int                      (* size of load *)
+             * bool                     (* load is signed *)
+             * btype_t                  (* type of element loaded *)
   (** address of global location, instructions address of load
       instruction, load address, size of load, signed *)
 
-  | GStore of
-      doubleword_int * ctxt_iaddress_t * xpr_t * int * numerical_t option
+  | GStore of doubleword_int
+              * ctxt_iaddress_t
+              * xpr_t
+              * int
+              * numerical_t option
+(*  | GStore of
+      doubleword_int * ctxt_iaddress_t * xpr_t * int * numerical_t option *)
   (** address of global location, instruction address of store
       instruction, store address, size of store, optional numerical value
       assigned *)
@@ -4500,6 +4553,15 @@ class type global_location_int =
 class type global_memory_map_int =
   object
 
+    (** {1 Sections} *)
+
+    (** [set_section readonly initialized name startaddr size] adds a section
+        with the give attributes: whether it is readonly, initialized, its
+        name in the binary, its virtual start address and its size in bytes.
+
+        The partition of global memory into sections enables the characterization
+        of global variables in terms of being initialized and constant.
+     *)
     method set_section:
              readonly:bool
              -> initialized:bool
@@ -4508,6 +4570,32 @@ class type global_memory_map_int =
              -> doubleword_int
              -> unit
 
+    (** {1 Locations} *)
+
+    (** A memory location corresponds to a single global variable identified by
+        a name, where the name can come from a symbol embedded in the binary,
+        or from userdata, or, if both of these are absent, an automatically
+        generated name of the form [gv_<address>].*)
+
+    (** {2 Creating locations} *)
+
+    (** [add_location name desc btype initialvalue size address] creates a new global
+        location with the given name (or [gv_<address>]) and type, initial value,
+        and size (if available) at the given [address], if it does not overlap with
+        an already existing global location.
+
+        If a new global location is created the new global location is returned. If
+        another global location already exists at the same address the original
+        location is returned, an error message is logged, and the global memory map
+        remains unchanged. If the provided address and size overlap with an existing
+        global location an error is returned, and the global memory map remains
+        unchanged.
+
+        A global location can be created before disassembly from a symbolic address
+        in userdata, or at initial disassembly from a symbol in the binary, from
+        a global variable in a C header file with the name [gv_<address>], or as the
+        result of variable discovery during disassembly or analysis.
+     *)
     method add_location:
              ?name:string option
              -> ?desc:string option
@@ -4517,21 +4605,60 @@ class type global_memory_map_int =
              -> doubleword_int
              -> global_location_int traceresult
 
-    method add_gload:
+    (** {2 Updating locations} *)
+
+    (** Locations can be updated in two ways:
+        - adding type information from named global variables in C header files;
+        - adding code access information, including loads, stores, and use as a
+          function argument.
+     *)
+
+    (** [update_named_location name varinfo] supplements an earlier created global
+        location with the same [name] with associated type information obtained from
+        a C header file.
+
+        It is expected that a global location with the given name has already been
+        created either from a symbol in the binary or from a symbolic address in
+        the userdata.
+     *)
+    method update_named_location:
+             string -> bvarinfo_t -> global_location_int traceresult
+
+    (** [add_gload faddr iaddr gaddr size signed] records a load operation by an
+        instruction in function [faddr] at address [iaddr] for a global variable with
+        address expression [gaddr] and size [size] in bytes.
+
+        If gaddr is a valid global address, but no global location is present at this
+        address, an unconnected reference is recorded, and an error is returned.
+
+        If gaddr cannot be reduced to a valid global address, an error is returned.
+     *)
+    method add_location_gload:
              doubleword_int
              -> ctxt_iaddress_t
-             -> xpr_t
+             -> doubleword_int
+             -> memory_offset_t
              -> int
              -> bool
+             -> btype_t
              -> unit
 
+    (** [add_gstore faddr iaddr gaddr size value] records a store operation by
+        an instruction in function [faddr] at address [iaddr] for a global variable with
+        address expression [gaddr] and size [size] in bytes.
+
+        If gaddr is a valid global address, but no global location is present at this
+        address, an unconnected reference is recorded, and an error is returned.
+
+        If gaddr cannot be reduced to a valid global address, an error is returned.
+     *)
     method add_gstore:
              doubleword_int
              -> ctxt_iaddress_t
              -> xpr_t
              -> int
              -> numerical_t option
-             -> unit
+             -> unit traceresult
 
     method add_gaddr_argument:
              doubleword_int
@@ -4540,9 +4667,6 @@ class type global_memory_map_int =
              -> int
              -> btype_t
              -> global_location_int option
-
-    method update_named_location:
-             string -> bvarinfo_t -> global_location_int traceresult
 
     method has_location: doubleword_int -> bool
 
@@ -4605,6 +4729,7 @@ class type stackslot_int =
     method name: string
     method offset: int
     method btype: btype_t
+    method offset_type: memory_offset_t -> btype_t traceresult
     method spill: register_t option
     method size: int option
     method desc: string option
@@ -4613,11 +4738,13 @@ class type stackslot_int =
     method frame_offset_memory_offset:
              ?tgtsize:int option
              -> ?tgtbtype:btype_t
+             -> location_int
              -> xpr_t
              -> memory_offset_t traceresult
     method object_offset_memory_offset:
              ?tgtsize:int option
              -> ?tgtbtype:btype_t
+             -> location_int
              -> xpr_t
              -> memory_offset_t traceresult
 
@@ -4626,6 +4753,7 @@ class type stackslot_int =
     method is_struct: bool
     method is_array: bool
     method is_spill: bool
+    method is_compatible_with_spill: bool
     method is_loopcounter: bool
 
     method write_xml: xml_element_int -> unit
@@ -4649,7 +4777,11 @@ class type stackframe_int =
              -> int
              -> stackslot_int traceresult
 
+    method has_stackslot: int -> bool
+
     method containing_stackslot: int -> stackslot_int option
+
+    method xpr_containing_stackslot: xpr_t -> stackslot_int option
 
     method add_load:
              baseoffset:int
@@ -4833,8 +4965,18 @@ class type function_environment_int =
     method mk_gloc_variable:
              global_location_int -> memory_offset_t -> variable_t
 
+    (** [mk_stackslot_variable stackslot memoff] creates a stack variable for an
+        existing stackslot with memory offset [memoff].
+
+        It also sets the name of the stack variable and the name of the stack
+        variable with offset according to the name of the stackslot.
+     *)
+    method mk_stackslot_variable:
+             stackslot_int -> memory_offset_t -> variable_t
+(*
     method mk_stack_variable:
              ?size: int -> stackframe_int -> numerical_t -> variable_t traceresult
+ *)
 
     (** [mk_initial_memory_value var] returns an auxiliary variable that
         represents the initial value of [var] at function entry.
@@ -6145,6 +6287,13 @@ class type floc_int =
     method get_stackpointer_offset: string -> int * interval_t
 
     method get_singleton_stackpointer_offset: numerical_t traceresult
+
+    (** [get_stackpointer_offset_xpr x] returns the expression [x - sp_in] where
+        sp_in is the initial stackpointer value for the function.
+
+        If [x] does not contain [sp_in] as a positive term, an Error is returned.
+     *)
+    method get_stackpointer_offset_xpr: xpr_t -> xpr_t traceresult
 
     method get_var_at_address:
              ?size:int option       (** size of the argument, in bytes *)

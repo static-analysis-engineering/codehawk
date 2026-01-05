@@ -44,6 +44,7 @@ open BCHBCTypes
 open BCHBCTypeUtil
 open BCHDoubleword
 open BCHLibTypes
+open BCHMemoryReference
 
 module H = Hashtbl
 module TR = CHTraceResult
@@ -62,6 +63,8 @@ let optty2s (ty: btype_t option) =
 
 let bcd = BCHBCDictionary.bcdictionary
 
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let globalvalue_to_pretty (gv: globalvalue_t): pretty_t =
   match gv with
@@ -71,13 +74,12 @@ let globalvalue_to_pretty (gv: globalvalue_t): pretty_t =
 
 let _global_location_ref_to_pretty (gref: global_location_ref_t): pretty_t =
   match gref with
-  | GLoad (gaddr, iaddr, gxpr, size, signed) ->
+  | GLoad (gaddr, iaddr, offset, size, signed, _vtype) ->
      LBLOCK [
          STR "load: ";
          gaddr#toPretty; STR ", ";
          STR iaddr; STR "  ";
-         x2p gxpr;
-         STR "  ";
+         STR (memory_offset_to_string offset); STR "  ";
          INT size;
          (if signed then STR " (signed)" else STR "")
        ]
@@ -87,7 +89,7 @@ let _global_location_ref_to_pretty (gref: global_location_ref_t): pretty_t =
          gaddr#toPretty; STR ", ";
          STR iaddr;
          STR "  ";
-         x2p gxpr;
+         STR (x2s gxpr);
          STR "  ";
          INT size]
   | GAddressArgument (gaddr, iaddr, argindex, gxpr, btype, memoff) ->
@@ -706,42 +708,74 @@ object (self)
         [] in
     H.replace unconnectedreferences faddr#index (gref :: entry)
 
+  method add_location_gload
+           (faddr: doubleword_int)
+           (iaddr: ctxt_iaddress_t)
+           (gaddr: doubleword_int)
+           (offset: memory_offset_t)
+           (size: int)
+           (signed: bool)
+           (vtype: btype_t) =
+    let gload = GLoad (gaddr, iaddr, offset, size, signed, vtype) in
+    self#add_global_ref faddr gload
+
+(*
   method add_gload
            (faddr: doubleword_int)
            (iaddr: ctxt_iaddress_t)
            (gxpr: xpr_t)
            (size: int)
-           (signed: bool) =
+           (signed: bool): unit traceresult =
     match self#xpr_containing_location gxpr with
     | Some gloc ->
        let gload = GLoad (gloc#address, iaddr, gxpr, size, signed) in
-       self#add_global_ref faddr gload
+       begin
+         self#add_global_ref faddr gload;
+         Ok ()
+       end
     | _ ->
        (match gxpr with
         | XConst (IntConst n) ->
            let gaddr = numerical_mod_to_doubleword n in
            let gload = GLoad (gaddr, iaddr, gxpr, size, signed) in
-           self#add_unconnected_ref faddr gload
+           begin
+             self#add_unconnected_ref faddr gload;
+             Error [(elocm __LINE__);
+                    "Unable to match address " ^ (gaddr#to_hex_string)
+                    ^ " with a global location. Unconnected reference "
+                    ^ "recorded for this address"]
+           end
         | _ ->
-           ())
-
+           Error [(elocm __LINE__);
+                  "Unable to match address " ^ (x2s gxpr)
+                  ^ " with a global location: No load recorded"])
+ *)
   method add_gstore
            (faddr: doubleword_int)
            (iaddr: ctxt_iaddress_t)
            (gxpr: xpr_t)
            (size: int)
-           (optvalue: CHNumerical.numerical_t option) =
+           (optvalue: CHNumerical.numerical_t option): unit traceresult =
     match self#xpr_containing_location gxpr with
     | Some gloc ->
        let gstore = GStore (gloc#address, iaddr, gxpr, size, optvalue) in
-       self#add_global_ref faddr gstore
+       Ok (self#add_global_ref faddr gstore)
     | _ ->
-       (match gxpr with
-        | XConst (IntConst n) ->
-           let gaddr = numerical_mod_to_doubleword n in
-           let gstore = GStore (gaddr, iaddr, gxpr, size, optvalue) in
-           self#add_unconnected_ref faddr gstore
-        | _ -> ())
+       match gxpr with
+       | XConst (IntConst n) ->
+          let gaddr = numerical_mod_to_doubleword n in
+          let gstore = GStore (gaddr, iaddr, gxpr, size, optvalue) in
+          begin
+            self#add_unconnected_ref faddr gstore;
+            Error [(elocm __LINE__);
+                   "Unable to match address " ^ (gaddr#to_hex_string)
+                   ^ " with a global location. Unconnected reference "
+                   ^ "recorded for this address"]
+          end
+       | _ ->
+          Error [elocm __LINE__;
+                 "Unable to match address " ^ (faddr#to_hex_string)
+                 ^ " with a global location."]
 
   method add_gaddr_argument
            (faddr: doubleword_int)
@@ -873,13 +907,14 @@ object (self)
       | Some off -> seti "mix" (vard#index_memory_offset off)
       | _ -> () in
     match gref with
-    | GLoad (gaddr, iaddr, gxpr, size, signed) ->
+    | GLoad (gaddr, iaddr, offset, size, signed, vtype) ->
        begin
          set "t" "L";
+         seti "mix" (vard#index_memory_offset offset);
          set_gaddr gaddr;
-         set_gxpr gxpr;
          set_iaddr iaddr;
          set_size size;
+         set_btype vtype;
          (if signed then set "sg" "yes")
        end
     | GStore (gaddr, iaddr, gxpr, size, optvalue) ->
