@@ -265,8 +265,13 @@ object (self)
           let varinfo = bcfiles#get_varinfo fname in
           let fsum = function_summary_of_bvarinfo varinfo in
           let _ =
-            ch_diagnostics_log#add "load-so-function"
-              (LBLOCK [STR fname; STR ": "; fsum#toPretty]) in
+            log_diagnostics_result
+              ~msg:fname
+              ~tag:"load_so_function"
+              __FILE__ __LINE__
+              ["signature: "
+               ^ (BCHFunctionInterface.function_interface_to_prototype_string
+                    fsum#get_function_interface)] in
           begin
             chlog#add "summary from function prototype" (STR fname);
             bc_so_summaries#add fname;

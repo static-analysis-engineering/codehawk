@@ -677,7 +677,7 @@ object (self)
          "var: " ^ (p2s var#toPretty);
          "numoffset: " ^ (numoffset#toString)] in
     let inv = self#inv in
-    let mk_memvar memref_r memoffset_r =
+    let _mk_memvar memref_r memoffset_r =
       let _ =
         log_diagnostics_result
           ~msg:(p2s self#l#toPretty)
@@ -685,7 +685,8 @@ object (self)
           __FILE__ __LINE__
           ["var: " ^ (p2s var#toPretty);
            "memref_r: "
-           ^ (TR.tfold_default (fun memref -> p2s memref#toPretty) "error" memref_r);
+           ^ (TR.tfold_default
+                (fun memref -> p2s memref#toPretty) "error" memref_r);
            "memoff_r: "
            ^ (TR.tfold_default memory_offset_to_string "error" memoffset_r)] in
       TR.tbind
@@ -707,11 +708,33 @@ object (self)
                 TR.tbind
                   ~msg:(eloc __LINE__)
                   (fun numoff ->
+                    if self#f#stackframe#has_stackslot numoff#toInt then
+                      let stackslot =
+                        Option.get (
+                            self#f#stackframe#containing_stackslot numoff#toInt) in
+                      match stackslot#size with
+                      | Some slotsize when size = slotsize ->
+                         Ok (self#f#env#mk_stackslot_variable stackslot NoOffset)
+                      | Some slotsize ->
+                         Error [(elocm __LINE__);
+                                (p2s self#l#toPretty);
+                                "Size of stackslot at offset " ^ (i2s numoff#toInt)
+                                ^ ": " ^ (i2s slotsize)]
+                      | _ ->
+                         Error [(elocm __LINE__);
+                                (p2s self#l#toPretty);
+                                "Stackslot at offset " ^ (i2s numoff#toInt)
+                                ^ " does not have a size"]
+                    else
+                      Error [(eloc __LINE__);
+                             (p2s self#l#toPretty);
+                             "No stackslot found at offset " ^ (i2s numoff#toInt)])
+                               (*
                     if Option.is_some
                          (self#f#stackframe#containing_stackslot numoff#toInt) then
                       (self#env#mk_stack_variable finfo#stackframe numoff)
                     else
-                      Ok (self#env#mk_offset_memory_variable memref memoff))
+                      Ok (self#env#mk_offset_memory_variable memref memoff)) *)
                   (get_total_constant_offset memoff))
               memoffset_r
           else
@@ -721,7 +744,7 @@ object (self)
                 (self#env#mk_offset_memory_variable memref memoff))
               memoffset_r)
         memref_r in
-
+(*
     if inv#is_base_offset_constant var then
       let (base, offset) = inv#get_base_offset_constant var in
       let memoffset = numoffset#add offset in
@@ -729,7 +752,7 @@ object (self)
       let memoff_r = Ok (ConstantOffset (memoffset, NoOffset)) in
       mk_memvar memref_r memoff_r
 
-    else
+    else *)
       let varx =
         if align > 1 then
           let alignx = int_constant_expr align in
@@ -844,6 +867,8 @@ object (self)
     let addr = XOp (XPlus, [XVar var1; XVar var2]) in
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    self#get_var_at_address ~size:(Some size) address
+    (*
     let (memref_r, memoff_r) = self#decompose_memaddr address in
     TR.tbind
       ~msg:(eloc __LINE__)
@@ -867,6 +892,7 @@ object (self)
                 (get_total_constant_offset memoff))
             memoff_r)
       memref_r
+     *)
 
   method get_memory_variable_2
            ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
@@ -906,6 +932,8 @@ object (self)
       XOp (XPlus,
            [addr; XOp (XMult, [int_constant_expr scale; indexexpr])]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
+    self#get_var_at_address ~size:(Some size) address
+    (*
     let (memref_r, memoff_r) = self#decompose_memaddr address in
     TR.tbind
       ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
@@ -922,6 +950,7 @@ object (self)
                 (get_total_constant_offset memoff))
             memoff_r)
       memref_r
+     *)
 
   method get_memory_variable_3
            ?(size=4)
@@ -1051,10 +1080,6 @@ object (self)
     (self#f#env#is_initial_memory_value v)
     || (self#env#is_initial_register_value v)
 
-  (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
-   * esp offset                                                               *
-   * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
-
   method get_singleton_stackpointer_offset: numerical_t traceresult =
     let arch = system_settings#get_architecture in
     let roffset = self#get_stackpointer_offset arch in
@@ -1067,10 +1092,10 @@ object (self)
     | (level, _) ->
        Error [(elocm __LINE__) ^ ": level: " ^ (string_of_int level)]
 
-  method get_stackpointer_offset arch =
+  method get_stackpointer_offset (arch: string): (int * interval_t) =
     match arch with
-    | "x86" -> self#get_esp_offset
-    | "mips" -> self#get_sp_offset
+    | "x86" -> self#get_x86_esp_offset
+    | "mips" -> self#get_mips_sp_offset
     | "arm" -> self#get_arm_sp_offset
     | "pwr" -> self#get_pwr_sp_offset
     | _ ->
@@ -1078,7 +1103,53 @@ object (self)
          (BCH_failure
             (LBLOCK [STR "Architecture not recognized: "; STR arch]))
 
-  method stackpointer_offset_to_string arch =
+  method get_stackpointer_offset_xpr (x: xpr_t): xpr_t traceresult =
+    let arch = system_settings#get_architecture in
+    match arch with
+    | "x86" -> self#get_x86_stackpointer_offset_xpr x
+    | "mips" -> self#get_mips_stackpointer_offset_xpr x
+    | "arm" -> self#get_arm_stackpointer_offset_xpr x
+    | "pwr" -> Error [(elocm __LINE__) ^ "not yet implemented"]
+    | _ ->
+       Error [(elocm __LINE__) ^ "architecture " ^ arch ^ " not recognized"]
+
+  method private get_x86_stackpointer_offset_xpr (x: xpr_t): xpr_t traceresult =
+    let spreg = CPURegister Esp in
+    let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
+    let x = simplify_xpr (self#inv#rewrite_expr x) in
+    let vars = vars_as_positive_terms x in
+    if not (List.exists (fun v -> v#equal sp0) vars) then
+      Error [(elocm __LINE__);
+             "expression " ^ (x2s x)
+             ^ "does not include stackpointer " ^ (x2s (XVar sp0))]
+    else
+      Ok (simplify_xpr (XOp (XMinus, [x; XVar sp0])))
+
+  method private get_arm_stackpointer_offset_xpr (x: xpr_t): xpr_t traceresult =
+    let spreg = ARMRegister ARSP in
+    let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
+    let x = simplify_xpr (self#inv#rewrite_expr x) in
+    let vars = vars_as_positive_terms x in
+    if not (List.exists (fun v -> v#equal sp0) vars) then
+      Error [(elocm __LINE__);
+             "expression " ^ (x2s x)
+             ^ " does not include stackpointer " ^ (x2s (XVar sp0))]
+    else
+      Ok (simplify_xpr (XOp (XMinus, [x; XVar sp0])))
+
+  method private get_mips_stackpointer_offset_xpr (x: xpr_t): xpr_t traceresult =
+    let spreg = MIPSRegister MRsp in
+    let sp0 = self#env#mk_initial_register_value ~level:0 spreg in
+    let x = simplify_xpr (self#inv#rewrite_expr x) in
+    let vars = vars_as_positive_terms x in
+    if not (List.exists (fun v -> v#equal sp0) vars) then
+      Error [(elocm __LINE__);
+             "expression " ^ (x2s x)
+             ^ " does not include stackpointer " ^ (x2s (XVar sp0))]
+    else
+      Ok (simplify_xpr (XOp (XMinus, [x; XVar sp0])))
+
+  method stackpointer_offset_to_string (arch: string) =
     match arch with
     | "x86" -> self#esp_offset_to_string
     | "mips" -> self#sp_offset_to_string
@@ -1089,7 +1160,7 @@ object (self)
          (BCH_failure
             (LBLOCK [STR "Architecture not recognized: "; STR arch]))
 
-  method private get_esp_offset =    (* specific to x86 *)
+  method private get_x86_esp_offset: (int * interval_t) =
     let inv = self#inv in
     let espreg = CPURegister Esp in
     let esp = self#env#mk_register_variable espreg in
@@ -1105,7 +1176,7 @@ object (self)
     else
       (0,esp0Offset)
 
-  method private get_sp_offset =     (* specific to mips *)
+  method private get_mips_sp_offset: (int * interval_t) =
     let inv = self#inv in
     let spreg = MIPSRegister MRsp in
     let sp = self#env#mk_register_variable spreg in
@@ -1121,7 +1192,7 @@ object (self)
     else
       (0,sp0Offset)
 
-  method private get_arm_sp_offset =  (* specific to arm *)
+  method private get_arm_sp_offset: (int * interval_t) =
     let inv = self#inv in
     let spreg = ARMRegister ARSP in
     let sp = self#env#mk_register_variable spreg in
@@ -1137,7 +1208,7 @@ object (self)
     else
       (0, sp0Offset)
 
-  method private get_pwr_sp_offset =  (* specific to power32 *)
+  method private get_pwr_sp_offset: (int * interval_t) =
     let inv = self#inv in
     let spreg = PowerGPRegister 1 in
     let sp = self#env#mk_register_variable spreg in
@@ -1154,7 +1225,7 @@ object (self)
       (0, sp0Offset)
 
   method private esp_offset_to_string =
-    let (level,offset) = self#get_esp_offset in
+    let (level,offset) = self#get_x86_esp_offset in
     let openB = string_repeat "[" (level+1) in
     let closeB = string_repeat "]" (level+1) in
     let offset = if offset#isTop then " ? "	else
@@ -1169,7 +1240,7 @@ object (self)
     openB ^ " " ^ offset ^ " " ^ closeB
 
   method private sp_offset_to_string =
-    let (level,offset) = self#get_sp_offset in
+    let (level,offset) = self#get_mips_sp_offset in
     let openB = string_repeat "[" (level+1) in
     let closeB = string_repeat "]" (level+1) in
     let offset = if offset#isTop then " ? "	else
@@ -1293,10 +1364,9 @@ object (self)
                     ~tgtsize:size ~tgtbtype:btype self#l zero_constant_expr) in
              varresult
            else
-             Error[(elocm __LINE__)
-                   ^ (p2s self#l#toPretty)
-                   ^ ": "
-                   ^ "Global location at address "
+             Error[(elocm __LINE__);
+                   (p2s self#l#toPretty);
+                   "Global location at address "
                    ^ gvaddr#to_hex_string
                    ^ " not found"])
          gvaddr_r
@@ -1310,7 +1380,7 @@ object (self)
          (fun gvaddr ->
            if memmap#has_location gvaddr then
              let gloc = memmap#get_location gvaddr in
-             let varresult =
+             let var_r =
                TR.tmap
                  ~msg:(eloc __LINE__)
                  (fun offset -> self#f#env#mk_gloc_variable gloc offset)
@@ -1325,15 +1395,14 @@ object (self)
                  ~tag:"normalized global address"
                  __FILE__ __LINE__
                  ["varresult: "
-                  ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" varresult);
+                  ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" var_r);
                   "gloc: " ^ gloc#name] in
-             varresult
+             var_r
 
            else
-             Error [(elocm __LINE__)
-                    ^ (p2s self#l#toPretty)
-                    ^ ": "
-                    ^ "Global location at address "
+             Error [(elocm __LINE__);
+                    (p2s self#l#toPretty);
+                    "Global location at address "
                     ^ gvaddr#to_hex_string
                     ^ " not found"])
          gvaddr_r
@@ -1346,12 +1415,47 @@ object (self)
              (gloc#address_memory_offset
                 ~tgtsize:size ~tgtbtype:btype self#l addrvalue))
        | _ ->
-          let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
-          TR.tmap2
-            ~msg1:(eloc __LINE__)
-            (fun memref memoff ->
-              self#f#env#mk_offset_memory_variable memref memoff)
-            memref_r memoff_r
+          match self#f#stackframe#xpr_containing_stackslot addrvalue with
+          | Some stackslot ->
+             let stackoffset_r = self#get_stackpointer_offset_xpr addrvalue in
+             (TR.tmap
+                ~msg:(eloc __LINE__)
+                (fun offset -> self#f#env#mk_stackslot_variable stackslot offset)
+                (TR.tbind
+                   ~msg:(eloc __LINE__)
+                   (stackslot#frame_offset_memory_offset
+                      ~tgtsize:size ~tgtbtype:btype self#l)
+                   stackoffset_r))
+          | _ ->
+             let (memref_r, memoff_r) = self#decompose_memaddr addrvalue in
+             TR.tbind2
+               ~msg1:(eloc __LINE__)
+               (fun memref memoff ->
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"get_var_at_address:decompose_memaddr"
+                     ~msg:(p2s self#l#toPretty)
+                     __FILE__ __LINE__
+                     ["addrvalue: " ^ (x2s addrvalue);
+                      "memref: " ^ (p2s memref#toPretty);
+                      "memoff: " ^ (memory_offset_to_string memoff)] in
+                 if memref#is_stack_reference then
+                   match memoff with
+                   | ConstantOffset (num, NoOffset) ->
+                      let stackslot_r =
+                        self#f#stackframe#add_stackslot ~size num#toInt in
+                      TR.tmap (fun stackslot ->
+                          self#f#env#mk_stackslot_variable stackslot NoOffset)
+                        stackslot_r
+                   | _ ->
+                      Error [(elocm __LINE__);
+                             (p2s self#l#toPretty);
+                             "Unable to create stackslot for " ^ (x2s addrvalue)
+                             ^  " with offset "
+                             ^ (memory_offset_to_string memoff)]
+                 else
+                      Ok (self#f#env#mk_offset_memory_variable memref memoff))
+               memref_r memoff_r
 
   (* deprecated. to be merged with get_var_at_address *)
    method get_lhs_from_address (xpr:xpr_t) =
@@ -1433,33 +1537,63 @@ object (self)
       TR.tbind
         ~msg:(eloc __LINE__)
         (fun memref ->
-          match memref#get_base with
-          | BGlobal ->
-             (match memoff_r with
-              | Ok (ConstantOffset (num, NoOffset)) ->
-                 let gvaddr = numerical_mod_to_doubleword num in
-                 if memmap#has_location gvaddr then
-                   let gloc = memmap#get_location gvaddr in
-                   Ok (gloc#btype)
-                 else
-                   Error [(elocm __LINE__)
-                          ^ "no global location found for address "
-                          ^ gvaddr#to_hex_string]
-              | _ ->
-                 Error [(elocm __LINE__) ^ "not a constant offset"])
-          | _ ->
-             let basevar_r =
-               match memref#get_base with
-               | BaseVar v -> Ok v
-               | b ->
-                  Error [(elocm __LINE__)
-                         ^ "memory-base: " ^ (p2s (memory_base_to_pretty b))] in
-             let basevar_type_r =
-               TR.tbind
-                 ~msg:(eloc __LINE__)
-                 self#get_variable_type
-                 basevar_r in
-             TR.tbind
+          if memref#is_global_reference then
+            (match memoff_r with
+             | Ok (ConstantOffset (num, NoOffset)) ->
+                let gvaddr = numerical_mod_to_doubleword num in
+                if memmap#has_location gvaddr then
+                  let gloc = memmap#get_location gvaddr in
+                  Ok (gloc#btype)
+                else
+                  Error [(elocm __LINE__);
+                         (p2s self#l#toPretty);
+                         "No global location found for address "
+                         ^ gvaddr#to_hex_string]
+             | _ ->
+                Error [
+                    (elocm __LINE__);
+                    (p2s self#l#toPretty);
+                    "Memory variable " ^ (p2s v#toPretty)
+                    ^ " does not have a constant offset"])
+          else if memref#is_stack_reference then
+            TR.tbind
+              ~msg:(eloc __LINE__)
+              (fun memoff ->
+                match memoff with
+                | ConstantOffset (num, varoffset) ->
+                   (match self#f#stackframe#containing_stackslot num#toInt with
+                    | Some stackslot ->
+                       if stackslot#is_typed then
+                         stackslot#offset_type varoffset
+                       else
+                         Error [(elocm __LINE__);
+                                (p2s self#l#toPretty);
+                                "Stackslot at offset " ^ num#toString
+                                ^ " does not have a known type"]
+                    | _ ->
+                       Error [(elocm __LINE__);
+                              (p2s self#l#toPretty);
+                              "No stackslot found at offset " ^ num#toString])
+                | _ ->
+                   Error[(elocm __LINE__);
+                         (p2s self#l#toPretty);
+                         "Not a constant stack offset: "
+                         ^ (memory_offset_to_string memoff)])
+              memoff_r
+          else
+            let basevar_r =
+              match memref#get_base with
+              | BaseVar v -> Ok v
+              | b ->
+                 Error [(elocm __LINE__);
+                        (p2s self#l#toPretty);
+                        "Memory-base: " ^ (p2s (memory_base_to_pretty b))] in
+            let basevar_type_r =
+              TR.tbind
+                ~msg:(eloc __LINE__)
+                self#get_variable_type
+                basevar_r in
+            TR.tbind
                ~msg:(eloc __LINE__)
                (fun basevartype ->
                  TR.tbind
@@ -1473,8 +1607,8 @@ object (self)
                             (ptr_deref basevartype) (num_constant_expr n) in
                         TR.tbind
                           ~msg:((elocm __LINE__)
-                                ^ "basevar type: " ^ (btype_to_string basevartype)
-                                ^ "; offset: " ^ n#toString)
+                                ^ "Basevar type: " ^ (btype_to_string basevartype)
+                                ^ "offset: " ^ n#toString)
                           (fun off ->
                             match off with
                             | FieldOffset ((fname, ckey), NoOffset) ->
@@ -1482,8 +1616,9 @@ object (self)
                                let finfo = get_compinfo_field cinfo fname in
                                Ok finfo.bftype
                             | _ ->
-                               Error [(elocm __LINE__)
-                                      ^ "symbolic offset: "
+                               Error [(elocm __LINE__);
+                                      (p2s self#l#toPretty);
+                                      "symbolic offset: "
                                       ^ (memory_offset_to_string off)
                                       ^ " with basevar type: "
                                       ^ (btype_to_string basevartype)
@@ -1494,8 +1629,9 @@ object (self)
                         let finfo = get_compinfo_field cinfo fname in
                         Ok finfo.bftype
                      | IndexOffset (v, i, memsuboff) ->
-                        Error [(elocm __LINE__)
-                               ^ "index offset: "
+                        Error [(elocm __LINE__);
+                               (p2s self#l#toPretty);
+                               "index offset: "
                                ^ (memory_offset_to_string memoff)
                                ^ " with "
                                ^ (p2s v#toPretty)
@@ -1504,8 +1640,9 @@ object (self)
                                ^ "; and "
                                ^ (memory_offset_to_string memsuboff)]
                      | ArrayIndexOffset (x, memsuboff) ->
-                        Error [(elocm __LINE__)
-                               ^ "array index offset: "
+                        Error [(elocm __LINE__);
+                               (p2s self#l#toPretty);
+                               "array index offset: "
                                ^ (memory_offset_to_string memoff)
                                ^ " with "
                                ^ (x2s x)
@@ -1515,15 +1652,17 @@ object (self)
                         (match basevartype with
                          | TPtr (t, _) -> Ok t
                          | _ ->
-                            Error [(elocm __LINE__)
-                                   ^ "array index offset: "
+                            Error [(elocm __LINE__);
+                                   (p2s self#l#toPretty);
+                                   "array index offset: "
                                    ^ (memory_offset_to_string memoff)
                                    ^ " with basevar type: "
                                    ^ (btype_to_string basevartype)
                                    ^ " not yet handled"])
                      | BasePtrArrayIndexOffset (x, memsuboff) ->
-                        Error [(elocm __LINE__)
-                               ^ "base-ptr array index offset: "
+                        Error [(elocm __LINE__);
+                               (p2s self#l#toPretty);
+                               "base-ptr array index offset: "
                                ^ (memory_offset_to_string memoff)
                                ^ " with "
                                ^ (x2s x)
@@ -1531,8 +1670,9 @@ object (self)
                                ^ (memory_offset_to_string memsuboff)]
 
                      | _ ->
-                        Error [(elocm __LINE__)
-                               ^ "memoff: " ^ (memory_offset_to_string memoff)
+                        Error [(elocm __LINE__);
+                               (p2s self#l#toPretty);
+                               "memoff: " ^ (memory_offset_to_string memoff)
                                ^ " not yet handled"])
                    memoff_r)
                basevar_type_r)
@@ -1546,10 +1686,15 @@ object (self)
           if fndata#has_regvar_type_annotation loc#i then
             fndata#get_regvar_type_annotation loc#i
           else
-            Error [(elocm __LINE__)
-                   ^ "type of callsite return value " ^ (x2s (XVar v))
-                   ^ " at address " ^ loc#i#to_hex_string
-                   ^ " not yet handled"])
+            let ctinfo = self#f#get_call_target callsite in
+            let rty = ctinfo#get_returntype in
+            if is_unknown_type rty then
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "return type of function " ^ ctinfo#get_name
+                     ^ " not known"]
+            else
+              Ok rty)
         (self#f#env#get_call_site v)
     else if self#f#env#is_register_variable v then
       let vrdefs = self#get_variable_rdefs v in
@@ -1566,8 +1711,9 @@ object (self)
              | Some ty -> Ok ty
              | _ ->
                 Error [
-                    (elocm __LINE__)
-                    ^ "No reglhs type assignment found for variable "
+                    (elocm __LINE__);
+                    (p2s self#l#toPretty);
+                    "No reglhs type assignment found for variable "
                     ^ (p2s v#toPretty)
                     ^ " at location "
                     ^ h#getBaseName])
@@ -1575,8 +1721,9 @@ object (self)
          optty_r
       | _ ->
          Error [
-             (elocm __LINE__)
-             ^ "Unable to find reachingdefs for variable "
+             (elocm __LINE__);
+             (p2s self#l#toPretty);
+             "Unable to find reachingdefs for variable "
              ^ (p2s v#toPretty)]
     else
       let ty = self#env#get_variable_type v in
@@ -1697,9 +1844,10 @@ object (self)
          | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
-            Error [(elocm __LINE__)
-                   ^ "base: " ^ (p2s base#toPretty)
-                   ^ "; offset expr: " ^ (x2s offset)] in
+            Error [(elocm __LINE__);
+                   (p2s self#l#toPretty);
+                   "base: " ^ (p2s base#toPretty);
+                   "offset expr: " ^ (x2s offset)] in
        let var_r =
          TR.tmap2
            ~msg1:(eloc __LINE__)
@@ -1721,9 +1869,11 @@ object (self)
              if is_pointer t then
                Ok (ptr_deref t)
              else
-               Error [(elocm __LINE__)
-                      ^ "x: " ^ (x2s a) ^ "; base: " ^ (x2s (XVar base))
-                      ^ "; offset: " ^ (x2s offset)])
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "x: " ^ (x2s a);
+                      "base: " ^ (x2s (XVar base));
+                      "offset: " ^ (x2s offset)])
            rvartype_r in
        let memoff_r =
          TR.tbind
@@ -1739,8 +1889,9 @@ object (self)
            memref_r memoff_r in
        TR.tmap (fun v -> XVar v) var_r
     | _ ->
-       Error [(elocm __LINE__)
-              ^ "size: " ^ (opti2s size) ^ "; "
+       Error [(elocm __LINE__);
+              (p2s self#l#toPretty);
+              "size: " ^ (opti2s size) ^ "; "
               ^ "type: " ^ (optty2s xtype) ^ "; "
               ^ "addr: " ^ (x2s a)
               ^ ": Not yet handled"]
@@ -1750,8 +1901,9 @@ object (self)
     match vtype with
     | None -> self#convert_variable_offsets ~size v
     | _ ->
-       Error [(elocm __LINE__)
-              ^ "size: " ^ (opti2s size) ^ "; "
+       Error [(elocm __LINE__);
+              (p2s self#l#toPretty);
+              "size: " ^ (opti2s size) ^ "; "
               ^ "type: " ^ (optty2s vtype) ^ "; "
               ^ "v: " ^ (p2s v#toPretty)
               ^ ": Not yet implemented"]
@@ -1847,12 +1999,14 @@ object (self)
             | TPtr (t, _) -> Ok t
             | TComp (key, _) ->
                let cinfo = get_compinfo_by_key key in
-               Error [(elocm __LINE__)
-                      ^ "Target type is a struct: " ^ cinfo.bcname
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "Target type is a struct: " ^ cinfo.bcname
                       ^ ". A pointer was expected"]
             | t ->
-               Error [(elocm __LINE__)
-                      ^ "Type " ^ (btype_to_string t)
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "Type " ^ (btype_to_string t)
                       ^ " is not a pointer"]) basetype_r in
       let coffset_r =
         TR.tbind
@@ -1889,6 +2043,7 @@ object (self)
                 self#env#mk_basevar_memory_variable cbasevar coffset in
               TR.tbind
                 ~msg:((elocm __LINE__)
+                      ^ (p2s self#l#toPretty) ^ ": "
                       ^ "cbasevar: " ^ (p2s cbasevar#toPretty)
                       ^ "; coffset: " ^ (memory_offset_to_string coffset))
                 self#env#mk_initial_memory_value memvar_r
@@ -1972,7 +2127,46 @@ object (self)
     match x with
     | XVar v -> self#get_variable_type v
     | XOp (XPlus, [XVar v; XConst (IntConst _)]) -> self#get_variable_type v
-    | _ -> Error [(elocm __LINE__) ^ "xpr: " ^ (x2s x)]
+    | XOp (XPlus, [x1; x2]) ->
+       TR.tbind2
+         ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
+         ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
+         (fun t1 t2 ->
+           if is_pointer t1 && is_int t2 then
+             Ok t1
+           else if is_pointer t2 && is_int t1 then
+             Ok t2
+           else if is_int t1 && is_int t2 then
+             Ok t1
+           else
+             Error [(elocm __LINE__);
+                    (p2s self#l#toPretty);
+                    "Unable to combine types "
+                    ^ (ty2s t1) ^ " and " ^ (ty2s t2)])
+         (self#get_xpr_type x1)
+         (self#get_xpr_type x2)
+    | XOp (XMinus, [x1; x2]) ->
+       TR.tbind2
+         ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
+         ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
+         (fun t1 t2 ->
+           if is_pointer t1 && is_pointer t2 then
+             Ok t_int
+           else if is_pointer t1 && is_int t2 then
+             Ok t1
+           else if is_int t1 && is_int t2 then
+             Ok t1
+           else
+             Error [(elocm __LINE__);
+                    (p2s self#l#toPretty);
+                    "Untable to combine types "
+                    ^ (ty2s t1) ^ " and  " ^ (ty2s t2)])
+         (self#get_xpr_type x1)
+         (self#get_xpr_type x2)
+    | _ ->
+       Error [(elocm __LINE__);
+              (p2s self#l#toPretty);
+              "xpr: " ^ (x2s x)]
 
   method decompose_memaddr (x: xpr_t):
            (memory_reference_int traceresult * memory_offset_t traceresult) =
@@ -1986,6 +2180,7 @@ object (self)
     let vars = vars_as_positive_terms x in
     let knownpointers = List.filter self#f#is_base_pointer vars in
     match knownpointers with
+
     (* one known pointer, must be the base *)
     | [base] (* when self#f#env#is_initial_stackpointer_value base *) ->
        let offset = simplify_xpr (XOp (XMinus, [x; XVar base])) in
@@ -1996,9 +2191,10 @@ object (self)
          | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
-            Error [(elocm __LINE__)
-                   ^ "base: " ^ (p2s base#toPretty)
-                   ^ "; offset expr: " ^ (x2s offset)] in
+            Error [(elocm __LINE__);
+                   (p2s self#l#toPretty);
+                   "base: " ^ (p2s base#toPretty);
+                   "offset expr: " ^ (x2s offset)] in
        (memref_r, memoff_r)
 
     (* no known pointers, have to find a base *)
@@ -2022,9 +2218,9 @@ object (self)
               let v = self#env#mk_symbolic_value x in
               Ok (IndexOffset (v, n#toInt, NoOffset))
            | _ ->
-              Error [(elocm __LINE__)
-                     ^ (p2s self#l#toPretty) ^ ": "
-                     ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "decompose_memaddr: " ^ (x2s x) ^ ": "
                      ^ "Offset from global base "
                      ^ maxC#toString
                      ^ " not recognized: " ^ (x2s offset)] in
@@ -2049,9 +2245,9 @@ object (self)
                | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                   Ok (IndexOffset (v, n#toInt, NoOffset))
               | _ ->
-                 Error [(elocm __LINE__)
-                        ^ (p2s self#l#toPretty) ^ ": "
-                        ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
+                 Error [(elocm __LINE__);
+                        (p2s self#l#toPretty);
+                        "decompose_memaddr: " ^ (x2s x) ^ ": "
                         ^ "Offset from base "
                         ^ (x2s (XVar base))
                         ^ " not recognized: " ^ (x2s offset)] in
@@ -2080,9 +2276,9 @@ object (self)
                    | XOp (XMult, [XConst (IntConst n); XVar v]) ->
                       Ok (IndexOffset (v, n#toInt, NoOffset))
                    | _ ->
-                      Error [(elocm __LINE__)
-                             ^ (p2s self#l#toPretty) ^ ": "
-                             ^ "decompose_memaddr: " ^ (x2s x) ^ ": "
+                      Error [(elocm __LINE__);
+                             (p2s self#l#toPretty);
+                             "decompose_memaddr: " ^ (x2s x) ^ ": "
                              ^ "Offset from base "
                              ^ (x2s (XVar base))
                              ^ " not recognized: " ^ (x2s offset)])
@@ -2091,9 +2287,9 @@ object (self)
 
           | [v] ->
              let memref_r =
-               Error [(elocm __LINE__)
-                      ^ (p2s self#l#toPretty) ^ ": "
-                      ^ "No candidate base pointers. Only variable found: "
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "No candidate base pointers. Only variable found: "
                       ^ (p2s v#toPretty)] in
              let memoff_r = Error [eloc __LINE__] in
              (memref_r, memoff_r)
@@ -2296,7 +2492,7 @@ object (self)
 	 begin
 	   try
 	     begin
-	       match self#get_esp_offset with
+	       match self#get_x86_esp_offset with
 	       | (0,range) ->
 		 begin
 		   match range#singleton with
@@ -2672,37 +2868,39 @@ object (self)
         (match xpr with
          | XOp (XMinus, [XVar _v; XConst (IntConst n)]) when n#geq numerical_zero ->
             let spoffset = n#neg in
-            if Option.is_some
-                 (self#f#stackframe#containing_stackslot spoffset#toInt) then
-              TR.tfold_default
-                (fun s -> Some s)
-                None
-                (self#env#mk_stack_variable finfo#stackframe spoffset)
-            else
-              let _ =
-                ch_diagnostics_log#add "evaluate-fts-address-argument:reg"
-                  (LBLOCK [self#l#toPretty; STR ": ";
-                           STR (fts_parameter_to_string p); STR ": ";
-                           (x2p xpr); STR ": ";
-                           INT spoffset#toInt]) in
-              None
-
+            (match self#f#stackframe#containing_stackslot spoffset#toInt with
+             | Some stackslot ->
+                Some (self#f#env#mk_stackslot_variable stackslot NoOffset)
+             | _ ->
+                begin
+                  log_diagnostics_result
+                    ~tag:"evaluate_fts_address_argument"
+                    ~msg:(p2s self#l#toPretty)
+                    __FILE__ __LINE__
+                    ["parameter: " ^ (fts_parameter_to_string p);
+                     "external argvar: " ^ (x2s xpr);
+                     "offset: " ^ (spoffset#toString)];
+                  None
+                end)
          | _ ->
-            let _ =
-              ch_diagnostics_log#add "evaluate-fts-address-argument: reg"
-                (LBLOCK [self#l#toPretty; STR ": ";
-                         STR (fts_parameter_to_string p); STR ": ";
-                         (x2p xpr)]) in
-            None)
+            begin
+              log_diagnostics_result
+                ~tag:"evaluate_fts_address_argument"
+                ~msg:(p2s self#l#toPretty)
+                __FILE__ __LINE__
+                ["parameter: " ^ (fts_parameter_to_string p);
+                 "external argvar: " ^ (x2s xpr)];
+              None
+            end)
      | _ ->
-        let _ =
-          chlog#add
-            "evaluate-fts-address-argument: failure"
-            (LBLOCK [
-                 STR self#cia;
-                 STR ": ";
-                 fts_parameter_to_pretty p]) in
-        None
+        begin
+          log_diagnostics_result
+            ~tag:"evaluate_fts_address_argument"
+            ~msg:(p2s self#l#toPretty)
+            __FILE__ __LINE__
+            ["Unable to evaluate fts parameter " ^ (fts_parameter_to_string p)];
+          None
+        end
 
    method evaluate_summary_address_term (t:bterm_t) =
      match t with
