@@ -12,7 +12,7 @@
    </documentation>
    <api adj="0" cc="cdecl" name="mktime">
     <par loc="stack" io="r" name="timeptr" nr="1">
-     <type><ptr>tm</ptr></type>
+     <type><ptr>ch_tm</ptr></type>
      <roles>
       <role rt="ioc:memops" rn="src-struct:tm" />
      </roles>
