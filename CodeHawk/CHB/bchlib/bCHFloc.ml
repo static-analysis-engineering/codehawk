@@ -1441,6 +1441,12 @@ object (self)
                       "memoff: " ^ (memory_offset_to_string memoff)] in
                  if memref#is_stack_reference then
                    match memoff with
+                   | NoOffset ->
+                      let stackslot_r =
+                        self#f#stackframe#add_stackslot ~size 0 in
+                      TR.tmap (fun stackslot ->
+                          self#f#env#mk_stackslot_variable stackslot NoOffset)
+                      stackslot_r
                    | ConstantOffset (num, NoOffset) ->
                       let stackslot_r =
                         self#f#stackframe#add_stackslot ~size num#toInt in

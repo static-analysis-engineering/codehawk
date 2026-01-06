@@ -28,7 +28,6 @@
 
 (* chlib *)
 open CHLanguage
-open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -154,16 +153,9 @@ object (self)
     offset >= self#offset && offset < self#offset + size
 
   method frame2object_offset_value (xpr: xpr_t): xpr_t traceresult =
-    let (t, coffset) = BCHXprUtil.smallest_wrapped_constant_term xpr in
-    if coffset#lt numerical_zero then
+    let (t, _coffset) = BCHXprUtil.smallest_wrapped_constant_term xpr in
       let xoff = simplify_xpr (XOp (XMinus, [xpr; num_constant_expr t])) in
        Ok xoff
-    else
-       Error [
-           __FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-           ^ "Offset expression "
-           ^ (x2s xpr)
-           ^ " not yet handled"]
 
   method frame_offset_memory_offset
            ?(tgtsize=None)
@@ -479,12 +471,7 @@ object (self)
            ?(size = None)
            ?(desc = None)
            (offset: int): stackslot_int traceresult =
-    if offset >= 0 then
-      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-             ^ "Illegal offset for stack slot: "
-             ^ (string_of_int offset)
-             ^ ". Offset should be less than zero."]
-    else if H.mem stackslots offset then
+    if H.mem stackslots offset then
       begin
         log_error_result
           ~tag:"duplicate stack slot"
@@ -519,7 +506,11 @@ object (self)
          let sname =
            match name with
            | Some name -> name
-           | _ -> "var_" ^ (string_of_int (-offset)) in
+           | _ ->
+              if offset < 0 then
+                "var_" ^ (string_of_int (-offset))
+              else
+                "arg_" ^ (string_of_int offset) in
          let ssrec = {
              sslot_name = sname;
              sslot_offset = offset;

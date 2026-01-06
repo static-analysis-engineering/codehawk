@@ -963,6 +963,13 @@ object (self)
     else
       false
 
+  method is_local_stack_variable (v: variable_t) =
+    if (self#is_stack_variable v) && (self#has_constant_offset v) then
+      let memoff_r = tbind get_total_constant_offset (self#get_memvar_offset v) in
+      tfold_default (fun memoff -> memoff#lt numerical_zero) false memoff_r
+    else
+      false
+
   method is_realigned_stack_variable (v:variable_t) =
     (self#is_memory_variable v)
     && (tfold_default
