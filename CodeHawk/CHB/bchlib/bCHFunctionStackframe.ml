@@ -153,9 +153,9 @@ object (self)
     offset >= self#offset && offset < self#offset + size
 
   method frame2object_offset_value (xpr: xpr_t): xpr_t traceresult =
-    let (t, _coffset) = BCHXprUtil.smallest_wrapped_constant_term xpr in
-      let xoff = simplify_xpr (XOp (XMinus, [xpr; num_constant_expr t])) in
-       Ok xoff
+    let xoff =
+      simplify_xpr (XOp (XMinus, [xpr; int_constant_expr self#offset])) in
+    Ok xoff
 
   method frame_offset_memory_offset
            ?(tgtsize=None)
@@ -584,10 +584,26 @@ object (self)
       ()
     else
       let restore = RegisterRestore (offset, reg) in
+      let mk_stackslot () =
+        let ssrec = {
+            sslot_name = (register_to_string reg) ^ "_spill";
+            sslot_offset = offset;
+            sslot_btype = t_unknown;
+            sslot_spill = Some reg;
+            sslot_size = Some 4;
+            sslot_loopcounter = false;
+            sslot_desc = Some "register restore"
+          } in
+        new stackslot_t ssrec in
       begin
         (if H.mem stackslots offset then
            if (H.find stackslots offset)#is_spill then
              ()
+           else
+             let sslot = H.find stackslots offset in
+             if sslot#is_compatible_with_spill then
+               let sslot = mk_stackslot () in
+               H.replace stackslots offset sslot
            else
              let sslot = H.find stackslots offset in
              raise
