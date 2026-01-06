@@ -1442,6 +1442,8 @@ object (self)
   method is_stack_parameter_variable (v:variable_t) =
     (varmgr#is_stack_parameter_variable v)
 
+  method is_local_stack_variable = varmgr#is_local_stack_variable
+
   method is_stack_parameter_value (v:variable_t) =
     (self#is_initial_memory_value v)
     && (tfold_default

@@ -4235,6 +4235,10 @@ object
       Note: The first stack parameter for ARM is at 0.*)
   method is_stack_parameter_variable: variable_t -> bool
 
+  (** Returns [true] if [var] is a memory variable located on the stack
+      with negative offset from the initial value of the stack pointer. *)
+  method is_local_stack_variable: variable_t -> bool
+
   (** Returns the index of the stack parameter variable [var] assuming
       4-byte parameters starting at offset 4 (x86 only). The variable may
       either be a stack memory variable or a stack initial memory value.
@@ -4760,6 +4764,10 @@ class type stackslot_int =
   end
 
 
+  (** Function stackframe consisting of stackslots. The function stackframe
+      includes both the local stackframe (containing stackslots with negative offset)
+      and the function argument area (containt stackslots with non-negative offset)
+*)
 class type stackframe_int =
   object
 
@@ -5207,6 +5215,10 @@ class type function_environment_int =
 
         Note: The first stack parameter for ARM is at 0.*)
     method is_stack_parameter_variable: variable_t -> bool
+
+    (** Returns [true] if [var] is a memory variable located on the with
+        negative offset from the initial value of the stack pointer. *)
+    method is_local_stack_variable: variable_t -> bool
 
     (** Returns [true] if [var] is the initial-value variable of a
         stack-parameter variable. *)

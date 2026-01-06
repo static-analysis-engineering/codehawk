@@ -75,7 +75,7 @@ let smallest_constant_term (x: xpr_t): numerical_t =
        let c1 = aux x1 polarity in
        let c2 = aux x2 (not polarity) in
        if c1#lt c2 then c1 else c2
-    | _ -> numerical_zero in
+    | _ -> mkNumericalPowerOf2 31 in
   aux x true
 
 

@@ -46,7 +46,7 @@ let lastupdated = "2024-12-25"
 
 
 let largest_constant_term_test () =
-  (* let xv = XVar (XG.mk_var "v") in *)
+  let xv = XVar (XG.mk_var "v") in
   begin
 
     TS.new_testsuite (testname ^ "_largest_constant_term_test") lastupdated;
@@ -60,7 +60,52 @@ let largest_constant_term_test () =
           ~received:(X.largest_constant_term (Xprt.int_constant_expr 0x500000))
           ());
 
+    TS.add_simple_test
+      ~title:"offset"
+      (fun () ->
+        let x = XOp (XPlus, [xv; Xprt.int_constant_expr 4]) in
+        XBA.equal_numerical
+          ~expected:(mkNumerical 4)
+          ~received:(X.largest_constant_term x)
+          ());
+
     TS.launch_tests()
+  end
+
+
+let smallest_constant_term_test() =
+  let xv = XVar (XG.mk_var "v") in
+  begin
+
+    TS.new_testsuite (testname ^ "_smallest_constant_term_test") lastupdated;
+
+    TS.add_simple_test
+      ~title:"constant"
+      (fun () ->
+        XBA.equal_numerical
+          ~expected:(mkNumerical 0x500000)
+          ~received:(X.smallest_constant_term (Xprt.int_constant_expr 0x500000))
+          ());
+
+    TS.add_simple_test
+      ~title:"negative offset"
+      (fun () ->
+        let x = XOp (XMinus, [xv; Xprt.int_constant_expr 4]) in
+        XBA.equal_numerical
+          ~expected:(mkNumerical (-4))
+          ~received:(X.smallest_constant_term x)
+          ());
+
+    TS.add_simple_test
+      ~title:"positive offset"
+      (fun () ->
+        let x = XOp (XPlus, [xv; Xprt.int_constant_expr 4]) in
+        XBA.equal_numerical
+          ~expected:(mkNumerical 4)
+          ~received:(X.smallest_constant_term x)
+          ());
+
+    TS.launch_tests ()
   end
 
 
@@ -213,6 +258,7 @@ let () =
   begin
     TS.new_testfile testname lastupdated;
     largest_constant_term_test ();
+    smallest_constant_term_test ();
     array_index_offset_test ();
     TS.exit_file ()
   end

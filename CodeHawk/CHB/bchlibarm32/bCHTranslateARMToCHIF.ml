@@ -3224,7 +3224,7 @@ let translate_arm_instruction
        if floc#has_initial_value vrt then
          TR.tfold
            ~ok:(fun memlhs ->
-             if finfo#env#is_stack_variable memlhs then
+             if finfo#env#is_local_stack_variable memlhs then
                finfo#save_register memlhs floc#cia rt#to_register)
            ~error:(fun e ->
              begin log_dc_error_result __FILE__ __LINE__ e; () end)

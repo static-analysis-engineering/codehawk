@@ -61,6 +61,25 @@ open BCHTranslateARMToCHIF
 open BCHAnalyzeApp
 
 
+(* Tools to diagnose failing tests:
+
+            let _ = CHLogger.activate_diagnostics () in
+            let _ = BCHSystemSettings.system_settings#set_collect_data in
+            .....
+            let _ =
+              if title = "STM" then
+                begin
+                  CHPretty.pr_debug [proc#toPretty];
+                  CHFileIO.file_output#saveFile
+                    "testlog.chlog" CHLogger.chlog#toPretty;
+                  CHFileIO.file_output#saveFile
+                    "testlog.ch_error_log" CHLogger.ch_error_log#toPretty;
+                  CHFileIO.file_output#saveFile
+                    "testlog.ch_diagnostics_log" CHLogger.ch_diagnostics_log#toPretty
+                end in
+ *)
+
+
 let testname = "bCHTranslateARMToCHIFTest"
 let lastupdated = "2025-08-20"
 
@@ -108,6 +127,7 @@ let translate_store () =
         TS.add_simple_test
           ~title
           (fun () ->
+            let _ = BCHSystemSettings.system_settings#set_architecture "arm" in
             let faddr = make_dw sfaddr in
             let fn = ARMU.arm_function_setup faddr bytes in
             let _ = analyze_arm_function faddr fn 0 in
