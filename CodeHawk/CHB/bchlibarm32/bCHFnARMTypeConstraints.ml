@@ -193,6 +193,15 @@ object (self)
     let getopt_stackaddress_r (x_r: xpr_t traceresult): int option =
       TR.tfold_default getopt_stackaddress None x_r in
 
+    let getopt_stacklocation_type (x: xpr_t): btype_t option =
+      match getopt_stackaddress x with
+      | Some offset when fndata#has_stackvar_type_annotation offset ->
+         TR.to_option (fndata#get_stackvar_type_annotation offset)
+      | _ -> None in
+
+    let getopt_stacklocation_type_r (x_r: xpr_t traceresult): btype_t option =
+      TR.tfold_default getopt_stacklocation_type None x_r in
+
     let getopt_global_address (x: xpr_t): doubleword_int option =
       match (rewrite_expr x) with
       | XConst (IntConst num) ->
@@ -818,26 +827,30 @@ object (self)
          (regvar_type_introduction "LDR" rt);
 
          (* loaded type may be known *)
-         (let xmem_r = memop#to_expr floc in
-          let xrmem_r =
-            TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
-          let xtype_r = TR.tbind floc#get_xpr_type xrmem_r in
-          let rule = "LDR-memop-tc" in
-          TR.titer
-            ~ok:(fun t ->
-              let opttc = mk_btype_constraint rttypevar t in
-              (match opttc with
-               | Some tc ->
-                  if fndata#is_typing_rule_enabled iaddr rule then
-                    begin
-                      log_type_constraint __LINE__ rule tc;
-                      store#add_constraint faddr iaddr rule tc
-                    end
-                  else
-                    log_type_constraint_rule_disabled __LINE__ rule tc
-               | _ -> ()))
-            ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
-            xtype_r);
+         (match getopt_stacklocation_type_r (memop#to_address floc) with
+          (* skip if stacklocation type has been declared in userdata *)
+          | Some _ -> ()
+          | _ ->
+             (let xmem_r = memop#to_expr floc in
+              let xrmem_r =
+                TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
+              let xtype_r = TR.tbind floc#get_xpr_type xrmem_r in
+              let rule = "LDR-memop-tc" in
+              TR.titer
+                ~ok:(fun t ->
+                  let opttc = mk_btype_constraint rttypevar t in
+                  (match opttc with
+                   | Some tc ->
+                      if fndata#is_typing_rule_enabled iaddr rule then
+                        begin
+                          log_type_constraint __LINE__ rule tc;
+                          store#add_constraint faddr iaddr rule tc
+                        end
+                      else
+                        log_type_constraint_rule_disabled __LINE__ rule tc
+                   | _ -> ()))
+                ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
+                xtype_r));
 
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
