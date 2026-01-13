@@ -2130,6 +2130,12 @@ object (self)
        result
 
   method get_xpr_type (x: xpr_t): btype_t traceresult =
+    let _ =
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_xpr_type"
+        __FILE__ __LINE__
+        ["x: " ^ (x2s x)] in
     match x with
     | XVar v -> self#get_variable_type v
     | XOp (XPlus, [XVar v; XConst (IntConst _)]) -> self#get_variable_type v
