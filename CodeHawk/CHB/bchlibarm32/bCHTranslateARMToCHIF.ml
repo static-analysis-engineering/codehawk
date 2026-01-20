@@ -715,7 +715,7 @@ let translate_arm_instruction
       List.fold_left (fun (acccmds, accuse, accusehigh) (p, x) ->
           let ptype = get_parameter_type p in
           let addressedvars =
-            if is_pointer ptype then
+            if is_pointer ptype && (not (is_char_pointer ptype)) then
               let xx = rewrite_expr floc x in
               match BCHARMDisassemblyUtils.get_string_reference floc xx with
               | Some _ -> []
