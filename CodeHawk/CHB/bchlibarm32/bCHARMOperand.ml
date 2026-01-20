@@ -1,4 +1,4 @@
-(* =============================================================================
+CEXCEGG(* =============================================================================
    CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
@@ -60,8 +60,12 @@ open BCHARMTypes
 module TR = CHTraceResult
 
 
-(* let x2p = XprToPretty.xpr_formatter#pr_expr *)
+let x2p = XprToPretty.xpr_formatter#pr_expr
 let p2s = pretty_to_string
+let x2s x = p2s (x2p x)
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let arm_operand_mode_to_string = function RD -> "RD" | WR -> "WR" | RW -> "RW"
@@ -347,80 +351,87 @@ object (self:'a)
        let xoffset_r =
          if isindex then
            match (offset, isadd) with
+           (* immediate offset *)
            | (ARMImmOffset i, true) -> Ok (int_constant_expr i)
            | (ARMImmOffset i, false) -> Ok (int_constant_expr (-i))
+
+           (* index offset *)
            | (ARMIndexOffset (indexreg, indexoffset), true) ->
               let indexvar = env#mk_arm_register_variable indexreg in
               Ok (XOp (XPlus, [XVar indexvar; int_constant_expr indexoffset]))
+
+           (* shifted index offset *)
            | (ARMShiftedIndexOffset (indexreg, srt, indexoffset), true) ->
               let indexvar = env#mk_arm_register_variable indexreg in
               let xoffset = int_constant_expr indexoffset in
+              let factor = CHNumerical.mkNumericalPowerOf2 in
               (match srt with
                | ARMImmSRT (_, 0)-> Ok (XOp (XPlus, [XVar indexvar; xoffset]))
-               | ARMImmSRT (SRType_LSL, 1) ->
-                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 2]) in
+
+               (* fixed shift left (multiply) *)
+               | ARMImmSRT (SRType_LSL, n) when n > 0 && n < 32 ->
+                  let samount = num_constant_expr (factor n) in
+                  let shifted = XOp (XMult, [XVar indexvar; samount]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_LSL, 2) ->
-                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 4]) in
+
+               (* fixed shift right (divide) *)
+               | ARMImmSRT (SRType_ASR, n) when n > 0 && n < 32 ->
+                  let samount = num_constant_expr (factor n) in
+                  let shifted = XOp (XDiv, [XVar indexvar; samount]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_LSL, 3) ->
-                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 8]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_LSL, 4) ->
-                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 16]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_LSL, 5) ->
-                  let shifted = XOp (XMult, [XVar indexvar; int_constant_expr 32]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_ASR, 1) ->
-                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 2]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_ASR, 2) ->
-                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 4]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_ASR, 3) ->
-                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 8]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
-               | ARMImmSRT (SRType_ASR, 4) ->
-                  let shifted = XOp (XDiv, [XVar indexvar; int_constant_expr 16]) in
-                  Ok (XOp (XPlus, [shifted; xoffset]))
+
+               (* variable shift left *)
                | ARMRegSRT (SRType_LSL, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
                   let shifted = XOp (XLsl, [XVar indexvar; XVar shiftvar]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
+
+               (* variable shift right *)
                | ARMRegSRT (SRType_ASR, srtreg) ->
                   let shiftvar = env#mk_arm_register_variable srtreg in
                   let shifted = XOp (XAsr, [XVar indexvar; XVar shiftvar]) in
                   Ok (XOp (XPlus, [shifted; xoffset]))
                | _ ->
-                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  Error [(elocm __LINE__)
+                         ^ (p2s floc#l#toPretty) ^ "; "
                          ^ "register shift: "
                          ^ (register_shift_to_string srt)
                          ^ " not yet supported"])
            | _ ->
-              Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+              Error [(elocm __LINE__)
+                     ^ (p2s floc#l#toPretty) ^ "; "
                      ^ "arm memory offset: "
                      ^ (arm_memory_offset_to_string offset)
                      ^ " not yet supported with isadd: "
                      ^ (if isadd then "true" else "false")]
          else
+           (* post-indexed: offset is applied in the next iteration *)
            Ok zero_constant_expr in
        let rvar = env#mk_arm_register_variable r in
        let rvarx =
          if align > 1 then
            let alignx = int_constant_expr align in
-           XOp (XMult, [XOp (XDiv, [XVar rvar; alignx]); alignx])
+           let result = XOp (XMult, [XOp (XDiv, [XVar rvar; alignx]); alignx]) in
+           begin
+             log_diagnostics_result
+               ~msg:(p2s floc#l#toPretty)
+               ~tag:"to_address"
+               __FILE__ __LINE__
+               ["apply offset-address alignment adjustment: " ^ (x2s result)];
+             result
+           end
          else
            XVar rvar in
        (* memory addresses are not rewritten to preserve the structure of the
           data accessed (in case of a non-optimizing compiler) *)
        TR.tmap
-         (fun memoff -> simplify_xpr (XOp (XPlus, [rvarx; memoff])))
+         (fun xoffset -> simplify_xpr (XOp (XPlus, [rvarx; xoffset])))
          xoffset_r
 
     | ARMLiteralAddress dw -> Ok (num_constant_expr dw#to_numerical)
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+       Error [(elocm __LINE__)
+              ^ (p2s floc#l#toPretty) ^ "; "
               ^ "Address for " ^ (p2s self#toPretty)
               ^ " not yet supported"]
 
@@ -469,12 +480,18 @@ object (self:'a)
        Ok (env#mk_arm_double_extension_register_variable r1 r2)
     | ARMSpecialReg r ->
        Ok (env#mk_arm_special_register_variable r)
+
+    (* Memory address calculated from the PC value and an immediate offset *)
     | ARMLiteralAddress dw ->
        TR.tprop
          (floc#env#mk_global_variable floc#l dw#to_numerical)
-         (__FILE__ ^ ":" ^ (string_of_int __LINE__))
+         (eloc __LINE__)
+
+    (* Generic memory address *)
     | ARMOffsetAddress (r, align, offset, isadd, _iswback, isindex, size) ->
        (match offset with
+
+        (* Immediate offset: resolve with get_memory_variable_numoffset *)
         | ARMImmOffset _ ->
            let rvar = env#mk_arm_register_variable r in
            let numoffset_r =
@@ -483,80 +500,126 @@ object (self:'a)
                | (ARMImmOffset i, true) -> Ok (mkNumerical i)
                | (ARMImmOffset i, false) -> Ok (mkNumerical i)#neg
                | _ ->
-                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  Error [(elocm __LINE__)
                          ^ "Immediate offset not yet implemented for offset "
                          ^ (arm_memory_offset_to_string offset)]
              else
                Ok numerical_zero in
            TR.tbind
-             ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-             (fun memoff ->
-               floc#get_memory_variable_numoffset ~size ~align rvar memoff)
+             ~msg:(eloc __LINE__)
+             (fun numoffset ->
+               let tresult =
+                 floc#get_memory_variable_numoffset ~size ~align rvar numoffset in
+               begin
+                 log_diagnostics_result
+                   ~msg:(p2s floc#l#toPretty)
+                   ~tag:"to_variable:numoffset"
+                   __FILE__ __LINE__
+                   ["operand: " ^ (p2s self#toPretty);
+                    "tresult: "
+                    ^ (TR.tfold
+                         ~ok:(fun v -> p2s v#toPretty)
+                         ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+                         tresult)];
+                 tresult
+               end)
              numoffset_r
 
+        (* Index offset: resolve with get_memory_variable_varoffset *)
         | ARMIndexOffset (ri, i) ->
            let rvar = env#mk_arm_register_variable r in
            let ivar = env#mk_arm_register_variable ri in
-           if isadd then
-             let rx = floc#inv#rewrite_expr (XVar rvar) in
-             let ivax = floc#inv#rewrite_expr (XVar ivar) in
-             let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
-             (match (xoffset, i) with
-              | (XConst (IntConst n), 0) when n#equal CHNumerical.numerical_zero ->
-                 Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                        ^ "Illegal address (zero) for ARMOffsetAddress"]
-              | (XConst (IntConst n), 0) ->
-                 floc#env#mk_global_variable ~size floc#l n
-              | _ ->
-                 floc#get_memory_variable_varoffset
-                   ~size rvar ivar (mkNumerical i))
-           else
-             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                    ^ "Index offset with is_add false not yet supported: "
-                    ^ (p2s self#toPretty)]
+           let tresult =
+             if isadd then
+               let rx = floc#inv#rewrite_expr (XVar rvar) in
+               let ivax = floc#inv#rewrite_expr (XVar ivar) in
+               let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+               (match (xoffset, i) with
+                | (XConst (IntConst n), 0) when n#equal CHNumerical.numerical_zero ->
+                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                          ^ "Illegal address (zero) for ARMOffsetAddress"]
+                | (XConst (IntConst n), 0) ->
+                   floc#env#mk_global_variable ~size floc#l n
+                | _ ->
+                   floc#get_memory_variable_varoffset
+                     ~size rvar ivar (mkNumerical i))
+             else
+               Error [(elocm __LINE__)
+                      ^ (p2s floc#l#toPretty) ^ "; "
+                      ^ "Index offset with is_add false not yet supported: "
+                      ^ (p2s self#toPretty)] in
+           begin
+             log_diagnostics_result
+               ~msg:(p2s floc#l#toPretty)
+               ~tag:"to_variable:varoffset"
+               __FILE__ __LINE__
+               ["operand: " ^ (p2s self#toPretty);
+                "tresult: "
+                ^ (TR.tfold
+                     ~ok:(fun v -> p2s v#toPretty)
+                     ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+                     tresult)];
+             tresult
+           end
 
+        (* Shifted index offset: resolve with get_memory_variable_varoffset or
+           get_memory_variable_scaledoffset *)
         | ARMShiftedIndexOffset _ ->
            let rvar = env#mk_arm_register_variable r in
-           (match (offset, isadd) with
-            | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
-               let optscale =
-                 match srt with
-                 | ARMImmSRT (SRType_LSL, 3) -> Some 8
-                 | ARMImmSRT (SRType_LSL, 2) -> Some 4
-                 | ARMImmSRT (SRType_LSL, 0) -> Some 1
-                 | _ -> None in
-               (match optscale with
-                | Some scale ->
-                   let ivar = env#mk_arm_register_variable ivar in
-                   if scale = 1 then
-                     let rx = floc#inv#rewrite_expr (XVar rvar) in
-                     let ivax = floc#inv#rewrite_expr (XVar ivar) in
-                     let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
-                     (match (xoffset, i) with
-                      | (XConst (IntConst n), 0) ->
-                         floc#env#mk_global_variable ~size floc#l n
-                      | _ ->
-                         floc#get_memory_variable_varoffset
-                           ~size rvar ivar (mkNumerical i))
-                   else
-                     floc#get_memory_variable_scaledoffset
-                       ~size rvar ivar scale (mkNumerical i)
-                | _ ->
-                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                          ^ "Scaled memory offset with register shift "
-                          ^ (register_shift_to_string srt)
-                          ^ " not yet supported"])
-            | _ ->
-               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                      ^ "Shifted Index Offset with isadd: false: "
-                      ^ (p2s self#toPretty)
-                      ^ " not yet supported"]))
+           let tresult =
+             (match (offset, isadd) with
+              | (ARMShiftedIndexOffset (ivar, srt, i), true) ->
+                 let optscale =
+                   match srt with
+                   | ARMImmSRT (SRType_LSL, 3) -> Some 8
+                   | ARMImmSRT (SRType_LSL, 2) -> Some 4
+                   | ARMImmSRT (SRType_LSL, 0) -> Some 1
+                   | _ -> None in
+                 (match optscale with
+                  | Some scale ->
+                     let ivar = env#mk_arm_register_variable ivar in
+                     if scale = 1 then
+                       let rx = floc#inv#rewrite_expr (XVar rvar) in
+                       let ivax = floc#inv#rewrite_expr (XVar ivar) in
+                       let xoffset = simplify_xpr (XOp (XPlus, [rx; ivax])) in
+                       (match (xoffset, i) with
+                        | (XConst (IntConst n), 0) ->
+                           floc#env#mk_global_variable ~size floc#l n
+                        | _ ->
+                           floc#get_memory_variable_varoffset
+                             ~size rvar ivar (mkNumerical i))
+                     else
+                       floc#get_memory_variable_scaledoffset
+                         ~size rvar ivar scale (mkNumerical i)
+                  | _ ->
+                     Error [(elocm __LINE__)
+                            ^ "Scaled memory offset with register shift "
+                            ^ (register_shift_to_string srt)
+                            ^ " not yet supported"])
+              | _ ->
+                 Error [(elocm __LINE__)
+                        ^ "Shifted Index Offset with isadd: false: "
+                        ^ (p2s self#toPretty)
+                        ^ " not yet supported"]) in
+           begin
+             log_diagnostics_result
+               ~msg:(p2s self#toPretty)
+               ~tag:"to_variable:scaledoffset"
+               __FILE__ __LINE__
+               ["operand: " ^ (p2s self#toPretty);
+                "tresult: "
+                ^ (TR.tfold
+                     ~ok:(fun v -> p2s v#toPretty)
+                     ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+                     tresult)];
+             tresult
+           end)
 
     | ARMShiftedReg (r, ARMImmSRT (SRType_LSL, 0)) ->
        Ok (env#mk_arm_register_variable r)
 
     | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+       Error [(elocm __LINE__)
               ^ "ARMOffsetAddress: " ^ (p2s self#toPretty)
               ^ " not yet supported"]
 

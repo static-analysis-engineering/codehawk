@@ -826,31 +826,40 @@ object (self)
        begin
          (regvar_type_introduction "LDR" rt);
 
-         (* loaded type may be known *)
          (match getopt_stacklocation_type_r (memop#to_address floc) with
-          (* skip if stacklocation type has been declared in userdata *)
-          | Some _ -> ()
-          | _ ->
-             (let xmem_r = memop#to_expr floc in
-              let xrmem_r =
-                TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
-              let xtype_r = TR.tbind floc#get_xpr_type xrmem_r in
-              let rule = "LDR-memop-tc" in
-              TR.titer
-                ~ok:(fun t ->
-                  let opttc = mk_btype_constraint rttypevar t in
-                  (match opttc with
-                   | Some tc ->
-                      if fndata#is_typing_rule_enabled iaddr rule then
-                        begin
-                          log_type_constraint __LINE__ rule tc;
-                          store#add_constraint faddr iaddr rule tc
-                        end
-                      else
-                        log_type_constraint_rule_disabled __LINE__ rule tc
-                   | _ -> ()))
-                ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
-                xtype_r));
+          | Some ty ->
+             let opttc = mk_btype_constraint rttypevar ty in
+             (match opttc with
+              | Some tc ->
+                 let rule = "LDR-memop-tc" in
+                 if fndata#is_typing_rule_enabled iaddr rule then
+                   begin
+                     log_type_constraint __LINE__ rule tc;
+                     store#add_constraint faddr iaddr rule tc
+                   end
+                 else
+                   log_type_constraint_rule_disabled __LINE__ rule tc
+              | _ -> ())
+          | _ -> ());
+
+         (let vmem_r = memop#to_variable floc in
+          let ty_r = TR.tbind floc#get_variable_type vmem_r in
+          TR.tfold_default
+            (fun ty ->
+              let opttc = mk_btype_constraint rttypevar ty in
+              (match opttc with
+               | Some tc ->
+                  let rule = "LDR-memop-tc" in
+                  if fndata#is_typing_rule_enabled iaddr rule then
+                    begin
+                      log_type_constraint __LINE__ rule tc;
+                      store#add_constraint faddr iaddr rule tc
+                    end
+                  else
+                    log_type_constraint_rule_disabled __LINE__ rule tc
+               | _ -> ()))
+            ()
+            ty_r);
 
          (* LDR rt, [rn, rm] :  X_rndef.load <: X_rt *)
          (let xrdef = get_variable_rdefs_r (rn#to_variable floc) in
@@ -1060,13 +1069,13 @@ object (self)
 
        end
 
-    | LoadRegisterHalfword (_, rt, rn, rm, memop, _) when rm#is_immediate ->
+    | LoadRegisterHalfword (_, rt, rn, rm, _memop, _) when rm#is_immediate ->
        let rtreg = rt#to_register in
        let rttypevar = mk_reglhs_typevar rtreg faddr iaddr in
        begin
          (regvar_type_introduction "LDRH" rt);
 
-         (* loaded type may be known *)
+         (* loaded type may be known
          (let xmem_r = memop#to_expr floc in
           let xrmem_r =
             TR.tmap (fun x -> simplify_xpr (floc#inv#rewrite_expr x)) xmem_r in
@@ -1087,6 +1096,7 @@ object (self)
                | _ -> ()))
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             xtype_r);
+          *)
 
        (* LDRH rt, ...  : X_rt <: integer type *)
          (let tc = mk_int_type_constant SignedNeutral 16 in
@@ -1509,7 +1519,7 @@ object (self)
                       log_subtype_rule_disabled __LINE__ rule rttypeterm rntypeterm
                   ) rtrdefs) rnrdefs);
 
-         (* type of destination memory location may be known *)
+         (* type of destination memory location may be known
          (let vmem_r = memvarop#to_variable floc in
           let vtype_r = TR.tbind floc#get_variable_type vmem_r in
           let rule = "STR-memop-tc" in
@@ -1531,6 +1541,7 @@ object (self)
                   | _ -> ()) rtrdefs)
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
             vtype_r)
+          *)
 
        end
 
