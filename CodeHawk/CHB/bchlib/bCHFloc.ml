@@ -668,15 +668,18 @@ object (self)
            ?(size=4)
            (var: variable_t)
            (numoffset: numerical_t): variable_t traceresult =
-    let _ =
-      log_diagnostics_result
-        ~msg:(p2s self#l#toPretty)
-        ~tag:"get-memory-variable-numoffset"
-        __FILE__ __LINE__
-        ["size: " ^ (string_of_int size);
-         "var: " ^ (p2s var#toPretty);
-         "numoffset: " ^ (numoffset#toString)] in
-    let inv = self#inv in
+      let varx =
+        if align > 1 then
+          let alignx = int_constant_expr align in
+          XOp (XMult, [XOp (XDiv, [XVar var; alignx]); alignx])
+        else
+          XVar var in
+
+      let inv = self#inv in
+      let addr = XOp (XPlus, [varx; num_constant_expr numoffset]) in
+      let address = simplify_xpr (inv#rewrite_expr addr) in
+    let tresult =
+      (*
     let _mk_memvar memref_r memoffset_r =
       let _ =
         log_diagnostics_result
@@ -743,7 +746,7 @@ object (self)
               (fun memoff ->
                 (self#env#mk_offset_memory_variable memref memoff))
               memoffset_r)
-        memref_r in
+        memref_r in *)
 (*
     if inv#is_base_offset_constant var then
       let (base, offset) = inv#get_base_offset_constant var in
@@ -777,7 +780,23 @@ object (self)
                   ^ system_info#get_image_base#to_hex_string
                   ^ ")"]
       | _ ->
-         self#get_var_at_address ~size:(Some size) address
+         self#get_var_at_address ~size:(Some size) address in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_memory_variable_numoffset"
+        __FILE__ __LINE__
+        ["size: " ^ (string_of_int size);
+         "var: " ^ (p2s var#toPretty);
+         "numoffset: " ^ (numoffset#toString);
+         "address: " ^ (x2s addr) ^ " (" ^ (x2s address) ^ ")";
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:(fun cv -> p2s cv#toPretty)
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method get_memory_variable_1
            ?(align=1)    (* alignment of var value *)
@@ -867,32 +886,23 @@ object (self)
     let addr = XOp (XPlus, [XVar var1; XVar var2]) in
     let addr = XOp (XPlus, [addr; num_constant_expr offset]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
-    self#get_var_at_address ~size:(Some size) address
-    (*
-    let (memref_r, memoff_r) = self#decompose_memaddr address in
-    TR.tbind
-      ~msg:(eloc __LINE__)
-      (fun memref ->
-        if memref#is_global_reference then
-          TR.tbind
-            ~msg:((elocm __LINE__) ^ "memref:global")
-            (fun memoff ->
-              TR.tbind
-                ~msg:(eloc __LINE__)
-                (self#env#mk_global_variable ~size self#l)
-                (get_total_constant_offset memoff))
-            memoff_r
-        else
-          TR.tbind
-            ~msg:(eloc __LINE__)
-            (fun memoff ->
-              TR.tmap
-                ~msg:(eloc __LINE__)
-                (self#env#mk_memory_variable memref)
-                (get_total_constant_offset memoff))
-            memoff_r)
-      memref_r
-     *)
+    let tresult = self#get_var_at_address ~size:(Some size) address in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_memory_variable_varoffset"
+        __FILE__ __LINE__
+        ["size: " ^ (string_of_int size);
+         "var1: " ^ (p2s var1#toPretty);
+         "var2: " ^ (p2s var2#toPretty);
+         "offset: " ^ offset#toString;
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:(fun v -> p2s v#toPretty)
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method get_memory_variable_2
            ?(size=4) (var1:variable_t) (var2:variable_t) (offset:numerical_t) =
@@ -932,25 +942,24 @@ object (self)
       XOp (XPlus,
            [addr; XOp (XMult, [int_constant_expr scale; indexexpr])]) in
     let address = simplify_xpr (self#inv#rewrite_expr addr) in
-    self#get_var_at_address ~size:(Some size) address
-    (*
-    let (memref_r, memoff_r) = self#decompose_memaddr address in
-    TR.tbind
-      ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-      (fun memref ->
-        if memref#is_global_reference then
-          self#get_var_at_address ~size:(Some size) address
-        else
-          TR.tbind
-            ~msg:(eloc __LINE__)
-            (fun memoff ->
-              TR.tmap
-                ~msg:(eloc __LINE__)
-                (self#env#mk_memory_variable memref)
-                (get_total_constant_offset memoff))
-            memoff_r)
-      memref_r
-     *)
+    let tresult = self#get_var_at_address ~size:(Some size) address in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_memory_variable_scaledoffset"
+        __FILE__ __LINE__
+        ["size: " ^ (string_of_int size);
+         "base: " ^ p2s base#toPretty;
+         "index: " ^ p2s index#toPretty;
+         "scale: " ^ (string_of_int scale);
+         "offset: " ^ offset#toString;
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:(fun v -> p2s v#toPretty)
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method get_memory_variable_3
            ?(size=4)
@@ -1332,23 +1341,15 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
-  method private normalize_addrvalue (x: xpr_t): xpr_t =
-    simplify_xpr x
-
   method get_var_at_address
            ?(size=None)
            ?(btype=t_unknown)
            (addrvalue: xpr_t): variable_t traceresult =
-    let _ =
-      log_diagnostics_result
-        ~msg:(p2s self#l#toPretty)
-        ~tag:"get_var_at_address"
-        __FILE__ __LINE__
-        ["addrvalue: " ^ (x2s addrvalue);
-         "btype: " ^ (btype_to_string btype);
-         "size: " ^ (opti2s size)] in
-
-    match self#normalize_addrvalue addrvalue with
+    (* Note: the expression &v (addressofvar v) may be introduced by rewriting
+       against an invariant. Assign_commands converts some addresses to addressofvar
+       expressions.*)
+    let tresult =
+      match (simplify_xpr addrvalue) with
     | XOp ((Xf "addressofvar"), [XVar v]) when self#env#is_global_variable v ->
        let gvaddr_r = self#f#env#get_global_variable_address v in
        TR.tbind
@@ -1374,7 +1375,7 @@ object (self)
     | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
          when self#f#env#is_global_variable v ->
        let gvaddr_r = self#f#env#get_global_variable_address v in
-       let cxoff_r = self#xpr_to_cxpr xoff in
+       let cxoff_r = self#xpr_to_cxpr xoff in   (* **should we have this call? *)
        TR.tbind
          ~msg:(eloc __LINE__)
          (fun gvaddr ->
@@ -1392,7 +1393,7 @@ object (self)
              let _ =
                log_diagnostics_result
                  ~msg:(p2s self#l#toPretty)
-                 ~tag:"normalized global address"
+                 ~tag:"get_var_at_address: addressofvar global"
                  __FILE__ __LINE__
                  ["varresult: "
                   ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" var_r);
@@ -1420,7 +1421,8 @@ object (self)
              let stackoffset_r = self#get_stackpointer_offset_xpr addrvalue in
              (TR.tmap
                 ~msg:(eloc __LINE__)
-                (fun offset -> self#f#env#mk_stackslot_variable stackslot offset)
+                (fun offset ->
+                  self#f#env#mk_stackslot_variable stackslot offset)
                 (TR.tbind
                    ~msg:(eloc __LINE__)
                    (stackslot#frame_offset_memory_offset
@@ -1461,7 +1463,22 @@ object (self)
                              ^ (memory_offset_to_string memoff)]
                  else
                       Ok (self#f#env#mk_offset_memory_variable memref memoff))
-               memref_r memoff_r
+               memref_r memoff_r in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_var_at_address"
+        __FILE__ __LINE__
+        ["addrvalue: " ^ (x2s addrvalue);
+         "btype: " ^ (btype_to_string btype);
+         "size: " ^ (opti2s size);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:(fun v -> p2s v#toPretty)
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   (* deprecated. to be merged with get_var_at_address *)
    method get_lhs_from_address (xpr:xpr_t) =
@@ -1492,6 +1509,148 @@ object (self)
      | _ ->
         default ()
 
+   method private get_memory_offset_type
+                    ?(size=4)
+                    (basetype: btype_t)
+                    (offset: memory_offset_t): btype_t traceresult =
+     let tresult =
+       match offset with
+       | NoOffset when is_pointer basetype
+                       && (not (is_struct_type (ptr_deref basetype))) ->
+          Ok (ptr_deref basetype)
+
+       | NoOffset when is_pointer basetype ->
+          begin
+            log_diagnostics_result
+              ~msg:(p2s self#l#toPretty)
+              ~tag:"get_memory_offset_type:struct - nooffset"
+              __FILE__ __LINE__
+              ["size: " ^ (string_of_int size);
+               "basetype: " ^ (btype_to_string basetype)];
+            Ok (ptr_deref basetype)
+          end
+
+       | FieldOffset ((fname, ckey), NoOffset) ->
+          let cinfo = get_compinfo_by_key ckey in
+          let finfo = get_compinfo_field cinfo fname in
+          Ok finfo.bftype
+
+       | FieldOffset ((fname, ckey), foff) ->
+          let cinfo = get_compinfo_by_key ckey in
+          let finfo = get_compinfo_field cinfo fname in
+          self#get_memory_offset_type ~size finfo.bftype foff
+
+       | _ ->
+          Error [(elocm __LINE__);
+                 (p2s self#l#toPretty);
+                 "offset " ^ (memory_offset_to_string offset)
+                 ^ " not yet handled"] in
+     begin
+       log_diagnostics_result
+         ~msg:(p2s self#l#toPretty)
+         ~tag:"get_memory_offset_type"
+         __FILE__ __LINE__
+         ["size: " ^ (string_of_int size);
+          "basetype: " ^ (btype_to_string basetype);
+          "offset: " ^ (memory_offset_to_string offset);
+          "tresult: "
+          ^ (TR.tfold
+               ~ok:btype_to_string
+               ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+               tresult)];
+       tresult
+     end
+
+   method private get_global_variable_type
+                    ?(size=4)
+                    (v: variable_t)
+                    (offset: memory_offset_t): btype_t traceresult =
+     let tresult =
+       match offset with
+       | ConstantOffset (num, off) ->
+          let gvaddr = numerical_mod_to_doubleword num in
+          if memmap#has_location gvaddr then
+            let gloc = memmap#get_location gvaddr in
+            if is_unknown_type gloc#btype then
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "Global location at address "
+                     ^ gvaddr#to_hex_string
+                     ^ " does not have a type"]
+            else
+              match off with
+              | NoOffset -> Ok gloc#btype
+              | _ -> self#get_memory_offset_type gloc#btype off
+          else
+            Error [(elocm __LINE__);
+                   (p2s self#l#toPretty);
+                   "No global location found at address "
+                   ^ gvaddr#to_hex_string]
+       | _ ->
+          Error [
+              (elocm __LINE__);
+              (p2s self#l#toPretty);
+              "Memory variable " ^ (p2s v#toPretty)
+              ^ " does not have a constant offset"] in
+     begin
+       log_diagnostics_result
+         ~msg:(p2s self#l#toPretty)
+         ~tag:"get_global_variable_type"
+         __FILE__ __LINE__
+         ["size: " ^ (string_of_int size);
+          "v: " ^ (p2s v#toPretty);
+          "offset: " ^ (memory_offset_to_string offset);
+          "tresult: "
+          ^ (TR.tfold
+               ~ok:btype_to_string
+               ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+               tresult)];
+       tresult
+     end
+
+   method private get_stack_variable_type
+                    ?(size=4)
+                    (v: variable_t)
+                    (offset: memory_offset_t): btype_t traceresult =
+     let tresult =
+       match offset with
+       | ConstantOffset (num, off) ->
+          (match self#f#stackframe#containing_stackslot num#toInt with
+           | Some stackslot ->
+              if stackslot#is_typed then
+                match off with
+                | NoOffset -> Ok stackslot#btype
+                | _ -> self#get_memory_offset_type stackslot#btype off
+              else
+                Error [(elocm __LINE__);
+                       (p2s self#l#toPretty);
+                       "Stackslot at offset " ^ num#toString
+                       ^ " does not have a type"]
+           | _ ->
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "No stackslot found at offset " ^ num#toString])
+       | _ ->
+          Error [(elocm __LINE__);
+                 (p2s self#l#toPretty);
+                 "Stack memory variable " ^ (p2s v#toPretty)
+                 ^ " does not have a constant offset"] in
+     begin
+       log_diagnostics_result
+         ~msg:(p2s self#l#toPretty)
+         ~tag:"get_stack_variable_type"
+         __FILE__ __LINE__
+         ["size: " ^ (string_of_int size);
+          "v: " ^ (p2s v#toPretty);
+          "offset: " ^ (memory_offset_to_string offset);
+          "tresult: "
+          ^ (TR.tfold
+               ~ok:btype_to_string
+               ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+               tresult)];
+       tresult
+     end
+
    (* Handles the following cases:
       - initial_register_value:
          if the register is a function parameter: get parameter type
@@ -1515,11 +1674,12 @@ object (self)
         if callsite has a typed var-intro: retrieve type of var-intro
         otherwise: Error (not yet handled)
     *)
-  method get_variable_type (v: variable_t): btype_t traceresult =
+   method get_variable_type (v: variable_t): btype_t traceresult =
     let is_zero (x: xpr_t) =
       match x with
       | XConst (IntConst n) -> n#equal numerical_zero
       | _ -> false in
+    let tresult =
     if self#f#env#is_initial_register_value v then
       let reg_r = self#f#env#get_initial_register_value_register v in
       TR.tbind
@@ -1544,47 +1704,14 @@ object (self)
         ~msg:(eloc __LINE__)
         (fun memref ->
           if memref#is_global_reference then
-            (match memoff_r with
-             | Ok (ConstantOffset (num, NoOffset)) ->
-                let gvaddr = numerical_mod_to_doubleword num in
-                if memmap#has_location gvaddr then
-                  let gloc = memmap#get_location gvaddr in
-                  Ok (gloc#btype)
-                else
-                  Error [(elocm __LINE__);
-                         (p2s self#l#toPretty);
-                         "No global location found for address "
-                         ^ gvaddr#to_hex_string]
-             | _ ->
-                Error [
-                    (elocm __LINE__);
-                    (p2s self#l#toPretty);
-                    "Memory variable " ^ (p2s v#toPretty)
-                    ^ " does not have a constant offset"])
+            TR.tbind
+              ~msg:(eloc __LINE__)
+              (self#get_global_variable_type v)
+              memoff_r
           else if memref#is_stack_reference then
             TR.tbind
               ~msg:(eloc __LINE__)
-              (fun memoff ->
-                match memoff with
-                | ConstantOffset (num, varoffset) ->
-                   (match self#f#stackframe#containing_stackslot num#toInt with
-                    | Some stackslot ->
-                       if stackslot#is_typed then
-                         stackslot#offset_type varoffset
-                       else
-                         Error [(elocm __LINE__);
-                                (p2s self#l#toPretty);
-                                "Stackslot at offset " ^ num#toString
-                                ^ " does not have a known type"]
-                    | _ ->
-                       Error [(elocm __LINE__);
-                              (p2s self#l#toPretty);
-                              "No stackslot found at offset " ^ num#toString])
-                | _ ->
-                   Error[(elocm __LINE__);
-                         (p2s self#l#toPretty);
-                         "Not a constant stack offset: "
-                         ^ (memory_offset_to_string memoff)])
+              (self#get_stack_variable_type v)
               memoff_r
           else
             let basevar_r =
@@ -1605,8 +1732,49 @@ object (self)
                  TR.tbind
                    (fun memoff ->
                      match memoff with
-                     | NoOffset when is_pointer basevartype ->
+                     | NoOffset when is_pointer basevartype
+                                     && (not (is_struct_type (ptr_deref basevartype)))->
+                        let _ =
+                          log_diagnostics_result
+                            ~msg:(p2s self#l#toPretty)
+                            ~tag:"get_variable_type:basevar-nooffset"
+                            __FILE__ __LINE__
+                            ["v: " ^ (p2s v#toPretty);
+                             "basevar-type: " ^ (btype_to_string basevartype)] in
                         Ok (ptr_deref basevartype)
+                     | NoOffset when is_pointer basevartype ->
+                        let _ =
+                          log_diagnostics_result
+                            ~msg:(p2s self#l#toPretty)
+                            ~tag:"get_variable_type:basevar-struct-nooffset"
+                            __FILE__ __LINE__
+                            ["v: " ^ (p2s v#toPretty);
+                             "basevar-type: " ^ (btype_to_string basevartype)] in
+                        let symmemoff_r =
+                          address_memory_offset
+                            ~tgtsize:(Some 4) (ptr_deref basevartype) zero_constant_expr in
+                                                TR.tbind
+                          ~msg:((elocm __LINE__)
+                                ^ "Basevar type: " ^ (btype_to_string basevartype)
+                                ^ "offset: 0")
+                          (fun off ->
+                            match off with
+                            | FieldOffset ((fname, ckey), NoOffset) ->
+                               let cinfo = get_compinfo_by_key ckey in
+                               let finfo = get_compinfo_field cinfo fname in
+                               Ok finfo.bftype
+                            | _ ->
+                               Error [(elocm __LINE__);
+                                      (p2s self#l#toPretty);
+                                      "symbolic offset: "
+                                      ^ (memory_offset_to_string off)
+                                      ^ " with basevar type: "
+                                      ^ (btype_to_string basevartype)
+                                      ^ " not yet handled"])
+                          symmemoff_r
+
+
+
                      | ConstantOffset (n, NoOffset) when is_pointer basevartype ->
                         let symmemoff_r =
                           address_memory_offset
@@ -1735,7 +1903,20 @@ object (self)
       let ty = self#env#get_variable_type v in
       match ty with
       | None -> Error [(elocm __LINE__) ^ "variable: " ^ (x2s (XVar v))]
-      | Some t -> Ok t
+      | Some t -> Ok t in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"get_variable_type"
+        __FILE__ __LINE__
+        ["v: " ^ (p2s v#toPretty);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:btype_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method private get_variable_rdefs (v: variable_t): symbol_t list =
     let symvar = self#f#env#mk_symbolic_variable v in
@@ -1750,14 +1931,7 @@ object (self)
            ?(size=None)
            ?(xtype=None)
            (x: xpr_t): xpr_t traceresult =
-    let _ =
-      log_diagnostics_result
-        ~msg:(p2s self#l#toPretty)
-        ~tag:"xpr_to_cxpr"
-        __FILE__ __LINE__
-        ["size: " ^ (opti2s size);
-         "xtype: " ^ (optty2s xtype);
-         "x: " ^ (x2s x)] in
+    let tresult =
     let is_pointer (y: xpr_t) =
       TR.tfold_default BCHBCTypeUtil.is_pointer false (self#get_xpr_type y) in
     let default () = self#convert_xpr_offsets ~xtype ~size x in
@@ -1822,7 +1996,22 @@ object (self)
           | XConst (IntConst n)
                when n#equal (mkNumerical 0xffffffff) && is_int t ->
              Ok (int_constant_expr (-1))
-          | _ -> default ()
+          | _ -> default () in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"xpr_to_cxpr"
+        __FILE__ __LINE__
+        ["size: " ^ (opti2s size);
+         "xtype: " ^ (optty2s xtype);
+         "x: " ^ (x2s x);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:(fun cx -> if syntactically_equal x cx then "--" else x2s cx)
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method addr_to_ctgt_xpr
            ?(size=None) ?(xtype=None) (a: xpr_t): xpr_t traceresult =
@@ -1914,16 +2103,9 @@ object (self)
               ^ "v: " ^ (p2s v#toPretty)
               ^ ": Not yet implemented"]
 
-  method convert_variable_offsets
+  method private convert_variable_offsets
            ?(vtype=None) ?(size=None) (v: variable_t): variable_t traceresult =
-    let _ =
-      log_diagnostics_result
-        ~msg:(p2s self#l#toPretty)
-        ~tag:"convert-variable-offsets"
-        __FILE__ __LINE__
-        ["vtype: " ^ (optty2s vtype);
-         "size: " ^ (opti2s size);
-         "v: " ^ (p2s v#toPretty)] in
+    let tresult =
     if self#env#is_basevar_memory_variable v then
       let basevar_r = self#env#get_memvar_basevar v in
       let offset_r = self#env#get_memvar_offset v in
@@ -1978,16 +2160,26 @@ object (self)
           ~tag:"convert-variable-offsets:default"
           __FILE__ __LINE__
           [(p2s v#toPretty)] in
-      Ok v
-
-  method convert_value_offsets
-           ?(size=None) (v: variable_t): variable_t traceresult =
-    let _ =
+      Ok v in
+    begin
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
-        ~tag:"convert-value-offsets"
+        ~tag:"convert_variable_offsets"
         __FILE__ __LINE__
-        ["size: " ^ (opti2s size); "v: " ^ (p2s v#toPretty)] in
+        ["vtype: " ^ (optty2s vtype);
+         "size: " ^ (opti2s size);
+         "v: " ^ (p2s v#toPretty);
+         "tresult: "
+         ^ TR.tfold
+             ~ok:(fun cv -> if v#equal cv then "--" else (p2s cv#toPretty))
+             ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+             tresult];
+      tresult
+    end
+
+  method private convert_value_offsets
+           ?(size=None) (v: variable_t): variable_t traceresult =
+    let tresult =
     if self#env#is_basevar_memory_value v then
       let basevar_r = self#env#get_memval_basevar v in
       let offset_r = self#env#get_memval_offset v in
@@ -2062,16 +2254,24 @@ object (self)
           ~tag:"convert-value-offsets:default"
           __FILE__ __LINE__
           ["v: " ^ (p2s v#toPretty)] in
-      Ok v
-
-  method convert_xpr_offsets
-           ?(xtype=None) ?(size=None) (x: xpr_t): xpr_t traceresult =
-    let _ =
+      Ok v in
+    begin
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
-        ~tag:"convert-xpr-offsets"
+        ~tag:"convert_value offsets"
         __FILE__ __LINE__
-        ["xtype: " ^ (optty2s xtype); "size: " ^ (opti2s size); "x: " ^ (x2s x)] in
+        ["size: " ^ (opti2s size);
+         "v: " ^ (p2s v#toPretty);
+         TR.tfold
+           ~ok:(fun cv -> if cv#equal v then "--" else (p2s cv#toPretty))
+           ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+           tresult];
+      tresult
+    end
+
+  method private convert_xpr_offsets
+                   ?(xtype=None) ?(size=None) (x: xpr_t): xpr_t traceresult =
+    let tresult =
     let rec aux exp =
       match exp with
       | XVar v when self#env#is_basevar_memory_value v ->
@@ -2127,58 +2327,81 @@ object (self)
            ~tag:"convert-xpr-offsets:failure"
            __FILE__ __LINE__
            ["x: " ^ (x2s x) ^ "; " ^ (String.concat "; " e)] in
-       result
+       result in
+    begin
+      log_diagnostics_result
+        ~msg:(p2s self#l#toPretty)
+        ~tag:"convert_xpr_offsets"
+        __FILE__ __LINE__
+        ["xtype: " ^ (optty2s xtype);
+         "size: " ^ (opti2s size);
+         "x: " ^ (x2s x);
+         "tresult: " ^
+           TR.tfold
+             ~ok:(fun cx -> if syntactically_equal x cx then "--" else x2s cx)
+             ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+             tresult];
+      tresult
+    end
 
   method get_xpr_type (x: xpr_t): btype_t traceresult =
-    let _ =
+    let tresult =
+      match x with
+      | XVar v -> self#get_variable_type v
+      | XOp (XPlus, [XVar v; XConst (IntConst _)]) -> self#get_variable_type v
+      | XOp (XPlus, [x1; x2]) ->
+         TR.tbind2
+           ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
+           ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
+           (fun t1 t2 ->
+             if is_pointer t1 && is_int t2 then
+               Ok t1
+             else if is_pointer t2 && is_int t1 then
+               Ok t2
+             else if is_int t1 && is_int t2 then
+               Ok t1
+             else
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "Unable to combine types "
+                      ^ (ty2s t1) ^ " and " ^ (ty2s t2)])
+           (self#get_xpr_type x1)
+           (self#get_xpr_type x2)
+      | XOp (XMinus, [x1; x2]) ->
+         TR.tbind2
+           ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
+           ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
+           (fun t1 t2 ->
+             if is_pointer t1 && is_pointer t2 then
+               Ok t_int
+             else if is_pointer t1 && is_int t2 then
+               Ok t1
+             else if is_int t1 && is_int t2 then
+               Ok t1
+             else
+               Error [(elocm __LINE__);
+                      (p2s self#l#toPretty);
+                      "Untable to combine types "
+                      ^ (ty2s t1) ^ " and  " ^ (ty2s t2)])
+           (self#get_xpr_type x1)
+           (self#get_xpr_type x2)
+      | _ ->
+         Error [(elocm __LINE__);
+                (p2s self#l#toPretty);
+                "xpr: " ^ (x2s x)] in
+    begin
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
         ~tag:"get_xpr_type"
         __FILE__ __LINE__
-        ["x: " ^ (x2s x)] in
-    match x with
-    | XVar v -> self#get_variable_type v
-    | XOp (XPlus, [XVar v; XConst (IntConst _)]) -> self#get_variable_type v
-    | XOp (XPlus, [x1; x2]) ->
-       TR.tbind2
-         ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
-         ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
-         (fun t1 t2 ->
-           if is_pointer t1 && is_int t2 then
-             Ok t1
-           else if is_pointer t2 && is_int t1 then
-             Ok t2
-           else if is_int t1 && is_int t2 then
-             Ok t1
-           else
-             Error [(elocm __LINE__);
-                    (p2s self#l#toPretty);
-                    "Unable to combine types "
-                    ^ (ty2s t1) ^ " and " ^ (ty2s t2)])
-         (self#get_xpr_type x1)
-         (self#get_xpr_type x2)
-    | XOp (XMinus, [x1; x2]) ->
-       TR.tbind2
-         ~msg1:((elocm __LINE__) ^ "x1: " ^ (x2s x1))
-         ~msg2:((elocm __LINE__) ^ "x2: " ^ (x2s x2))
-         (fun t1 t2 ->
-           if is_pointer t1 && is_pointer t2 then
-             Ok t_int
-           else if is_pointer t1 && is_int t2 then
-             Ok t1
-           else if is_int t1 && is_int t2 then
-             Ok t1
-           else
-             Error [(elocm __LINE__);
-                    (p2s self#l#toPretty);
-                    "Untable to combine types "
-                    ^ (ty2s t1) ^ " and  " ^ (ty2s t2)])
-         (self#get_xpr_type x1)
-         (self#get_xpr_type x2)
-    | _ ->
-       Error [(elocm __LINE__);
-              (p2s self#l#toPretty);
-              "xpr: " ^ (x2s x)]
+        ["x: " ^ (x2s x);
+         "tresult: "
+         ^ TR.tfold
+             ~ok:btype_to_string
+             ~error:(fun e -> "Error:[" ^ (String.concat "; " e) ^ "]")
+             tresult];
+      tresult
+    end
 
   method decompose_memaddr (x: xpr_t):
            (memory_reference_int traceresult * memory_offset_t traceresult) =
@@ -2616,11 +2839,11 @@ object (self)
               let newrhs =
                 TR.tvalue (self#f#env#mk_global_variable_address dw) ~default:rhs in
               let _ =
-                ch_diagnostics_log#add
-                  "rewrite constant to global address"
-                  (LBLOCK [
-                       self#l#toPretty; STR ": ";
-                       dw#toPretty; STR " ==> "; (x2p newrhs)]) in
+                log_diagnostics_result
+                  ~msg:(p2s self#l#toPretty)
+                  ~tag:"get_assign_commands_r: global address"
+                  __FILE__ __LINE__
+                  [dw#to_hex_string ^ " ==> " ^ (x2s newrhs)] in
               newrhs
             else
               rhs

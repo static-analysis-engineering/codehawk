@@ -484,48 +484,56 @@ object (self)
            ?(tgtbtype=t_unknown)
            (loc: location_int)
            (xoffset: xpr_t): memory_offset_t traceresult =
-    let _ =
+    let tresult =
+      match xoffset with
+      | XConst (IntConst n)
+           when n#equal CHNumerical.numerical_zero
+                && Option.is_none tgtsize
+                && ((is_unknown_type tgtbtype) || (is_void tgtbtype)) ->
+         Ok NoOffset
+      | XConst (IntConst n)
+           when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
+         Ok NoOffset
+      | XConst (IntConst n)
+           when n#equal CHNumerical.numerical_zero
+                && self#is_scalar
+                && Option.is_some tgtsize
+                && Option.is_some self#size
+                && (Option.get tgtsize) = (Option.get self#size) ->
+         Ok NoOffset
+      | XConst (IntConst n) when not self#is_typed ->
+         Ok (ConstantOffset (n, NoOffset))
+      | _ ->
+         let tgtbtype =
+           if is_unknown_type tgtbtype then None else Some tgtbtype in
+         if self#is_struct then
+           let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+           self#structvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
+         else if self#is_array then
+           let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+           self#arrayvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                  ^ (btype_to_string self#btype)
+                  ^ " is not known to be a struct or array";
+                  "gloc_address: " ^ self#address#to_hex_string;
+                "xoffset: " ^ (x2s xoffset)] in
+    begin
       log_diagnostics_result
         ~msg:(p2s loc#toPretty)
-        ~tag:"mmap:address-offset-memory-offset"
+        ~tag:"mmap:address_offset_memory_offset"
         __FILE__ __LINE__
         ["gloc: " ^ self#address#to_hex_string
          ^ "; xoffset: " ^ (x2s xoffset)
          ^ "; tgtsize: " ^ (opti2s tgtsize)
-         ^ "; tgtbtype: " ^ (ty2s tgtbtype)] in
-    match xoffset with
-    | XConst (IntConst n)
-         when n#equal CHNumerical.numerical_zero
-              && Option.is_none tgtsize
-              && ((is_unknown_type tgtbtype) || (is_void tgtbtype)) ->
-       Ok NoOffset
-    | XConst (IntConst n)
-         when n#equal CHNumerical.numerical_zero && (not self#is_typed) ->
-       Ok NoOffset
-    | XConst (IntConst n)
-         when n#equal CHNumerical.numerical_zero
-              && self#is_scalar
-              && Option.is_some tgtsize
-              && Option.is_some self#size
-              && (Option.get tgtsize) = (Option.get self#size) ->
-       Ok NoOffset
-    | XConst (IntConst n) when not self#is_typed ->
-       Ok (ConstantOffset (n, NoOffset))
-    | _ ->
-       let tgtbtype =
-         if is_unknown_type tgtbtype then None else Some tgtbtype in
-       if self#is_struct then
-         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#structvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
-       else if self#is_array then
-         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#arrayvar_memory_offset ~tgtsize ~tgtbtype loc btype xoffset
-       else
-         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
-                ^ (btype_to_string self#btype)
-                ^ " is not known to be a struct or array";
-                "gloc_address: " ^ self#address#to_hex_string;
-                "xoffset: " ^ (x2s xoffset)]
+         ^ "; tgtbtype: " ^ (ty2s tgtbtype);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method address_memory_offset
            ?(tgtsize=None)
@@ -774,7 +782,7 @@ object (self)
           end
        | _ ->
           Error [elocm __LINE__;
-                 "Unable to match address " ^ (faddr#to_hex_string)
+                 "Unable to match address expression " ^ (x2s gxpr)
                  ^ " with a global location."]
 
   method add_gaddr_argument

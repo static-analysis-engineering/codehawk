@@ -547,8 +547,10 @@ let stack_offset_to_name offset =
   match offset with
   | ConstantOffset (n,NoOffset) when n#gt numerical_zero ->
      "arg_" ^ (constant_offset_to_suffix_string n)
-  | ConstantOffset (n,NoOffset) when n#lt numerical_zero ->
-     "var_" ^ (constant_offset_to_neg_suffix_string n)
+  | ConstantOffset (n, off) when n#lt numerical_zero ->
+     "var_"
+     ^ (constant_offset_to_neg_suffix_string n)
+     ^ (memory_offset_to_string off)
   | ConstantOffset (n,NoOffset) when n#equal numerical_zero ->
      "var_0000"
   | NoOffset -> "var_0000"

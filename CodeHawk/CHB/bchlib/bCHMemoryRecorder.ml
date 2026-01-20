@@ -430,13 +430,31 @@ object (self)
         match xpr with
         | XConst (IntConst n) -> Some n
         | _ -> None in
-      match mmap#add_gstore self#faddr iaddr addr size optvalue with
-      | Ok () -> ()
-      | Error e ->
-         log_dc_error_result
-           ~msg:(p2s self#loc#toPretty)
-           ~tag:"record store"
-           __FILE__ __LINE__ e
+      let add_gstore gaddr =
+        match mmap#add_gstore self#faddr iaddr gaddr size optvalue with
+        | Ok () -> ()
+        | Error e ->
+           log_dc_error_result
+             ~msg:(p2s self#loc#toPretty)
+             ~tag:"record_store"
+             __FILE__ __LINE__
+             (["addr: " ^ (x2s addr); "var: " ^ (p2s var#toPretty)] @ e) in
+                     (*
+      match addr with
+      | XOp ((Xf "addressofvar"), [XVar v]) when self#env#is_global_variable v ->
+         TR.tfold
+           ~ok:add_gstore
+           ~error:(fun e ->
+             begin
+               log_dc_error_result
+                 ~msg:(p2s self#loc#toPretty)
+                 ~tag:"record_store"
+                 __FILE__ __LINE__
+                 (["addr: " ^ (x2s addr); "var: " ^ (p2s var#toPretty)] @ e);
+               ()
+             end)
+           (self#env#get_global_variable_address v)
+      | _ -> *) add_gstore addr
 
   method private record_stack_variable_store
                    ~(var: variable_t)
