@@ -84,6 +84,8 @@ let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
 let x2s x = p2s (x2p x)
 
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("finfo:" ^ tag) msg
@@ -874,7 +876,7 @@ object (self)
     match memmap#containing_location dw with
     | Some gloc ->
        tmap
-         ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": memref:global")
+         ~msg:((elocm __LINE__) ^ "mk_global_variable")
          (fun offset ->
            let gvar =
              self#mk_variable
@@ -908,11 +910,16 @@ object (self)
       | _ ->
          log_diagnostics_result
            ~msg:name
-           ~tag:"loop-counter variable"
+           ~tag:"mk_stackslot_variable:loop-counter variable"
            __FILE__ __LINE__
            ["offset: " ^ (memory_offset_to_string offset); p2s svar#toPretty] in
     begin
       self#set_variable_name svar name;
+      log_diagnostics_result
+        ~msg:name
+        ~tag:"mk_stackslot_variable"
+        __FILE__ __LINE__
+        ["offset: " ^ (memory_offset_to_string offset); p2s svar#toPretty];
       svar
     end
 

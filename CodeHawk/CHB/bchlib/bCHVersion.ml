@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -95,8 +95,8 @@ end
 
 
 let version = new version_info_t 
-  ~version:"0.6.0_20260106"
-  ~date:"2026-01-06"
+  ~version:"0.6.0_20260119"
+  ~date:"2026-01-19"
   ~licensee: None
   ~maxfilesize: None
   ()

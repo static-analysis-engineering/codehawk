@@ -4553,7 +4553,12 @@ class type global_location_int =
 
 (** Container for global locations in the system in the data sections,
     including initialized and uninitialized (.bss) data, but typically
-    excluding data contained within the .text section.*)
+    excluding data contained within the .text section.
+
+    Currently no type inference is performed for global variables. It is
+    assumed that all (relevant) types of global variables are provided
+    in userdata.
+*)
 class type global_memory_map_int =
   object
 
@@ -4765,8 +4770,13 @@ class type stackslot_int =
 
 
   (** Function stackframe consisting of stackslots. The function stackframe
-      includes both the local stackframe (containing stackslots with negative offset)
-      and the function argument area (containt stackslots with non-negative offset)
+      includes both the local stackframe (containing stackslots with negative
+      offset) and the function argument area (stackslots with non-negative
+      offset)
+
+      Stack slots for stack variables included in the function annotations of
+      the userdata are created upon initialization of the stackframe. Other
+      stack slots are added as needed when stack variables are discovered.
 *)
 class type stackframe_int =
   object
@@ -6318,11 +6328,6 @@ class type floc_int =
      *)
     method get_lhs_from_address: xpr_t -> variable_t
 
-    method get_variable_type: variable_t -> btype_t traceresult
-
-    method get_xpr_type: xpr_t -> btype_t traceresult
-
-
 
     (** {2 Predicates on variables}*)
 
@@ -6343,8 +6348,31 @@ class type floc_int =
        register *)
     method has_initial_value: variable_t -> bool
 
+    method get_variable_type: variable_t -> btype_t traceresult
 
-    (** {1 Conversion to c expressions / variables}*)
+    method get_xpr_type: xpr_t -> btype_t traceresult
+
+
+    (** {1 Conversion to c expressions / variables}
+
+        Expressions involving memory operands are initially created with a
+        base variable and, if applicable, a numerical offset in bytes.
+
+        In liftings to c these numerical offsets must be converted to
+        type-aware offsets such as fields and array indices.
+
+        The functions provided here attempt this conversion using the results
+        of type inference performed earlier. To ensure maximum type availability
+        these functions should only be called after type inference for a given
+        function has been completed. In particular, these functions should not
+        be called by the type inference itself.
+
+        The four main sources for types are:
+        1. c header files: function signatures and declaration of global variables
+        2. function signatures from function summaries
+        3. userdata: typed register and stack variable introductions
+        4. type inference, based on (1) and (2)and (3)  and instruction semantics
+     *)
 
     method xpr_to_cxpr:
              ?arithm:bool
@@ -6361,18 +6389,6 @@ class type floc_int =
              -> ?vtype:btype_t option
              -> variable_t
              -> variable_t traceresult
-
-    method convert_value_offsets:
-             ?size:int option -> variable_t -> variable_t traceresult
-
-    method convert_variable_offsets:
-             ?vtype:btype_t option
-             -> ?size:int option
-             -> variable_t
-             -> variable_t traceresult
-
-    method convert_xpr_offsets:
-             ?xtype:btype_t option -> ?size:int option -> xpr_t -> xpr_t traceresult
 
 
     (** {1 Conditional jumps}*)

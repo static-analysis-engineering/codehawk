@@ -64,9 +64,8 @@ let opti2s (i: int option) =
 let ty2s (ty: btype_t) =
   if is_unknown_type ty then "?" else btype_to_string ty
 
-(* let optty2s (ty: btype_t option) =
+let optty2s (ty: btype_t option) =
   if Option.is_some ty then btype_to_string (Option.get ty) else "?"
- *)
 
 let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
 let elocm (line: int): string = (eloc line) ^ ": "
@@ -162,123 +161,166 @@ object (self)
            ?(tgtbtype=t_unknown)
            (loc: location_int)
            (xpr: xpr_t): memory_offset_t traceresult =
-    let _ =
+    let tresult =
+      TR.tbind
+        (self#object_offset_memory_offset ~tgtsize ~tgtbtype loc)
+        (self#frame2object_offset_value xpr) in
+    begin
       log_diagnostics_result
         ~msg:(p2s loc#toPretty)
-        ~tag:"stackframe:frame_offset_memory_offset"
+        ~tag:"frame_offset_memory_offset"
         __FILE__ __LINE__
-        ["xpr: " ^ (x2s xpr)] in
-    TR.tbind
-      (self#object_offset_memory_offset ~tgtsize ~tgtbtype loc)
-      (self#frame2object_offset_value xpr)
+        ["xpr: " ^ (x2s xpr);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method object_offset_memory_offset
            ?(tgtsize=None)
            ?(tgtbtype=t_unknown)
            (loc: location_int)
            (xoffset: xpr_t): memory_offset_t traceresult =
-    let _ =
+    let tresult =
+      match xoffset with
+      | XConst (IntConst n)
+           when n#equal CHNumerical.numerical_zero
+                && (not self#is_typed || self#is_scalar) ->
+         Ok NoOffset
+      | XConst (IntConst n) when not self#is_typed ->
+         Ok (ConstantOffset (n, NoOffset))
+      | _ ->
+         let tgtbtype =
+           if is_unknown_type tgtbtype then None else Some tgtbtype in
+         if self#is_array then
+           let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+           self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+         else if self#is_struct then
+           let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
+           self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ (btype_to_string self#btype)
+                  ^ " not yet handled"] in
+    begin
       log_diagnostics_result
         ~msg:(p2s loc#toPretty)
-        ~tag:"stackframe:object_offset_memory_offset"
+        ~tag:"object_offset_memory_offset"
         __FILE__ __LINE__
         ["stackslot: " ^ (string_of_int self#offset);
          "xoffset: " ^ (x2s xoffset);
          "tgtsize: " ^ (opti2s tgtsize);
-         "tgtbtype: " ^ (ty2s tgtbtype)] in
-    match xoffset with
-    | XConst (IntConst n)
-         when n#equal CHNumerical.numerical_zero
-              && (not self#is_typed || self#is_scalar) ->
-       Ok NoOffset
-    | XConst (IntConst n) when not self#is_typed ->
-       Ok (ConstantOffset (n, NoOffset))
-    | _ ->
-       let tgtbtype =
-         if is_unknown_type tgtbtype then None else Some tgtbtype in
-       if self#is_array then
-         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#arrayvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
-       else if self#is_struct then
-         let btype = TR.tvalue (resolve_type self#btype) ~default:t_unknown in
-         self#structvar_memory_offset ~tgtsize ~tgtbtype btype xoffset
-       else
-         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                ^ (btype_to_string self#btype)
-                ^ " not yet handled"]
+         "tgtbtype: " ^ (ty2s tgtbtype);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method private arrayvar_memory_offset
                    ~(tgtsize: int option)
                    ~(tgtbtype: btype_t option)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
-    let _ =
-      log_diagnostics_result
-        ~tag:"stackframe:arrayvar_memory_offset"
-        __FILE__ __LINE__
-        ["tgtsize: " ^ (opti2s tgtsize);
-         "type: " ^ (ty2s btype);
-         "offset: " ^ (x2s xoffset)] in
     let iszero x =
       match x with
       | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
       | _ -> false in
-    match xoffset with
-    | XConst (IntConst n) when
-           n#equal CHNumerical.numerical_zero
-           && Option.is_none tgtsize
-           && Option.is_none tgtbtype ->
-       Ok NoOffset
-    | _ ->
-       if is_array_type btype then
-         let eltty = get_element_type btype in
-         tbind
-           (fun elsize ->
-             let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
-             match optindex with
-             | None ->
-                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "Unable to extract index from " ^ (x2s xoffset)]
-             | Some (indexxpr, xrem) when
-                    iszero xrem
-           (* && Option.is_none tgtsize
-                    && Option.is_none tgtbtype *) ->
-                Ok (ArrayIndexOffset (indexxpr, NoOffset))
-             | Some (indexxpr, xrem) ->
-                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "Unable to handle remainder "
-                       ^ (x2s xrem)
-                       ^ " with index expression "
-                       ^ (x2s indexxpr)])
-           (size_of_btype eltty)
-       else
-         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                ^ "xoffset: " ^ (x2s xoffset)
-                ^ "; btype: " ^ (btype_to_string btype)]
+    let tresult =
+      match xoffset with
+      | XConst (IntConst n) when
+             n#equal CHNumerical.numerical_zero
+             && Option.is_none tgtsize
+             && Option.is_none tgtbtype ->
+         Ok NoOffset
+      | _ ->
+         if is_array_type btype then
+           let eltty = get_element_type btype in
+           tbind
+             (fun elsize ->
+               let optindex = BCHXprUtil.get_array_index_offset xoffset elsize in
+               match optindex with
+               | None ->
+                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "Unable to extract index from " ^ (x2s xoffset)]
+
+                 (* No check is performed on tgtsize, to allow for memory accesses
+                    whose size does not align with the size of individual
+                    elements of an array or struct. An example of this situation
+                    is a char array used as a destination of an STM instruction *)
+               | Some (indexxpr, xrem) when iszero xrem ->
+                  Ok (ArrayIndexOffset (indexxpr, NoOffset))
+               | Some (indexxpr, xrem) ->
+                  Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "Unable to handle remainder "
+                         ^ (x2s xrem)
+                         ^ " with index expression "
+                         ^ (x2s indexxpr)])
+             (size_of_btype eltty)
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "xoffset: " ^ (x2s xoffset)
+                  ^ "; btype: " ^ (btype_to_string btype)] in
+    begin
+      log_diagnostics_result
+        ~tag:"stackframe:arrayvar_memory_offset"
+        ~msg:self#name
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "type: " ^ (ty2s btype);
+         "offset: " ^ (x2s xoffset);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method private structvar_memory_offset
                    ~(tgtsize: int option)
                    ~(tgtbtype: btype_t option)
                    (btype: btype_t)
                    (xoffset: xpr_t): memory_offset_t traceresult =
-    match xoffset with
-    | XConst (IntConst n) when
-           n#equal CHNumerical.numerical_zero
-           && Option.is_none tgtsize
-           && Option.is_none tgtbtype ->
-       Ok NoOffset
-    | XConst (IntConst _) ->
-       if is_struct_type btype then
-         let compinfo = get_struct_type_compinfo btype in
-         (self#get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
-       else
+    let tresult =
+      match xoffset with
+      | XConst (IntConst n) when
+             n#equal CHNumerical.numerical_zero
+             && Option.is_none tgtsize
+             && Option.is_none tgtbtype ->
+         Ok NoOffset
+      | XConst (IntConst _) ->
+         if is_struct_type btype then
+           let compinfo = get_struct_type_compinfo btype in
+           (self#get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "xoffset: " ^ (x2s xoffset)
+                  ^ "; btype: " ^ (btype_to_string btype)]
+      | _ ->
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                 ^ "xoffset: " ^ (x2s xoffset)
-                ^ "; btype: " ^ (btype_to_string btype)]
-    | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "xoffset: " ^ (x2s xoffset)
-              ^ "; btype: " ^ (btype_to_string btype)]
+                ^ "; btype: " ^ (btype_to_string btype)] in
+    begin
+      log_diagnostics_result
+        ~tag:"stackframe:structvar_memory_offset"
+        ~msg:self#name
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "type: " ^ (ty2s btype);
+         "offset: " ^ (x2s xoffset);
+         "tresult: "
+         ^ (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method private get_field_memory_offset_at
                    ~(tgtsize: int option)
@@ -318,62 +360,78 @@ object (self)
       | Some size, _ when size != s -> size_discrepancy size s
       | _, Some ty when not (btype_equal ty t) -> type_discrepancy ty t
       | _ -> "" in
-    match xoffset with
-    | XConst (IntConst n) ->
-       let offset = n#toInt in
-       let finfos = c.bcfields in
-       let optfield_r =
-         List.fold_left (fun acc_r finfo ->
-             match acc_r with
-             (* Error has been detected earlier *)
-             | Error e -> Error e
-             (* Result has already been determined *)
-             | Ok (Some _) -> acc_r
-             (* Still looking for a result *)
-             | Ok _ ->
-                match finfo.bfieldlayout with
-                | None ->
-                   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                          ^ "No field layout for field " ^ finfo.bfname]
-                | Some (foff, sz) ->
-                   if offset < foff then
+    let tresult =
+      match xoffset with
+      | XConst (IntConst n) ->
+         let offset = n#toInt in
+         let finfos = c.bcfields in
+         let optfield_r =
+           List.fold_left (fun acc_r finfo ->
+               match acc_r with
+               (* Error has been detected earlier *)
+               | Error e -> Error e
+               (* Result has already been determined *)
+               | Ok (Some _) -> acc_r
+               (* Still looking for a result *)
+               | Ok _ ->
+                  match finfo.bfieldlayout with
+                  | None ->
                      Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                            ^ "Skipped over field: "
-                            ^ (string_of_int offset)]
-                   else if offset >= (foff + sz) then
-                     Ok None
-                   else
-                     let offset = offset - foff in
-                     tbind
-                       (fun fldtype ->
-                         if offset = 0 && is_void_tgtbtype then
-                           Ok (Some (FieldOffset
-                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
-                         else if offset = 0
-                                 && (is_scalar fldtype)
-                                 && (check_tgttype_compliance fldtype sz) then
-                           Ok (Some (FieldOffset
-                                       ((finfo.bfname, finfo.bfckey), NoOffset)))
-                         else if offset = 0 && is_scalar fldtype then
-                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                                  ^ "Scalar type or size is not consistent: "
-                                  ^ (compliance_failure fldtype sz)]
-                         else
-                           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                                  ^ "Field offset "
-                                  ^ (x2s xoffset)
-                                  ^ " not yet handled"])
-                       (resolve_type finfo.bftype)) (Ok None) finfos in
-       (match optfield_r with
-        | Error e -> Error e
-        | Ok (Some offset) -> Ok offset
-        | Ok None ->
-           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                  ^ "Unable to find field at offset " ^ (string_of_int offset)])
-    | _ ->
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)
-              ^ " and tgtsize: " ^ pr_tgtsize ]
+                            ^ "No field layout for field " ^ finfo.bfname]
+                  | Some (foff, sz) ->
+                     if offset < foff then
+                       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                              ^ "Skipped over field: "
+                              ^ (string_of_int offset)]
+                     else if offset >= (foff + sz) then
+                       Ok None
+                     else
+                       let offset = offset - foff in
+                       tbind
+                         (fun fldtype ->
+                           if offset = 0 && is_void_tgtbtype then
+                             Ok (Some (FieldOffset
+                                         ((finfo.bfname, finfo.bfckey), NoOffset)))
+                           else if offset = 0
+                                   && (is_scalar fldtype)
+                                   && (check_tgttype_compliance fldtype sz) then
+                             Ok (Some (FieldOffset
+                                         ((finfo.bfname, finfo.bfckey), NoOffset)))
+                           else if offset = 0 && is_scalar fldtype then
+                             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                    ^ "Scalar type or size is not consistent: "
+                                    ^ (compliance_failure fldtype sz)]
+                           else
+                             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                                    ^ "Field offset "
+                                    ^ (x2s xoffset)
+                                    ^ " not yet handled"])
+                         (resolve_type finfo.bftype)) (Ok None) finfos in
+         (match optfield_r with
+          | Error e -> Error e
+          | Ok (Some offset) -> Ok offset
+          | Ok None ->
+             Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                    ^ "Unable to find field at offset " ^ (string_of_int offset)])
+      | _ ->
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)
+                ^ " and tgtsize: " ^ pr_tgtsize] in
+    begin
+      log_diagnostics_result
+        ~tag:"stackframe:get_field_memory_offset_at"
+        __FILE__ __LINE__
+        ["tgtsize: " ^ (opti2s tgtsize);
+         "tgttype: " ^ (optty2s tgtbtype);
+         "compinfo: " ^ c.bcname;
+         "xoffset: " ^ (x2s xoffset);
+         "tresult: " ^
+           (TR.tfold
+              ~ok:memory_offset_to_string
+              ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+              tresult)];
+      tresult
+    end
 
   method write_xml(node: xml_element_int) =
     begin
@@ -507,10 +565,9 @@ object (self)
            match name with
            | Some name -> name
            | _ ->
-              if offset < 0 then
-                "var_" ^ (string_of_int (-offset))
-              else
-                "arg_" ^ (string_of_int offset) in
+              let numoff = CHNumerical.mkNumerical offset in
+              let memoff = ConstantOffset(numoff, NoOffset) in
+              BCHMemoryReference.stack_offset_to_name memoff in
          let ssrec = {
              sslot_name = sname;
              sslot_offset = offset;
