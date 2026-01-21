@@ -96,9 +96,9 @@ object (self:'a)
           | "gv" -> global_offset_to_name size offset
           | _ ->
              (match offset with
-              | NoOffset -> "__pderef_" ^ basename ^ "_"
+              | NoOffset -> basename ^ "[0]"
               | ConstantOffset _ -> basename ^ (memory_offset_to_string offset)
-              | _ -> "__pderef_" ^ basename ^ (memory_offset_to_string offset)))
+              | _ -> basename ^ (memory_offset_to_string offset)))
       | RegisterVariable reg -> register_to_string reg
       | CPUFlagVariable flag -> flag_to_string flag
       | AuxiliaryVariable a ->
