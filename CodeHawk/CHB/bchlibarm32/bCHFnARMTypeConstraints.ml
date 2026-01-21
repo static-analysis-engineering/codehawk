@@ -1519,16 +1519,15 @@ object (self)
                       log_subtype_rule_disabled __LINE__ rule rttypeterm rntypeterm
                   ) rtrdefs) rnrdefs);
 
-         (* type of destination memory location may be known
          (let vmem_r = memvarop#to_variable floc in
-          let vtype_r = TR.tbind floc#get_variable_type vmem_r in
+          let ty_r = TR.tbind floc#get_variable_type vmem_r in
           let rule = "STR-memop-tc" in
           TR.titer
-            ~ok:(fun t ->
+            ~ok:(fun ty ->
               List.iter (fun rtdsym ->
                   let rtdloc = rtdsym#getBaseName in
                   let rttypevar = mk_reglhs_typevar rtreg faddr rtdloc in
-                  let opttc = mk_btype_constraint rttypevar t in
+                  let opttc = mk_btype_constraint rttypevar ty in
                   match opttc with
                   | Some tc ->
                      if fndata#is_typing_rule_enabled iaddr rule then
@@ -1540,9 +1539,7 @@ object (self)
                        log_type_constraint_rule_disabled __LINE__ rule tc
                   | _ -> ()) rtrdefs)
             ~error:(fun e -> log_error_result __FILE__ __LINE__ e)
-            vtype_r)
-          *)
-
+            ty_r);
        end
 
     | StoreRegisterByte (_, rt, rn, rm, _memvarop, _) when rm#is_immediate ->
