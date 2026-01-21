@@ -1721,11 +1721,8 @@ object (self)
                  Error [(elocm __LINE__);
                         (p2s self#l#toPretty);
                         "Memory-base: " ^ (p2s (memory_base_to_pretty b))] in
-            let basevar_type_r =
-              TR.tbind
-                ~msg:(eloc __LINE__)
-                self#get_variable_type
-                basevar_r in
+            let basevar_type_r = TR.tbind self#get_variable_type basevar_r in
+            let basevar_type_r = TR.tbind resolve_type basevar_type_r in
             TR.tbind
                ~msg:(eloc __LINE__)
                (fun basevartype ->
@@ -2127,6 +2124,16 @@ object (self)
           ~msg:(eloc __LINE__)
           (fun offset ->
             match offset with
+            | NoOffset ->
+               TR.tbind
+                 ~msg:(eloc __LINE__)
+                 (fun tgttype ->
+                   if is_struct_type tgttype then
+                     address_memory_offset
+                       ~tgtbtype:optvtype ~tgtsize:size tgttype zero_constant_expr
+                   else
+                     Ok offset)
+                 tgttype_r
             | ConstantOffset (n, NoOffset) ->
                TR.tbind
                  ~msg:(eloc __LINE__)
@@ -2212,17 +2219,15 @@ object (self)
           (fun offset ->
             match offset with
             | NoOffset ->
-               let _ =
-                 log_diagnostics_result
-                   ~msg:(p2s self#l#toPretty)
-                   ~tag:"convert-value-offsets:NoOffset"
-                   __FILE__ __LINE__
-                   ["v: " ^ (p2s v#toPretty)] in
                TR.tbind
                  ~msg:(eloc __LINE__)
                  (fun tgttype ->
-                   address_memory_offset
-                     ~tgtsize:size tgttype (int_constant_expr 0)) tgttype_r
+                   if is_struct_type tgttype then
+                     address_memory_offset
+                       ~tgtsize:size tgttype (int_constant_expr 0)
+                   else
+                     Ok offset)
+                 tgttype_r
             | ConstantOffset (n, NoOffset) ->
                TR.tbind
                  ~msg:(eloc __LINE__)
