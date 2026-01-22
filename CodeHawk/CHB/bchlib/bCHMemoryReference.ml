@@ -190,6 +190,7 @@ let rec address_memory_offset
     | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
     | _ -> false in
   let rbasetype = TR.tvalue (resolve_type basetype) ~default:t_unknown in
+  let tresult =
   match xoffset with
   | XConst (IntConst n) when is_unknown_type rbasetype ->
      let _ =
@@ -249,7 +250,20 @@ let rec address_memory_offset
                      ^ "Nonzero suboffset encountered when extracting index "
                      ^ "from " ^ (x2s xoffset) ^ " with base type "
                      ^ (btype_to_string rbasetype)])
-         tsize_r
+         tsize_r in
+  begin
+    log_diagnostics_result
+      ~tag:"address_memory_offset"
+      __FILE__ __LINE__
+      ["basetype: " ^ (btype_to_string basetype);
+       "xoffset: " ^ (x2s xoffset);
+       "tresult: "
+       ^ (TR.tfold
+            ~ok:memory_offset_to_string
+            ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+            tresult)];
+    tresult
+  end
 
 and structvar_memory_offset
 ~(tgtsize: int option)
