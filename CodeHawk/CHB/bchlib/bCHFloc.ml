@@ -1682,10 +1682,9 @@ object (self)
                             "symoff: " ^ (memory_offset_to_string symoff)])
                 symoff_r
 
-           | ConstantOffset (n, NoOffset) when is_pointer basevartype
-                                               && n#equal numerical_zero ->
+           | ConstantOffset (n, NoOffset) when is_pointer basevartype ->
               let symoff_r =
-                address_memory_offset (ptr_deref basevartype) zero_constant_expr in
+                address_memory_offset (ptr_deref basevartype) (num_constant_expr n) in
               TR.tbind (fun symoff ->
                   match symoff with
                   | FieldOffset ((fname, ckey), NoOffset) ->
@@ -1697,6 +1696,7 @@ object (self)
                             (p2s self#l#toPretty);
                             "get_basevar_type: address_memory_offset";
                             "basevar: " ^ (p2s basevar#toPretty);
+                            "offset: " ^ (memory_offset_to_string offset);
                             "basevartype: " ^ (btype_to_string basevartype);
                             "symoff: " ^ (memory_offset_to_string symoff)])
                 symoff_r
