@@ -256,7 +256,32 @@ and structvar_memory_offset
 ~(tgtbtype: btype_t option)
 (btype: btype_t)
 (xoffset: xpr_t): memory_offset_t traceresult =
-  let _ =
+  let tresult =
+    match xoffset with
+    | XConst (IntConst n)
+         when n#equal numerical_zero
+              && (Option.is_some tgtbtype)
+              && (btype_equal (Option.get tgtbtype) btype) ->
+       Ok NoOffset
+    | XConst (IntConst _) ->
+       if is_struct_type btype then
+         let compinfo = get_struct_type_compinfo btype in
+         (get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
+                ^ " xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)]
+    | _ ->
+       if is_struct_type btype then
+         let compinfo = get_struct_type_compinfo btype in
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "xoffset: " ^ (x2s xoffset)
+                ^ "; type: struct " ^ compinfo.bcname]
+       else
+         Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                ^ "xoffset: " ^ (x2s xoffset)
+                ^ "; btype: " ^ (btype_to_string btype)] in
+  begin
     log_diagnostics_result
       ~tag:"structvar-memory-offset"
       __FILE__ __LINE__
@@ -266,31 +291,14 @@ and structvar_memory_offset
        ^ (if Option.is_some tgtbtype then (btype_to_string (Option.get tgtbtype))
           else "?");
        "btype: " ^ (btype_to_string btype);
-       "xoffset: " ^ (x2s xoffset)] in
-  match xoffset with
-  | XConst (IntConst n)
-       when n#equal numerical_zero
-            && (Option.is_some tgtbtype)
-            && (btype_equal (Option.get tgtbtype) btype) ->
-     Ok NoOffset
-  | XConst (IntConst _) ->
-     if is_struct_type btype then
-       let compinfo = get_struct_type_compinfo btype in
-       (get_field_memory_offset_at ~tgtsize ~tgtbtype compinfo xoffset)
-     else
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ":"
-              ^ " xoffset: " ^ (x2s xoffset)
-              ^ "; btype: " ^ (btype_to_string btype)]
-  | _ ->
-     if is_struct_type btype then
-       let compinfo = get_struct_type_compinfo btype in
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "xoffset: " ^ (x2s xoffset)
-              ^ "; type: struct " ^ compinfo.bcname]
-     else
-       Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-              ^ "xoffset: " ^ (x2s xoffset)
-              ^ "; btype: " ^ (btype_to_string btype)]
+       "xoffset: " ^ (x2s xoffset);
+       "tresult: "
+       ^ (TR.tfold
+            ~ok:memory_offset_to_string
+            ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+            tresult)];
+    tresult
+  end
 
 and arrayvar_memory_offset
 ~(tgtsize: int option)
@@ -375,6 +383,7 @@ and get_field_memory_offset_at
     | _, Some ty when not (btype_equal ty t) -> type_discrepancy ty t
     | _ -> "" in
 
+  let tresult =
   match xoffset with
   | XConst (IntConst n) ->
      let offset = n#toInt in
@@ -400,7 +409,7 @@ and get_field_memory_offset_at
                    let offset = offset - foff in
                    TR.tbind
                   ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-                     (fun fldtype ->
+                  (fun fldtype ->
                        if offset = 0
                           && (is_scalar fldtype)
                           && (check_tgttype_compliance fldtype sz) then
@@ -449,7 +458,26 @@ and get_field_memory_offset_at
                 ^ "Unable to find field at offset " ^ (string_of_int offset)])
   | _ ->
   Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-         ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)]
+         ^ "Unable to determine field for xoffset: " ^ (x2s xoffset)] in
+  begin
+    log_diagnostics_result
+      ~tag:"get_fieldmemory_offset_at"
+      __FILE__ __LINE__
+      ["tgtsize: "
+       ^ (if Option.is_some tgtsize then (string_of_int (Option.get tgtsize)) else "?");
+       "tgtbtype: "
+       ^ (if Option.is_some tgtbtype then (btype_to_string (Option.get tgtbtype))
+          else "?");
+       "compinfo: " ^ c.bcname;
+       "xoffset: " ^ (x2s xoffset);
+       "tresult: "
+       ^ (TR.tfold
+            ~ok:memory_offset_to_string
+            ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+            tresult)];
+    tresult
+  end
+
 
 
 let rec is_unknown_offset offset =
