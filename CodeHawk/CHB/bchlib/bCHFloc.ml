@@ -1749,8 +1749,8 @@ object (self)
                              "basevar-type: " ^ (btype_to_string basevartype)] in
                         let symmemoff_r =
                           address_memory_offset
-                            ~tgtsize:(Some 4) (ptr_deref basevartype) zero_constant_expr in
-                                                TR.tbind
+                            (ptr_deref basevartype) zero_constant_expr in
+                        TR.tbind
                           ~msg:((elocm __LINE__)
                                 ^ "Basevar type: " ^ (btype_to_string basevartype)
                                 ^ "offset: 0")
@@ -2267,10 +2267,11 @@ object (self)
         __FILE__ __LINE__
         ["size: " ^ (opti2s size);
          "v: " ^ (p2s v#toPretty);
-         TR.tfold
-           ~ok:(fun cv -> if cv#equal v then "--" else (p2s cv#toPretty))
-           ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
-           tresult];
+         "tresult: "
+           ^ (TR.tfold
+                ~ok:(fun cv -> if cv#equal v then "--" else (p2s cv#toPretty))
+                ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+                tresult)];
       tresult
     end
 
