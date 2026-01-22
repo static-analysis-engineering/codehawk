@@ -233,7 +233,7 @@ let is_char_pointer t = match t with TPtr (TInt (IChar, _), _) -> true | _  -> f
 
 let is_void_pointer t = match t with TPtr (TVoid _, _) -> true | _ -> false
 
-let is_scalar t = (is_int t) || (is_float t) || (is_pointer t)
+let is_scalar t = (is_int t) || (is_float t) || (is_pointer t) || (is_enum t)
 
 let is_pointer_to_struct t = match t with TPtr (TComp _,_) -> true | _ -> false
 
