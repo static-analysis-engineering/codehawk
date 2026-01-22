@@ -1651,6 +1651,114 @@ object (self)
        tresult
      end
 
+   method private get_membasevar_type
+                    ?(size=4)
+                    (basevar: variable_t)
+                    (offset: memory_offset_t): btype_t traceresult =
+     let basevar_type_r = self#get_variable_type basevar in
+     let basevar_type_r = TR.tbind resolve_type basevar_type_r in
+     let tresult =
+       TR.tbind (fun basevartype ->
+           match offset with
+           | NoOffset when is_pointer basevartype
+                           && (not (is_struct_type (ptr_deref basevartype))) ->
+              Ok (ptr_deref basevartype)
+           | NoOffset when is_pointer basevartype ->
+              let symoff_r =
+                address_memory_offset
+                  ~tgtsize:(Some size) (ptr_deref basevartype) zero_constant_expr in
+              TR.tbind (fun symoff ->
+                  match symoff with
+                  | FieldOffset ((fname, ckey), NoOffset) ->
+                     let cinfo = get_compinfo_by_key ckey in
+                     let finfo = get_compinfo_field cinfo fname in
+                     Ok finfo.bftype
+                  | _ ->
+                     Error [(elocm __LINE__);
+                            (p2s self#l#toPretty);
+                            "get_basevar_type: address_memory_offset";
+                            "basevar: " ^ (p2s basevar#toPretty);
+                            "basevartype: " ^ (btype_to_string basevartype);
+                            "symoff: " ^ (memory_offset_to_string symoff)])
+                symoff_r
+
+           | ConstantOffset (n, NoOffset) when is_pointer basevartype
+                                               && n#equal numerical_zero ->
+              let symoff_r =
+                address_memory_offset (ptr_deref basevartype) zero_constant_expr in
+              TR.tbind (fun symoff ->
+                  match symoff with
+                  | FieldOffset ((fname, ckey), NoOffset) ->
+                     let cinfo = get_compinfo_by_key ckey in
+                     let finfo = get_compinfo_field cinfo fname in
+                     Ok finfo.bftype
+                  | _ ->
+                     Error [(elocm __LINE__);
+                            (p2s self#l#toPretty);
+                            "get_basevar_type: address_memory_offset";
+                            "basevar: " ^ (p2s basevar#toPretty);
+                            "basevartype: " ^ (btype_to_string basevartype);
+                            "symoff: " ^ (memory_offset_to_string symoff)])
+                symoff_r
+
+           | FieldOffset ((fname, ckey), NoOffset) ->
+              let cinfo = get_compinfo_by_key ckey in
+              let finfo = get_compinfo_field cinfo fname in
+              Ok finfo.bftype
+
+           | IndexOffset (v, i, memsuboff) ->
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "get_basevar_type: index offset: "
+                     ^ (memory_offset_to_string offset)
+                     ^ " with "
+                     ^ (p2s v#toPretty)
+                     ^ ", index: "
+                     ^ (string_of_int i)
+                     ^ "; and "
+                     ^ (memory_offset_to_string memsuboff)]
+
+           | ArrayIndexOffset (x, memsuboff) ->
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "get_basevar_type: array index offset: "
+                     ^ (memory_offset_to_string offset)
+                     ^ " with "
+                     ^ (x2s x)
+                     ^ "; and "
+                     ^ (memory_offset_to_string memsuboff)]
+
+           | BasePtrArrayIndexOffset (x, memsuboff) ->
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "get_basevar_type: base-ptr array index offset: "
+                     ^ (memory_offset_to_string offset)
+                     ^ " with "
+                     ^ (x2s x)
+                     ^ "; and "
+                     ^ (memory_offset_to_string memsuboff)]
+
+           | _ ->
+              Error [(elocm __LINE__);
+                     (p2s self#l#toPretty);
+                     "memoff: " ^ (memory_offset_to_string offset)
+                     ^ " not yet handled"])
+         basevar_type_r in
+     begin
+       log_diagnostics_result
+         ~msg:(p2s self#l#toPretty)
+         ~tag:"get_membasevar_type"
+         __FILE__ __LINE__
+         ["basevar: " ^ (p2s basevar#toPretty);
+          "offset: " ^ (memory_offset_to_string offset);
+          "tresult: "
+          ^ (TR.tfold
+               ~ok:btype_to_string
+               ~error:(fun e -> "Error [" ^ (String.concat "; " e) ^ "]")
+               tresult)];
+       tresult
+     end
+
    (* Handles the following cases:
       - initial_register_value:
          if the register is a function parameter: get parameter type
@@ -1675,10 +1783,6 @@ object (self)
         otherwise: Error (not yet handled)
     *)
    method get_variable_type (v: variable_t): btype_t traceresult =
-    let is_zero (x: xpr_t) =
-      match x with
-      | XConst (IntConst n) -> n#equal numerical_zero
-      | _ -> false in
     let tresult =
     if self#f#env#is_initial_register_value v then
       let reg_r = self#f#env#get_initial_register_value_register v in
@@ -1697,6 +1801,7 @@ object (self)
     else if self#env#is_initial_memory_value v then
       let memvar_r = self#env#get_init_value_variable v in
       TR.tbind ~msg:(eloc __LINE__) self#get_variable_type memvar_r
+
     else if self#env#is_memory_variable v then
       let memref_r = self#env#get_memory_reference v in
       let memoff_r = self#env#get_memvar_offset v in
@@ -1721,133 +1826,11 @@ object (self)
                  Error [(elocm __LINE__);
                         (p2s self#l#toPretty);
                         "Memory-base: " ^ (p2s (memory_base_to_pretty b))] in
-            let basevar_type_r = TR.tbind self#get_variable_type basevar_r in
-            let basevar_type_r = TR.tbind resolve_type basevar_type_r in
-            TR.tbind
-               ~msg:(eloc __LINE__)
-               (fun basevartype ->
-                 TR.tbind
-                   (fun memoff ->
-                     match memoff with
-                     | NoOffset when is_pointer basevartype
-                                     && (not (is_struct_type (ptr_deref basevartype)))->
-                        let _ =
-                          log_diagnostics_result
-                            ~msg:(p2s self#l#toPretty)
-                            ~tag:"get_variable_type:basevar-nooffset"
-                            __FILE__ __LINE__
-                            ["v: " ^ (p2s v#toPretty);
-                             "basevar-type: " ^ (btype_to_string basevartype)] in
-                        Ok (ptr_deref basevartype)
-                     | NoOffset when is_pointer basevartype ->
-                        let _ =
-                          log_diagnostics_result
-                            ~msg:(p2s self#l#toPretty)
-                            ~tag:"get_variable_type:basevar-struct-nooffset"
-                            __FILE__ __LINE__
-                            ["v: " ^ (p2s v#toPretty);
-                             "basevar-type: " ^ (btype_to_string basevartype)] in
-                        let symmemoff_r =
-                          address_memory_offset
-                            (ptr_deref basevartype) zero_constant_expr in
-                        TR.tbind
-                          ~msg:((elocm __LINE__)
-                                ^ "Basevar type: " ^ (btype_to_string basevartype)
-                                ^ "offset: 0")
-                          (fun off ->
-                            match off with
-                            | FieldOffset ((fname, ckey), NoOffset) ->
-                               let cinfo = get_compinfo_by_key ckey in
-                               let finfo = get_compinfo_field cinfo fname in
-                               Ok finfo.bftype
-                            | _ ->
-                               Error [(elocm __LINE__);
-                                      (p2s self#l#toPretty);
-                                      "symbolic offset: "
-                                      ^ (memory_offset_to_string off)
-                                      ^ " with basevar type: "
-                                      ^ (btype_to_string basevartype)
-                                      ^ " not yet handled"])
-                          symmemoff_r
+            TR.tbind2
+              (fun basevar memoff -> self#get_membasevar_type basevar memoff)
+              basevar_r memoff_r)
+        memref_r
 
-
-
-                     | ConstantOffset (n, NoOffset) when is_pointer basevartype ->
-                        let symmemoff_r =
-                          address_memory_offset
-                            (ptr_deref basevartype) (num_constant_expr n) in
-                        TR.tbind
-                          ~msg:((elocm __LINE__)
-                                ^ "Basevar type: " ^ (btype_to_string basevartype)
-                                ^ "offset: " ^ n#toString)
-                          (fun off ->
-                            match off with
-                            | FieldOffset ((fname, ckey), NoOffset) ->
-                               let cinfo = get_compinfo_by_key ckey in
-                               let finfo = get_compinfo_field cinfo fname in
-                               Ok finfo.bftype
-                            | _ ->
-                               Error [(elocm __LINE__);
-                                      (p2s self#l#toPretty);
-                                      "symbolic offset: "
-                                      ^ (memory_offset_to_string off)
-                                      ^ " with basevar type: "
-                                      ^ (btype_to_string basevartype)
-                                      ^ " not yet handled"])
-                          symmemoff_r
-                     | FieldOffset ((fname, ckey), NoOffset) ->
-                        let cinfo = get_compinfo_by_key ckey in
-                        let finfo = get_compinfo_field cinfo fname in
-                        Ok finfo.bftype
-                     | IndexOffset (v, i, memsuboff) ->
-                        Error [(elocm __LINE__);
-                               (p2s self#l#toPretty);
-                               "index offset: "
-                               ^ (memory_offset_to_string memoff)
-                               ^ " with "
-                               ^ (p2s v#toPretty)
-                               ^ ", index: "
-                               ^ (string_of_int i)
-                               ^ "; and "
-                               ^ (memory_offset_to_string memsuboff)]
-                     | ArrayIndexOffset (x, memsuboff) ->
-                        Error [(elocm __LINE__);
-                               (p2s self#l#toPretty);
-                               "array index offset: "
-                               ^ (memory_offset_to_string memoff)
-                               ^ " with "
-                               ^ (x2s x)
-                               ^ "; and "
-                               ^ (memory_offset_to_string memsuboff)]
-                     | BasePtrArrayIndexOffset (x, _) when is_zero x ->
-                        (match basevartype with
-                         | TPtr (t, _) -> Ok t
-                         | _ ->
-                            Error [(elocm __LINE__);
-                                   (p2s self#l#toPretty);
-                                   "array index offset: "
-                                   ^ (memory_offset_to_string memoff)
-                                   ^ " with basevar type: "
-                                   ^ (btype_to_string basevartype)
-                                   ^ " not yet handled"])
-                     | BasePtrArrayIndexOffset (x, memsuboff) ->
-                        Error [(elocm __LINE__);
-                               (p2s self#l#toPretty);
-                               "base-ptr array index offset: "
-                               ^ (memory_offset_to_string memoff)
-                               ^ " with "
-                               ^ (x2s x)
-                               ^ "; and "
-                               ^ (memory_offset_to_string memsuboff)]
-
-                     | _ ->
-                        Error [(elocm __LINE__);
-                               (p2s self#l#toPretty);
-                               "memoff: " ^ (memory_offset_to_string memoff)
-                               ^ " not yet handled"])
-                   memoff_r)
-               basevar_type_r)
-      memref_r
     else if self#f#env#is_return_value v then
       TR.tbind
         ~msg:(eloc __LINE__)
@@ -1867,6 +1850,7 @@ object (self)
             else
               Ok rty)
         (self#f#env#get_call_site v)
+
     else if self#f#env#is_register_variable v then
       let vrdefs = self#get_variable_rdefs v in
       let fndata = self#f#get_function_data in
@@ -2185,73 +2169,87 @@ object (self)
     end
 
   method private convert_value_offsets
-           ?(size=None) (v: variable_t): variable_t traceresult =
+                   ?(size=None) (v: variable_t): variable_t traceresult =
     let tresult =
-    if self#env#is_basevar_memory_value v then
-      let basevar_r = self#env#get_memval_basevar v in
-      let offset_r = self#env#get_memval_offset v in
-      let cbasevar_r =
-        TR.tbind
-          ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
-          (self#convert_value_offsets ~size)
-          basevar_r in
-      let basetype_r = TR.tbind self#get_variable_type cbasevar_r in
-      let tgttype_r =
-        TR.tbind
-          ~msg:(eloc __LINE__)
-          (fun basetype ->
-            match basetype with
-            | TPtr (t, _) -> Ok t
-            | TComp (key, _) ->
-               let cinfo = get_compinfo_by_key key in
-               Error [(elocm __LINE__);
-                      (p2s self#l#toPretty);
-                      "Target type is a struct: " ^ cinfo.bcname
-                      ^ ". A pointer was expected"]
-            | t ->
-               Error [(elocm __LINE__);
-                      (p2s self#l#toPretty);
-                      "Type " ^ (btype_to_string t)
-                      ^ " is not a pointer"]) basetype_r in
-      let coffset_r =
-        TR.tbind
-          ~msg:(eloc __LINE__)
-          (fun offset ->
-            match offset with
-            | NoOffset ->
-               TR.tbind
-                 ~msg:(eloc __LINE__)
-                 (fun tgttype ->
-                   if is_struct_type tgttype then
-                     address_memory_offset
-                       ~tgtsize:size tgttype (int_constant_expr 0)
-                   else
-                     Ok offset)
-                 tgttype_r
-            | ConstantOffset (n, NoOffset) ->
-               TR.tbind
-                 ~msg:(eloc __LINE__)
-                 (fun tgttype ->
-                   address_memory_offset
-                     ~tgtsize:size tgttype (num_constant_expr n)) tgttype_r
-            | _ ->
-               Ok offset) offset_r in
-      TR.tbind
-        ~msg:((elocm __LINE__) ^ (p2s v#toPretty))
-        (fun cbasevar ->
+      if self#env#is_basevar_memory_value v then
+        let basevar_r = self#env#get_memval_basevar v in
+        let offset_r = self#env#get_memval_offset v in
+        let cbasevar_r =
           TR.tbind
-            ~msg:((elocm __LINE__) ^ "cbasevar: " ^ (p2s cbasevar#toPretty))
-            (fun coffset ->
-              let memvar_r =
-                self#env#mk_basevar_memory_variable cbasevar coffset in
+            ~msg:(__FILE__ ^ ":" ^ (string_of_int __LINE__))
+            (self#convert_value_offsets ~size)
+            basevar_r in
+        let basetype_r = TR.tbind self#get_variable_type cbasevar_r in
+        let basetype_r = TR.tbind resolve_type basetype_r in
+        let tgttype_r =
+          TR.tbind
+            ~msg:(eloc __LINE__)
+            (fun basetype ->
+              match basetype with
+              | TPtr (t, _) -> Ok t
+              | TComp (key, _) ->
+                 let cinfo = get_compinfo_by_key key in
+                 Error [(elocm __LINE__);
+                        (p2s self#l#toPretty);
+                        "Target type is a struct: " ^ cinfo.bcname
+                        ^ ". A pointer was expected"]
+              | t ->
+                 Error [(elocm __LINE__);
+                        (p2s self#l#toPretty);
+                        "Type " ^ (btype_to_string t)
+                        ^ " is not a pointer"]) basetype_r in
+        let coffset_r =
+          TR.tbind (fun offset ->
+              match offset with
+              | NoOffset ->
+                 TR.tbind (fun tgttype ->
+                     if is_struct_type tgttype then
+                       address_memory_offset
+                         ~tgtsize:size tgttype (int_constant_expr 0)
+                     else
+                       Ok offset)
+                   tgttype_r
+              | ConstantOffset (n, NoOffset) ->
+                 TR.tbind
+                   ~msg:(eloc __LINE__)
+                   (fun tgttype ->
+                     address_memory_offset
+                       ~tgtsize:size tgttype (num_constant_expr n)) tgttype_r
+              | _ ->
+                 Ok offset) offset_r in
+        let tresult =
+          TR.tbind
+            ~msg:((elocm __LINE__) ^ (p2s v#toPretty))
+            (fun cbasevar ->
               TR.tbind
-                ~msg:((elocm __LINE__)
-                      ^ (p2s self#l#toPretty) ^ ": "
-                      ^ "cbasevar: " ^ (p2s cbasevar#toPretty)
-                      ^ "; coffset: " ^ (memory_offset_to_string coffset))
-                self#env#mk_initial_memory_value memvar_r
-            ) coffset_r)
-        cbasevar_r
+                ~msg:((elocm __LINE__) ^ "cbasevar: " ^ (p2s cbasevar#toPretty))
+                (fun coffset ->
+                  let memvar_r =
+                    self#env#mk_basevar_memory_variable cbasevar coffset in
+                  TR.tbind
+                    ~msg:((elocm __LINE__)
+                          ^ (p2s self#l#toPretty) ^ ": "
+                          ^ "cbasevar: " ^ (p2s cbasevar#toPretty)
+                          ^ "; coffset: " ^ (memory_offset_to_string coffset))
+                    self#env#mk_initial_memory_value memvar_r
+                ) coffset_r)
+            cbasevar_r in
+        begin
+          log_diagnostics_result
+            ~msg:(p2s self#l#toPretty)
+            ~tag:"convert_value_offsets:basevar_memory_value"
+            __FILE__ __LINE__
+            ["size: " ^ (opti2s size);
+             "v: " ^ (p2s v#toPretty);
+             "tgttype: " ^ (TR.tfold_default btype_to_string "?" tgttype_r);
+             "coffset: " ^ (TR.tfold_default memory_offset_to_string "?" coffset_r);
+             "tresult: "
+             ^ (TR.tfold
+                  ~ok:(fun cv -> if cv#equal v then "--" else (p2s cv#toPretty))
+                  ~error:(fun e -> "Error: [" ^ (String.concat "; " e) ^ "]")
+                  tresult)];
+          tresult
+        end
     else
       let _ =
         log_diagnostics_result
@@ -2263,7 +2261,7 @@ object (self)
     begin
       log_diagnostics_result
         ~msg:(p2s self#l#toPretty)
-        ~tag:"convert_value offsets"
+        ~tag:"convert_value_offsets"
         __FILE__ __LINE__
         ["size: " ^ (opti2s size);
          "v: " ^ (p2s v#toPretty);
