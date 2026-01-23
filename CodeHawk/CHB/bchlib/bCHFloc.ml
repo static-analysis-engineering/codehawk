@@ -1915,6 +1915,8 @@ object (self)
     let tresult =
     let is_pointer (y: xpr_t) =
       TR.tfold_default BCHBCTypeUtil.is_pointer false (self#get_xpr_type y) in
+    let is_integer (y: xpr_t) =
+      TR.tfold_default BCHBCTypeUtil.is_int false (self#get_xpr_type y) in
     let default () = self#convert_xpr_offsets ~xtype ~size x in
     match x with
     | XOp (XPlus, [y; XOp (XMult, [XConst (IntConst n); XVar v])]) ->
@@ -1969,6 +1971,21 @@ object (self)
            result)
          (self#xpr_to_cxpr y)
          (BCHBCTypeUtil.size_of_btype derefty)
+
+    | XOp (XPlus, [y; XConst (IntConst n)])
+           when is_integer y && n#geq (mkNumerical 0x100000000) ->
+       let rresult =
+         simplify_xpr (XOp (XMinus, [x; int_constant_expr 0x100000000])) in
+       begin
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"xpr_to_cxpr:subtract 2^32"
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x);
+            "rresult: " ^ (x2s rresult)];
+         Ok rresult
+       end
+
     | _ ->
        match xtype with
        | None -> default ()
@@ -2130,7 +2147,7 @@ object (self)
       let _ =
         log_diagnostics_result
           ~msg:(p2s self#l#toPretty)
-          ~tag:"convert-variable-offsets"
+          ~tag:"convert_variable_offsets:basevar_memory_variable"
           __FILE__ __LINE__
           ["tgttype: " ^ (TR.tfold_default btype_to_string "?" tgttype_r);
            "tgtbtype: " ^ (btype_to_string optvtype);
@@ -2148,7 +2165,7 @@ object (self)
       let _ =
         log_diagnostics_result
           ~msg:(p2s self#l#toPretty)
-          ~tag:"convert-variable-offsets:default"
+          ~tag:"convert_variable_offsets:default"
           __FILE__ __LINE__
           [(p2s v#toPretty)] in
       Ok v in
