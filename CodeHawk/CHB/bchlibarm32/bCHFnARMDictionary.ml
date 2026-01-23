@@ -676,7 +676,7 @@ object (self)
             let xx = rewrite_expr ?restrict:(Some 4) x in
             let ptype = get_parameter_type p in
             let xx =
-              if is_pointer ptype && (not (is_char_pointer ptype)) then
+              if is_pointer ptype (* && (not (is_char_pointer ptype)) *) then
                 let _ = floc#memrecorder#record_argument xx index in
                 match get_string_reference floc xx with
                 | Some _ -> xx
