@@ -28,6 +28,7 @@
 
 (* chlib *)
 open CHLanguage
+open CHNumerical
 open CHPretty
 
 (* chutil *)
@@ -154,6 +155,19 @@ object (self)
   method frame2object_offset_value (xpr: xpr_t): xpr_t traceresult =
     let xoff =
       simplify_xpr (XOp (XMinus, [xpr; int_constant_expr self#offset])) in
+    let xoff =
+      match xoff with
+      | XOp (XPlus, [_; XConst (IntConst n)]) when n#geq (mkNumerical 0x100000000) ->
+         let rresult =
+           simplify_xpr (XOp (XMinus, [xoff; int_constant_expr 0x100000000])) in
+         begin
+           log_diagnostics_result
+             ~tag:"frame2object_offset_value:correct for stackpointer wraparound"
+             __FILE__ __LINE__
+             ["xpr: " ^ (x2s xpr); "rresult: " ^ (x2s rresult)];
+           rresult
+         end
+      | _ -> xoff in
     Ok xoff
 
   method frame_offset_memory_offset
