@@ -1561,7 +1561,7 @@ class type output_parameter_analysis_digest_int =
 
     method is_active: proof_obligation_int list -> bool
 
-    method add_new_parameter: varinfo -> unit traceresult
+    method add_new_parameter: int -> varinfo -> unit traceresult
 
     method add_parameter: candidate_output_parameter_int -> unit traceresult
 
