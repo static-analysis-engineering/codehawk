@@ -55,7 +55,7 @@ let _fenv = CCHFileEnvironment.file_environment
 class outputparameter_unaltered_checker_t
         (poq: po_query_int)
         (vinfo: varinfo)
-        (_offset: offset)
+        (offset: offset)
         (invs: invariant_int list) =
 object (self)
 
@@ -141,7 +141,7 @@ object (self)
 
   method private inv_xpr_implies_safe (invindex: int) (xpr: xpr_t) =
     let mname = "inv_xpr_implies_safe" in
-    let numv = poq#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
+    let numv = poq#env#mk_program_var vinfo offset NUM_VAR_TYPE in
     match xpr with
     | XVar v when poq#env#is_initial_parameter_deref_value v ->
        let paramvar = poq#env#get_initial_value_variable v in

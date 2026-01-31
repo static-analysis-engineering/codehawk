@@ -76,7 +76,7 @@ object (self)
 
   method private inv_xpr_implies_violation (invindex: int) (xpr: xpr_t) =
     let mname = "inv_xpr_implies_violation" in
-    let numv = poq#env#mk_program_var vinfo NoOffset NUM_VAR_TYPE in
+    let numv = poq#env#mk_program_var vinfo self#offset NUM_VAR_TYPE in
     match xpr with
     | XVar v when poq#env#is_initial_parameter_deref_value v ->
        let paramvar = poq#env#get_initial_value_variable v in
