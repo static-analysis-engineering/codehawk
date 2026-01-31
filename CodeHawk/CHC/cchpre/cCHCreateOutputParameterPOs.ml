@@ -29,6 +29,7 @@
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHTimingLog
 open CHTraceResult
 
@@ -215,12 +216,14 @@ object (self)
                    (e: exp)
                    (el: exp list)
                    (loc: location) =
+    let vname =
+      match e with
+      | Lval (Var (vname, _), _) -> vname
+      | _ -> "?" in
+    let _ =
+      ch_info_log#add "create_po_call" (STR vname) in
     let is_ref_arg (arg: exp) =
       is_pointer_type (fenv#get_type_unrolled (type_of_exp self#env arg)) in
-    let is_library_call =
-      match e with
-      | Lval (Var (vname, _), _) -> fenv#has_external_header vname
-      | _ -> false in
     begin
       (match lval_o with
        | Some lval -> self#create_po_lval context#add_lhs lval loc
@@ -238,8 +241,9 @@ object (self)
          begin
            self#create_output_parameter_po_s context loc;
            self#analysisdigest#add_call_dependency loc context e;
-           (if not is_library_call then
-              self#analysisdigest#add_callee_callsite loc context e);
+           self#analysisdigest#add_callee_callsite loc context e;
+           ch_info_log#add "add_callee_callsite"
+             (LBLOCK [STR "context: "; STR context#to_string])
          end);
       (List.iteri (fun i x ->
            let newcontext = context#add_arg (i + 1) in
@@ -249,18 +253,20 @@ object (self)
               | TPtr _ ->
                  begin
                    self#add_ppo (PValidMem x) loc newcontext;
-                   (if not is_library_call then
-                      begin
-                        self#add_ppo (POutputParameterArgument x) loc newcontext;
-                        (List.iter (fun vinfo ->
-                             self#add_ppo
-                               (POutputParameterNoEscape (vinfo, x)) loc newcontext)
-                           self#active_params);
-                        self#analysisdigest#add_callee_callsite_arg
-                          loc context newcontext x;
-                        self#analysisdigest#add_call_dependency_arg
-                          loc context newcontext x
-                      end)
+                   begin
+                     self#add_ppo (POutputParameterArgument x) loc newcontext;
+                     (List.iter (fun vinfo ->
+                          self#add_ppo
+                            (POutputParameterNoEscape (vinfo, x)) loc newcontext)
+                        self#active_params);
+                     self#analysisdigest#add_callee_callsite_arg
+                       loc context newcontext x;
+                     self#analysisdigest#add_call_dependency_arg
+                       loc context newcontext x;
+                     ch_info_log#add
+                       "add_callee_callsite_arg"
+                       (LBLOCK [STR vname; STR ": "; INT i])
+                   end
                  end
               | _ -> ())
            end) el)
@@ -414,13 +420,14 @@ object (self)
 end
 
 
-let get_pointer_parameters (fundec: fundec): varinfo list =
+let get_pointer_parameters (fundec: fundec): (int * varinfo) list =
   let fdecls = fundec.sdecls in
   match fundec.svar.vtype with
   | TFun (_, Some funargs, _, _) | TPtr (TFun (_, Some funargs, _, _), _) ->
-     List.fold_left (fun acc (vname, ty, _) ->
+     let funargs = List.mapi (fun i a -> (i, a)) funargs in
+     List.fold_left (fun acc (i, (vname, ty, _)) ->
          match ty with
-         | TPtr _ -> (fdecls#get_varinfo_by_name vname) :: acc
+         | TPtr _ -> (i + 1, fdecls#get_varinfo_by_name vname) :: acc
          | _ -> acc) [] funargs
   | _ -> []
 
@@ -429,12 +436,12 @@ let get_pointer_parameters (fundec: fundec): varinfo list =
    the conditions posed on output parameters based on their types.*)
 let initialize_output_parameters
       (analysisdigest: output_parameter_analysis_digest_int)
-      (ptrparams: varinfo list): unit traceresult =
-  List.fold_left (fun acc ptrparam ->
+      (ptrparams: (int * varinfo) list): unit traceresult =
+  List.fold_left (fun acc (paramindex, ptrparam) ->
       match acc with
       | Error _ -> acc
       | _ ->
-         let* _ = analysisdigest#add_new_parameter ptrparam in
+         let* _ = analysisdigest#add_new_parameter paramindex ptrparam in
          let pname = ptrparam.vname in
          let ptype = fenv#get_type_unrolled ptrparam.vtype in
          if has_const_attribute ptype then
@@ -478,19 +485,16 @@ let process_function (fname:string): unit traceresult =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
   let fundec = read_function_semantics fname in
   let ptrparams = get_pointer_parameters fundec in
-  (* if (List.length ptrparams) > 0 then *)
-    let _ = read_proof_files fname fundec.sdecls in
-    let* _ = proof_scaffolding#initialize_output_parameter_analysis fname in
-    let* analysisdigest = proof_scaffolding#get_output_parameter_analysis fname in
-    let* _ = initialize_output_parameters analysisdigest ptrparams in
-    let _ = (new po_creator_t fundec analysisdigest)#create_proof_obligations in
-    let _ = CCHCheckValid.process_function fname in
-    let _ = save_analysis_digests fname in
-    let _ = save_proof_files fname in
-    let _ = save_api fname in
-    Ok ()
-  (* else
-    Ok () *)
+  let _ = read_proof_files fname fundec.sdecls in
+  let* _ = proof_scaffolding#initialize_output_parameter_analysis fname in
+  let* analysisdigest = proof_scaffolding#get_output_parameter_analysis fname in
+  let* _ = initialize_output_parameters analysisdigest ptrparams in
+  let _ = (new po_creator_t fundec analysisdigest)#create_proof_obligations in
+  let _ = CCHCheckValid.process_function fname in
+  let _ = save_analysis_digests fname in
+  let _ = save_proof_files fname in
+  let _ = save_api fname in
+  Ok ()
 
 
 let output_parameter_po_process_file (): unit traceresult =
