@@ -886,7 +886,7 @@ let rec get_scalar_struct_offsets (t: typ): offset list =
     | TComp (ckey, _) ->
        let cinfo = fenv#get_comp ckey in
        List.fold_left (fun acc finfo ->
-           match finfo.ftype with
+           match fenv#get_type_unrolled finfo.ftype with
            | TInt _
              | TFloat _
              | TPtr _ -> (Field ((finfo.fname, finfo.fckey), NoOffset)) :: acc
