@@ -26,25 +26,32 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHPrettyUtil
 open CHTraceResult
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
+open CCHTypesToPretty
+open CCHTypesUtil
 open CCHUtilities
 
 (* cchpre *)
 open CCHPreTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 let (let* ) x f = CHTraceResult.tbind f x
 
 let ccontexts = CCHContext.ccontexts
 let cdictionary = CCHDictionary.cdictionary
 let fdecls = CCHDeclarations.cdeclarations
+let fenv = CCHFileEnvironment.file_environment
 
+
+let e2s e = pretty_to_string (exp_to_pretty e)
 
 class copparam_call_dependency_arg_t
         (_pod: podictionary_int)
@@ -121,10 +128,17 @@ class copparam_returnsite_t
         (pod: podictionary_int)
         (loc: location)
         (ctxt: program_context_int)
+        (offsets: (offset * output_parameter_status_t)  list)
         (rv: exp option) =
 object (self)
 
   val mutable status: output_parameter_status_t = OpUnknown
+  val offsetstatus =
+    let t = H.create 3 in
+    let _ =
+      List.iter (fun (o, s) ->
+          H.add t (cdictionary#index_offset o) s) offsets in
+    t
 
   method loc: location = loc
 
@@ -136,20 +150,55 @@ object (self)
 
   method set_status (s: output_parameter_status_t) = status <- s
 
+  method private update_status =
+    let sl = H.fold (fun _ v a -> v :: a) offsetstatus [] in
+    if List.exists (fun s -> match s with OpUnknown -> true | _ -> false) sl then
+      self#set_status OpUnknown
+    else if
+      List.for_all (fun s -> match s with OpWritten -> true | _ -> false) sl then
+      self#set_status OpWritten
+    else if
+      List.for_all (fun s -> match s with OpUnaltered -> true | _ -> false) sl then
+      self#set_status OpUnaltered
+    else
+      self#set_status (OpRejected [(OpOtherReason "mix of written and unaltered")])
+
   method record_proof_obligation_result (po: proof_obligation_int) =
     match po#get_predicate with
-    | POutputParameterInitialized _ when po#is_safe ->
-       status <- OpWritten
-    | POutputParameterUnaltered _ when po#is_safe ->
-       status <- OpUnaltered
+    | POutputParameterInitialized (_, offset) when po#is_safe ->
+       let oindex = cdictionary#index_offset offset in
+       begin
+         H.replace offsetstatus oindex OpWritten;
+         self#update_status
+       end
+    | POutputParameterUnaltered (_, offset) when po#is_safe ->
+       let oindex = cdictionary#index_offset offset in
+       begin
+         H.replace offsetstatus oindex OpUnaltered;
+         self#update_status
+       end
     | _ -> ()
 
+  method private write_xml_offset_status (node: xml_element_int) =
+    let sl = H.fold (fun i v a -> (i, v) :: a) offsetstatus [] in
+    node#appendChildren
+      (List.map (fun (i, s) ->
+           let snode = xmlElement "os" in
+           begin
+             pod#write_xml_output_parameter_status snode s;
+             snode#setIntAttribute "ioffset" i;
+             snode
+           end) sl)
+
   method write_xml (node: xml_element_int) =
+    let onode = xmlElement "offset-status" in
     begin
+      self#write_xml_offset_status onode;
       pod#write_xml_output_parameter_status node self#status;
       fdecls#write_xml_location node self#loc;
       ccontexts#write_xml_context node self#ctxt;
       cdictionary#write_xml_exp_opt node self#rv;
+      node#appendChildren [onode]
     end
 
 end
@@ -157,6 +206,7 @@ end
 
 class candidate_output_parameter_t
         (pod: podictionary_int)
+        (paramindex: int)
         (vinfo: varinfo): candidate_output_parameter_int =
 object (self)
 
@@ -186,6 +236,9 @@ object (self)
        let ictxt = ccontexts#index_context po#get_context in
        if H.mem returnsites ictxt then
          (H.find returnsites ictxt)#record_proof_obligation_result po
+    | POutputParameterNoEscape (_vinfo, e) ->
+       if po#is_violation then
+         self#reject (OpOtherReason ("parameter escapes with argument " ^ (e2s e)))
     | _ -> ()
 
 
@@ -198,7 +251,20 @@ object (self)
 
   method add_returnsite
            (loc: location) (ctxt: program_context_int) (rv: exp option) =
-    let rs = new copparam_returnsite_t pod loc ctxt rv in
+    let offsets =
+      let vty = fenv#get_type_unrolled vinfo.vtype in
+      match vty with
+      | TPtr (ty, _) ->
+         let ty = fenv#get_type_unrolled ty in
+         if is_integral_type ty then
+           [NoOffset]
+         else if is_scalar_struct_type ty then
+           get_scalar_struct_offsets ty
+         else
+           []
+      | _ -> [] in
+    let offsetstatus = List.map (fun o -> (o, OpUnknown)) offsets in
+    let rs = new copparam_returnsite_t pod loc ctxt offsetstatus rv in
     let ictxt = ccontexts#index_context ctxt in
     H.replace returnsites ictxt rs
 
@@ -231,15 +297,25 @@ object (self)
   method private call_dependencies: copparam_call_dependency_t list =
     H.fold (fun _ v a -> v :: a) calldeps []
 
+  method private read_xml_returnsite_offset_status
+                   (node: xml_element_int):
+                   (offset * output_parameter_status_t) list =
+    List.map (fun n ->
+        let status = TR.tget_ok (pod#read_xml_output_parameter_status n) in
+        let offset = cdictionary#read_xml_offset n in
+        (offset, status)) (node#getTaggedChildren "os")
+
   method private read_xml_returnsite (node: xml_element_int): unit traceresult =
-  let loc = fdecls#read_xml_location node in
-  let ctxt = ccontexts#read_xml_context node in
-  let rv = cdictionary#read_xml_exp_opt node in
-  let* status = pod#read_xml_output_parameter_status node in
-  let rs = new copparam_returnsite_t pod loc ctxt rv in
-  let _ = rs#set_status status in
-  let ictxt = ccontexts#index_context ctxt in
-  Ok (H.replace returnsites ictxt rs)
+    let loc = fdecls#read_xml_location node in
+    let ctxt = ccontexts#read_xml_context node in
+    let rv = cdictionary#read_xml_exp_opt node in
+    let* status = pod#read_xml_output_parameter_status node in
+    let offsetstatus =
+      self#read_xml_returnsite_offset_status (node#getTaggedChild "offset-status") in
+    let rs = new copparam_returnsite_t pod loc ctxt offsetstatus rv in
+    let _ = rs#set_status status in
+    let ictxt = ccontexts#index_context ctxt in
+    Ok (H.replace returnsites ictxt rs)
 
   method private read_xml_call_dependency (node: xml_element_int): unit traceresult =
     let loc = fdecls#read_xml_location node in
@@ -264,6 +340,7 @@ object (self)
     begin
       fdecls#write_xml_varinfo node self#parameter;
       pod#write_xml_output_parameter_status node self#status;
+      node#setIntAttribute "paramindex" paramindex;
       rrnode#appendChildren
         (List.map (fun rs ->
              let rnode = xmlElement "rs" in
@@ -283,14 +360,16 @@ object (self)
 end
 
 
-let mk_candidate_output_parameter (pod: podictionary_int) (vinfo: varinfo) =
-  new candidate_output_parameter_t pod vinfo
+let mk_candidate_output_parameter
+      (pod: podictionary_int) (paramindex: int) (vinfo: varinfo) =
+  new candidate_output_parameter_t pod paramindex vinfo
 
 
 let read_xml_candidate_output_parameter
       (node: xml_element_int)
       (pod: podictionary_int): candidate_output_parameter_int traceresult =
   let vinfo = fdecls#read_xml_varinfo node in
-  let candidate = mk_candidate_output_parameter pod vinfo in
+  let paramindex = node#getIntAttribute "paramindex" in
+  let candidate = mk_candidate_output_parameter pod paramindex vinfo in
   let* _ = candidate#read_xml node in
   Ok candidate
