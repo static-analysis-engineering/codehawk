@@ -37,7 +37,7 @@ open CCHPreTypes
 
 
 val mk_candidate_output_parameter:
-  podictionary_int -> varinfo -> candidate_output_parameter_int
+  podictionary_int -> int -> varinfo -> candidate_output_parameter_int
 
 
 val read_xml_candidate_output_parameter:
