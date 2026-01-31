@@ -595,7 +595,9 @@ let check_ppo_validity
     begin
       ppo#set_status status;
       ppo#set_dependencies mth;
-      ppo#set_explanation explanation
+      ppo#set_explanation explanation;
+      ignore(proof_scaffolding#record_proof_obligation_result fname ppo);
+      ()
     end in
 
   let make = make_record Green DStmt in
@@ -1354,6 +1356,21 @@ let check_ppo_validity
 
   | POutputParameterScalar (_, e) when is_string_literal e ->
      make ("expression " ^ (e2s e) ^ " is a string literal")
+
+  | POutputParameterScalar (vinfo,
+                           ((BinOp ((PlusPI | MinusPI | IndexPI),
+                                    Lval (Var (vname, vid), NoOffset),
+                                    _, _)) as e1))
+       when vinfo.vid = vid ->
+     make_violation ("expression " ^ (e2s e1) ^ " contains " ^ vname
+                     ^ " in a pointer arithmetic context")
+
+  | POutputParameterNoEscape (vinfo, Lval (Var (vname, vid), NoOffset))
+    | POutputParameterNoEscape (
+          vinfo, CastE (_, Lval (Var (vname, vid), NoOffset)))
+       when vinfo.vid = vid ->
+     make_violation ("parameter " ^ vname ^ " escapes through argument "
+                     ^ vname)
 
   | PWidthOverflow (e, ik) ->
      let safeBitWidth = mkNumerical (get_safe_bit_width ik) in
