@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHLogger
 open CHTraceResult
 open CHXmlDocument
 
@@ -34,14 +35,14 @@ open CCHBasicTypes
 open CCHLibTypes
 open CCHTypesToPretty
 open CCHUtilities
-   
+
 (* cchpre *)
 open CCHCandidateOutputParameter
 open CCHPreTypes
 
 module H = Hashtbl
 
-         
+
 let (let* ) x f = CHTraceResult.tbind f x
 
 let p2s = CHPrettyUtil.pretty_to_string
@@ -64,13 +65,29 @@ object (self)
 
   val mutable status: output_parameter_status_t = OpUnknown
 
+  method set_status (s: output_parameter_status_t) = status <- s
+
+  method status = status
+
   method loc: location = loc
 
   method ctxt: program_context_int = ctxt
 
   method argument: exp = argument
 
-  method record_proof_obligation_result (_po: proof_obligation_int) = ()
+  method record_proof_obligation_result (po: proof_obligation_int) =
+    match po#get_predicate with
+    | POutputParameterArgument _ when po#is_safe ->
+       begin
+         ch_info_log#add "record_proof_obligation_result" (STR "safe");
+         status <- OpViable
+       end
+    | POutputParameterArgument _ when po#is_violation ->
+       begin
+         ch_info_log#add "record_proof_obligation_result" (STR "violation");
+         status <- OpRejected [OpOtherReason "argument is not a local variable"]
+       end
+    | _ -> ()
 
   method write_xml (node: xml_element_int) =
     begin
@@ -91,7 +108,6 @@ class op_callee_callsite_t
 object (self)
 
   val callargs = H.create 3
-  val mutable status: output_parameter_status_t = OpUnknown
 
   method callee: exp = callee
 
@@ -99,15 +115,20 @@ object (self)
 
   method ctxt: program_context_int = ctxt
 
-  method record_proof_obligation_result (_po: proof_obligation_int) = ()            
+  method record_proof_obligation_result (po: proof_obligation_int) =
+    let ictxt = ccontexts#index_context po#get_context in
+    if H.mem callargs ictxt then
+      let ccsa = H.find callargs ictxt in
+      ccsa#record_proof_obligation_result po;
+    else
+      ch_info_log#add
+        "record_proof_obligation_result"
+        (STR "Unable to find ccsa")
 
   method is_active (_po_s: proof_obligation_int list): bool =
-    match status with
-    | OpUnknown -> true
-    | _ -> false
-
-  method set_status (s: output_parameter_status_t) =
-    status <- s                                   
+    List.exists (fun arg ->
+        match arg#status with OpUnknown -> true | _ -> false)
+      self#callsite_args
 
   method add_callee_callsite_arg
            (argloc: location) (argctxt: program_context_int) (arg: exp) =
@@ -122,7 +143,6 @@ object (self)
     let xcallargs = xmlElement "callee-callsite-args" in
     let _ = node#appendChildren [xcallargs] in
     begin
-      pod#write_xml_output_parameter_status node status;
       fdecls#write_xml_location node self#loc;
       ccontexts#write_xml_context node self#ctxt;
       cdictionary#write_xml_exp node self#callee;
@@ -135,9 +155,35 @@ object (self)
              end) self#callsite_args)
     end
 
+  method private read_xml_callsite_arg
+                   (node: xml_element_int): op_callee_callsite_arg_t traceresult =
+    let status = tget_ok (pod#read_xml_output_parameter_status node) in
+    let argloc = fdecls#read_xml_location node in
+    let argctxt = ccontexts#read_xml_context node in
+    let arg = cdictionary#read_xml_exp node in
+    let ccsa = new op_callee_callsite_arg_t pod argloc argctxt arg in
+    let _ = ccsa#set_status status in
+    Ok ccsa
+
+  method read_xml (node: xml_element_int): unit traceresult =
+    let xcallargs = node#getTaggedChild "callee-callsite-args" in
+    let* _ =
+      List.fold_left (fun acc_r anode ->
+          match acc_r with
+          | Error _ -> acc_r
+          | Ok _ ->
+             let* callarg = self#read_xml_callsite_arg anode in
+             let ictxt = ccontexts#index_context callarg#ctxt in
+             begin
+               H.replace callargs ictxt callarg;
+               Ok ()
+             end) (Ok ()) (xcallargs#getTaggedChildren "callarg") in
+    Ok ()
+
+
 end
 
-  
+
 class output_parameter_analysis_digest_t
         (fname: string)
         (pod: podictionary_int): output_parameter_analysis_digest_int =
@@ -159,10 +205,11 @@ object (self)
   method active_parameter_varinfos: varinfo list =
     List.map (fun param -> param#parameter) self#active_parameters
 
-  method add_new_parameter (vinfo: varinfo): unit traceresult =
+  method add_new_parameter (paramindex: int) (vinfo: varinfo): unit traceresult =
     if not (H.mem params vinfo.vname) then
       let param =
-        CCHCandidateOutputParameter.mk_candidate_output_parameter pod vinfo in
+        CCHCandidateOutputParameter.mk_candidate_output_parameter
+          pod paramindex vinfo in
       Ok (H.add params vinfo.vname param)
     else
       Error [(elocm __LINE__)
@@ -242,13 +289,22 @@ object (self)
        if H.mem params vinfo.vname then
          Ok ((H.find params vinfo.vname)#record_proof_obligation_result po)
        else
+         let _ =
+           chlog#add
+             "record_proof obligation"
+             (LBLOCK [STR vinfo.vname; STR " could not be found"]) in
          Error [(elocm __LINE__)
                 ^ "No corresponding return site context found for " ^ vinfo.vname]
     | POutputParameterArgument e ->
-       let ictxt = ccontexts#index_context po#get_context in
+       let ictxt = ccontexts#index_context po#get_context#project_on_cfg in
        if H.mem callee_callsites ictxt then
          Ok ((H.find callee_callsites ictxt)#record_proof_obligation_result po)
        else
+         let _ =
+           chlog#add
+             "record_proof_obligation_result:outputparameter"
+             (LBLOCK [STR "Unable to find callsite at context: ";
+                      STR po#get_context#to_string]) in
          Error [(elocm __LINE__)
                 ^ "No corresponding callee callsite context found for "
                 ^ " expression " ^ (p2s (exp_to_pretty e))]
@@ -280,12 +336,13 @@ object (self)
     let loc = fdecls#read_xml_location node in
     let ctxt = ccontexts#read_xml_context node in
     let callee = cdictionary#read_xml_exp node in
-    let* status = pod#read_xml_output_parameter_status node in
+    (* let* status = pod#read_xml_output_parameter_status node in *)
     let ccs = new op_callee_callsite_t pod loc ctxt callee in
-    let _ = ccs#set_status status in
+    (* let _ = ccs#set_status status in *)
+    let* _ = ccs#read_xml node in
     let ictxt = ccontexts#index_context ctxt in
     Ok (H.replace callee_callsites ictxt ccs)
-    
+
   method read_xml (node: xml_element_int): unit traceresult =
     let ppnode = node#getTaggedChild "candidate-parameters" in
     let ccnode = node#getTaggedChild "callee-callsites" in
