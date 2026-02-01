@@ -235,12 +235,22 @@ object (self)
       | POutputParameterUnaltered _ ->
        let ictxt = ccontexts#index_context po#get_context in
        if H.mem returnsites ictxt then
-         (H.find returnsites ictxt)#record_proof_obligation_result po
+         begin
+           (H.find returnsites ictxt)#record_proof_obligation_result po;
+           self#check_returnsites
+         end
     | POutputParameterNoEscape (_vinfo, e) ->
        if po#is_violation then
          self#reject (OpOtherReason ("parameter escapes with argument " ^ (e2s e)))
     | _ -> ()
 
+  method private check_returnsites =
+    let returnsites = H.fold (fun _ v a -> v :: a) returnsites [] in
+    if List.for_all (fun r ->
+           match r#status with OpUnaltered -> true | _ -> false) returnsites then
+      self#reject (OpOtherReason ("parameter is not written by any return site"))
+    else
+      ()
 
   method is_active (_po_s: proof_obligation_int list) =
     match status with
