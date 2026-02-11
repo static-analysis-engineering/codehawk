@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -480,10 +480,19 @@ object (self)
     | Some (c, r) -> (c, r)
     | _ ->
        match returntype with
-       | TPtr (t,_) ->
-          let basevar = env#mk_base_address_value returnvalue NoOffset t in
-          (make_c_cmd SKIP, NUM_VAR basevar)
+       | TPtr ((TInt _ | TFloat _ | TPtr _) as t, _) ->
+          (* create a placeholder memory variable for the dereferenced return value *)
+          let (rmemvar, rmemvarinit) =
+            env#mk_base_address_memory_variable_init returnvalue NoOffset t NUM_VAR_TYPE in
+          let cmd = make_c_cmd (ASSIGN_NUM (rmemvar, NUM_VAR rmemvarinit)) in
+          (cmd, NUM_VAR returnvalue)
        | _ ->
+          let _ =
+            log_diagnostics_result
+              ~tag:"get_arg_post_value"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["returntype: " ^ (p2s (typ_to_pretty returntype))] in
           (make_c_cmd SKIP, NUM_VAR returnvalue)
 
   method private get_post_assert
@@ -824,8 +833,8 @@ object (self)
                          postconditions fname fvid rvar fnargs in
                      let domainop =
                        match type_of_lval fdecls lval with
-                       | TPtr (t,_) ->
-                          let frVar = env#mk_base_address_value frVar NoOffset t in
+                       | TPtr (_t,_) ->
+                          (* let frVar = env#mk_base_address_value frVar NoOffset t in *)
                           make_c_cmd
                             (DOMAIN_OPERATION (
                                  [valueset_domain],
@@ -903,11 +912,20 @@ object (self)
     | Some (c, r) -> (c, r)
     | _ ->
        match returntype with
-       | TPtr  (t, _) ->
-          let basevar = env#mk_base_address_value returnvalue NoOffset t in
-          (make_c_cmd SKIP, NUM_VAR basevar)
+       | TPtr ((TInt _ | TFloat _ | TPtr _) as t, _) ->
+          (* create a placeholder memory variable for the dereferenced return value *)
+          let (rmemvar, rmemvarinit) =
+            env#mk_base_address_memory_variable_init returnvalue NoOffset t NUM_VAR_TYPE in
+          let cmd = make_c_cmd (ASSIGN_NUM (rmemvar, NUM_VAR rmemvarinit)) in
+          (cmd, NUM_VAR returnvalue)
        | _ ->
-          (make_c_cmd SKIP, NUM_VAR  returnvalue)
+          let _ =
+            log_diagnostics_result
+              ~tag:"get_arg_post_value"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["returntype: " ^ (p2s (typ_to_pretty returntype))] in
+          (make_c_cmd SKIP, NUM_VAR returnvalue)
 
   method private get_post_assert
                    (postconditions:

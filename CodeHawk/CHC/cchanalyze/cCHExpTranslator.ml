@@ -162,20 +162,42 @@ object (self)
          env#mk_stack_memory_variable vinfo eoffset otype NUM_VAR_TYPE
        else
          env#mk_program_var vinfo eoffset NUM_VAR_TYPE
-    | (Var _, _) -> env#mk_temp NUM_VAR_TYPE
+    | (Var _, _) ->
+       let _ =
+         log_diagnostics_result
+           ~tag:"translate_lval:Var"
+           ~msg:env#get_functionname
+           __FILE__ __LINE__
+           ["lval: " ^ (p2s (lval_to_pretty lval))] in
+       env#mk_temp NUM_VAR_TYPE
     | (Mem e, offset) ->
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
           let (memref, moffset) = env#get_memory_address v in
           env#mk_memory_variable
             memref#index (add_offset moffset offset) NUM_VAR_TYPE
-       | XVar v when env#is_initial_value v ->
-          let memref =
-            env#get_variable_manager#memrefmgr#mk_external_reference
-              v (type_of_exp fdecls e) in
-          env#mk_memory_variable memref#index offset NUM_VAR_TYPE
-       | XVar _ -> env#mk_temp NUM_VAR_TYPE
-       | _ -> env#mk_temp NUM_VAR_TYPE
+       | XVar v when (env#is_initial_value v || env#is_function_return_value v) ->
+          (match type_of_exp fdecls e with
+           | TPtr (t, _) ->
+              env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
+           | _ ->
+              env#mk_temp NUM_VAR_TYPE)
+       | XVar _ ->
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:Mem:Var"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["lval: " ^ (p2s (lval_to_pretty lval))] in
+          env#mk_temp NUM_VAR_TYPE
+       | _ ->
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["lval: " ^ (p2s (lval_to_pretty lval))] in
+          env#mk_temp NUM_VAR_TYPE
 
   method private translate_unop_expr op x =
     match op with

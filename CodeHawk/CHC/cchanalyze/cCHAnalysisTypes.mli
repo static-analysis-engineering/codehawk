@@ -112,7 +112,20 @@ object
   method mk_call_var: string -> int -> variable_t
   method mk_call_vars: variable_t
 
-  method mk_base_address_value: variable_t -> offset -> typ -> variable_t
+  (** [mk_base_address_memory_variable_init basevar offset type vt] returns a
+      memory variable with base address held in (constant-value) variable
+      [basevar], offset [offset], type [type], and chif-var type [vt],
+      together with a symbolic initial value for that variable.
+   *)
+  method mk_base_address_memory_variable_init:
+           variable_t -> offset -> typ -> variable_type_t -> (variable_t * variable_t)
+
+  (** [mk_base_address_memory_variable_init basevar offset type vt] returns a
+      memory variable with base address held in (constant-value) variable
+      [basevar], offset [offset], type [type], and chif-var type [vt]
+   *)
+  method mk_base_address_memory_variable:
+           variable_t -> offset -> typ -> variable_type_t -> variable_t
   method mk_global_address_value: varinfo -> offset -> typ -> variable_t
   method mk_stack_address_value: varinfo -> offset -> typ -> variable_t
   method mk_memory_address_value: int -> offset -> variable_t
@@ -157,7 +170,7 @@ object
            -> offset
            -> typ
            -> variable_type_t
-           -> (variable_t * variable_t * variable_t * variable_t)
+           -> (variable_t * variable_t)
 
   method mk_struct_par_deref:
            varinfo

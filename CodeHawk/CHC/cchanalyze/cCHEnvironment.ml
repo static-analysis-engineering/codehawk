@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,9 @@ open CCHAnalysisTypes
 
 module EU = CCHEngineUtil
 module H = Hashtbl
+
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 
 module NumericalCollections = CHCollections.Make
@@ -233,9 +236,8 @@ object(self)
     let memref = vmgr#memrefmgr#mk_external_reference vInit vinfo.vtype in
     let memvar = vmgr#mk_memory_variable memref#index offset in
     let chifmemvar = self#add_chifvar memvar vt in
-    let chifmemaddr = self#mk_memory_address_value memref#index NoOffset in
-    let memvarinit = self#mk_initial_value chifmemvar ttyp vt in
-    (chifvar,  chifmemaddr, chifmemvar, memvarinit)
+    let chifmemvarinit = self#mk_initial_value chifmemvar ttyp vt in
+    (chifmemvar, chifmemvarinit)
 
   method mk_struct_par_deref
            (vinfo:varinfo) (ttyp:typ) (ckey:int) (vt:variable_type_t) =
@@ -383,10 +385,36 @@ object(self)
     let addrvar = vmgr#mk_memory_address memref#index offset in
     self#add_chifvar addrvar NUM_VAR_TYPE
 
-  method mk_base_address_value (v:variable_t) (offset:offset) (t:typ) =
+  method mk_base_address_memory_variable_init
+           (v: variable_t) (offset:offset) (t:typ) (vt: variable_type_t) =
     let memref = vmgr#memrefmgr#mk_external_reference v t in
-    let addrvar = vmgr#mk_memory_address memref#index offset in
-    self#add_chifvar addrvar NUM_VAR_TYPE
+    let memvar = vmgr#mk_memory_variable memref#index offset in
+    let chifmemvar = self#add_chifvar memvar vt in
+    let chifmemvarinit = self#mk_initial_value chifmemvar t vt in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_base_address_variable_init"
+        ~msg:v#getName#getBaseName
+        __FILE__ __LINE__
+        ["offset: " ^ (p2s (offset_to_pretty offset));
+         "type: " ^ (p2s (typ_to_pretty t));
+         "memvar: " ^ (p2s chifmemvar#toPretty)] in
+    (chifmemvar, chifmemvarinit)
+
+  method mk_base_address_memory_variable
+           (v: variable_t) (offset:offset) (t:typ) (vt: variable_type_t) =
+    let memref = vmgr#memrefmgr#mk_external_reference v t in
+    let memvar = vmgr#mk_memory_variable memref#index offset in
+    let chifmemvar = self#add_chifvar memvar vt in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_base_address_variable"
+        ~msg:v#getName#getBaseName
+        __FILE__ __LINE__
+        ["offset: " ^ (p2s (offset_to_pretty offset));
+         "type: " ^ (p2s (typ_to_pretty t));
+         "memvar: " ^ (p2s chifmemvar#toPretty)] in
+    chifmemvar
 
   method mk_global_memory_variable
            (vinfo:varinfo) (offset:offset) (_t:typ) (vt:variable_type_t) =

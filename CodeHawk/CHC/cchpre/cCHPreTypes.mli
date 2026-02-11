@@ -266,7 +266,19 @@ type constant_value_variable_t =
   (** byte sequence written by v with length x *)
 
   | MemoryAddress of int * offset
-  (** memory reference index *)
+  (** constant that represents the address indicated by a memory reference index
+      and offset.
+
+      Note that the offset in this case is interpreted differently than for the
+      variable MemoryVariable. Here the offsets mean:
+      NoOffset: base-address + 0
+      FieldOffset(f): base-address.field
+      IndexOffset(n): base-address + n
+
+      A MemoryAddress should not be used for a CBaseVar memory-base, as the
+      memory-base already is a symbolic address. Creating an alias for this
+      value complicates the analysis.
+*)
 
 
 (** {2 Unique storage location} *)
