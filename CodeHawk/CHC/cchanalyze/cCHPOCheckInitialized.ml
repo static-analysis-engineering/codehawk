@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -70,60 +70,6 @@ let fenv = CCHFileEnvironment.file_environment
 class initialized_checker_t
         (poq:po_query_int) (lval:lval) (invs:invariant_int list)  =
 object (self)
-
-  method private check_program_name =
-    if poq#is_command_line_argument (Lval lval) then
-      let index = poq#get_command_line_argument_index (Lval lval) in
-      if index == 0 then
-        begin
-          (* first index into argv is always safe, it is the program name *)
-          poq#record_safe_result
-            (DLocal [])
-            ("command-line argument "
-             ^ (string_of_int index)
-             ^ " is guaranteed initialized by the operating system");
-          true
-        end
-      else
-        false
-    else
-      false
-
-  method private check_command_line_argument =
-    if poq#is_command_line_argument (Lval lval) then
-      let index = poq#get_command_line_argument_index (Lval lval) in
-      match poq#get_command_line_argument_count with
-      | Some (inv, arg_count) ->
-         if index < arg_count then
-           begin
-             poq#record_safe_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is guaranteed initialized for argument count "
-                ^ (string_of_int arg_count));
-             true
-           end
-         else
-           begin
-             poq#record_violation_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is not included in argument count of "
-                ^ (string_of_int arg_count));
-             true
-           end
-      | _ ->
-         begin
-           poq#set_diagnostic
-             ("no invariant found for argument count; unable to validate access of "
-              ^ "command-line argument "
-              ^ (string_of_int index));
-           false
-         end
-    else
-      false
 
   method private get_symbol_name (s: symbol_t) =
     s#getBaseName
@@ -556,8 +502,7 @@ object (self)
     | _ -> false
 
   method check_safe =
-    self#check_command_line_argument
-    || (List.fold_left (fun acc inv ->
+    (List.fold_left (fun acc inv ->
             acc ||
               match self#inv_implies_safe inv with
               | Some (deps, msg, site) ->
@@ -805,10 +750,7 @@ object (self)
     | _ -> false
 
   method check_delegation =
-    if self#check_program_name then
-      false
-    else
-      self#check_delegation_invs || self#check_delegation_lval
+    self#check_delegation_invs || self#check_delegation_lval
 
 end
 

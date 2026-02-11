@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -572,32 +572,6 @@ class type po_query_int =
 
     (** {1 Checks} *)
 
-    (** {2 Command-line argument check} *)
-
-    (** [check_command_line_argument exp safemsg vmsg dmsg] checks if [exp] is a
-        command-line argument, and if so, checks whether its index is less than
-        the argument count. If less the PO is set to safe, if greater than or
-        equal the PO is set to violation, and if no argument count is found, a
-        diagnostic message is set according to [dmsg].*)
-    method check_command_line_argument:
-             exp
-             -> (int -> int -> string)
-             -> (int -> int -> string)
-             -> (int -> string)
-             -> bool
-
-    (** Returns the index of the supporting invariant fact and the
-        command-line argument count if this function is main and an invariant
-        fact is available with that information. Otherwise returns None.*)
-    method get_command_line_argument_count: (int * int) option
-
-    (** [get_command_line_argument_index exp] returns the (0-based) function
-        argument index if exp is a function argument.
-
-        raise [CCHFailure] if [exp] is not a command-line argument.*)
-    method get_command_line_argument_index: exp -> int
-
-
     method check_implied_by_assumptions: po_predicate_t -> po_predicate_t option
 
     (** {1 Information} *)
@@ -847,7 +821,7 @@ class type po_query_int =
     method is_api_expression: xpr_t -> bool
     method is_global_expression: xpr_t -> bool
     method is_function_return: xpr_t -> bool
-    method is_command_line_argument: exp -> bool
+
     method is_memory_base_address: variable_t -> string option
 
     (** {1 Printing} *)

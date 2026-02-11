@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1432,99 +1432,6 @@ object (self)
          | _ -> None
     with
     | Failure _ -> None
-
-  method is_command_line_argument (e:exp) =
-    fname = "main" &&
-      match e with
-      | CastE (_,ee) -> self#is_command_line_argument ee
-      | Lval (Mem (BinOp
-                     ((PlusPI | IndexPI),
-                      Lval (Var (_, vid), NoOffset),
-                      Const (CInt (_i64, _, _)), _)),
-              NoOffset) when vid > 0  ->
-         fenv#is_formal vid && (self#env#get_varinfo vid).vparam = 2
-      | _ -> false
-
-  method get_command_line_argument_index (e:exp) =
-    if self#is_command_line_argument e then
-      match e with
-      | CastE (_, ee) -> self#get_command_line_argument_index ee
-      | Lval (Mem (BinOp
-                     ((PlusPI | IndexPI),
-                      Lval (Var (_, _vid), NoOffset),
-                      Const (CInt (i64, _, _)), _)), NoOffset) ->
-         Int64.to_int i64
-      | _ ->
-         raise
-           (CCHFailure
-              (LBLOCK [STR "Internal error in get_command_line_argument_index"]))
-    else
-      raise
-        (CCHFailure
-           (LBLOCK [
-                STR "expression ";
-                exp_to_pretty e;
-                STR " is not a command-line argument"]))
-
-  method get_command_line_argument_count: (int * int) option =
-    if fname = "main" then
-      let locinvio = invio#get_location_invariant cfgcontext in
-      let argc = fenv#get_formal 1 in
-      let argcvar = self#env#mk_program_var argc NoOffset NUM_VAR_TYPE in
-      let facts = List.concat (List.map locinvio#get_var_invariants [argcvar]) in
-      let facts =
-        List.fold_left (fun acc f ->
-            match f#get_fact with
-            | NonRelationalFact (_v, i) -> (f#index, i) :: acc
-            | _ -> acc) [] facts in
-      List.fold_left (fun acc (inv, i) ->
-          match acc with
-          | Some _ -> acc
-          | _ ->
-             match i with
-             | FIntervalValue (Some lb, Some ub) when lb#equal ub ->
-                begin
-                  try
-                    Some (inv,lb#toInt)
-                  with
-                    _ ->
-                    begin
-                      chlog#add
-                        "large value"
-                        (LBLOCK [STR self#fname; STR ": "; lb#toPretty]);
-                      None
-                    end
-                end
-             | _ -> acc) None facts
-    else
-      None
-
-  method check_command_line_argument
-           (e:exp)
-           (safemsg:int -> int -> string)
-           (vmsg:int -> int -> string)
-           (dmsg:int -> string): bool =
-    if self#is_command_line_argument e then
-      let index = self#get_command_line_argument_index e in
-      match self#get_command_line_argument_count with
-      | Some (inv, i) ->
-         if index < i then
-           begin
-             self#record_safe_result (DLocal [inv]) (safemsg index i);
-             true
-           end
-         else
-           begin
-             self#record_violation_result (DLocal [inv]) (vmsg index i);
-             true
-           end
-      | _ ->
-         begin
-           self#set_diagnostic (dmsg index);
-           false
-         end
-    else
-      false
 
   method check_implied_by_assumptions (p:po_predicate_t) =
     let assumptions =
