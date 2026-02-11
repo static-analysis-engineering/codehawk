@@ -315,6 +315,8 @@ and create_po_binop
       addxop (PNotNull e1) 1;
       addxop (PValidMem e1) 1;
       addxop (PInScope e1) 1;
+      addxop (PLowerBound (tgttyp, e1)) 1;
+      addxop (PUpperBound (tgttyp, e1)) 1;
       add (PPtrLowerBound (tgttyp, binop, e1, e2));
       add (if deref then
 	  PPtrUpperBoundDeref (tgttyp, binop, e1, e2)
@@ -377,6 +379,10 @@ and create_po_binop
       addxop (PValidMem e2) 2;
       addxop (PInScope e1) 1;
       addxop (PInScope e2) 2;
+      addxop (PLowerBound (tgttyp1, e1)) 1;
+      addxop (PLowerBound (tgttyp2, e2)) 2;
+      addxop (PUpperBound (tgttyp1, e1)) 1;
+      addxop (PUpperBound (tgttyp2, e2)) 2;
       add (PCommonBase (e1,e2));
       add (PCommonBaseType (e1,e2));
     end
@@ -491,8 +497,8 @@ and create_po_exp
   | Question (e1, e2, e3, _t) ->
     begin
       create_po_exp env (context#add_question 1) e1 loc;
-      create_po_exp env (context#add_question 2) e2 loc;
-      create_po_exp env (context#add_question 3) e3 loc
+      create_po_exp ~deref env (context#add_question 2) e2 loc;
+      create_po_exp ~deref env (context#add_question 3) e3 loc
     end
 
   | CastE (t, e) ->
