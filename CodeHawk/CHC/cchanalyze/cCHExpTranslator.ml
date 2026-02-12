@@ -150,7 +150,7 @@ object (self)
     | Field (f, o) -> Field (f, self#externalize_offset o)
     | Index (e, o) -> Index (externalize_exp e, self#externalize_offset o)
 
-  method private translate_lval lval =
+  method private translate_lval (lval: lval): variable_t =
     match lval with
     | (Var (_, vid),offset) when vid > 0 ->
        let vinfo = env#get_varinfo vid in
@@ -190,13 +190,19 @@ object (self)
               __FILE__ __LINE__
               ["lval: " ^ (p2s (lval_to_pretty lval))] in
           env#mk_temp NUM_VAR_TYPE
-       | _ ->
+       | XOp (XPlus, [XVar base; XConst (IntConst n)])
+            when env#is_memory_address base ->
+          let ioffset = CCHTypesUtil.mk_constant_index_offset n in
+          let (memref, memoff) = env#get_memory_address base in
+          env#mk_memory_variable memref#index (add_offset memoff ioffset) NUM_VAR_TYPE
+       | mem_e ->
           let _ =
             log_diagnostics_result
-              ~tag:"translate_lval"
+              ~tag:"translate_lval:Mem"
               ~msg:env#get_functionname
               __FILE__ __LINE__
-              ["lval: " ^ (p2s (lval_to_pretty lval))] in
+              ["lval: " ^ (p2s (lval_to_pretty lval));
+               "mem_e: " ^ (x2s mem_e)] in
           env#mk_temp NUM_VAR_TYPE
 
   method private translate_unop_expr op x =

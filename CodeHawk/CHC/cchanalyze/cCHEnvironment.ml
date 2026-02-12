@@ -755,6 +755,12 @@ object(self)
 
   method is_memory_address v = vmgr#is_memory_address (self#get_seqnr v)
 
+  method is_string_literal_address v =
+    vmgr#is_string_literal_address (self#get_seqnr v)
+
+  method get_string_literal_address_string (v: variable_t) =
+    vmgr#get_string_literal_address_string (self#get_seqnr v)
+
   method is_memory_variable v = vmgr#is_memory_variable (self#get_seqnr v)
 
   method check_variable_applies_to_po

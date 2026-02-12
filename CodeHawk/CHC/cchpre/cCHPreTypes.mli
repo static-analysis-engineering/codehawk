@@ -195,6 +195,7 @@ object ('a)
   method get_external_basevar: variable_t
   method get_stack_address_var: variable_t
   method get_global_address_var: variable_t
+  method get_string_literal_base: string
   method get_base_variable: variable_t
 
   (* predicates *)
@@ -202,6 +203,7 @@ object ('a)
   method has_external_base: bool
   method is_stack_reference: bool
   method is_global_reference: bool
+  method is_string_reference: bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit
@@ -306,7 +308,18 @@ type c_variable_denotation_t =
    *)
 
   | MemoryVariable of int * offset
-  (** variable identified by memory reference index *)
+  (** variable identified by memory reference index
+
+      The meaning of this variable for a memory reference with basevar v is
+      NoOffset: *v
+      FieldOffset(f): v->f
+      IndexOffset(n): v[n]
+
+      The meaning of this variable for a memory reference with a stack address
+      of global address a, where a is declared as an array or struct is
+      FieldOffset(f): a.f
+      IndexOffset(n): a[n]
+   *)
 
   | MemoryRegionVariable of int
   (** variable used for valid-mem region analysis *)
@@ -569,6 +582,8 @@ object
    *)
   method get_canonical_fnvar_index: int -> int
 
+  method get_string_literal_address_string: int -> string
+
   (** {1 Predicates on variables}*)
 
   method is_symbolic_value: int -> bool
@@ -584,6 +599,8 @@ object
   method is_memory_variable: int -> bool
 
   method is_memory_address: int -> bool
+
+  method is_string_literal_address: int -> bool
 
   method is_program_variable: int -> bool
 

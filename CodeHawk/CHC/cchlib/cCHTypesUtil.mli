@@ -132,6 +132,8 @@ val is_constant_string: exp -> bool
 
 val is_enum_constant: string -> exp -> bool
 
+val mk_constant_index_offset: numerical_t -> offset
+
 val get_field_offset: offset -> string * int
 
 val get_scalar_struct_offsets: typ -> offset list

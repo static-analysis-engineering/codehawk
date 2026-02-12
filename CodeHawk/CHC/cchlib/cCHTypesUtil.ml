@@ -174,6 +174,11 @@ let minval w =
   (mkNumerical_big v)#neg
 
 
+let mk_constant_index_offset (n: numerical_t): offset =
+  let i64 = Int64.of_string n#toString in
+  Index (Const (CInt (i64, IInt, None)), NoOffset)
+
+
 let rec is_field_offset offset =
   match offset with
   | NoOffset -> false

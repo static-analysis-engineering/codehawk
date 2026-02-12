@@ -107,6 +107,14 @@ object (self:'a)
          (CCHFailure
 	    (LBLOCK [STR "Not a base variable: "; STR self#get_name]))
 
+  method get_string_literal_base =
+    match data.memrefbase with
+    | CStringLiteral s -> s
+    | _ ->
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Not a string literal reference: "; STR self#get_name]))
+
   method has_external_base =
     match data.memrefbase with CBaseVar _ -> true | _ -> false
 
@@ -115,6 +123,9 @@ object (self:'a)
 
   method is_global_reference =
     match data.memrefbase with CGlobalAddress _ -> true | _ -> false
+
+  method is_string_reference =
+    match data.memrefbase with CStringLiteral _ -> true | _ -> false
 
   method write_xml (node:xml_element_int) =
     begin

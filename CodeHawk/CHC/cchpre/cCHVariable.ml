@@ -217,11 +217,18 @@ let constant_value_variable_to_pretty c =
          STR "_len:";
          optx_to_pretty optlen;
          STR ")"]
-  | MemoryAddress (i,o) ->
+  | MemoryAddress (i, o) ->
      match o with
      | NoOffset ->  LBLOCK [STR "memaddr-"; INT i]
-     | _ ->
-        LBLOCK [STR "memaddr-"; INT i; STR ":"; offset_to_pretty o]
+     | Field _ ->
+        LBLOCK [STR "memaddr-"; INT i; offset_to_pretty o]
+     | Index (e, offset) ->
+        LBLOCK [
+            STR "(memaddr-";
+            INT i;
+            STR " + ";
+            exp_to_pretty e; STR ")";
+            offset_to_pretty offset]
 
 
 let c_variable_denotation_to_pretty v =
@@ -798,6 +805,33 @@ object (self)
     index >= 0 &&
       (match (self#get_variable index)#get_denotation with
 	 AuxiliaryVariable (MemoryAddress _) -> true | _ -> false)
+
+  method is_string_literal_address (index: int) =
+    (self#is_memory_address index) &&
+      (match (self#get_variable index)#get_denotation with
+       | AuxiliaryVariable (MemoryAddress (i, _)) ->
+          let memref = memrefmgr#get_memory_reference i in
+          memref#is_string_reference
+       | _ -> false)
+
+  method get_string_literal_address_string (index: int) =
+    if self#is_string_literal_address index then
+      (match (self#get_variable index)#get_denotation with
+       | AuxiliaryVariable (MemoryAddress (i, _)) ->
+          let memref = memrefmgr#get_memory_reference i in
+          memref#get_string_literal_base
+       | _ ->
+          raise
+            (CCHFailure
+               (LBLOCK [
+                    STR "Not a string literal address reference: ";
+                    INT index])))
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Not a string literal address reference: ";
+                INT index]))
 
   method get_memory_reference (index:int) =
     match (self#get_variable index)#get_denotation with

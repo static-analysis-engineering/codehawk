@@ -236,6 +236,7 @@ object
   method get_tainted_value_bounds: variable_t -> xpr_t option * xpr_t option
   method get_byte_sequence_origin: variable_t -> variable_t
   method get_memory_reference : variable_t -> memory_reference_int
+  method get_string_literal_address_string: variable_t -> string
 
   method get_region_name: int -> string   (* memory region index *)
   method get_indicator: variable_t -> int  (* augmentation variable *)
@@ -249,6 +250,7 @@ object
   method is_global_variable: variable_t -> bool
   method is_fixed_value: variable_t -> bool
   method is_memory_variable: variable_t -> bool
+  method is_string_literal_address: variable_t -> bool
   method is_memory_address: variable_t -> bool
   method is_fixed_xpr: xpr_t -> bool
   method is_initial_value: variable_t -> bool
