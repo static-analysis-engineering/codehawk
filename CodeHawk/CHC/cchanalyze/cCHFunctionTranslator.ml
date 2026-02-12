@@ -97,9 +97,9 @@ object (self)
     List.fold_left (fun acc vinfo ->
         let ttyp = fenv#get_type_unrolled vinfo.vtype in
         match ttyp with
-        | TPtr ((TInt _ | TFloat _), _) ->
+        | TPtr ((TInt _ | TFloat _) as basetype, _) ->
            let (vm, vmInit) =
-             env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
+             env#mk_par_deref_init vinfo NoOffset basetype NUM_VAR_TYPE in
            let _ =
              log_diagnostics_result
                ~tag:"get_deref_assigns:scalar"
@@ -112,9 +112,9 @@ object (self)
            (List.map
               (fun (v, vInit) -> ASSIGN_NUM (v, NUM_VAR vInit))
               (env#mk_struct_par_deref vinfo ttyp ckey NUM_VAR_TYPE)) @ acc
-        | TPtr (TPtr _,_) ->
+        | TPtr (TPtr _ as basetype, _) ->
            let (vm, vmInit) =
-             env#mk_par_deref_init vinfo NoOffset ttyp NUM_VAR_TYPE in
+             env#mk_par_deref_init vinfo NoOffset basetype NUM_VAR_TYPE in
            let _ =
              log_diagnostics_result
                ~tag:"get_deref_assigns:pointer"

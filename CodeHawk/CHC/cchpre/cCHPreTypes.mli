@@ -169,12 +169,12 @@ class type memory_region_manager_int =
 
 (** {2 Memory reference} *)
 
-(* A memory reference is a memory base address;
-   points to the storage location of a variable at that location in memory
- *)
+    (** A memory reference is an encapsulated memory base combined with the
+        type of the memory location pointed at. *)
+
 type memory_reference_data_t = {
     memrefbase: memory_base_t ;
-    memreftype: typ
+    memreftype: typ                          (* type of memory pointed at *)
   }
 
 
@@ -190,6 +190,8 @@ object ('a)
   (* accessors *)
   method get_data: memory_reference_data_t
   method get_base: memory_base_t
+
+  (** Returns the type of the memory pointed at by this reference. *)
   method get_type: typ
   method get_name: string
   method get_external_basevar: variable_t

@@ -177,11 +177,20 @@ object (self)
           env#mk_memory_variable
             memref#index (add_offset moffset offset) NUM_VAR_TYPE
        | XVar v when (env#is_initial_value v || env#is_function_return_value v) ->
-          (match type_of_exp fdecls e with
-           | TPtr (t, _) ->
-              env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
-           | _ ->
-              env#mk_temp NUM_VAR_TYPE)
+          let resultv =
+            (match type_of_exp fdecls e with
+             | TPtr (t, _) ->
+                env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
+             | _ ->
+                env#mk_temp NUM_VAR_TYPE) in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["v: " ^ (p2s v#toPretty);
+               "resultv: " ^ (p2s v#toPretty)] in
+          resultv
        | XVar _ ->
           let _ =
             log_diagnostics_result
@@ -194,7 +203,17 @@ object (self)
             when env#is_memory_address base ->
           let ioffset = CCHTypesUtil.mk_constant_index_offset n in
           let (memref, memoff) = env#get_memory_address base in
-          env#mk_memory_variable memref#index (add_offset memoff ioffset) NUM_VAR_TYPE
+          let v =
+            env#mk_memory_variable memref#index (add_offset memoff ioffset) NUM_VAR_TYPE in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["base: " ^ (p2s base#toPretty);
+               "ioff: " ^ n#toString;
+               "v: " ^ (p2s v#toPretty)] in
+          v
        | mem_e ->
           let _ =
             log_diagnostics_result
@@ -227,7 +246,7 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = type_of_exp fdecls e in
+            let memtype = get_pointer_expr_target_type fdecls e in
             let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v ->
@@ -246,6 +265,7 @@ object (self)
   method private translate_binop_expr op x1 x2 ty =
     let ty = fenv#get_type_unrolled ty in
     let result = match op with
+      (* | PlusA when CCHBasicUtil.exp_is_zero x2 -> (self#translate_expr x1) *)
       | PlusA -> XOp (XPlus, [self#translate_expr x1; self#translate_expr x2])
       | MinusA -> XOp (XMinus, [self#translate_expr x1; self#translate_expr x2])
       | Mult -> XOp (XMult, [self#translate_expr x1; self#translate_expr x2])
@@ -473,7 +493,7 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = type_of_exp fdecls e in
+            let memtype = get_pointer_expr_target_type fdecls e in
             let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v -> XVar v
@@ -741,7 +761,7 @@ object (self)
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = type_of_exp fdecls e in
+            let memtype = get_pointer_expr_target_type fdecls e in
             let memref = vmgr#memrefmgr#mk_external_reference v memtype in
             XVar (env#mk_memory_address_value memref#index offset)
          | XVar v when env#is_memory_address v -> XVar v
@@ -767,7 +787,16 @@ object (self)
     let lvar = self#translate_lval lval in
     if env#has_constant_offset lvar then
       match orakel#get_external_value context (XVar lvar) with
-      | Some vx -> vx
+      | Some vx ->
+         let _ =
+           log_diagnostics_result
+             ~tag:"sym:translate_variable_expr"
+             ~msg:env#get_functionname
+             __FILE__ __LINE__
+             ["lval: " ^ (p2s (lval_to_pretty lval));
+              "lvar: " ^ (p2s lvar#toPretty);
+              "vx: " ^ (x2s vx)] in
+         vx
       | _ -> XVar lvar
     else
       XVar lvar
@@ -809,13 +838,32 @@ object (self)
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
           let (memref, moffset) = env#get_memory_address v in
-          env#mk_memory_variable
-            memref#index (add_offset moffset offset) SYM_VAR_TYPE
+          let resultv =
+            env#mk_memory_variable
+              memref#index (add_offset moffset offset) SYM_VAR_TYPE in
+          let _ =
+            log_diagnostics_result
+              ~tag:"sym:translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["e: " ^ (p2s (exp_to_pretty e));
+               "v: " ^ (p2s v#toPretty);
+               "resultv: " ^ (p2s resultv#toPretty)] in
+          resultv
        | XVar v when env#is_initial_value v ->
+          let memtype = get_pointer_expr_target_type fdecls e in
           let memref =
-            env#get_variable_manager#memrefmgr#mk_external_reference
-              v (type_of_exp fdecls e) in
-          env#mk_memory_variable memref#index offset SYM_VAR_TYPE
+            env#get_variable_manager#memrefmgr#mk_external_reference v memtype in
+          let resultv = env#mk_memory_variable memref#index offset SYM_VAR_TYPE in
+          let _ =
+            log_diagnostics_result
+              ~tag:"sym:translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["e: " ^ (p2s (exp_to_pretty e));
+               "v: " ^ (p2s v#toPretty);
+               "resultv: " ^ (p2s v#toPretty)] in
+          resultv
        | _ ->
           env#mk_temp SYM_VAR_TYPE
 

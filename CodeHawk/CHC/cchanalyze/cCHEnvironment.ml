@@ -233,10 +233,24 @@ object(self)
     let cVar = vmgr#mk_local_variable vinfo NoOffset in
     let chifvar = self#add_chifvar cVar vt in
     let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
-    let memref = vmgr#memrefmgr#mk_external_reference vInit vinfo.vtype in
+    let memref = vmgr#memrefmgr#mk_external_reference vInit ttyp in
     let memvar = vmgr#mk_memory_variable memref#index offset in
     let chifmemvar = self#add_chifvar memvar vt in
     let chifmemvarinit = self#mk_initial_value chifmemvar ttyp vt in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_par_deref_init"
+        ~msg:self#get_functionname
+        __FILE__ __LINE__
+        ["typ: " ^ (p2s (typ_to_pretty ttyp));
+         "cVar: " ^ (p2s cVar#toPretty);
+         "chifvar: " ^ (p2s chifvar#toPretty);
+         "vInit: " ^ (p2s vInit#toPretty);
+         "memref: " ^ (p2s memref#toPretty)
+         ^ " (index: " ^ (string_of_int memref#index) ^ ")";
+         "memvar: " ^ (p2s memvar#toPretty);
+         "chifmemvar: " ^ (p2s chifmemvar#toPretty);
+         "chifmemvarinit: " ^ (p2s chifmemvarinit#toPretty)] in
     (chifmemvar, chifmemvarinit)
 
   method mk_struct_par_deref
@@ -409,11 +423,16 @@ object(self)
     let _ =
       log_diagnostics_result
         ~tag:"mk_base_address_variable"
-        ~msg:v#getName#getBaseName
+        ~msg:self#get_functionname
         __FILE__ __LINE__
-        ["offset: " ^ (p2s (offset_to_pretty offset));
+        ["v: " ^ (p2s v#toPretty);
+         "offset: " ^ (p2s (offset_to_pretty offset));
          "type: " ^ (p2s (typ_to_pretty t));
-         "memvar: " ^ (p2s chifmemvar#toPretty)] in
+         "vt: " ^ (p2s (variable_type_to_pretty vt));
+         "memref: " ^ (p2s memref#toPretty)
+         ^ " (index: " ^ (string_of_int memref#index) ^ ")";
+         "memvar: " ^ (p2s memvar#toPretty);
+         "chifmemvar: " ^ (p2s chifmemvar#toPretty)] in
     chifmemvar
 
   method mk_global_memory_variable

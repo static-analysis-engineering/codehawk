@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,12 @@ open CHLanguage
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
+open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -43,6 +45,13 @@ open CCHPreTypes
 open CCHMemoryBase
 
 module H = Hashtbl
+
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+
+let memory_reference_data_to_pretty (d: memory_reference_data_t) =
+  LBLOCK [memory_base_to_pretty d.memrefbase; STR "; "; typ_to_pretty d.memreftype]
 
 
 class memory_reference_t
@@ -163,6 +172,12 @@ object (self)
 
   method private mk_memory_reference (data:memory_reference_data_t) =
     let index = vard#index_memory_reference_data data in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_memory_reference"
+        __FILE__ __LINE__
+        ["data: " ^ (p2s (memory_reference_data_to_pretty data));
+         "index: " ^ (string_of_int index)] in
     if H.mem table index then
       H.find table index
     else
