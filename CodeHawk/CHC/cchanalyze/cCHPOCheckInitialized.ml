@@ -99,8 +99,6 @@ object (self)
   (* ----------------------------- safe ------------------------------------- *)
   (* check_safe
      - inv_implies_safe
-       - inv_xpr_implies_safe
-       - inv_bounded_xpr_implies_safe
      - check_safe_command_line_argument
      - check_safe_lval
        - check_safe_memlval
@@ -109,29 +107,6 @@ object (self)
            - memlval_vinv_memref_implies_safe
              - memlval_vinv_memref_basevar_implies_safe
    *)
-
-  method private inv_xpr_implies_safe (invindex: int) (x: xpr_t) =
-    let deps = DLocal [invindex] in
-    let msg =
-      "variable "
-      ^ (p2s (lval_to_pretty lval))
-      ^ " has the value "
-      ^ (x2s x) in
-    let site = Some (__FILE__, __LINE__, "inv_xpr_implies_safe") in
-    Some (deps, msg, site)
-
-  method private inv_bounded_xpr_implies_safe
-                   (invindex: int) (lb: xpr_t) (ub: xpr_t) =
-    let deps = DLocal [invindex] in
-    let msg =
-      "variable "
-      ^ (p2s (lval_to_pretty lval))
-      ^ " is bounded by LB: "
-      ^ (x2s lb)
-      ^ " and UB: "
-      ^ (x2s ub) in
-    let site = Some (__FILE__, __LINE__, "inv_bounded_xpr_implies_safe") in
-    Some (deps, msg, site)
 
   method private inv_implies_safe (inv: invariant_int) =
     let mname = "inv_implies_safe" in
@@ -150,14 +125,7 @@ object (self)
             let site = Some (__FILE__, __LINE__, mname) in
             Some (deps, msg, site)
        end
-    | _ ->
-       match inv#expr with
-       | Some x -> self#inv_xpr_implies_safe inv#index x
-       | _ ->
-          match (inv#lower_bound_xpr, inv#upper_bound_xpr) with
-          | (Some lb, Some ub) ->
-             self#inv_bounded_xpr_implies_safe inv#index lb ub
-          | _ -> None
+    | _ -> None
 
   method private check_safe_functionpointer (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
