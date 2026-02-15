@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025  Aarno Labs LLC
+   Copyright (c) 2025-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ object (self)
        if poq#env#is_memory_variable paramvar then
          let (memref, _offset) = poq#env#get_memory_variable paramvar in
          (match memref#get_base with
-          | CBaseVar base when poq#env#is_initial_parameter_value base ->
+          | CBaseVar (base, _, _) when poq#env#is_initial_parameter_value base ->
              let basevar = poq#env#get_initial_value_variable base in
              if basevar#equal numv then
                let deps = DLocal ([invindex]) in

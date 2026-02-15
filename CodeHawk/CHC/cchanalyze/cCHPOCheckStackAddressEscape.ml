@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -111,7 +111,7 @@ object (self)
              ^ (self#memref_to_string memref)
              ^ " is allowed to leave local scope" in
            Some (deps, msg)
-        | CBaseVar v -> self#var_implies_safe invindex v
+        | CBaseVar (v, _, _) -> self#var_implies_safe invindex v
         | _ -> None
       end
     else
@@ -144,14 +144,14 @@ object (self)
        let _ = poq#set_diagnostic_arg 2 (self#memref_to_string memref) in
        begin
          match memref#get_base with
-         | CBaseVar v when poq#is_api_expression (XVar v) ->
+         | CBaseVar (v, _, _) when poq#is_api_expression (XVar v) ->
             let deps = DLocal [inv#index] in
             let msg =
               "address "
               ^ (x2s (XVar v))
               ^ " received from caller is returned to caller" in
             Some (deps,msg)
-         | CBaseVar v -> self#var_implies_safe inv#index v
+         | CBaseVar (v, _, _) -> self#var_implies_safe inv#index v
          | CStringLiteral _ ->
             let deps = DLocal [inv#index] in
             let msg =
@@ -237,7 +237,7 @@ object (self)
               ^ (self#memref_to_string memref)
               ^ " should not leave scope" in
             Some (deps,msg)
-         | CBaseVar v -> self#xpr_implies_violation invindex (XVar v)
+         | CBaseVar (v, _, _) -> self#xpr_implies_violation invindex (XVar v)
          | _ -> None
        end
     | XOp (_, [xbase; _xinc]) -> self#xpr_implies_violation invindex xbase

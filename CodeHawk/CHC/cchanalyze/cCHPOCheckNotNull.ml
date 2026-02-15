@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024-206  Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -158,7 +158,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps, msg)
-    | CBaseVar v -> self#xpr_implies_safe invindex (XVar v)
+    | CBaseVar (v, _, _) -> self#xpr_implies_safe invindex (XVar v)
     | _ -> None
 
   method private memory_variable_safe (_invindex: int) (v: variable_t) =
@@ -296,7 +296,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar v when poq#is_api_expression (XVar v) ->
+    | CBaseVar (v, _, _) when poq#is_api_expression (XVar v) ->
        let a = poq#get_api_expression (XVar v) in
        let pred = PNotNull a in
        let deps = DEnvC ([invindex],[ApiAssumption  pred]) in

@@ -83,7 +83,7 @@ object (self:'a)
     match  data.memrefbase with
     | CStackAddress v
       | CGlobalAddress v
-      | CBaseVar v -> v
+      | CBaseVar (v, _, _) -> v
     | _ ->
        raise
          (CCHFailure
@@ -110,7 +110,7 @@ object (self:'a)
 
   method get_external_basevar =
     match data.memrefbase with
-    | CBaseVar v -> v
+    | CBaseVar (v, _, _) -> v
     | _ ->
        raise
          (CCHFailure
@@ -199,8 +199,9 @@ object (self)
     let data = { memrefbase = CGlobalAddress v; memreftype = typ } in
     self#mk_memory_reference data
 
-  method mk_external_reference (v:variable_t) (typ:typ) =
-    let data = { memrefbase = CBaseVar v; memreftype = typ } in
+  method mk_external_reference
+           ?(refattr=RawPointer) ?(nullattr=CanBeNull) (v:variable_t) (typ:typ) =
+    let data = { memrefbase = CBaseVar (v, refattr, nullattr); memreftype = typ } in
     self#mk_memory_reference data
 
 end

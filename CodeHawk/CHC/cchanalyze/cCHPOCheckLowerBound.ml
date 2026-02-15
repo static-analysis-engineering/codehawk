@@ -90,7 +90,7 @@ object (self)
        let (vinfo, _offset) = poq#env#get_local_variable svar in
        let msg = "address of stack variable: " ^ vinfo.vname in
        Some (deps, msg)
-    | CBaseVar svar ->
+    | CBaseVar (svar, _, _) ->
        let msg =
          "address of externally provided variable/field: "
          ^ svar#getName#getBaseName in
@@ -255,7 +255,7 @@ object (self)
               None
          | _ -> None
        end
-    | CBaseVar v ->
+    | CBaseVar (v, _, _) ->
        self#var_offset_implies_universal_violation invindex v xoffset
     | _ -> None
 

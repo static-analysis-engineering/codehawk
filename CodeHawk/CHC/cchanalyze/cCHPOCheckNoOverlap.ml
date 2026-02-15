@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +106,7 @@ object (self)
       let memref = poq#env#get_memory_reference v in
       let _ = poq#set_diagnostic_arg arg (self#memref_to_string memref) in
       match memref#get_base with
-      | CBaseVar basevar -> self#is_alloca_address arg basevar invindex
+      | CBaseVar (basevar, _, _) -> self#is_alloca_address arg basevar invindex
       | _ -> None
     else
       None
@@ -135,7 +135,7 @@ object (self)
       let memref = poq#env#get_memory_reference v in
       let _ = poq#set_diagnostic_arg arg (self#memref_to_string memref) in
       match memref#get_base with
-      | CBaseVar basevar ->
+      | CBaseVar (basevar, _, _) ->
          if poq#is_api_expression (XVar basevar) then
            let xapi = poq#get_api_expression (XVar basevar) in
            let deps = DLocal [invindex] in

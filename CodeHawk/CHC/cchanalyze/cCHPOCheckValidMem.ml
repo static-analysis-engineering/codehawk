@@ -216,7 +216,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps,msg)
-    | CBaseVar  v -> self#var_implies_safe invindex v
+    | CBaseVar  (v, _, _) -> self#var_implies_safe invindex v
     | _ -> None
 
   method private call_preserves_validity_excludes
@@ -359,7 +359,7 @@ object (self)
       if poq#env#is_memory_variable vv then
         let (memref, offset) = poq#env#get_memory_variable vv in
         match memref#get_base with
-        | CBaseVar v ->
+        | CBaseVar (v, _, _) ->
            begin
              poq#set_diagnostic_arg
                1
@@ -490,7 +490,7 @@ object (self)
     if poq#env#is_memory_variable vi then
       let (memref, offset) = poq#env#get_memory_variable vi in
       match memref#get_base with
-      | CBaseVar bv when poq#is_api_expression (XVar bv) ->
+      | CBaseVar (bv, _, _) when poq#is_api_expression (XVar bv) ->
          let a = poq#get_api_expression (XVar bv) in
          let pred = PValidMem (Lval (Mem a, offset)) in
          let deps = DEnvC ([invindex], [ApiAssumption pred]) in

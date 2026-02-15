@@ -638,7 +638,7 @@ object(self)
          else if self#is_memory_variable v then
            let (memref,offset) = self#get_memory_variable v in
            match memref#get_base with
-           | CBaseVar v ->
+           | CBaseVar (v, _, _) ->
               let (vinfo,voffset) =
                 vmgr#get_local_variable v#getName#getSeqNumber in
               "stack variable "
@@ -668,7 +668,7 @@ object(self)
                 (LBLOCK [
                      STR "global address region of non-global-variable: ";
                      v#toPretty]))
-      | CBaseVar v -> "basevar " ^ v#getName#getBaseName
+      | CBaseVar (v, _, _) -> "basevar " ^ v#getName#getBaseName
       | CUninterpreted s -> "unknown:" ^ s in
     aux index
 

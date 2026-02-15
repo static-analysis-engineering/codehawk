@@ -88,7 +88,7 @@ object (self)
        let (vinfo,_offset) = poq#env#get_local_variable svar in
        let msg = "address of stack variable: " ^ vinfo.vname in
        Some (deps, msg)
-    | CBaseVar svar ->
+    | CBaseVar (svar, _, _) ->
        let msg =
          "address of externally provided variable/field: "
          ^ svar#getName#getBaseName in

@@ -743,7 +743,7 @@ object (self)
     else if poq#env#is_memory_address v1 then
       let (memref, _offset) = poq#env#get_memory_address v1 in
       match memref#get_base with
-      | CBaseVar basevar ->
+      | CBaseVar (basevar, _, _) ->
          self#var_const_implies_delegation invindices basevar n
       | _ -> None
     else
@@ -762,7 +762,7 @@ object (self)
     else  if poq#env#is_memory_address v1 then
       let (memref, _offset) = poq#env#get_memory_address v1 in
       match memref#get_base with
-      | CBaseVar basevar ->
+      | CBaseVar (basevar, _, _) ->
          self#var_api_implies_delegation invindices basevar a2
       | _ -> None
     else

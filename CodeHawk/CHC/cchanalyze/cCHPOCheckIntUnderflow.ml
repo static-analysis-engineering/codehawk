@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -878,7 +878,7 @@ object (self)
               let (memref, _offset) = poq#env#get_memory_address v in
               begin
                 match memref#get_base with
-                | CBaseVar bv ->
+                | CBaseVar (bv, _, _) ->
                    let _ =
                      poq#set_diagnostic_arg
                        arg ("base var: " ^ (p2s bv#toPretty)) in

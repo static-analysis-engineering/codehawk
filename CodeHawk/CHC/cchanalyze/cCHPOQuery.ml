@@ -393,7 +393,7 @@ object (self)
            if self#env#is_memory_variable v then
              let (memref, memoffset) = self#env#get_memory_variable v in
              (match memref#get_base with
-              | CBaseVar base when self#env#is_initial_parameter_value base ->
+              | CBaseVar (base, _, _) when self#env#is_initial_parameter_value base ->
                  let basevar = self#env#get_initial_value_variable base in
                  if numv#equal basevar
                     && (offset_compare offset memoffset) = 0 then
@@ -1019,7 +1019,7 @@ object (self)
                  ^ (p2s (offset_to_pretty offset))) in
             None
        end
-    | CBaseVar v ->
+    | CBaseVar (v, _, _) ->
        begin
          self#set_diagnostic_arg arg ("basevar: " ^ v#getName#getBaseName);
          self#xpr_buffer_offset_size arg invindex (XVar v)

@@ -51,6 +51,18 @@ class type idregistry_int =
     method read_xml: xml_element_int -> unit
   end
 
+
+type ref_attribute_t =
+  | MutableRef
+  | ImmutableRef
+  | RawPointer
+
+
+type null_attribute_t =
+  | NotNull
+  | CanBeNull
+
+
 (** {1 Memory representations}*)
 
 (** {2 Memory base} *)
@@ -73,7 +85,7 @@ type memory_base_t =
   | CGlobalAddress of variable_t
   (** base address of a global memory region: global variable *)
 
-  | CBaseVar of variable_t
+  | CBaseVar of (variable_t * ref_attribute_t * null_attribute_t)
   (** address provided by contents of an externally controlled variable *)
 
   | CUninterpreted of string
@@ -138,7 +150,11 @@ class type memory_region_manager_int =
     method mk_global_region: variable_t -> memory_region_int
 
     (** [mk_external_region base] returns a memory with base pointer [base]*)
-    method mk_external_region: variable_t -> memory_region_int
+    method mk_external_region:
+             ?refattr:ref_attribute_t
+             -> ?nullattr: null_attribute_t
+             -> variable_t
+             -> memory_region_int
     method mk_uninterpreted_region: string -> memory_region_int
 
     method mk_null_sym: int -> symbol_t
@@ -146,7 +162,11 @@ class type memory_region_manager_int =
     method mk_stack_region_sym : variable_t -> symbol_t
 
     method mk_global_region_sym: variable_t -> symbol_t
-    method mk_external_region_sym: variable_t -> symbol_t
+    method mk_external_region_sym:
+             ?refattr:ref_attribute_t
+             -> ?nullattr: null_attribute_t
+             -> variable_t
+             -> symbol_t
     method mk_uninterpreted_sym: string -> symbol_t
     method mk_base_region_sym: memory_base_t -> symbol_t
 
@@ -222,7 +242,12 @@ object ('a)
   method mk_string_reference: string -> typ -> memory_reference_int
   method mk_stack_reference: variable_t -> typ -> memory_reference_int
   method mk_global_reference: variable_t -> typ -> memory_reference_int
-  method mk_external_reference: variable_t -> typ -> memory_reference_int
+  method mk_external_reference:
+           ?refattr:ref_attribute_t
+           -> ?nullattr:null_attribute_t
+           -> variable_t
+           -> typ
+           -> memory_reference_int
 
   (* accessors *)
   method get_memory_reference: int -> memory_reference_int

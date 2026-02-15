@@ -986,7 +986,7 @@ object (self)
                let memrefbase = memref#get_base in
                begin
                  match memrefbase with
-                 | CBaseVar v ->
+                 | CBaseVar (v, _, _) ->
                     self#is_initial_parameter_value v#getName#getSeqNumber
                  | _ -> false
                end

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025  Aarno Labs LLC
+   Copyright (c) 2025-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -123,7 +123,7 @@ object (self)
          ^ vinfo.vname in
        let site = Some (__FILE__, __LINE__, mname) in
        Some (deps, msg, site)
-    | CBaseVar bvar ->
+    | CBaseVar (bvar, _, _) ->
        self#memlval_memref_basevar_implies_safe invindex bvar
     | _ ->
        begin

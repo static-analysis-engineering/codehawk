@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -118,8 +118,10 @@ object (self)
       | CNull i -> (tags,[i])
       | CStringLiteral s -> (tags,[cd#index_string s])
       | CStackAddress v
-        | CGlobalAddress v
-        | CBaseVar v -> (tags, [xd#index_variable v])
+        | CGlobalAddress v -> (tags, [xd#index_variable v])
+      | CBaseVar (v, refattr, nullity) ->
+         (tags @ [ref_attribute_mfts#ts refattr; null_attribute_mfts#ts nullity],
+          [xd#index_variable v])
       | CUninterpreted s -> (tags @ [s],[]) in
     memory_base_table#add key
 
@@ -133,7 +135,11 @@ object (self)
     | "str" ->  CStringLiteral (cd#get_string (a 0))
     | "sa" -> CStackAddress (xd#get_variable (a 0))
     | "ga" -> CGlobalAddress (xd#get_variable (a 0))
-    | "bv" -> CBaseVar (xd#get_variable (a 0))
+    | "bv" ->
+       CBaseVar (
+           xd#get_variable (a 0),
+           ref_attribute_mfts#fs (t 1),
+           null_attribute_mfts#fs (t 2))
     | "ui" -> CUninterpreted (t 1)
     | s -> raise_tag_error name s memory_base_mcts#tags
 

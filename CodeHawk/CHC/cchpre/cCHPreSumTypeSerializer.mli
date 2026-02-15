@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,10 @@ val output_parameter_status_mcts: output_parameter_status_t mfts_int
 val po_status_mfts: po_status_t mfts_int
 
 val address_type_mfts: address_type_t mfts_int
+
+val ref_attribute_mfts: ref_attribute_t mfts_int
+
+val null_attribute_mfts: null_attribute_t mfts_int
 
 val assignment_mcts: assignment_t mfts_int
 

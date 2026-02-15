@@ -45,7 +45,12 @@ let memory_base_to_string (b:memory_base_t) =
      ^ "_"
      ^ (string_of_int v#getName#getSeqNumber)
   | CGlobalAddress v -> "addrof_globalvar_" ^ v#getName#getBaseName
-  | CBaseVar v -> "addr_in_" ^ v#getName#getBaseName
+  | CBaseVar (v, refattr, nullattr) ->
+     "addr_in_" ^ v#getName#getBaseName
+     ^ "_"
+     ^ (match refattr with MutableRef -> "mut" | ImmutableRef -> "ref" | _ -> "raw")
+     ^ "_"
+     ^ (match nullattr with NotNull -> "notnull" | _ -> "")
   | CUninterpreted s -> "uninterpreted_" ^ s
 
 

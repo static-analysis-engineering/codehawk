@@ -350,7 +350,7 @@ object (self)
                 self#memlval_vinv_memref_stackvar_implies_safe invindex vinfo
              | _ -> None)
 
-         | CBaseVar v ->
+         | CBaseVar (v, _, _) ->
             (try
                self#memlval_vinv_memref_basevar_implies_safe invindex v memoffset
              with

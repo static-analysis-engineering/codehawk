@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -160,7 +160,7 @@ object (self)
     | CStackAddress svar ->
        let (vinfo, offset) = poq#env#get_local_variable svar in
        self#declared_variable_implies_safe false invindex vinfo offset
-    | CBaseVar v -> self#var_implies_safe invindex  v
+    | CBaseVar (v, _, _) -> self#var_implies_safe invindex  v
     | _ -> None
 
   method private var_implies_safe (invindex: int) (v: variable_t) =
@@ -273,7 +273,7 @@ object (self)
     else if poq#env#is_memory_address v then
       let (memref,offset) = poq#env#get_memory_address v in
       match (memref#get_base,offset) with
-      | (CBaseVar basevar, NoOffset) ->
+      | (CBaseVar (basevar, _, _), NoOffset) ->
          self#var_implies_violation invindex basevar
       | _ -> None
     else
@@ -313,7 +313,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar v -> self#var_implies_delegation invindex v
+    | CBaseVar (v, _, _) -> self#var_implies_delegation invindex v
     | _ -> None
 
   method private var_implies_delegation (invindex: int) (v: variable_t) =
