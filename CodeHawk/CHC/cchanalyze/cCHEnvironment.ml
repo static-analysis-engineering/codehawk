@@ -179,8 +179,27 @@ object(self)
   method get_return_contexts = return_contexts#toList
 
   method mk_memory_variable (memrefindex:int) (offset:offset) (vt:variable_type_t) =
+    (* For a memory variable NoOffset and IndexOffset 0 are semantically equivalent.
+       To ensure that only a single variable is created for the two different
+       representations, the IndexOffset 0 is chosen.
+     *)
+    let offset =
+      match offset with
+      | NoOffset -> mk_constant_index_offset numerical_zero
+      | _ -> offset in
     let cvar = vmgr#mk_memory_variable memrefindex offset in
-    self#add_chifvar cvar vt
+    let chifvar = self#add_chifvar cvar vt in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_memory_variable"
+        ~msg:self#get_functionname
+        __FILE__ __LINE__
+        ["memrefindex: " ^ (string_of_int memrefindex);
+         "offset: " ^ (p2s (offset_to_pretty offset));
+         "vt: " ^ (p2s (variable_type_to_pretty vt));
+         "cvar: " ^ (p2s cvar#toPretty);
+         "chifvar: " ^ (p2s chifvar#toPretty)] in
+    chifvar
 
   method mk_return_var (typ:typ) (vt:variable_type_t) =
     let cVar = vmgr#mk_return_variable typ in
@@ -252,6 +271,28 @@ object(self)
          "chifmemvar: " ^ (p2s chifmemvar#toPretty);
          "chifmemvarinit: " ^ (p2s chifmemvarinit#toPretty)] in
     (chifmemvar, chifmemvarinit)
+
+  method mk_array_par_deref
+           (vinfo: varinfo) (ttyp: typ) (size: int) (vt: variable_type_t) =
+    let cVar = vmgr#mk_local_variable vinfo NoOffset in
+    let chifvar = self#add_chifvar cVar vt in
+    let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
+    List.init size (fun i ->
+        let offset = mk_constant_index_offset (mkNumerical i) in
+        let memref = vmgr#memrefmgr#mk_external_reference vInit ttyp in
+        let memvar = vmgr#mk_memory_variable memref#index offset in
+        let memvar = self#add_chifvar memvar vt in
+        let memvarInit = self#mk_initial_value memvar ttyp vt in
+        let _ =
+          log_diagnostics_result
+            ~tag:"mk_array_par_deref"
+            ~msg:self#get_functionname
+            __FILE__ __LINE__
+            ["typ: " ^ (p2s (typ_to_pretty ttyp));
+             "memref: " ^ (p2s memref#toPretty)
+             ^ " (index: " ^ (string_of_int memref#index) ^ ")";
+             "memvar: " ^ (p2s memvar#toPretty)] in
+        (memvar, memvarInit))
 
   method mk_struct_par_deref
            (vinfo:varinfo) (ttyp:typ) (ckey:int) (vt:variable_type_t) =

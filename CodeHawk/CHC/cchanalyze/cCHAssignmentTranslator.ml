@@ -69,6 +69,13 @@ object (self)
   val mutable location = unknown_location
 
   method translate (ctxt:program_context_int) (loc:location) (lhs:lval) (rhs:exp) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"translate"
+        ~msg:env#get_functionname
+        __FILE__ __LINE__
+        ["lhs: " ^ (p2s (lval_to_pretty lhs));
+         "rhs: " ^ (p2s (exp_to_pretty rhs))] in
     let _ = context <- ctxt in
     let _ = location <- loc in
     if self#has_contract_instr loc.line lhs then

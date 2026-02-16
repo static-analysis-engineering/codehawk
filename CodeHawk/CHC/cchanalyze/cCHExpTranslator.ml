@@ -151,6 +151,12 @@ object (self)
     | Index (e, o) -> Index (externalize_exp e, self#externalize_offset o)
 
   method private translate_lval (lval: lval): variable_t =
+    let _ =
+      log_diagnostics_result
+        ~tag:"translate_lval"
+        ~msg:env#get_functionname
+        __FILE__ __LINE__
+        ["lval: " ^ (p2s (lval_to_pretty lval))] in
     match lval with
     | (Var (_, vid),offset) when vid > 0 ->
        let vinfo = env#get_varinfo vid in
@@ -174,8 +180,18 @@ object (self)
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
           let (memref, moffset) = env#get_memory_address v in
-          env#mk_memory_variable
-            memref#index (add_offset moffset offset) NUM_VAR_TYPE
+          let resultv =
+            env#mk_memory_variable
+              memref#index (add_offset moffset offset) NUM_VAR_TYPE in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:Mem:memory_address"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["e: " ^ (p2s (exp_to_pretty e));
+               "offset: " ^ (p2s (offset_to_pretty offset));
+               "resultv: " ^ (p2s (resultv#toPretty))] in
+          resultv
        | XVar v when (env#is_initial_value v || env#is_function_return_value v) ->
           let resultv =
             (match type_of_exp fdecls e with
@@ -189,7 +205,7 @@ object (self)
               ~msg:env#get_functionname
               __FILE__ __LINE__
               ["v: " ^ (p2s v#toPretty);
-               "resultv: " ^ (p2s v#toPretty)] in
+               "resultv: " ^ (p2s resultv#toPretty)] in
           resultv
        | XVar _ ->
           let _ =
@@ -200,11 +216,34 @@ object (self)
               ["lval: " ^ (p2s (lval_to_pretty lval))] in
           env#mk_temp NUM_VAR_TYPE
        | XOp (XPlus, [XVar base; XConst (IntConst n)])
+            when (env#is_initial_value base || env#is_function_return_value base) ->
+          let ioffset = CCHTypesUtil.mk_constant_index_offset n in
+          let (resultv, t) =
+            (match type_of_exp fdecls e with
+             | TPtr (t, _) ->
+                (env#mk_base_address_memory_variable base ioffset t NUM_VAR_TYPE, t)
+             | _ ->
+                raise
+                  (CCHFailure
+                     (LBLOCK [STR "Unexpected type in dereference"]))) in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:index"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["base: " ^ (p2s base#toPretty);
+               "ioff: " ^ n#toString;
+               "typ: " ^ (p2s (typ_to_pretty t));
+               "resultv: " ^ (p2s resultv#toPretty)] in
+          resultv
+
+       | XOp (XPlus, [XVar base; XConst (IntConst n)])
             when env#is_memory_address base ->
           let ioffset = CCHTypesUtil.mk_constant_index_offset n in
           let (memref, memoff) = env#get_memory_address base in
           let v =
-            env#mk_memory_variable memref#index (add_offset memoff ioffset) NUM_VAR_TYPE in
+            env#mk_memory_variable memref#index
+              (add_offset memoff ioffset) NUM_VAR_TYPE in
           let _ =
             log_diagnostics_result
               ~tag:"translate_lval"
@@ -272,7 +311,7 @@ object (self)
       | Div -> XOp (XDiv, [self#translate_expr x1; self#translate_expr x2])
       | PlusPI
       | IndexPI ->
-	 let targetTyp = match ty with
+	 (* let targetTyp = match ty with
 	   | (TPtr (tty, _)) -> tty
 	   | _ ->
               raise
@@ -281,7 +320,8 @@ object (self)
                         STR "Application of PlusPI to non-pointer type: ";
 		        typ_to_pretty ty])) in
 	 let elementSize = size_of_type fdecls targetTyp in
-         let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in
+         let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in *)
+         let offsetx = self#translate_expr x2 in
 	 XOp (XPlus, [self#translate_expr x1; offsetx])
       | MinusPP ->
 	begin
@@ -517,16 +557,17 @@ object (self)
          XOp (XDiv,   [self#translate_lhs_expr x1; self#translate_lhs_expr x2])
       | PlusPI
         | IndexPI ->
-	 let targetTyp = match ty with
+	 (* let targetTyp = match ty with
 	   | (TPtr (tty, _)) -> tty
 	   | _ ->
               raise
                 (CCHFailure
 		   (LBLOCK [
                         STR "Application of PlusPI to non-pointer type: ";
-			typ_to_pretty ty])) in
-	 let elementSize = size_of_type fdecls targetTyp in
-         let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in
+			typ_to_pretty ty])) in *)
+	 (* let elementSize = size_of_type fdecls targetTyp in *)
+         (* let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in *)
+         let xoffset = self#translate_lhs_expr x2 in
 	 XOp (XPlus, [self#translate_lhs_expr x1; xoffset])
       | MinusPP ->
 	 begin

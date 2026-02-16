@@ -237,8 +237,14 @@ let c_variable_denotation_to_pretty v =
     | GlobalVariable (vinfo,offset) ->
      LBLOCK [STR vinfo.vname; offset_to_pretty offset]
   | ExternalStateVariable s -> STR s
-  | MemoryVariable (i,offset) ->
-     LBLOCK [STR "memvar-"; INT i; offset_to_pretty offset]
+  | MemoryVariable (i, offset) ->
+     (match offset with
+      | NoOffset -> LBLOCK [STR "memvar-"; INT i; STR ".0"]
+      | Field _ ->
+         LBLOCK [STR "memvar-"; INT i; offset_to_pretty offset]
+      | Index (e, suboffset) ->
+         LBLOCK [STR "memvar-"; INT i; STR "."; exp_to_pretty e;
+                 offset_to_pretty suboffset])
   | MemoryRegionVariable i ->
      LBLOCK [STR "memreg-"; INT i]
   | ReturnVariable _ -> STR "return"

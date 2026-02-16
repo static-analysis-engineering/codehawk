@@ -113,16 +113,21 @@ object (self)
               (fun (v, vInit) -> ASSIGN_NUM (v, NUM_VAR vInit))
               (env#mk_struct_par_deref vinfo ttyp ckey NUM_VAR_TYPE)) @ acc
         | TPtr (TPtr _ as basetype, _) ->
-           let (vm, vmInit) =
-             env#mk_par_deref_init vinfo NoOffset basetype NUM_VAR_TYPE in
-           let _ =
-             log_diagnostics_result
-               ~tag:"get_deref_assigns:pointer"
-               ~msg:env#get_functionname
-               __FILE__ __LINE__
-               ["vm: " ^ (p2s vm#toPretty);
-                "vmInit: " ^ (p2s vmInit#toPretty)] in
-           (ASSIGN_NUM (vm, NUM_VAR vmInit)) :: acc
+           if env#get_functionname = "main" then
+             (List.map
+                (fun (v, vInit) -> ASSIGN_NUM (v, NUM_VAR vInit))
+                (env#mk_array_par_deref vinfo basetype 6 NUM_VAR_TYPE)) @ acc
+           else
+             let (vm, vmInit) =
+               env#mk_par_deref_init vinfo NoOffset basetype NUM_VAR_TYPE in
+             let _ =
+               log_diagnostics_result
+                 ~tag:"get_deref_assigns:pointer"
+                 ~msg:env#get_functionname
+                 __FILE__ __LINE__
+                 ["vm: " ^ (p2s vm#toPretty);
+                  "vmInit: " ^ (p2s vmInit#toPretty)] in
+             (ASSIGN_NUM (vm, NUM_VAR vmInit)) :: acc
         | _ -> acc) [] formals
 
   method private assert_global_values globals =
@@ -183,7 +188,7 @@ object (self)
     let fsymbol = EU.symbol f.svar.vname in
     let proc =
       EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
-    (* let _ = CHPretty.pr_debug [proc#toPretty; NL; NL] in *)
+    let _ = CHPretty.pr_debug [proc#toPretty; NL; NL] in
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None, csystem)

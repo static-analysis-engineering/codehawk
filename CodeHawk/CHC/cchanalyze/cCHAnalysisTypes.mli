@@ -172,6 +172,13 @@ object
            -> variable_type_t
            -> (variable_t * variable_t)
 
+  method mk_array_par_deref:
+           varinfo
+           -> typ
+           -> int
+           -> variable_type_t
+           -> (variable_t * variable_t) list
+
   method mk_struct_par_deref:
            varinfo
            -> typ

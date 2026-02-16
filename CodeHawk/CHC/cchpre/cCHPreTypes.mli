@@ -339,8 +339,8 @@ type c_variable_denotation_t =
 
       The meaning of this variable for a memory reference with basevar v is
       NoOffset: *v
-      FieldOffset(f): v->f
-      IndexOffset(n): v[n]
+      FieldOffset(f): v->f  or ( *v ).f    (memvar-x.f)
+      IndexOffset(n): v[n]  or *(v + n)  (memvar-x.n)
 
       The meaning of this variable for a memory reference with a stack address
       of global address a, where a is declared as an array or struct is
