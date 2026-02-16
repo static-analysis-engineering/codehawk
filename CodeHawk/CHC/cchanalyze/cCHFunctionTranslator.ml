@@ -188,7 +188,7 @@ object (self)
     let fsymbol = EU.symbol f.svar.vname in
     let proc =
       EU.mkProcedure fsymbol ~signature:[] ~bindings:[] ~scope ~body:fbody in
-    let _ = CHPretty.pr_debug [proc#toPretty; NL; NL] in
+    (* let _ = CHPretty.pr_debug [proc#toPretty; NL; NL] in *)
     let csystem = EU.mkSystem (new symbol_t "c-system") in
     let _ = csystem#addProcedure proc in
     (None, csystem)

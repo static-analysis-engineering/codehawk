@@ -821,6 +821,9 @@ object (self)
       | Ge -> XOp (XGe, [self#translate_expr x1; self#translate_expr x2])
       | Ne -> XOp (XNe, [self#translate_expr x1; self#translate_expr x2])
       | Eq -> XOp (XEq, [self#translate_expr x1; self#translate_expr x2])
+      | PlusPI | IndexPI ->
+         let offsetx = self#translate_expr x2 in
+         XOp (XPlus, [self#translate_expr x1; offsetx])
       | _ -> random_constant_expr in
     simplify_xpr result
 
@@ -891,8 +894,78 @@ object (self)
                "v: " ^ (p2s v#toPretty);
                "resultv: " ^ (p2s resultv#toPretty)] in
           resultv
-       | XVar v when env#is_initial_value v ->
-          let memtype = get_pointer_expr_target_type fdecls e in
+       | XVar v when env#is_initial_value v || env#is_function_return_value v ->
+          let resultv =
+            (match type_of_exp fdecls e with
+             | TPtr (t, _) ->
+                env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
+             | _ ->
+                env#mk_temp SYM_VAR_TYPE) in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["v: " ^ (p2s v#toPretty);
+               "resultv: " ^ (p2s resultv#toPretty)] in
+          resultv
+       | XVar _ ->
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:Mem:Var"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["lval: " ^ (p2s (lval_to_pretty lval))] in
+          env#mk_temp SYM_VAR_TYPE
+       | XOp (XPlus, [XVar base; XConst (IntConst n)])
+            when (env#is_initial_value base || env#is_function_return_value base) ->
+          let ioffset = CCHTypesUtil.mk_constant_index_offset n in
+          let (resultv, t) =
+            (match type_of_exp fdecls e with
+             | TPtr (t, _) ->
+                (env#mk_base_address_memory_variable base ioffset t SYM_VAR_TYPE, t)
+             | _ ->
+                raise
+                  (CCHFailure
+                     (LBLOCK [STR "Unexpected type in dereference"]))) in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:index"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["base: " ^ (p2s base#toPretty);
+               "ioff: " ^ n#toString;
+               "typ: " ^ (p2s (typ_to_pretty t));
+               "resultv: " ^ (p2s resultv#toPretty)] in
+          resultv
+
+       | XOp (XPlus, [XVar base; XConst (IntConst n)])
+            when env#is_memory_address base ->
+          let ioffset = CCHTypesUtil.mk_constant_index_offset n in
+          let (memref, memoff) = env#get_memory_address base in
+          let v =
+            env#mk_memory_variable memref#index
+              (add_offset memoff ioffset) SYM_VAR_TYPE in
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["base: " ^ (p2s base#toPretty);
+               "ioff: " ^ n#toString;
+               "v: " ^ (p2s v#toPretty)] in
+          v
+       | mem_e ->
+          let _ =
+            log_diagnostics_result
+              ~tag:"translate_lval:Mem"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["lval: " ^ (p2s (lval_to_pretty lval));
+               "e: " ^ (p2s (exp_to_pretty e));
+               "mem_e: " ^ (x2s mem_e)] in
+          env#mk_temp SYM_VAR_TYPE
+(*          let memtype = get_pointer_expr_target_type fdecls e in
           let memref =
             env#get_variable_manager#memrefmgr#mk_external_reference v memtype in
           let resultv = env#mk_memory_variable memref#index offset SYM_VAR_TYPE in
@@ -906,7 +979,7 @@ object (self)
                "resultv: " ^ (p2s v#toPretty)] in
           resultv
        | _ ->
-          env#mk_temp SYM_VAR_TYPE
+          env#mk_temp SYM_VAR_TYPE *)
 
   method translate_condition (context: program_context_int) (c: exp) =
     let make_assume (x:xpr_t) =
