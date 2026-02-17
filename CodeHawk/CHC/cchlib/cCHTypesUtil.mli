@@ -74,6 +74,8 @@ val float_fits_kind: float -> fkind -> bool
 
 val enum_fits_kind: string -> ikind -> bool
 
+val get_typ_attributes: typ -> attribute list
+
 val has_const_attribute: typ -> bool
 
 val has_deref_const_attribute: typ -> bool

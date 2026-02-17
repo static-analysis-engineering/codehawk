@@ -330,17 +330,25 @@ object (self)
 
   method private initial_value_implies_safe (invindex: int) (v: variable_t) =
     if poq#env#is_initial_parameter_value v then
-      let vv = poq#env#get_initial_value_variable v in
-      let deps = DLocal [invindex] in
-      let msg = "initial value of argument: " ^ vv#getName#getBaseName in
-      let _ =
-        poq#set_diagnostic_arg 1 ("initial value of " ^ (p2s (vv#toPretty))) in
-      match self#validity_maintenance v poq#env#get_fn_entry_call_var with
-      | Some (d, m) ->
-         let deps = join_dependencies deps d in
-         let msg = msg ^ ";  " ^  m in
-         Some (deps, msg)
-      | _ -> None
+      let (vinfo, _) = poq#env#get_initial_parameter_vinfo v in
+      let vtype =
+        CCHFileEnvironment.file_environment#get_type_unrolled vinfo.vtype in
+      if CCHTypesUtil.has_deref_const_attribute vtype then
+        let deps = DLocal [invindex] in
+        let msg = "function parameter " ^ vinfo.vname ^ " is a const parameter" in
+        Some (deps, msg)
+      else
+        let vv = poq#env#get_initial_value_variable v in
+        let deps = DLocal [invindex] in
+        let msg = "initial value of argument: " ^ vv#getName#getBaseName in
+        let _ =
+          poq#set_diagnostic_arg 1 ("initial value of " ^ (p2s (vv#toPretty))) in
+        match self#validity_maintenance v poq#env#get_fn_entry_call_var with
+        | Some (d, m) ->
+           let deps = join_dependencies deps d in
+           let msg = msg ^ ";  " ^  m in
+           Some (deps, msg)
+        | _ -> None
     else if poq#is_global_expression (XVar v) then
       match self#global_implies_safe
               invindex (poq#get_global_expression (XVar v)) with

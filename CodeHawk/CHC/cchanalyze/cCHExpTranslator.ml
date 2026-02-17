@@ -196,7 +196,7 @@ object (self)
           let resultv =
             (match type_of_exp fdecls e with
              | TPtr (t, _) ->
-                env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
+                env#mk_base_address_memory_variable v offset t NUM_VAR_TYPE
              | _ ->
                 env#mk_temp NUM_VAR_TYPE) in
           let _ =

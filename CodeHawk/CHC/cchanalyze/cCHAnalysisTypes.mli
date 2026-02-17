@@ -227,9 +227,6 @@ object
   method get_declared_type_value_range:
            variable_t -> numerical_t option * numerical_t option
 
-  method get_external_addresses: variable_t list
-  method get_symbolic_dereferences: variable_t list
-
   method get_parameter_exp: variable_t -> exp
   method get_global_exp: variable_t -> exp
   method get_callvar_callee: variable_t -> varinfo
@@ -247,6 +244,8 @@ object
 
   method get_region_name: int -> string   (* memory region index *)
   method get_indicator: variable_t -> int  (* augmentation variable *)
+
+  method get_initial_parameter_vinfo: variable_t -> varinfo * offset
 
   (** {1 Predicates} *)
 

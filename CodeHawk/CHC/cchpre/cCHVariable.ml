@@ -981,6 +981,25 @@ object (self)
              | LocalVariable _ -> true
              | _ -> false))
 
+  method get_initial_parameter_vinfo (index: int): varinfo * offset =
+    if self#is_initial_parameter_value index then
+      let initvar = (self#get_variable index)#get_initial_value_variable in
+      let initindex = initvar#getName#getSeqNumber in
+      match (self#get_variable initindex)#get_denotation with
+      | LocalVariable (vinfo, offset) -> (vinfo, offset)
+      | _ ->
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Variable ";
+                   initvar#toPretty;
+                   STR " is not an initial parameter"]))
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Variable "; INT index; STR " is not an initial parameter"]))
+
   method is_initial_parameter_deref_value (index:int) =
     (self#is_initial_value index)
     && (let initvar = (self#get_variable index)#get_initial_value_variable in

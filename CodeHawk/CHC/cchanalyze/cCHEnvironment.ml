@@ -37,6 +37,7 @@ open CHOnlineCodeSet
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -61,9 +62,13 @@ open CCHAnalysisTypes
 
 module EU = CCHEngineUtil
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let p2s = CHPrettyUtil.pretty_to_string
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 module NumericalCollections = CHCollections.Make
@@ -252,9 +257,8 @@ object(self)
     let cVar = vmgr#mk_local_variable vinfo NoOffset in
     let chifvar = self#add_chifvar cVar vt in
     let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
-    let memref = vmgr#memrefmgr#mk_external_reference vInit ttyp in
-    let memvar = vmgr#mk_memory_variable memref#index offset in
-    let chifmemvar = self#add_chifvar memvar vt in
+    let memref = self#mk_external_reference vInit ttyp in
+    let chifmemvar = self#mk_memory_variable memref#index offset vt in
     let chifmemvarinit = self#mk_initial_value chifmemvar ttyp vt in
     let _ =
       log_diagnostics_result
@@ -267,7 +271,6 @@ object(self)
          "vInit: " ^ (p2s vInit#toPretty);
          "memref: " ^ (p2s memref#toPretty)
          ^ " (index: " ^ (string_of_int memref#index) ^ ")";
-         "memvar: " ^ (p2s memvar#toPretty);
          "chifmemvar: " ^ (p2s chifmemvar#toPretty);
          "chifmemvarinit: " ^ (p2s chifmemvarinit#toPretty)] in
     (chifmemvar, chifmemvarinit)
@@ -279,20 +282,20 @@ object(self)
     let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
     List.init size (fun i ->
         let offset = mk_constant_index_offset (mkNumerical i) in
-        let memref = vmgr#memrefmgr#mk_external_reference vInit ttyp in
-        let memvar = vmgr#mk_memory_variable memref#index offset in
-        let memvar = self#add_chifvar memvar vt in
-        let memvarInit = self#mk_initial_value memvar ttyp vt in
+        let memref = self#mk_external_reference vInit ttyp in
+        let chifmemvar = self#mk_memory_variable memref#index offset vt in
+        let memvarInit = self#mk_initial_value chifmemvar ttyp vt in
         let _ =
           log_diagnostics_result
             ~tag:"mk_array_par_deref"
             ~msg:self#get_functionname
             __FILE__ __LINE__
             ["typ: " ^ (p2s (typ_to_pretty ttyp));
+             "vt: " ^ (p2s (variable_type_to_pretty vt));
              "memref: " ^ (p2s memref#toPretty)
              ^ " (index: " ^ (string_of_int memref#index) ^ ")";
-             "memvar: " ^ (p2s memvar#toPretty)] in
-        (memvar, memvarInit))
+             "chifmemvar: " ^ (p2s chifmemvar#toPretty)] in
+        (chifmemvar, memvarInit))
 
   method mk_struct_par_deref
            (vinfo:varinfo) (ttyp:typ) (ckey:int) (vt:variable_type_t) =
@@ -306,10 +309,9 @@ object(self)
           let offset = Field (fuse,NoOffset) in
           let memref = vmgr#memrefmgr#mk_external_reference
                          vInit vinfo.vtype in
-          let memvar = vmgr#mk_memory_variable memref#index offset in
-          let memvar = self#add_chifvar memvar vt in
-          let memvarInit = self#mk_initial_value memvar field.ftype vt in
-          (memvar,memvarInit)) cinfo.cfields
+          let chifmemvar = self#mk_memory_variable memref#index offset vt in
+          let memvarInit = self#mk_initial_value chifmemvar field.ftype vt in
+          (chifmemvar, memvarInit)) cinfo.cfields
     with
     | Invalid_argument s ->
        begin
@@ -440,11 +442,48 @@ object(self)
     let addrvar = vmgr#mk_memory_address memref#index offset in
     self#add_chifvar addrvar NUM_VAR_TYPE
 
+  method private get_basevar_attributes
+                   (v: variable_t): (ref_attribute_t * null_attribute_t) traceresult =
+    if self#is_initial_parameter_value v then
+      let (vinfo, _offset) = self#get_initial_parameter_vinfo v in
+      let vtype = fenv#get_type_unrolled vinfo.vtype in
+      let typattrs = CCHTypesUtil.get_typ_attributes vtype in
+      let _ =
+        log_diagnostics_result
+          ~msg:self#get_functionname
+          ~tag:"get_basevar_attributes"
+          __FILE__ __LINE__
+          ["vinfo.vname: " ^ vinfo.vname;
+           "vinfo.vtype: " ^ (p2s (typ_to_pretty vtype));
+           "typ attrs: " ^ (String.concat " " (List.map attribute_to_string typattrs));
+           "vinfo.vattr: "
+           ^ (String.concat " " (List.map attribute_to_string vinfo.vattr))] in
+      if has_const_attribute vtype || has_deref_const_attribute vtype then
+        Ok (ImmutableRef, CanBeNull)
+      else
+        Ok (RawPointer, CanBeNull)
+    else
+      Error [(elocm __LINE__); "v: " ^ (p2s v#toPretty); "Not yet implemented"]
+
+  method private mk_external_reference (v: variable_t) (t: typ): memory_reference_int =
+    TR.tfold
+      ~ok:(fun (refattr, nullattr) ->
+        vmgr#memrefmgr#mk_external_reference ~refattr ~nullattr v t)
+      ~error: (fun e ->
+        begin
+          log_diagnostics_result
+            ~msg:self#get_functionname
+            ~tag:"mk_external_reference:attrs"
+            __FILE__ __LINE__
+            (e @ ["v: " ^ (p2s v#toPretty)]);
+          vmgr#memrefmgr#mk_external_reference v t
+        end)
+    (self#get_basevar_attributes v)
+
   method mk_base_address_memory_variable_init
            (v: variable_t) (offset:offset) (t:typ) (vt: variable_type_t) =
-    let memref = vmgr#memrefmgr#mk_external_reference v t in
-    let memvar = vmgr#mk_memory_variable memref#index offset in
-    let chifmemvar = self#add_chifvar memvar vt in
+    let memref = self#mk_external_reference v t in
+    let chifmemvar = self#mk_memory_variable memref#index offset vt in
     let chifmemvarinit = self#mk_initial_value chifmemvar t vt in
     let _ =
       log_diagnostics_result
@@ -453,14 +492,13 @@ object(self)
         __FILE__ __LINE__
         ["offset: " ^ (p2s (offset_to_pretty offset));
          "type: " ^ (p2s (typ_to_pretty t));
-         "memvar: " ^ (p2s chifmemvar#toPretty)] in
+         "chifmemvar: " ^ (p2s chifmemvar#toPretty)] in
     (chifmemvar, chifmemvarinit)
 
   method mk_base_address_memory_variable
            (v: variable_t) (offset:offset) (t:typ) (vt: variable_type_t) =
-    let memref = vmgr#memrefmgr#mk_external_reference v t in
-    let memvar = vmgr#mk_memory_variable memref#index offset in
-    let chifmemvar = self#add_chifvar memvar vt in
+    let memref = self#mk_external_reference v t in
+    let chifmemvar = self#mk_memory_variable memref#index offset vt in
     let _ =
       log_diagnostics_result
         ~tag:"mk_base_address_variable"
@@ -472,7 +510,6 @@ object(self)
          "vt: " ^ (p2s (variable_type_to_pretty vt));
          "memref: " ^ (p2s memref#toPretty)
          ^ " (index: " ^ (string_of_int memref#index) ^ ")";
-         "memvar: " ^ (p2s memvar#toPretty);
          "chifmemvar: " ^ (p2s chifmemvar#toPretty)] in
     chifmemvar
 
@@ -652,10 +689,6 @@ object(self)
     else
       None
 
-  method get_symbolic_dereferences = [] (* TBD, see ref:get_frozen_dereferences *)
-
-  method get_external_addresses = [] (* TBD, see ref *)
-
   (* memory region manager services ------------------------------------------- *)
 
   method get_region_name (index:int) =
@@ -785,6 +818,9 @@ object(self)
 
   method is_initial_parameter_value v =
     vmgr#is_initial_parameter_value (self#get_seqnr v)
+
+  method get_initial_parameter_vinfo (v:variable_t): varinfo * offset =
+    vmgr#get_initial_parameter_vinfo (self#get_seqnr v)
 
   method is_initial_parameter_deref_value v =
     vmgr#is_initial_parameter_deref_value (self#get_seqnr v)

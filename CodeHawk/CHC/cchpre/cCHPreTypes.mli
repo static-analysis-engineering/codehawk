@@ -541,6 +541,8 @@ object
    *)
   method get_parameter_exp: int -> exp
 
+  method get_initial_parameter_vinfo: int -> varinfo * offset
+
   (** [get_global_exp varindex] returns the expression associated with the
       initial-value variable with index [varindex] of a global variable.
 
