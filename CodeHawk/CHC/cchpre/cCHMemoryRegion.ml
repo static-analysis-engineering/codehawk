@@ -70,7 +70,7 @@ object (self:'a)
 
   method get_base_var =
     match memory_base with
-    | CBaseVar (v, _, _) -> v
+    | CBaseVar (v, _) -> v
     | _ ->
        raise
          (CCHFailure
@@ -176,9 +176,8 @@ object (self)
   method mk_global_region (v:variable_t) =
     self#mk_memory_region (CGlobalAddress v)
 
-  method mk_external_region
-           ?(refattr=RawPointer) ?(nullattr=CanBeNull) (v:variable_t) =
-    self#mk_memory_region (CBaseVar (v, refattr, nullattr))
+  method mk_external_region ?(nullattr=CanBeNull) (v:variable_t) =
+    self#mk_memory_region (CBaseVar (v, nullattr))
 
   method mk_uninterpreted_region (s:string) =
     let s = if s = "" then "none" else s in
@@ -202,9 +201,8 @@ object (self)
   method mk_global_region_sym (v:variable_t) =
     self#mk_sym (self#mk_global_region v)
 
-  method mk_external_region_sym
-           ?(refattr=RawPointer) ?(nullattr=CanBeNull) (v:variable_t) =
-    self#mk_sym (self#mk_external_region ~refattr ~nullattr v)
+  method mk_external_region_sym ?(nullattr=CanBeNull) (v:variable_t) =
+    self#mk_sym (self#mk_external_region ~nullattr v)
 
   method mk_uninterpreted_sym (s:string) =
     self#mk_sym (self#mk_uninterpreted_region s)
@@ -238,5 +236,6 @@ object (self)
     (self#get_memory_region index)#is_uninterpreted
 
 end
+
 
 let mk_memory_region_manager = new memory_region_manager_t

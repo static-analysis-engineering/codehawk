@@ -85,7 +85,7 @@ type memory_base_t =
   | CGlobalAddress of variable_t
   (** base address of a global memory region: global variable *)
 
-  | CBaseVar of (variable_t * ref_attribute_t * null_attribute_t)
+  | CBaseVar of (variable_t * null_attribute_t)
   (** address provided by contents of an externally controlled variable *)
 
   | CUninterpreted of string
@@ -151,8 +151,7 @@ class type memory_region_manager_int =
 
     (** [mk_external_region base] returns a memory with base pointer [base]*)
     method mk_external_region:
-             ?refattr:ref_attribute_t
-             -> ?nullattr: null_attribute_t
+             ?nullattr: null_attribute_t
              -> variable_t
              -> memory_region_int
     method mk_uninterpreted_region: string -> memory_region_int
@@ -163,8 +162,7 @@ class type memory_region_manager_int =
 
     method mk_global_region_sym: variable_t -> symbol_t
     method mk_external_region_sym:
-             ?refattr:ref_attribute_t
-             -> ?nullattr: null_attribute_t
+             ?nullattr: null_attribute_t
              -> variable_t
              -> symbol_t
     method mk_uninterpreted_sym: string -> symbol_t
@@ -243,8 +241,7 @@ object ('a)
   method mk_stack_reference: variable_t -> typ -> memory_reference_int
   method mk_global_reference: variable_t -> typ -> memory_reference_int
   method mk_external_reference:
-           ?refattr:ref_attribute_t
-           -> ?nullattr:null_attribute_t
+           ?nullattr:null_attribute_t
            -> variable_t
            -> typ
            -> memory_reference_int
@@ -294,7 +291,7 @@ type constant_value_variable_t =
   | ByteSequence of variable_t * xpr_t option
   (** byte sequence written by v with length x *)
 
-  | MemoryAddress of int * offset
+  | MemoryAddress of int * offset * ref_attribute_t
   (** constant that represents the address indicated by a memory reference index
       and offset.
 
@@ -303,10 +300,6 @@ type constant_value_variable_t =
       NoOffset: base-address + 0
       FieldOffset(f): base-address.field
       IndexOffset(n): base-address + n
-
-      A MemoryAddress should not be used for a CBaseVar memory-base, as the
-      memory-base already is a symbolic address. Creating an alias for this
-      value complicates the analysis.
 *)
 
 
@@ -479,7 +472,8 @@ object
 
   (** mk_memory_address memindex [offset] returns a memory address from memory
       reference index [memindex] and an offset*)
-  method mk_memory_address: int -> offset -> c_variable_int
+  method mk_memory_address:
+           ?refattr:ref_attribute_t -> int -> offset -> c_variable_int
 
   method mk_string_address: string -> offset -> typ -> c_variable_int
 
@@ -584,6 +578,9 @@ object
   method get_memory_variable: int -> (memory_reference_int * offset)
 
   method get_memory_address: int -> (memory_reference_int * offset)
+
+  method get_memory_address_wrapped_value: int -> variable_t option
+
   method get_initial_value_variable: int -> variable_t
 
   (** [get_purpose varindex] returns the purpose associated with the
@@ -628,6 +625,10 @@ object
   method is_memory_variable: int -> bool
 
   method is_memory_address: int -> bool
+
+  method is_mut_memory_address: int -> bool
+
+  method is_ref_memory_address: int -> bool
 
   method is_string_literal_address: int -> bool
 
