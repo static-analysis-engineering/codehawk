@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2022 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 open CHCommon
 open CHLanguage
 open CHNumerical
+open CHNumericalConstraints
 open CHPEPRTypes
 open CHPretty
 
@@ -306,6 +307,37 @@ let xpr_to_boolexpr
   let (c,e) = xpr2boolexpr reqN reqC xpr in
   (nested_cmd_2_cmds c, e)
 
+
+let xpr_to_numconstraint (x: xpr_t): numerical_constraint_t option =
+  match x with
+  | XOp (XEq, [XVar v1; XVar v2]) ->
+     let f1 = (numerical_one, new numerical_factor_t v1) in
+     let f2 = (numerical_one#neg, new numerical_factor_t v2) in
+     Some (new numerical_constraint_t
+             ~factors:[f1; f2] ~constant:numerical_zero ~kind:LINEAR_EQ)
+  | XOp (XEq, [XVar v1; XConst (IntConst constant)]) ->
+     let f1 = (numerical_one, new numerical_factor_t v1) in
+     Some (new numerical_constraint_t ~factors:[f1] ~constant ~kind:LINEAR_EQ)
+  | _ -> None
+
+
+let numconstraint_to_xpr (c: numerical_constraint_t): xpr_t =
+  let factors = c#getFactors in
+  let constant = c#getConstant in
+  let lhs =
+    List.fold_left (fun acc f ->
+        let coeff = c#getCoefficient f in
+        if coeff#equal numerical_one then
+          XOp (XPlus, [acc; XVar f#getVariable])
+        else if coeff#equal numerical_one#neg then
+          XOp (XMinus, [acc; XVar f#getVariable])
+        else
+          XOp (XPlus, [acc;
+                       XOp (XMult, [XConst (IntConst coeff); XVar f#getVariable])]))
+      (XConst (IntConst numerical_zero)) factors in
+  match c#getKind with
+  | LINEAR_EQ -> XOp (XEq, [lhs; num_constant_expr constant])
+  | LINEAR_INEQ -> XOp (XLe, [lhs; num_constant_expr constant])
 
 
 (* ===============================================================================
