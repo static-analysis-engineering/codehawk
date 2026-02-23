@@ -38,6 +38,7 @@ open CHPrettyUtil
 open CHXmlDocument
 
 (* xprlib *)
+open Xconsequence
 open Xprt
 open XprTypes
 open XprToPretty
@@ -68,6 +69,7 @@ open CCHProofScaffolding
 open CCHAnalysisTypes
 open CCHCheckImplication
 open CCHExpTranslator
+open CCHNumericalConstraints
 open CCHOrakel
 
 let x2p = xpr_formatter#pr_expr
@@ -284,25 +286,381 @@ object (self)
     else
       None
 
+  method private has_api_assumptions (deps: dependencies_t): bool =
+    match deps with
+    | DEnvC (_, l) ->
+       List.exists (fun a ->
+           match a with | ApiAssumption _ -> true | _ -> false) l
+    | _ -> false
+
+  method private get_main_argc_invariants (argcvar: variable_t) =
+    if fname = "main" then
+      let locinvio = invio#get_location_invariant cfgcontext in
+      let facts = List.concat (List.map locinvio#get_var_invariants [argcvar]) in
+      let _ =
+        log_diagnostics_result
+          ~tag:"get_main_argc_invariants"
+          __FILE__ __LINE__
+          [String.concat "; " (List.map (fun f -> p2s f#toPretty) facts)] in
+      facts
+    else
+      []
+
+  (* Handling of assumptions delegated to the api of the main function.
+
+     Regular functions can delegate (part of) proof obligations to assumptions
+     on the arguments to that function, to be satisfied by the callers of that
+     function. The main function, however, has no callers, and thus assumptions
+     delegated cannot be propagated and thus are never checked in this way.
+     The assumptions on main can only be checked against the C standard, that is,
+     the C standard provides the only guarantees that can be assumed for the
+     arguments of main.
+
+     Section 5.1.2.2.1 Program startup of the C99 standard imposes the following
+     requirements on the first two arguments of main (referred to here as argc
+     and argv) (if they are declared):
+     - The value of argc shall be nonnegative.
+     - If the value of argc is greater than zero, the array members argv[0]
+       through argv[argc-1] inclusive shall contain pointers to string, which
+       are given implementation-defined values by the host environement prior
+       to program startup.
+     - If the value of argc is greater than zero, the string pointed to by
+       argv[0] represents the program name; argv[0][0] shall the be null
+       character if the program name is not available from the host environment.
+       If the value of argc is greater than one, the strings pointed to by
+       argv[1] through argv[argc-1] represent the program parameters.
+     - The parameters argc and argv and the strings pointed to by the argv
+       array shall be modifiable by the program, and retain their last-stored
+       values between program startup and program termination.
+
+     These requirements are checked by intercepting the recording of proof
+     results for main and checking whether any assumptions delegated to the
+     function api are implied by the guarantees described in the C standard.
+     It is checked whether the api assumptions made indeed concern (the
+     initial value of) argv, and, if applicable, which member of the array
+     pointed at by argv. Furthermore it is checked that the index into the
+     array is less than (or sometimes equal to) the initial value of argc.
+
+     The following predicate kinds can be discharged against the C standard
+     assumptions:
+     - not-null(argv): valid: argv is guaranteed non-null
+     - not-null(argv[i]): valid if i < argc
+     - initialized(argv[i]): valid if i <= argc
+     - null-terminated(argv[i]): valid if i < argc
+     - initialized-range(argv[i]): valid if i < argc
+     - valid-mem(argv[i]): valid if i < argc
+     - ptr-upper-bound-deref(argv, i, _, _): valid if i <= argc
+     - ptr-upper-bound(argv[i], null-terminator-position(argv[i], _, _):
+         (the pointer in argv[i] can safely be incremented with the index
+         of the null-terminator position): valid if i < argc
+
+     If an assumption is determined to be implied by the guarantees provided
+     by the standard, the status of the proof obligation is changed from
+     A (delegated to api) to L (local). If an assumption cannot be proven to
+     be implied by the guarantees, the status of the proof obligation is
+     changed from A to ? (open), indicating that the proof obligation has not
+     been discharged and is potentially a violation.
+
+     Note that the interception only happens if argv/argv[i] has already
+     been shown to be equal to the initial value at function entry. If the
+     value has been changed (as is allowed according to the C standard),
+     discharge follows the same procedure as for other variables.
+   *)
+  method private record_main_api_proof_result
+                   ?(site: (string * int * string) option = None)
+                   (status:po_status_t)
+                   (deps:dependencies_t)
+                   (expl:string) =
+    let line = match site with Some (_, l, _) -> l | _ -> -1 in
+    let is_argv (vid: int): bool =
+      fenv#is_formal vid && (self#env#get_varinfo vid).vparam = 2 in
+    let _argc_invs = self#get_main_argc_invariants in
+    let is_argv_array_member_location (lval: lval): bool =
+      match lval with
+      | (Mem (Lval (Var (_, vid), NoOffset)), NoOffset)
+        | (Mem (Lval (Var (_, vid), NoOffset)), Index _) -> is_argv vid
+      | (Mem e, offset) ->
+         let _ =
+           log_diagnostics_result
+             ~tag:"record_main_api_proof_result:unmatched"
+             __FILE__ __LINE__
+             ["e: " ^ (p2s (exp_to_pretty e));
+              "offset: " ^ (p2s (offset_to_pretty offset))] in
+         false
+      | _ -> false in
+    let is_argv_array_member (e: exp): bool =
+      match e with
+      | Lval lval -> is_argv_array_member_location lval
+      | _ -> false in
+    let get_argv_array_member_index (e: exp): int option =
+      match e with
+      | Lval (Mem _, Index (Const (CInt (i64, _, _)), NoOffset)) ->
+         Some (Int64.to_int i64)
+      | _ -> None in
+    let (invs, assumptions) =
+      match deps with
+      | DEnvC (invs, al) -> (invs, al)
+      | _ -> ([], []) in
+    let assumptions =
+      List.fold_left (fun acc a ->
+          match a with
+          | ApiAssumption p -> p :: acc
+          | _ -> acc) [] assumptions in
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_main_api_proof_result"
+        __FILE__ __LINE__
+        [(string_of_int line);
+         " ";
+         String.concat
+           "; "
+           (List.map (fun a -> (p2s (po_predicate_to_pretty a))) assumptions)] in
+    let (ldeps, expls, predicates') =
+      List.fold_left (fun (ldeps, expls, preds) p ->
+          let predicate_msg () =
+            match p with
+            | PNotNull _ -> "is guaranteed to be non-null"
+            | PValidMem _ -> "is guaranteed to be valid memory"
+            | PUpperBound _ ->
+               "is guaranteed to not exceed to upper bound of the buffer pointed at"
+            | PLowerBound _ ->
+               "is guaranteed to not go below the lower bound of the buffer pointed at"
+            | PInScope _ ->
+               "is guaranteed to be in scope"
+            | PInitializedRange _ ->
+               "is guaranteed to point at a buffer that is initialized up to its "
+               ^ "null terminator"
+            | PNullTerminated _ ->
+               "is guaranteed to point at a buffer that is null terminated"
+            | PPtrUpperBound _ | PPtrUpperBoundDeref _ ->
+               "allows for incrementing the pointer up to the null terminator"
+            | _ -> "?" in
+
+          match p with
+          | PNotNull (Lval (Var (_, vid), NoOffset)) when is_argv vid ->
+             (ldeps, "the initial value of argv is guaranteed not null" :: expls, preds)
+          | PNotNull e
+            | PValidMem e
+            | PUpperBound (_, e)
+            | PLowerBound (_, e)
+            | PInScope e
+            | PInitializedRange (e, _)
+            | PNullTerminated e when is_argv_array_member e ->
+             (match get_argv_array_member_index e with
+              | Some index ->
+                 (match self#is_valid_argv_index index with
+                  | Some (ideps, imsg) ->
+                     ((ideps @ ldeps,
+                       ("the value of argv[" ^ (string_of_int index) ^ "] " ^
+                       (predicate_msg ())) :: imsg :: expls, preds))
+                  | _ ->
+                     (ldeps, expls, p :: preds))
+              | _ ->
+                 (ldeps, expls, p :: preds))
+
+          | PPtrUpperBound (_, _, e, CnApp ("ntp", [Some len], _))
+            | PPtrUpperBoundDeref (_, _, e, CnApp ("ntp", [Some len], _))
+               when (exp_compare e len) = 0 ->
+             (match get_argv_array_member_index e with
+              | Some index ->
+                 (match self#is_valid_argv_index index with
+                  | Some (ideps, imsg) ->
+                     ((ideps @ ldeps,
+                       ("the value of argv[" ^ (string_of_int index) ^ "] " ^
+                       (predicate_msg ())) :: imsg :: expls, preds))
+                  | _ ->
+                     (ldeps, expls, p :: preds))
+              | _ ->
+                 (ldeps, expls, p :: preds))
+
+          | PPtrUpperBoundDeref (_,
+                                 IndexPI,
+                                 Lval (Var (_, vid), NoOffset),
+                                 Const (CInt (i64, _, _))) when is_argv vid ->
+             let index = Int64.to_int i64 in
+             (match self#is_valid_argv_index index with
+              | Some (ideps, imsg) ->
+                 ((ideps @ ldeps,
+                   ("the value of argv stays within bounds when incremented by "
+                      ^ (string_of_int index)) :: imsg :: expls, preds))
+              | _ ->
+                 begin
+                   self#set_diagnostic
+                     ("Unable to prove that increment of " ^ (string_of_int index)
+                      ^ " is safe");
+                   (ldeps, expls, p :: preds)
+                 end)
+
+          | PInitialized lval when is_argv_array_member_location lval ->
+             (match get_argv_array_member_index (Lval lval) with
+              | Some index ->
+                 (match self#is_valid_argv_index ~strict:false index with
+                  | Some (ideps, imsg) ->
+                     ((ideps @ ldeps,
+                      ("the value of argv[" ^ (string_of_int index) ^ "] " ^
+                         "is guaranteed to be initialized") :: imsg :: expls, preds))
+                  | _ ->
+                     (ldeps, expls, p :: preds))
+              | _ ->
+                 (ldeps, expls, p :: preds))
+          | _ ->
+             (ldeps, expls, p :: preds)) ([], [], []) assumptions in
+    if (List.length predicates') = 0 then
+      let deps' = DLocal (invs @ ldeps) in
+      let expl' = (String.concat "; " expls) ^ "; " ^ expl in
+      self#record_proof_result ~site status deps' expl'
+    else
+      begin
+        log_diagnostics_result
+          ~tag:"record_main_api_proof_result:rejected"
+          __FILE__ __LINE__
+          ["assumptions: " ^
+             (String.concat ", "
+                (List.map (fun a -> (p2s (po_predicate_to_pretty a))) assumptions))];
+        self#set_diagnostic
+          ("Unable to discharge all assumptions made against the api of main: "
+           ^ (String.concat
+                ", " (List.map (fun p -> p2s (po_predicate_to_pretty p)) predicates')));
+        po#set_status Orange;
+        po#set_dependencies deps;
+        po#set_explanation ~site expl;
+        po#set_resolution_timestamp (current_time_to_string ());
+        (match proof_scaffolding#record_proof_obligation_result self#fname po with
+         | Ok _ -> ()
+         | Error e ->
+            raise
+              (CCHFailure
+                 (LBLOCK [
+                      STR "Error in record-proof-result: ";
+                      STR (String.concat "; " e)])))
+      end
+
+  (* Checks the value of the index into the array pointed at by argv against
+     the initial value of argc. *)
+  method private is_valid_argv_index
+                   ?(strict=true) (index: int): (int list * string) option =
+    let argc = fenv#get_formal 1 in
+    let argcvar = self#env#mk_program_var argc NoOffset NUM_VAR_TYPE in
+    let argcinit = self#env#mk_initial_value argcvar (TInt (IInt, [])) NUM_VAR_TYPE in
+    let indexxpr =
+      if strict then
+        simplify_xpr (XOp (XPlus, [int_constant_expr index; one_constant_expr]))
+      else
+        int_constant_expr index in
+    let consequence = simplify_xpr (XOp (XMinus, [indexxpr; XVar argcinit])) in
+    let msg =
+      "property argc#init"
+      ^ (if strict then " > " else " >= ")
+      ^ "index for index = " ^ (string_of_int index)
+      ^ " implied by " in
+    let facts = self#get_main_argc_invariants argcvar in
+    let _ =
+      po#set_diagnostic_invariants 0 (List.map (fun f -> f#index) facts) in
+    let invxprs =
+      List.fold_left (fun acc inv ->
+          match inv#expr with
+          | Some x -> XOp (XEq, [XVar argcvar; x]) :: acc
+          | _ -> acc) [] facts in
+    let numconstraints =
+      List.fold_left (fun acc x ->
+          match xpr_to_numconstraint x with
+          | Some c -> c :: acc
+          | _ -> acc) [] invxprs in
+    let constraintset = mk_constraint_set () in
+    let _ = List.iter constraintset#add numconstraints in
+    let newconstraintset = constraintset#project_out [argcvar] in
+    match newconstraintset with
+    | Some cs ->
+       let newconstraints = cs#get_constraints in
+       let cxprs = List.map numconstraint_to_xpr newconstraints in
+       let cxprs = List.map simplify_xpr cxprs in
+       let _ =
+         log_diagnostics_result
+           ~tag:"is_valid_argv_index"
+           __FILE__ __LINE__
+           ["constraints: "
+            ^ (String.concat ", " (List.map (fun c -> p2s c#toPretty) newconstraints));
+            "xprs: " ^ (String.concat ", " (List.map x2s cxprs));
+            "index: " ^ (string_of_int index)] in
+       let antecedents =
+         List.fold_left (fun acc a ->
+             match a with
+             | XOp (XEq, [a; b]) ->
+                (XOp (XMinus, [a; b])) :: (XOp (XMinus, [b; a])) :: acc
+             | _ -> acc) [] cxprs in
+       let implication =
+         List.fold_left (fun acc a ->
+             acc || (xfimplies a consequence)) false antecedents in
+       if implication then
+         Some (List.map (fun f -> f#index) facts, msg ^ " invariants")
+
+       else
+         begin
+           log_diagnostics_result
+             ~tag:"is_valid_argv_index:no-implication"
+             __FILE__ __LINE__
+             ["indexxpr: " ^ (x2s indexxpr);
+              "consequence: " ^ (x2s consequence);
+              "antecedents: " ^ (String.concat ", " (List.map x2s antecedents))];
+           self#set_diagnostic
+             ("Unable to prove index < argc#init for index = " ^ (string_of_int index));
+           None
+         end
+    | _ ->
+       let parameterconstraints = self#get_parameter_constraints in
+       let antecedents =
+         List.fold_left
+           (fun acc p ->
+             match p with
+             | XOp (XGe, [a; b]) ->
+                (simplify_xpr (XOp (XMinus, [b; a]))) :: acc
+             | XOp (XEq, [a; b]) ->
+                (simplify_xpr (XOp (XMinus, [a; b]))) ::
+                  (simplify_xpr (XOp (XMinus, [b; a]))) :: acc
+             | _ -> acc) [] parameterconstraints in
+       let implication =
+         List.fold_left (fun acc a ->
+             acc || (xfimplies a consequence)) false antecedents in
+       if implication then
+         Some ([], msg
+                   ^ " parameter constraint(s) "
+                   ^ (String.concat ", " (List.map x2s parameterconstraints)))
+       else
+         begin
+           log_diagnostics_result
+             ~tag:"is_valid_argv_index:no-constraintset/no parameterconstraints"
+             __FILE__ __LINE__
+             ["invxprs: " ^ (String.concat ", " (List.map x2s invxprs));
+              "parameter constraints: "
+              ^ (String.concat ", " (List.map x2s parameterconstraints))];
+           self#set_diagnostic "Unable to prove index < argc#init";
+           None
+       end
+
   method private record_proof_result
                    ?(site: (string * int * string) option = None)
                    (status:po_status_t)
                    (deps:dependencies_t)
                    (expl:string) =
-    begin
-      po#set_status status;
-      po#set_dependencies deps;
-      po#set_explanation ~site expl;
-      po#set_resolution_timestamp (current_time_to_string ());
-      (match proof_scaffolding#record_proof_obligation_result self#fname po with
-       | Ok _ -> ()
-       | Error e ->
-          raise
-            (CCHFailure
-               (LBLOCK [
-                    STR "Error in record-proof-result: ";
-                    STR (String.concat "; " e)])))
-    end
+    if self#env#get_functionname = "main"
+       && (match (status, deps) with
+           | (Green, DEnvC _) -> true | _ -> false) then
+       self#record_main_api_proof_result ~site status deps expl
+    else
+       begin
+         po#set_status status;
+         po#set_dependencies deps;
+         po#set_explanation ~site expl;
+         po#set_resolution_timestamp (current_time_to_string ());
+         (match proof_scaffolding#record_proof_obligation_result self#fname po with
+          | Ok _ -> ()
+          | Error e ->
+             raise
+               (CCHFailure
+                  (LBLOCK [
+                       STR "Error in record-proof-result: ";
+                       STR (String.concat "; " e)])))
+       end
 
   method set_diagnostic
            ?(site: (string * int * string) option = None)
@@ -393,7 +751,7 @@ object (self)
            if self#env#is_memory_variable v then
              let (memref, memoffset) = self#env#get_memory_variable v in
              (match memref#get_base with
-              | CBaseVar (base, _, _) when self#env#is_initial_parameter_value base ->
+              | CBaseVar (base, _) when self#env#is_initial_parameter_value base ->
                  let basevar = self#env#get_initial_value_variable base in
                  if numv#equal basevar
                     && (offset_compare offset memoffset) = 0 then
@@ -1019,7 +1377,7 @@ object (self)
                  ^ (p2s (offset_to_pretty offset))) in
             None
        end
-    | CBaseVar (v, _, _) ->
+    | CBaseVar (v, _) ->
        begin
          self#set_diagnostic_arg arg ("basevar: " ^ v#getName#getBaseName);
          self#xpr_buffer_offset_size arg invindex (XVar v)
@@ -1196,6 +1554,19 @@ object (self)
              self#record_unevaluated x;
              None
            end)
+    | XVar v when Option.is_some (env#get_memory_address_wrapped_value v) ->
+       (match env#get_memory_address_wrapped_value v with
+        | Some wv ->
+           (try Some (env#get_parameter_exp wv) with
+            | CCHFailure p ->
+               begin
+                 chlog#add
+                   "api expression"
+                   (LBLOCK [STR env#get_functionname; STR ": "; p]);
+                 self#record_unevaluated x;
+                 None
+               end)
+        | _ -> None)
     | XOp (op, [x1; x2]) ->
        begin
          match (self#x2api x1, self#x2api x2) with
