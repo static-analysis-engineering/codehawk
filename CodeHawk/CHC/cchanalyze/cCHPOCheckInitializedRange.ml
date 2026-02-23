@@ -32,6 +32,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -124,6 +125,17 @@ object (self)
 
   method private get_initialization_length (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
+    let _ =
+      log_diagnostics_result
+        ~tag:"get_initialization_length"
+        ~msg:poq#env#get_functionname
+        __FILE__ __LINE__
+        ["vinfo: " ^ vinfo.vname;
+         "vinfo-values: " ^
+           (String.concat ", "
+              (List.map (fun (inv, offset) ->
+                   "(" ^ (p2s inv#toPretty) ^ ", " ^ (p2s (offset_to_pretty offset)))
+                 vinfovalues))] in
     List.fold_left (fun acc (inv,offset) ->
         match acc with
         | Some _ -> acc

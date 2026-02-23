@@ -1261,6 +1261,13 @@ object (self)
                    (fname:string) (args:exp list) (_fnargs:xpr_t list) =
     let (pcs, _epcs) =
       get_postconditions env#get_functionname (Some fname) context in
+    let _ =
+      log_diagnostics_result
+        ~tag:"sym:get_postconditions"
+        ~msg:env#get_functionname
+        __FILE__ __LINE__
+        ["pcs: " ^
+           (String.concat ", " (List.map annotated_xpredicate_to_string pcs))] in
     List.concat
       (List.map (fun (pc, _) ->
            match pc with
@@ -1334,6 +1341,13 @@ object (self)
                    (fnargs:xpr_t list) =
     let vinfo = fdecls#get_varinfo_by_vid fvid in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
+    let _ =
+      log_diagnostics_result
+        ~tag:"get_sideeffect:sym"
+        ~msg:env#get_functionname
+        __FILE__ __LINE__
+        ["side effects: " ^
+           (String.concat ", " (List.map annotated_xpredicate_to_string sideeffects))] in
     let (sitevars,xsitevars) = env#get_site_call_vars context in
     let fnzargs = List.map (fun _ -> None) fnargs in
     let zsevar =
@@ -1508,9 +1522,25 @@ object (self)
                      | CastE (_, Lval (Var (_vname,vid), offset)) ->
                         let vinfo = env#get_varinfo vid in
                         Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
-                     | _ -> None
+                     | _ ->
+                        begin
+                          log_diagnostics_result
+                            ~tag:"get_sideeffect:sym:initialized-range"
+                            ~msg:env#get_functionname
+                            __FILE__ __LINE__
+                            ["no base variable found for " ^ (p2s (s_term_to_pretty base))];
+                          None
+                        end
                    end
-                | _ -> None in
+                | _ ->
+                   begin
+                     log_diagnostics_result
+                       ~tag:"get_sideeffect:sym:initialized-range"
+                       ~msg:env#get_functionname
+                       __FILE__ __LINE__
+                       ["base term not recognized: " ^ (p2s (s_term_to_pretty base))];
+                     None
+                   end in
               let lenvalue =
                 match len with
                 | ArgValue (ParFormal n, ArgNoOffset) ->

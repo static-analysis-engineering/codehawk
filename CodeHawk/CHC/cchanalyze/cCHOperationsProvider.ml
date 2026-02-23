@@ -59,6 +59,8 @@ open CCHCommand
 module H = Hashtbl
 
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
 
 
 module ProgramContextCollections = CHCollections.Make
@@ -190,14 +192,27 @@ object (self)
                 [make_c_cmd SKIP]
            | _ ->
               match exp_translator#translate_exp context e with
-              | XVar symvar -> [make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar))]
-              | XConst _ -> [make_c_cmd SKIP]
+              | XVar symvar ->
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"make_context_operation:sym:symvar"
+                     ~msg:env#get_functionname
+                     __FILE__ __LINE__
+                     ["e: " ^ (p2s (exp_to_pretty e));
+                      "symvar: " ^ (p2s symvar#toPretty)] in
+                 [make_c_cmd (ASSIGN_SYM (v, SYM_VAR symvar))]
+              | XConst _ ->
+                 [make_c_cmd SKIP]
               | xpr ->
                  begin
-                   chlog#add "no symbolic check value assigned"
-                             (LBLOCK [STR env#get_functionname; STR ": ";
-                                       exp_to_pretty e; STR " --> ";
-                                       x2p xpr]);
+                   log_diagnostics_result
+                     ~tag:"make_context_operation:sym"
+                     ~msg:env#get_functionname
+                     __FILE__ __LINE__
+                     ["no symbolic check value assigned for: " ^
+                        "e: " ^ (p2s (exp_to_pretty e));
+                      "translated to: " ^
+                        "xpr: " ^ (x2s xpr)];
                    [make_c_cmd SKIP]
                  end
          end

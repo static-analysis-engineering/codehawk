@@ -63,6 +63,9 @@ open CCHNumericalConstraints
 module H = Hashtbl
 
 
+let p2s = CHPrettyUtil.pretty_to_string
+
+
 exception TimeOut of float
 
 
@@ -530,7 +533,7 @@ let extract_valuesets
 
 
 let extract_symbols
-      (_env:c_environment_int)
+      (env:c_environment_int)
       (invio:invariant_io_int)
       (invariants:(string, (string,atlas_t) H.t) H.t) =
   try
@@ -539,6 +542,15 @@ let extract_symbols
           let inv = H.find v symbolic_sets_domain in
           let context = get_context k in
           let facts = extract_symbol_facts symbolic_sets_domain inv in
+          let _ =
+            log_diagnostics_result
+              ~tag:"extract_symbols"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["facts: " ^
+                 (String.concat ", "
+                    (List.map (fun f ->
+                         (p2s (invariant_fact_to_pretty f))) facts))] in
           List.iter (fun f -> invio#add_fact context f) facts) invariants
   with
   | CCHFailure p ->

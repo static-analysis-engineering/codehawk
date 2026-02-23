@@ -28,10 +28,14 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHLanguage
 open CHPretty
 
 (* cchpre *)
 open CCHPreTypes
+
+
+let p2s = CHPrettyUtil.pretty_to_string
 
 
 let memory_base_to_string (b:memory_base_t) =
@@ -44,6 +48,8 @@ let memory_base_to_string (b:memory_base_t) =
      ^ v#getName#getBaseName
      ^ "_"
      ^ (string_of_int v#getName#getSeqNumber)
+     ^ "_"
+     ^ (p2s (variable_type_to_pretty v#getType))
   | CGlobalAddress v -> "addrof_globalvar_" ^ v#getName#getBaseName
   | CBaseVar (v, nullattr) ->
      "addr_in_"
