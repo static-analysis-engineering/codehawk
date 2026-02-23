@@ -350,7 +350,7 @@ object (self)
                 self#memlval_vinv_memref_stackvar_implies_safe invindex vinfo
              | _ -> None)
 
-         | CBaseVar (v, _, _) ->
+         | CBaseVar (v, _) ->
             (try
                self#memlval_vinv_memref_basevar_implies_safe invindex v memoffset
              with
@@ -579,9 +579,39 @@ object (self)
       None
 
   method private inv_implies_delegation (inv: invariant_int) =
-    match inv#expr with
-    | Some x -> self#xpr_implies_delegation inv#index x
-    | _ -> None
+    let mname = "inv_implies_delegation" in
+    let r = None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+               | Some a1 when poq#is_api_expression (XVar v) ->
+                  (match a1 with
+                   | Lval lval ->
+                      let pred = PInitialized lval in
+                      let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                      let msg =
+                        "exclusive reference " ^ (p2s v#toPretty)
+                        ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                        ^ " delegated to the api" in
+                      let site = Some (__FILE__, __LINE__, mname) in
+                      Some (deps, msg, site)
+                   | _ -> None)
+              | _ ->
+                 begin
+                   poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                   None
+                 end)
+            end
+         | Some x ->
+            self#xpr_implies_delegation inv#index x
+         | _ -> None in
+    r
 
   method private check_delegation_invs =
     match invs with

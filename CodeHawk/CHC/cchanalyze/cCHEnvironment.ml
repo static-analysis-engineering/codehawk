@@ -282,9 +282,22 @@ object(self)
     let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
     List.init size (fun i ->
         let offset = mk_constant_index_offset (mkNumerical i) in
-        let memref = self#mk_external_reference vInit ttyp in
+        let nullattr =
+          if self#get_functionname = "main" then NotNull else CanBeNull in
+        let memref = vmgr#memrefmgr#mk_external_reference ~nullattr vInit ttyp in
         let chifmemvar = self#mk_memory_variable memref#index offset vt in
         let memvarInit = self#mk_initial_value chifmemvar ttyp vt in
+        let memvarInit =
+          match ttyp with
+          | TPtr (tgttype, _) ->
+            let refattr =
+              if self#get_functionname = "main" then MutableRef else RawPointer in
+             let memref =
+               vmgr#memrefmgr#mk_external_reference memvarInit tgttype in
+             let memaddr = vmgr#mk_memory_address ~refattr memref#index NoOffset in
+             self#add_chifvar memaddr vt
+          | _ ->
+             memvarInit in
         let _ =
           log_diagnostics_result
             ~tag:"mk_array_par_deref"
@@ -417,7 +430,7 @@ object(self)
     let callvars = H.fold (fun _ v acc -> v @ acc) callvariables [] in
     self#mk_fn_entry_call_var :: callvars
 
-  method private mk_initial_value (v:variable_t) (t:typ) (vt:variable_type_t) =
+  method mk_initial_value (v:variable_t) (t:typ) (vt:variable_type_t) =
     let aVal = vmgr#mk_initial_value v t in
     self#add_chifvar aVal vt
 
@@ -467,8 +480,8 @@ object(self)
 
   method private mk_external_reference (v: variable_t) (t: typ): memory_reference_int =
     TR.tfold
-      ~ok:(fun (refattr, nullattr) ->
-        vmgr#memrefmgr#mk_external_reference ~refattr ~nullattr v t)
+      ~ok:(fun (_refattr, nullattr) ->
+        vmgr#memrefmgr#mk_external_reference ~nullattr v t)
       ~error: (fun e ->
         begin
           log_diagnostics_result
@@ -577,8 +590,22 @@ object(self)
     | t ->
        let cVar = vmgr#mk_local_variable vinfo NoOffset  in
        let chifvar = self#add_chifvar cVar vt in
-       let vInit = self#mk_initial_value chifvar vinfo.vtype vt in
-       [(vinfo.vname,t,chifvar,vInit)]
+       let vInit = self#mk_initial_value chifvar t vt in
+       let vInit =
+         match t with
+         | TPtr (tgttype, _) ->
+            let nullattr =
+              if self#get_functionname = "main" then NotNull else CanBeNull in
+            let refattr =
+              if self#get_functionname = "main" then MutableRef else RawPointer in
+            let memref =
+              vmgr#memrefmgr#mk_external_reference ~nullattr vInit tgttype in
+            let memaddr = vmgr#mk_memory_address ~refattr memref#index NoOffset in
+            self#add_chifvar memaddr vt
+         | _ ->
+            vInit in
+       (* let chifvInit = self#add_chifvar vInit vt in *)
+       [(vinfo.vname, t, chifvar, vInit)]
 
   method register_formals (formals: varinfo list) (vt:variable_type_t) =
     List.concat (List.map (fun v -> self#register_formal v vt) formals)
@@ -712,7 +739,7 @@ object(self)
          else if self#is_memory_variable v then
            let (memref,offset) = self#get_memory_variable v in
            match memref#get_base with
-           | CBaseVar (v, _, _) ->
+           | CBaseVar (v, _) ->
               let (vinfo,voffset) =
                 vmgr#get_local_variable v#getName#getSeqNumber in
               "stack variable "
@@ -742,7 +769,7 @@ object(self)
                 (LBLOCK [
                      STR "global address region of non-global-variable: ";
                      v#toPretty]))
-      | CBaseVar (v, _, _) -> "basevar " ^ v#getName#getBaseName
+      | CBaseVar (v, _) -> "basevar " ^ v#getName#getBaseName
       | CUninterpreted s -> "unknown:" ^ s in
     aux index
 
@@ -850,6 +877,13 @@ object(self)
   method has_constant_offset v = vmgr#has_constant_offset (self#get_seqnr v)
 
   method is_memory_address v = vmgr#is_memory_address (self#get_seqnr v)
+
+  method is_mut_memory_address v = vmgr#is_mut_memory_address (self#get_seqnr v)
+
+  method is_ref_memory_address v = vmgr#is_ref_memory_address (self#get_seqnr v)
+
+  method get_memory_address_wrapped_value v =
+    vmgr#get_memory_address_wrapped_value (self#get_seqnr v)
 
   method is_string_literal_address v =
     vmgr#is_string_literal_address (self#get_seqnr v)

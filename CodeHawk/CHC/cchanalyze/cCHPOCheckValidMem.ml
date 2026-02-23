@@ -216,7 +216,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps,msg)
-    | CBaseVar  (v, _, _) -> self#var_implies_safe invindex v
+    | CBaseVar  (v, _) -> self#var_implies_safe invindex v
     | _ -> None
 
   method private call_preserves_validity_excludes
@@ -367,7 +367,7 @@ object (self)
       if poq#env#is_memory_variable vv then
         let (memref, offset) = poq#env#get_memory_variable vv in
         match memref#get_base with
-        | CBaseVar (v, _, _) ->
+        | CBaseVar (v, _) ->
            begin
              poq#set_diagnostic_arg
                1
@@ -498,7 +498,7 @@ object (self)
     if poq#env#is_memory_variable vi then
       let (memref, offset) = poq#env#get_memory_variable vi in
       match memref#get_base with
-      | CBaseVar (bv, _, _) when poq#is_api_expression (XVar bv) ->
+      | CBaseVar (bv, _) when poq#is_api_expression (XVar bv) ->
          let a = poq#get_api_expression (XVar bv) in
          let pred = PValidMem (Lval (Mem a, offset)) in
          let deps = DEnvC ([invindex], [ApiAssumption pred]) in
@@ -532,6 +532,31 @@ object (self)
       | _ ->
          match inv#lower_bound_xpr with
          | Some x -> self#xpr_implies_delegation inv#index x
+         | _ -> None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+              | Some a1 when poq#is_api_expression (XVar v) ->
+                 let pred = PValidMem a1 in
+                 let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                 let msg =
+                   "exclusive reference " ^ (p2s v#toPretty)
+                   ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                   ^ " delegated to the api" in
+                 let site = Some (__FILE__, __LINE__, "inv_implies_delegation") in
+                 Some (deps, msg, site)
+              | _ ->
+                 begin
+                   poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                   None
+                 end)
+            end
          | _ -> None in
     r
 

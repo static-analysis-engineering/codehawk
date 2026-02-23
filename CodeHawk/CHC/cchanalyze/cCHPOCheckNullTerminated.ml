@@ -44,6 +44,7 @@ open CCHTypesToPretty
 
 (* cchpre *)
 open CCHMemoryBase
+open CCHPOPredicate
 open CCHPreTypes
 
 (* cchanalyze *)
@@ -186,7 +187,49 @@ object (self)
   (* ----------------------- violation -------------------------------------- *)
   method check_violation = false
   (* ----------------------- delegation ------------------------------------- *)
-  method check_delegation = false
+
+ method private inv_implies_delegation (inv: invariant_int) =
+    let r = None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+              | Some a1 when poq#is_api_expression (XVar v) ->
+                 let pred = PNullTerminated a1 in
+                 let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                 let msg =
+                   "exclusive reference " ^ (p2s v#toPretty)
+                   ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                   ^ " delegated to the api" in
+                 Some (deps, msg)
+              | _ ->
+                 begin
+                   poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                   None
+                 end)
+            end
+         | _ -> None in
+    r
+
+  method check_delegation =
+    match invs with
+    | [] -> false
+    | _ ->
+       List.fold_left (fun acc inv ->
+           acc ||
+             (match self#inv_implies_delegation inv with
+              | Some (deps, msg) ->
+                 begin
+                   poq#record_safe_result deps msg;
+                   true
+                 end
+              | _ -> false)) false invs
+
 end
 
 
