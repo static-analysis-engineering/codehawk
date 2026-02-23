@@ -69,6 +69,10 @@ let cmds = [
 
 let cmdchoices = String.concat ", " cmds
 
+let iteration_index = ref 0
+
+let set_iteration (index: int) = iteration_index := index
+
 
 let cmd = ref "version"
 let setcmd s = if List.mem s cmds then
@@ -119,6 +123,7 @@ let speclist = [
   ("-domains", Arg.String set_domains,
    "domains to be used in invariant generation: " ^
      "[l:lineq; v:valuesets; i:intervals; s:symbolicsets]");
+  ("-iteration", Arg.Int set_iteration, "iteration index");
   ("-cfilename", Arg.String system_settings#set_cfilename,
    "base filename of c source code file without extension");
   ("-cfilepath", Arg.String system_settings#set_cfilepath,
@@ -148,12 +153,13 @@ let read_args () = Arg.parse speclist system_settings#set_targetpath usage_msg
 
 
 let save_log_files (contenttype:string) =
+  let index = "_" ^ (string_of_int !iteration_index) in
   begin
-    save_logfile ch_info_log contenttype "infolog";
-    append_to_logfile ch_error_log contenttype "errorlog";
-    save_logfile chlog contenttype "chlog";
+    save_logfile ch_info_log contenttype ("infolog" ^ index);
+    append_to_logfile ch_error_log contenttype ("errorlog" ^ index);
+    save_logfile chlog contenttype ("chlog" ^ index);
     (if collect_diagnostics () then
-       save_logfile ch_diagnostics_log contenttype "ch_diagnostics_log")
+       save_logfile ch_diagnostics_log contenttype ("ch_diagnostics_log" ^ index))
   end
 
 
