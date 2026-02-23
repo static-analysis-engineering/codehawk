@@ -664,7 +664,7 @@ object (self)
                  match memref#get_base with
                  | CStackAddress v -> v
                  | CGlobalAddress v -> v
-                 | CBaseVar (v, _, _) -> v
+                 | CBaseVar (v, _) -> v
                  | _ ->
                     raise
                       (CCHFailure

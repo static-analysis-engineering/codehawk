@@ -158,7 +158,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps, msg)
-    | CBaseVar (v, _, _) -> self#xpr_implies_safe invindex (XVar v)
+    | CBaseVar (v, _) -> self#xpr_implies_safe invindex (XVar v)
     | _ -> None
 
   method private memory_variable_safe (_invindex: int) (v: variable_t) =
@@ -296,7 +296,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar (v, _, _) when poq#is_api_expression (XVar v) ->
+    | CBaseVar (v, _) when poq#is_api_expression (XVar v) ->
        let a = poq#get_api_expression (XVar v) in
        let pred = PNotNull a in
        let deps = DEnvC ([invindex],[ApiAssumption  pred]) in

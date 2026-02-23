@@ -156,7 +156,7 @@ object (self)
        let (memref, offset) = poq#env#get_memory_address v in
        begin
          match (memref#get_base, offset) with
-         | (CBaseVar (basevar, _, _), NoOffset) ->
+         | (CBaseVar (basevar, _), NoOffset) ->
             self#basevar_implies_minuspi_universal_violation
               invindices basevar numerical_zero x2
          | _ -> None
@@ -220,7 +220,7 @@ object (self)
              Some (deps, msg)
            else
              None
-        | CBaseVar (v, _, _) ->
+        | CBaseVar (v, _) ->
            self#basevar_implies_minuspi_universal_violation
              invindices v offsetlb decr
         | _ -> None
@@ -264,7 +264,7 @@ object (self)
       let memref = poq#env#get_memory_reference v in
       begin
         match memref#get_base with
-        | CBaseVar (v, _, _) ->
+        | CBaseVar (v, _) ->
            self#basevar_implies_pluspi_universal_violation
              invindices v offsetub incr
         | _ -> None

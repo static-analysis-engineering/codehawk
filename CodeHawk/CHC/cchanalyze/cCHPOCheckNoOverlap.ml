@@ -106,7 +106,7 @@ object (self)
       let memref = poq#env#get_memory_reference v in
       let _ = poq#set_diagnostic_arg arg (self#memref_to_string memref) in
       match memref#get_base with
-      | CBaseVar (basevar, _, _) -> self#is_alloca_address arg basevar invindex
+      | CBaseVar (basevar, _) -> self#is_alloca_address arg basevar invindex
       | _ -> None
     else
       None
@@ -135,7 +135,7 @@ object (self)
       let memref = poq#env#get_memory_reference v in
       let _ = poq#set_diagnostic_arg arg (self#memref_to_string memref) in
       match memref#get_base with
-      | CBaseVar (basevar, _, _) ->
+      | CBaseVar (basevar, _) ->
          if poq#is_api_expression (XVar basevar) then
            let xapi = poq#get_api_expression (XVar basevar) in
            let deps = DLocal [invindex] in

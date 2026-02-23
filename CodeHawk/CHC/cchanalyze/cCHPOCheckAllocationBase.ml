@@ -151,7 +151,7 @@ object (self)
        let deps = DLocal [invindex] in
        let msg = "address of stack variable: " ^ vinfo.vname in
        Some (deps,msg)
-    | CBaseVar (v, _, _) -> self#var_is_stack_memory invindex v
+    | CBaseVar (v, _) -> self#var_is_stack_memory invindex v
     | _ -> None
 
   method private var_is_stack_memory (invindex: int) (v: variable_t) =
@@ -413,7 +413,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar (v, _, _) -> self#var_implies_delegation invindex v
+    | CBaseVar (v, _) -> self#var_implies_delegation invindex v
     | _ -> None
 
   method private var_implies_delegation (invindex: int) (v: variable_t) =

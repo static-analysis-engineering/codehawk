@@ -130,6 +130,7 @@ object
   method mk_stack_address_value: varinfo -> offset -> typ -> variable_t
   method mk_memory_address_value: int -> offset -> variable_t
   method mk_string_address: string -> offset -> typ -> variable_t
+  method mk_initial_value: variable_t -> typ -> variable_type_t -> variable_t
 
   method mk_function_return_value:
            location
@@ -246,6 +247,7 @@ object
   method get_indicator: variable_t -> int  (* augmentation variable *)
 
   method get_initial_parameter_vinfo: variable_t -> varinfo * offset
+  method get_memory_address_wrapped_value: variable_t -> variable_t option
 
   (** {1 Predicates} *)
 
@@ -258,6 +260,8 @@ object
   method is_memory_variable: variable_t -> bool
   method is_string_literal_address: variable_t -> bool
   method is_memory_address: variable_t -> bool
+  method is_mut_memory_address: variable_t -> bool
+  method is_ref_memory_address: variable_t -> bool
   method is_fixed_xpr: xpr_t -> bool
   method is_initial_value: variable_t -> bool
   method is_initial_parameter_value: variable_t -> bool

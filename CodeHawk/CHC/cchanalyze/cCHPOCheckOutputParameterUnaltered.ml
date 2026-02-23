@@ -92,7 +92,7 @@ object (self)
                    (invindex: int) (memref: memory_reference_int) =
     let mname = "memlval_memref_implies_safe" in
     match memref#get_base with
-    | CBaseVar (bvar, _, _) ->
+    | CBaseVar (bvar, _) ->
        self#memlval_memref_basevar_implies_safe invindex bvar
     | _ ->
        begin
@@ -148,7 +148,7 @@ object (self)
        if poq#env#is_memory_variable paramvar then
          let (memref, _offset) = poq#env#get_memory_variable paramvar in
          (match memref#get_base with
-          | CBaseVar (base, _, _) ->
+          | CBaseVar (base, _) ->
              let basevar = poq#env#get_initial_value_variable base in
              if basevar#equal numv then
                let deps = DLocal ([invindex]) in

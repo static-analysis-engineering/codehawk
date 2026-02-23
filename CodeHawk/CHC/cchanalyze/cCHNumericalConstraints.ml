@@ -36,7 +36,7 @@ open CHPretty
 open CHUtils
 
 (* cchlib *)
-open CCHUtilities
+(* open CCHUtilities *)
 
 (* cchanalyze *)
 open CCHAnalysisTypes
@@ -133,7 +133,7 @@ object (self)
 	    let _ =
               if coeff1#equal numerical_zero || coeff2#equal numerical_zero then
 		raise
-                  (CCHFailure
+                  (CHCommon.CHFailure
                      (LBLOCK [
                           STR "Internal error in elimination of ";
                           v#toPretty;

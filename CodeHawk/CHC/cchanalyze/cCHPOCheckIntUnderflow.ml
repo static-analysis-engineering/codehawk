@@ -878,7 +878,7 @@ object (self)
               let (memref, _offset) = poq#env#get_memory_address v in
               begin
                 match memref#get_base with
-                | CBaseVar (bv, _, _) ->
+                | CBaseVar (bv, _) ->
                    let _ =
                      poq#set_diagnostic_arg
                        arg ("base var: " ^ (p2s bv#toPretty)) in

@@ -133,7 +133,7 @@ object (self)
        let (vinfo, offset) = poq#env#get_global_variable gvar in
        let msg = self#var_address_to_string vinfo offset in
        Some (deps, msg)
-    | CBaseVar (v, _, _) -> self#var_implies_safe invindex v
+    | CBaseVar (v, _) -> self#var_implies_safe invindex v
     | _ -> None
 
   method private var_implies_safe (invindex: int) (v: variable_t) =

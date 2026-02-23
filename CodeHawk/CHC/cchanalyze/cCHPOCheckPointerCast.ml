@@ -160,7 +160,7 @@ object (self)
     | CStackAddress svar ->
        let (vinfo, offset) = poq#env#get_local_variable svar in
        self#declared_variable_implies_safe false invindex vinfo offset
-    | CBaseVar (v, _, _) -> self#var_implies_safe invindex  v
+    | CBaseVar (v, _) -> self#var_implies_safe invindex  v
     | _ -> None
 
   method private var_implies_safe (invindex: int) (v: variable_t) =
@@ -273,7 +273,7 @@ object (self)
     else if poq#env#is_memory_address v then
       let (memref,offset) = poq#env#get_memory_address v in
       match (memref#get_base,offset) with
-      | (CBaseVar (basevar, _, _), NoOffset) ->
+      | (CBaseVar (basevar, _), NoOffset) ->
          self#var_implies_violation invindex basevar
       | _ -> None
     else
@@ -313,7 +313,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar (v, _, _) -> self#var_implies_delegation invindex v
+    | CBaseVar (v, _) -> self#var_implies_delegation invindex v
     | _ -> None
 
   method private var_implies_delegation (invindex: int) (v: variable_t) =
