@@ -644,7 +644,10 @@ object (self)
                    (expl:string) =
     if self#env#get_functionname = "main"
        && (match (status, deps) with
-           | (Green, DEnvC _) -> true | _ -> false) then
+           | (Green, DEnvC (_, al)) ->
+              List.exists (fun a ->
+                  match a with ApiAssumption _ -> true | _ -> false) al
+           | _ -> false) then
        self#record_main_api_proof_result ~site status deps expl
     else
        begin
