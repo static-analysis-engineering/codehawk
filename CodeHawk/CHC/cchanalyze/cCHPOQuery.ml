@@ -882,6 +882,10 @@ object (self)
         | NonRelationalFact (v, _) when env#is_call_var v -> inv :: acc
         | _ -> acc) [] invs
 
+  method get_var_invariants (var: variable_t): invariant_int list =
+    let locinvio = invio#get_location_invariant cfgcontext in
+    locinvio#get_var_invariants var
+
   method get_invariants (argindex: int): invariant_int list =
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in

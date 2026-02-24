@@ -123,6 +123,34 @@ object (self)
               | _ -> None)  None invs2
     | _ -> None
 
+  method private get_initialization_length_from_memory_variable (vinfo: varinfo) =
+    let memvar =
+      poq#env#mk_stack_memory_variable vinfo NoOffset vinfo.vtype SYM_VAR_TYPE in
+    let varinvs = poq#get_var_invariants memvar in
+    let _ =
+      log_diagnostics_result
+        ~tag:"get_initialization_length_from_memory_variable"
+        __FILE__ __LINE__
+        ["vinfo: " ^ vinfo.vname;
+         "memvar: " ^ (p2s memvar#toPretty);
+         "memvar-invariants: " ^
+           (String.concat ", " (List.map (fun inv -> p2s inv#toPretty) varinvs))] in
+    List.fold_left (fun acc inv ->
+        match acc with
+        | Some _ -> acc
+        | _ ->
+           match inv#get_fact with
+           | NonRelationalFact(_, FInitializedSet [sym])
+                when is_initialized_range sym ->
+              begin
+                match get_initialized_range_len sym with
+                | Some (irname, irlen) ->
+                   let deps = DLocal [inv#index] in
+                   Some (deps, irname, irlen)
+                | _ -> None
+              end
+           | _ -> None) None varinvs
+
   method private get_initialization_length (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
     let _ =
@@ -136,24 +164,28 @@ object (self)
               (List.map (fun (inv, offset) ->
                    "(" ^ (p2s inv#toPretty) ^ ", " ^ (p2s (offset_to_pretty offset)))
                  vinfovalues))] in
-    List.fold_left (fun acc (inv,offset) ->
-        match acc with
-        | Some _ -> acc
-        | _ ->
-           match offset with
-           | Field _ | Index _ -> None
-           | NoOffset ->
-              match inv#get_fact with
-              | NonRelationalFact(_,FInitializedSet [sym])
-                   when is_initialized_range sym ->
-                 begin
-                   match get_initialized_range_len sym with
-                   | Some (irname, irlen) ->
-                      let deps = DLocal [inv#index] in
-                      Some (deps, irname,irlen)
-                   | _ -> None
-                 end
-              | _ -> None) None vinfovalues
+    match vinfovalues with
+    | [] ->
+       self#get_initialization_length_from_memory_variable vinfo
+    | _ ->
+       List.fold_left (fun acc (inv, offset) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              match offset with
+              | Field _ | Index _ -> None
+              | NoOffset ->
+                 match inv#get_fact with
+                 | NonRelationalFact(_,FInitializedSet [sym])
+                      when is_initialized_range sym ->
+                    begin
+                      match get_initialized_range_len sym with
+                      | Some (irname, irlen) ->
+                         let deps = DLocal [inv#index] in
+                         Some (deps, irname,irlen)
+                      | _ -> None
+                    end
+                 | _ -> None) None vinfovalues
 
   method private get_element_initializations (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in

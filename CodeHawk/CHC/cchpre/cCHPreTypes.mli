@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2025 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,9 +68,19 @@ type null_attribute_t =
 (** {2 Memory base} *)
 
 (** The memory_base_t type denotes the (symbolic) address of the base of a memory
-   region that is used as the ground type in a memory reference (a representation
-   of a memory variable) and in a memory region (a representation of the entire
-   memory region identified by this base.
+    region that is used as the ground type in a memory reference (a representation
+    of a memory variable) and in a memory region (a representation of the entire
+    memory region identified by this base.
+
+    If the memory base includes a variable two distinct representations for the
+    same logical memory location may exist: one with the NUM_VAR_TYPE variable,
+    and one for the SYM_VAR_TYPE variable, resulting in two distinct memref
+    indices. This is not a problem for aliasing, as they are used in different
+    domains. However, it may be inconvenient in proof obligation discharge, as
+    it may be necessary to create the corresponding alternative representation
+    to retrieve invariants from that domain. An example of this is the method
+    [get_initialization_length_from_memory_variable vinfo] in the po checker
+    class file [cCHPOCheckInitializedRange].
  *)
 type memory_base_t =
   | CNull of int
