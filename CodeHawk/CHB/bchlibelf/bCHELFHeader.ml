@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -808,12 +808,18 @@ object(self)
     match self#get_containing_section a with
     | Some s ->
        let diff = a#subtract_to_int s#get_vaddr in
+       (* In some cases the <= check may be problematic. If the section is the
+          last one in the file, or perhaps if there is a gap between this
+          section and the next, the check may succeed, but the retrieval of
+          the corresponding bytes may fail. However, a < check may result in
+          missing the last library stub in a plt section.*)
        if Result.is_ok diff then
-         (TR.tget_ok diff) + size < s#get_size
+         (TR.tget_ok diff) + size <= s#get_size
        else
          raise
            (BCH_failure
               (LBLOCK [
+                   STR __FILE__; STR ":"; INT __LINE__;
                    STR "ELFHeader:has_xsubstring: interal error: ";
                    STR "subtraction"]))
   | _ -> false
