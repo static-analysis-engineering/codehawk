@@ -219,7 +219,14 @@ object
   method get_variable_type: variable_t -> typ
   method get_local_variable: variable_t -> (varinfo * offset)
   method get_global_variable: variable_t -> (varinfo * offset)
+
+  (** [get_memory_variable v] returns the memory reference associated with the
+      base of variable [v], and the offset from that base.
+
+      @raise [BCH_failure] if [v] is not a memory variable
+   *)
   method get_memory_variable: variable_t -> (memory_reference_int * offset)
+
   method get_memory_address: variable_t -> (memory_reference_int * offset)
   method get_memory_region: symbol_t -> memory_region_int
   method get_vinfo_offset: variable_t -> varinfo -> offset option

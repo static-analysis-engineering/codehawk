@@ -217,6 +217,13 @@ let rec is_constant_string (e:exp) =
   | _ -> false
 
 
+let is_zero_memory_offset (offset: offset): bool =
+  match offset with
+  | NoOffset -> true
+  | Index (Const (CInt (i64, _, _)), NoOffset) -> i64 = Int64.zero
+  | _ -> false
+
+
 let rec type_of_exp (fdecls:cfundeclarations_int) (x:exp) : typ =
   try
     let ty =
