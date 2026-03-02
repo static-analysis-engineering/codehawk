@@ -108,6 +108,30 @@ object (self)
              - memlval_vinv_memref_basevar_implies_safe
    *)
 
+  method private postcondition_implies_safe
+                   (invindex: int)
+                   (callee: varinfo)
+                   (pcs: annotated_xpredicate_t list) =
+    let mname = "postcondition_implies_safe" in
+    match pcs with
+    | [] -> None
+    | _ ->
+       List.fold_left (fun facc (pc, _) ->
+           match facc with
+           | Some _ -> facc
+           | _ ->
+              match pc with
+              | XInitialized (ArgAddressedValue (ReturnValue, ArgNoOffset)) ->
+                 let deps =
+                   DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
+                 let msg =
+                   "value addressed by return value from "
+                   ^ callee.vname
+                   ^ " is initialized" in
+                 let site = Some (__FILE__, __LINE__, mname) in
+                 Some (deps, msg, site)
+              | _ -> None) None pcs
+
   method private inv_implies_safe (inv: invariant_int) =
     let mname = "inv_implies_safe" in
     match inv#get_fact with
@@ -125,7 +149,56 @@ object (self)
             let site = Some (__FILE__, __LINE__, mname) in
             Some (deps, msg, site)
        end
-    | _ -> None
+    | _ ->
+       match inv#expr with
+       | Some (XVar v) when poq#env#is_initial_value v ->
+          let var = poq#env#get_initial_value_variable v in
+          if poq#env#is_memory_variable var then
+            let (memref, offset) = poq#env#get_memory_variable var in
+            if is_zero_memory_offset offset then
+              if memref#has_external_base then
+                let basevar = memref#get_external_basevar in
+                if poq#env#is_function_return_value basevar then
+                  let callee = poq#env#get_callvar_callee basevar in
+                  let (pcs, epcs) = poq#get_postconditions basevar in
+                  let r =
+                    match epcs with
+                    | [] ->
+                       self#postcondition_implies_safe inv#index callee pcs
+                    | _ -> None in
+                  match r with
+                  | None ->
+                     let pcr =
+                       XInitialized
+                         (ArgAddressedValue (ReturnValue, ArgNoOffset)) in
+                     begin
+                       poq#mk_postcondition_request pcr callee;
+                       poq#set_diagnostic
+                         ("Unable to determine if memory pointed at by the return "
+                          ^ "value from "
+                          ^ callee.vname
+                          ^ " is initialized.");
+                       None
+                     end
+                  | Some _ -> r
+                else
+                   begin
+                     poq#set_diagnostic_arg
+                       1 ("memvar:base: " ^ (p2s memref#toPretty));
+                 None
+               end
+            else
+               None
+          else
+            begin
+              poq#set_diagnostic_arg
+                1 ("initial-value: " ^ (p2s v#toPretty));
+              None
+            end
+          else
+            None
+       | _ ->
+          None
 
   method private check_safe_functionpointer (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in

@@ -637,7 +637,16 @@ object (self)
                    (vinfo: varinfo) (attr: attribute) =
     let (xpre, xpost, xside) =
       convert_attribute_to_function_conditions vinfo.vname attr in
+    let logx kind x =
+      log_diagnostics_result
+        ~tag:("add_function_attribute_conditions:" ^ kind)
+        ~msg:vinfo.vname
+        __FILE__ __LINE__
+        [p2s (xpredicate_to_pretty x)] in
     begin
+      List.iter (logx "pre") xpre;
+      List.iter (logx "post") xpost;
+      List.iter (logx "side") xside;
       List.iter (self#add_precondition vinfo.vname) xpre;
       List.iter (self#add_postcondition vinfo.vname) xpost;
       List.iter (self#add_sideeffect vinfo.vname) xside

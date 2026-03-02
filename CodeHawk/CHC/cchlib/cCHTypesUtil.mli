@@ -148,6 +148,8 @@ val is_field_offset: offset -> bool
 
 val is_constant_offset: offset -> bool
 
+val is_zero_memory_offset: offset -> bool
+
 val is_field_lval_exp: exp -> bool
 
 val exp_has_repeated_field: exp -> bool
