@@ -62,5 +62,5 @@ object (self)
 end
 
 let version = new version_info_t
-  ~version:"0.3.0_20260302"
-  ~date:"2026-03-02"
+  ~version:"0.3.0_20260304"
+  ~date:"2026-03-04"

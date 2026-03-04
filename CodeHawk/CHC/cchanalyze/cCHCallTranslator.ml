@@ -224,6 +224,7 @@ object (self)
        raise
          (CCHFailure
             (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                  STR "Error in translating call: ";
                  exp_to_pretty f;
                  STR " with arguments ";
@@ -859,9 +860,10 @@ object (self)
        raise
          (CCHFailure
 	    (LBLOCK [
+                 STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                  STR "Error in translating call: ";
                  exp_to_pretty f;
-		 STR " with arguments ";
+                 STR " with arguments ";
 		 pretty_print_list args exp_to_pretty "(" "," ")";
 		 (match lhs with
                   | Some lval ->

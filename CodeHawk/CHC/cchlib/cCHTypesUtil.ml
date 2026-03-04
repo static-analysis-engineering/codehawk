@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -348,12 +348,9 @@ and type_of_offset (fdecls:cfundeclarations_int) (t:typ) (offset:offset) : typ =
         begin
           match fenv#get_type_unrolled t with
 	  | TArray (t, _, _) -> type_of_offset fdecls t o
-          | otherTyp ->
-	     raise
-               (CCHFailure
-                  (LBLOCK [
-                       STR "type_of_offset: Index on a non-array: ";
-		       typ_to_pretty otherTyp]))
+          (* Memory variables may have an index offset, which is essentially
+             the same as the pointer addition on the base type *)
+          | t -> type_of_offset fdecls t o
         end
      | Field ((fname, ckey), o) ->
         let ftype = fenv#get_type_unrolled (fenv#get_field_type ckey fname) in
