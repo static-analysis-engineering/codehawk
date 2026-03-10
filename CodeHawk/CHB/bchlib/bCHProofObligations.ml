@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,17 +27,44 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* chlib *)
+open CHPretty
+
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
+open BCHExternalPredicate
 open BCHLibTypes
 open BCHLocation
+open BCHXPOPredicate
 
 module H = Hashtbl
 
 
+let p2s = CHPrettyUtil.pretty_to_string
+
+
 let id = BCHInterfaceDictionary.interface_dictionary
+
+
+let po_status_to_pretty (s: po_status_t): pretty_t =
+  match s with
+  | Discharged s -> LBLOCK [STR "discharged("; STR s; STR ")"]
+  | Delegated x -> LBLOCK [STR "delegated("; xxpredicate_to_pretty x; STR ")"]
+  | Requested (dw, x) ->
+     LBLOCK [
+         STR "requested("; dw#toPretty; STR ", "; xxpredicate_to_pretty x; STR ")"]
+  | DelegatedGlobal (dw, x) ->
+     LBLOCK [
+         STR "delegated_global(";
+         dw#toPretty;
+         STR ", ";
+         xxpredicate_to_pretty x;
+         STR ")"]
+  | Violated s -> LBLOCK [STR "violated("; STR s; STR ")"]
+  | Open -> STR "open"
 
 
 let write_xml_po_status (node: xml_element_int) (s: po_status_t) =
@@ -104,6 +131,13 @@ object (self)
            (status: po_status_t) =
     let loc = ctxt_string_to_location self#faddr cia in
     let po = new proofobligation_t xpo loc status in
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_proofobligation"
+        ~msg:(p2s loc#toPretty)
+        __FILE__ __LINE__
+        ["xpo: " ^ (p2s (xpo_predicate_to_pretty xpo));
+         "status: " ^ (p2s (po_status_to_pretty status))] in
     let entry =
       if H.mem store cia then
         H.find store cia

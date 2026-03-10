@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs LLC
+   Copyright (c) 2021-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -213,6 +213,8 @@ object (self)
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
     let sfNode = xmlElement "stackframe" in
+    let xpodNode = xmlElement "xpodictionary" in
+    let poNode = xmlElement "proofobligations" in
     let grNode = xmlElement "global-references" in
     (* let bNode = xmlElement "btypes" in *)
     begin
@@ -223,7 +225,9 @@ object (self)
       mmap#write_xml_references faddr vard grNode;
       (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
-      append [cNode; dNode; iiNode; jjNode; sfNode; grNode]
+      finfo#proofobligations#write_xml poNode;
+      finfo#xpod#write_xml xpodNode;
+      append [cNode; dNode; iiNode; jjNode; sfNode; grNode; xpodNode; poNode]
     end
 
   method write_xml_register_types

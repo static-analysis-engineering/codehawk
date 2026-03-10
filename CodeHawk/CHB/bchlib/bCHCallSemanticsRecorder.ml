@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2025  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -233,6 +233,12 @@ object (self)
   method record_precondition (pre: xxpredicate_t) =
     let xpo = xxp_to_xpo_predicate self#termev self#loc pre in
     let status = self#simplify_precondition xpo in
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_precondition"
+        ~msg:(p2s loc#toPretty)
+        __FILE__ __LINE__
+        ["pre: " ^ (p2s (xxpredicate_to_pretty pre))] in
     match status with
     | Discharged _ -> self#add_po xpo status
     | _ ->
@@ -279,6 +285,12 @@ object (self)
     | _ -> ()
 
   method private add_po (xpo: xpo_predicate_t) (status: po_status_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_po"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["po: " ^ (p2s (xpo_predicate_to_pretty xpo))] in
     self#finfo#proofobligations#add_proofobligation self#loc#ci xpo status
 
   method private add_gpo (dw: doubleword_int) (xxp: xxpredicate_t) =
@@ -339,6 +351,16 @@ object (self)
          (LBLOCK [self#loc#toPretty; STR ": "; (xpo_predicate_to_pretty xpo)])
 
   method record_callsemantics =
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_callsemantics"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["call target: " ^ (p2s self#calltargetinfo#toPretty);
+         "preconditions: "
+         ^ ((String.concat ", "
+               (List.map (fun p -> (p2s (xxpredicate_to_pretty p)))
+                  self#calltargetinfo#get_preconditions)))] in
     begin
       List.iter self#record_precondition self#calltargetinfo#get_preconditions;
       List.iter self#record_sideeffect self#calltargetinfo#get_sideeffects;
