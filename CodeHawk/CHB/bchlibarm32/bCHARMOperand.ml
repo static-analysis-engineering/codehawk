@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs, LLC
+   Copyright (c) 2021-2026  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -603,7 +603,7 @@ object (self:'a)
                         ^ " not yet supported"]) in
            begin
              log_diagnostics_result
-               ~msg:(p2s self#toPretty)
+               ~msg:(p2s floc#l#toPretty)
                ~tag:"to_variable:scaledoffset"
                __FILE__ __LINE__
                ["operand: " ^ (p2s self#toPretty);
