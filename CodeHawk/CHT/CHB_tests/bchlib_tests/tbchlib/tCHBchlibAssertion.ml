@@ -84,6 +84,20 @@ let equal_numerical
     received
 
 
+let equal_numerical_pair
+      ?(msg="")
+      ~(expected: numerical_t * numerical_t)
+      ~(received: numerical_t * numerical_t)
+      () =
+  A.make_equal
+    (fun (num11, num12) (num21, num22) ->
+      (num11#equal num21) && (num12#equal num22))
+    (fun (num1, num2) -> "(" ^ num1#toString ^ ", " ^ num2#toString ^ ")")
+    ~msg
+    expected
+    received
+
+
 let equal_doubleword_result
       ?(msg="") (dw: doubleword_int) (dwr: doubleword_result) =
   if Result.is_error dwr then
