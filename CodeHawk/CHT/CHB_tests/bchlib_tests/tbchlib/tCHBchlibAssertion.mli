@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,15 @@ val equal_numerical:
   -> received:numerical_t
   -> unit
   -> unit
+
+
+val equal_numerical_pair:
+  ?msg:string
+  -> expected:(numerical_t * numerical_t)
+  -> received:(numerical_t * numerical_t)
+  -> unit
+  -> unit
+
 
 val equal_doubleword_result:
   ?msg:string -> doubleword_int -> doubleword_result -> unit
