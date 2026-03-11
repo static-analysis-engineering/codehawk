@@ -100,13 +100,13 @@ MLIS := \
 	bCHSystemInfo \
 	bCHXPODictionary \
 	bCHCallTargetInfo \
+	bCHXPOPredicate \
 	bCHProofObligations \
 	bCHFunctionStackframe \
 	bCHFunctionInfo \
 	bCHMakeCallTargetInfo \
 	bCHGlobalState \
 	bCHMemoryRecorder \
-	bCHXPOPredicate \
 	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
@@ -192,13 +192,13 @@ SOURCES := \
 	bCHSystemInfo \
 	bCHXPODictionary \
 	bCHCallTargetInfo \
+	bCHXPOPredicate \
 	bCHProofObligations \
 	bCHFunctionStackframe \
 	bCHFunctionInfo \
 	bCHMakeCallTargetInfo \
 	bCHGlobalState \
 	bCHMemoryRecorder \
-	bCHXPOPredicate \
 	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
@@ -232,7 +232,7 @@ clean:
 	rm -f *.cmxa
 	rm -f *.ml~
 	rm -f *.mli~
-	rm -f Makefile~ 
+	rm -f Makefile~
 	rm -f bchlib.cmxa
 	rm -rf doc
 
