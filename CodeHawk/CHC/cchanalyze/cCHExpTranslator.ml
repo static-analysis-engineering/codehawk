@@ -276,14 +276,14 @@ object (self)
     let make_assume (x:xpr_t) =
       let trivial b = match b with TRUE | RANDOM -> true | _ -> false in
       let (code,bExp) =
-	let skip = make_c_nop () in
-	if Xprt.is_zero x then (skip,FALSE)
-	else if Xprt.is_one x then (skip,TRUE)
-	else match x with
-	| XOp (XLNot, [y]) when Xprt.is_one y -> (skip,FALSE)
+	    let skip = make_c_nop () in
+	    if Xprt.is_zero x then (skip,FALSE)
+	    else if Xprt.is_one x then (skip,TRUE)
+	    else match x with
+	    | XOp (XLNot, [y]) when Xprt.is_one y -> (skip,FALSE)
 	| _ -> xpr2boolexpr tmpProvider cstProvider x in
-      let assume =
-        if trivial bExp then make_c_nop () else make_c_cmd (make_assert bExp) in
+    let assume =
+      if trivial bExp then make_c_nop () else make_c_cmd (make_assert bExp) in
       make_c_cmd_block [code; assume] in
     let notc = match c with
       | BinOp (Eq, e1, e2, t) -> BinOp (Ne, e1, e2, t)
@@ -640,6 +640,14 @@ object (self)
       | CastE (_, e) -> is_zero e
       | _ -> false in
     match cond with
+    | UnOp (LNot, (Lval lval as e), _) when is_pointer_type (type_of_exp fdecls e) ->
+       let symvar = self#translate_lhs_lval lval in
+       if symvar#isTmp then
+         (SKIP, SKIP)
+       else
+         let tcond = ASSERT (SUBSET (symvar, nullsyms)) in
+         let fcond = ASSERT (DISJOINT (symvar, nullsyms)) in
+         (tcond, fcond)
     | BinOp (Ne, CastE(_, (Lval lval)), e, _) when is_zero e ->
        let symvar = self#translate_lhs_lval lval in
        if symvar#isTmp then

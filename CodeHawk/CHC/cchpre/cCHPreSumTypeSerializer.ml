@@ -233,6 +233,7 @@ object
     | POutputParameterArgument _ -> "opa"
     | POutputParameterScalar _ -> "ops"
     | POutputParameterNoEscape _ -> "opne"
+    | PErrnoWritten -> "ew"
 
   method! tags = [
       "ab"; "b"; "c"; "cb"; "cbt"; "cf"; "cob"; "cr"; "cssl"; "cssu"; "csul";

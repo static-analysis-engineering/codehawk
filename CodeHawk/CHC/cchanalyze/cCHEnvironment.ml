@@ -81,6 +81,24 @@ module ProgramContextCollections =
 
 let fenv = CCHFileEnvironment.file_environment
 
+let is_errno_location_call (e:exp) =
+  match e with
+  | Lval (Var ("__errno_location", _), NoOffset) -> true
+  | _ -> false
+
+(* TODO: move me *)
+class errno_collector_t =
+object
+  inherit CCHTypesTransformer.block_walker_t
+  val errno_pointers = new CHUtils.IntCollections.set_t
+  method errno_pointers = errno_pointers#toList
+
+  method! walk_instr (i:instr) =
+    match i with
+    | Call (Some (Var x, _), f, [], _) when is_errno_location_call f ->
+      errno_pointers#add (snd x);
+    | _ -> ()
+end
 
 class c_environment_t (f:fundec) (varmgr:variable_manager_int):c_environment_int =
 object(self)
@@ -94,6 +112,11 @@ object(self)
       s
     end
 
+  val errno_temps =
+    let coll = new errno_collector_t in
+    coll#walk_block (f.sbody);
+    coll#errno_pointers
+
   val mutable current_stmt_id: int = 0
   val mutable return_var: varinfo option = None
   val return_contexts = new ProgramContextCollections.set_t
@@ -103,6 +126,9 @@ object(self)
 
   (* context -> list of augmentation call variables *)
   val callvariables = H.create 3
+
+  (* context -> list of errno call variables *)
+  val errno_write_variables = H.create 3
 
   val p_entry_sym = new symbol_t "$p-entry"
 
@@ -290,6 +316,10 @@ object(self)
     self#mk_call_var "$fn-entry$" (-1)
 
   method get_fn_entry_call_var = self#mk_fn_entry_call_var
+
+  method get_errno_write_var (context:program_context_int) = 
+    let ictxt = ccontexts#index_context context in
+    self#mk_augmentation_variable "$errno_written$" "errno_write" (ictxt) SYM_VAR_TYPE
 
   method mk_call_vars =
     let directcallsites =
@@ -644,6 +674,10 @@ object(self)
     self#is_augmentation_variable v
     && (vmgr#get_purpose  (self#get_seqnr v)) = "call"
 
+  method is_errno_write_var v =
+    self#is_augmentation_variable v
+    && (vmgr#get_purpose (self#get_seqnr v)) = "errno_write"
+
   method get_indicator v = vmgr#get_indicator (self#get_seqnr v)
 
   method get_parameter_exp v = vmgr#get_parameter_exp (self#get_seqnr v)
@@ -732,6 +766,9 @@ object(self)
   method check_variable_applies_to_po
            (v:variable_t) ?(argindex=(-1)) (isppo:bool) (po_id:int) =
     vmgr#applies_to_po (self#get_seqnr v) ~argindex isppo po_id
+
+  method is_errno_temp (v:int) =
+    List.mem v errno_temps
 
   method is_fixed_xpr (x:xpr_t) =
     match x with

@@ -595,6 +595,8 @@ type xpredicate_t =
   | XPolicyTransition of s_term_t * string * string
 (** the term transitions according to a named transition
                                                        in the policy *)
+  | XWritesErrno
+  (** function must write to errno **)
 
 type postrequest_t = int * xpredicate_t  (* fvid of callee *)
 

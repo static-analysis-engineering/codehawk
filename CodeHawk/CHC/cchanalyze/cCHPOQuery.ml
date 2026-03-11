@@ -521,6 +521,17 @@ object (self)
         | NonRelationalFact (v, _) when env#is_call_var v -> inv :: acc
         | _ -> acc) [] invs
 
+  method get_errno_write_invariants: invariant_int list =
+    let locinvio = invio#get_location_invariant cfgcontext in
+    let maybe_errno_write_fact inv = 
+      match inv#get_fact with
+      | NonRelationalFact (v, FInitializedSet _)
+        when env#is_errno_write_var v -> Some(inv)
+      | _ -> None
+    in
+    locinvio#get_invariants 
+    |> List.filter_map maybe_errno_write_fact
+
   method get_invariants (argindex: int): invariant_int list =
     let id = po#index in
     let locinvio = invio#get_location_invariant cfgcontext in

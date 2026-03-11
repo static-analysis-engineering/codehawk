@@ -204,6 +204,14 @@ object (self)
   method translate
            (context:program_context_int) (loc:location) (lhs:lval) (rhs:exp) =
     let chifVar = exp_translator#translate_lhs context lhs in
+    let errno_write = match lhs with 
+    | Mem (Lval (Var (_, v), _)), _ when env#is_errno_temp v -> 
+      let write_errno = env#get_errno_write_var context in
+      let ttSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.True in
+      [make_c_cmd (ASSIGN_SYM (write_errno, SYM ttSym))]
+    | _ -> 
+      []
+    in
     let atts = match type_of_lval fdecls lhs with
       | TPtr _ ->
 	if is_field_lval_exp rhs then
@@ -227,7 +235,7 @@ object (self)
       | Some (fname,fvid) -> atts @ ["fptr"; fname; string_of_int fvid]
       | _ -> atts in
     let sym = new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
-    [make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))]
+    [make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))] @ errno_write
 
 end
 

@@ -227,6 +227,7 @@ let xpredicate_tag p =
   | XPolicyPre _ -> "policy-pre"
   | XPolicyValue _ -> "policy-value"
   | XPolicyTransition _ -> "policy-transition"
+  | XWritesErrno -> "writes-errno"
 
 
 class s_term_walker_t =
@@ -322,6 +323,7 @@ object (self)
     | XPolicyPre (t,_,_) -> wt 1 t
     | XPolicyValue (t,_,_) -> wt 1 t
     | XPolicyTransition (t,_,_) -> wt 1 t
+    | XWritesErrno -> ()
 
 end
 
@@ -520,6 +522,7 @@ let xpredicate_to_pretty p =
          STR pname;
          STR ",transition:";
          STR ptrans]
+  | XWritesErrno -> STR "writes-errno"
 
 
 let rec get_term_parameters (t:s_term_t) =
@@ -565,7 +568,8 @@ let get_xpredicate_terms (pred:xpredicate_t) =
   | XFalse
     | XFunctional
     | XPreservesAllMemory
-    | XPreservesNullTermination  -> []
+    | XPreservesNullTermination
+    | XWritesErrno -> []
   | XAllocationBase t
     | XConstTerm t
     | XControlledResource (_,t)
@@ -702,7 +706,8 @@ let xpredicate_to_dfs_string (p:xpredicate_t) =
   | XFalse
     | XFunctional
     | XPreservesAllMemory
-    | XPreservesNullTermination -> tag
+    | XPreservesNullTermination
+    | XWritesErrno -> tag
   | XAllocationBase t
     | XConfined t
     | XConstTerm t
@@ -952,6 +957,7 @@ let read_xml_xpredicate
            match op with
            | "false" -> [XFalse]
            | "functional" -> [XFunctional]
+           | "writes-errno" -> [XWritesErrno]
            | "preserves-all-memory" -> [XPreservesAllMemory]
            | "preserves-null-termination" -> [XPreservesNullTermination]
            | s ->

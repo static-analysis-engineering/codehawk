@@ -194,6 +194,7 @@ object
   (* augmentation variables with purpose: call, split by context *)
   method get_call_vars: variable_t list
   method get_fn_entry_call_var: variable_t
+  method get_errno_write_var: program_context_int -> variable_t
 
   method get_variable_type: variable_t -> typ
   method get_local_variable: variable_t -> (varinfo * offset)
@@ -231,6 +232,7 @@ object
 
   method is_augmentation_variable: variable_t -> bool
   method is_call_var: variable_t -> bool
+  method is_errno_write_var: variable_t -> bool
   method is_program_variable: variable_t -> bool
   method is_local_variable: variable_t -> bool
   method is_global_variable: variable_t -> bool
@@ -252,6 +254,7 @@ object
   method has_return_var: bool
   method check_variable_applies_to_po:
            variable_t -> ?argindex:int -> bool -> int -> bool
+  method is_errno_temp: int -> bool  (* vid *)
 
   (** {1 Transactions} *)
 
@@ -428,6 +431,8 @@ class type po_query_int =
     (** Returns a list of all call_var invariants at the cfg context of this
         PO.*)
     method get_call_invariants: invariant_int list
+
+    method get_errno_write_invariants: invariant_int list
 
     (** Returns a list of constraints created by the PEPR domain.
 
@@ -858,3 +863,10 @@ class type po_query_int =
              (int * offset * non_relational_value_t) list -> pretty_t
 
   end
+
+module type PREDICATE = 
+sig 
+  type t
+  val from_symbol : symbol_t -> t option
+  val to_symbol : t -> symbol_t
+end

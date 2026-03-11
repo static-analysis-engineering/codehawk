@@ -1182,16 +1182,15 @@ object (self)
     match f with
     | Lval (Var (fname,fvid), NoOffset) ->                (* direct call *)
        let fnargs = List.map (exp_translator#translate_exp ctxt) args in
-       let sideeffect = self#get_sideeffect fname fvid args fnargs in
        let postconditions = self#get_postconditions fname args fnargs in
        let callop =
          make_c_cmd
            (OPERATION
               { op_name = new symbol_t ~atts:[fname] "call";
                 op_args = [] }) in
-       let rcode =
+       let rvar, rcode =
          match lhs with
-         | None -> []
+         | None -> None, []
          | Some lval ->
             let rvar = exp_translator#translate_lhs context lval in
             if rvar#isTmp then
@@ -1202,7 +1201,7 @@ object (self)
                   ~msg:env#get_functionname
                   __FILE__ __LINE__
                   (List.map (fun v -> p2s v#toPretty) memoryvars) in
-              [make_c_cmd (ABSTRACT_VARS memoryvars)]
+              Some rvar, [make_c_cmd (ABSTRACT_VARS memoryvars)]
             else
               let ty = fenv#get_type_unrolled (env#get_variable_type rvar)  in
               match ty with
@@ -1214,12 +1213,13 @@ object (self)
                      ~msg:env#get_functionname
                      __FILE__ __LINE__
                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                 [make_c_cmd (ABSTRACT_VARS memoryvars)]
+                 Some rvar, [make_c_cmd (ABSTRACT_VARS memoryvars)]
               | _ ->
                   let atts = ["rv:"; fname] in
                   let sym =
                     new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
-                  [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
+                  Some rvar, [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
+       let sideeffect = self#get_sideeffect fname fvid args fnargs rvar in
        callop :: (sideeffect @ postconditions @ rcode)
     | _ ->                                             (* indirect call *)
        let callop =
@@ -1313,8 +1313,24 @@ object (self)
                    (fname:string)
                    (fvid:int)
                    (args:exp list)
-                   (fnargs:xpr_t list) =
+                   (fnargs:xpr_t list) 
+                   optrvar
+                   =
     let vinfo = fdecls#get_varinfo_by_vid fvid in
+    (* TODO generalize *)
+    let (_pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
+    let errno_sideeffect ps = 
+      if List.exists (function XWritesErrno, _ -> true | _ -> false) ps then 
+        match optrvar, List.filter (function (XWritesErrno, _) -> false | _ -> true) ps with
+        | Some rvar, [XNull ReturnValue, _] -> 
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+          |  _ -> 
+            []
+      else
+        [] in
+    let errno_sideeffect = errno_sideeffect epcs in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
     let (sitevars,xsitevars) = env#get_site_call_vars context in
     let fnzargs = List.map (fun _ -> None) fnargs in
@@ -1517,7 +1533,7 @@ object (self)
                 | _ -> []
               end
            | _ -> []) sideeffects) in
-    sitevarassigns :: xsitevarassigns :: seeffects
+    sitevarassigns :: xsitevarassigns :: errno_sideeffect @ seeffects
 
 end
 

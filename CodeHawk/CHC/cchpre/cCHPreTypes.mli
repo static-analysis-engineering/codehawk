@@ -685,7 +685,7 @@ class type assignment_dictionary_int =
 (** Predicates on expressions and other types that are evaluated on a program
     state.*)
 type po_predicate_t =
-
+  | PErrnoWritten
 
   | PNotNull of exp
   (** Pointer expression [exp] is not null.*)

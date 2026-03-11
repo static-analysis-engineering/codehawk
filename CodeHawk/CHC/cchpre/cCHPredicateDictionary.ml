@@ -156,6 +156,7 @@ object (self)
          (tags, [cdecls#index_varinfo v; cd#index_exp e])
       | POutputParameterNoEscape (v, e) ->
          (tags, [cdecls#index_varinfo v; cd#index_exp e])
+      | PErrnoWritten -> (tags, [])
     in
     po_predicate_table#add key
 
@@ -282,6 +283,8 @@ object (self)
     | "ops" -> POutputParameterScalar (cdecls#get_varinfo (a 0), cd#get_exp (a 1))
     | "opne" ->
        POutputParameterNoEscape (cdecls#get_varinfo (a 0), cd#get_exp (a 1))
+    | "ew" ->
+      PErrnoWritten 
     | s -> raise_tag_error name s po_predicate_mcts#tags
 
 
