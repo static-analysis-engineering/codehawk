@@ -1341,6 +1341,40 @@ object (self)
 
   method get_fts_parameter_expr (_p: fts_parameter_t) = None
 
+  method private get_globalvar_at_gv_address
+                   ?(size=None)
+                   ?(btype=t_unknown)
+                   (gvaddr: doubleword_int)
+                   (xoff: xpr_t): variable_t traceresult =
+    let cxoff_r = self#xpr_to_cxpr xoff in  (* should we have this call? *)
+    if memmap#has_location gvaddr then
+      let gloc = memmap#get_location gvaddr in
+      let var_r =
+        TR.tmap
+          ~msg:(eloc __LINE__)
+          (fun offset -> self#f#env#mk_gloc_variable gloc offset)
+          (TR.tbind
+             (fun xoff ->
+               gloc#address_offset_memory_offset
+                 ~tgtsize:size ~tgtbtype:btype self#l xoff)
+             cxoff_r) in
+      let _ =
+        log_diagnostics_result
+          ~msg:(p2s self#l#toPretty)
+          ~tag:"get_var_at_address: addressofvar global"
+          __FILE__ __LINE__
+          ["varresult: "
+           ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" var_r);
+           "gloc: " ^ gloc#name] in
+      var_r
+
+    else
+      Error [(elocm __LINE__);
+             (p2s self#l#toPretty);
+             "Global location at address "
+             ^ gvaddr#to_hex_string
+             ^ " not found"]
+
   method get_var_at_address
            ?(size=None)
            ?(btype=t_unknown)
@@ -1372,44 +1406,20 @@ object (self)
                    ^ " not found"])
          gvaddr_r
     | XOp ((Xf "addressofvar"), [XVar v]) -> Ok v
+
     | XOp (XPlus, [XOp ((Xf "addressofvar"), [XVar v]); xoff])
          when self#f#env#is_global_variable v ->
        let gvaddr_r = self#f#env#get_global_variable_address v in
-       let cxoff_r = self#xpr_to_cxpr xoff in   (* **should we have this call? *)
        TR.tbind
          ~msg:(eloc __LINE__)
          (fun gvaddr ->
-           if memmap#has_location gvaddr then
-             let gloc = memmap#get_location gvaddr in
-             let var_r =
-               TR.tmap
-                 ~msg:(eloc __LINE__)
-                 (fun offset -> self#f#env#mk_gloc_variable gloc offset)
-                 (TR.tbind
-                    (fun xoff ->
-                      gloc#address_offset_memory_offset
-                        ~tgtsize:size ~tgtbtype:btype self#l xoff)
-                    cxoff_r) in
-             let _ =
-               log_diagnostics_result
-                 ~msg:(p2s self#l#toPretty)
-                 ~tag:"get_var_at_address: addressofvar global"
-                 __FILE__ __LINE__
-                 ["varresult: "
-                  ^ (TR.tfold_default (fun v -> p2s v#toPretty) "error" var_r);
-                  "gloc: " ^ gloc#name] in
-             var_r
-
-           else
-             Error [(elocm __LINE__);
-                    (p2s self#l#toPretty);
-                    "Global location at address "
-                    ^ gvaddr#to_hex_string
-                    ^ " not found"])
+           self#get_globalvar_at_gv_address ~size ~btype gvaddr xoff)
          gvaddr_r
+
     | _ ->
        match memmap#xpr_containing_location addrvalue with
        | Some gloc ->
+          (* within existing global location *)
           (TR.tmap
              ~msg:(eloc __LINE__)
              (fun offset -> self#f#env#mk_gloc_variable gloc offset)
@@ -1418,6 +1428,7 @@ object (self)
        | _ ->
           match self#f#stackframe#xpr_containing_stackslot addrvalue with
           | Some stackslot ->
+             (* within existing stackslot *)
              let stackoffset_r = self#get_stackpointer_offset_xpr addrvalue in
              (TR.tmap
                 ~msg:(eloc __LINE__)
@@ -2445,12 +2456,24 @@ object (self)
        let memoff_r =
          match offset with
          | XConst (IntConst n) when n#equal numerical_zero -> Ok NoOffset
+         | XConst (IntConst n) when n#gt (mkNumerical 0xffff0000) ->
+            let n = n#sub (mkNumerical 0x100000000) in
+            Ok (ConstantOffset (n, NoOffset))
          | XConst (IntConst n) -> Ok (ConstantOffset (n, NoOffset))
          | _ ->
             Error [(elocm __LINE__);
                    (p2s self#l#toPretty);
                    "base: " ^ (p2s base#toPretty);
                    "offset expr: " ^ (x2s offset)] in
+       let _ =
+         log_diagnostics_result
+           ~tag:"decompose_memaddr:one-known-base"
+           ~msg:(p2s self#l#toPretty)
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x);
+            "base: " ^ (p2s base#toPretty);
+            "memoff: "
+            ^ (TR.tfold_default memory_offset_to_string "?" memoff_r)] in
        (memref_r, memoff_r)
 
     (* no known pointers, have to find a base *)
