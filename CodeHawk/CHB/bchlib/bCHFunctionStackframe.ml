@@ -157,7 +157,9 @@ object (self)
       simplify_xpr (XOp (XMinus, [xpr; int_constant_expr self#offset])) in
     let xoff =
       match xoff with
-      | XOp (XPlus, [_; XConst (IntConst n)]) when n#geq (mkNumerical 0x100000000) ->
+      | XConst (IntConst n)
+        | XOp (XPlus, [_; XConst (IntConst n)])
+           when n#geq (mkNumerical 0x100000000) ->
          let rresult =
            simplify_xpr (XOp (XMinus, [xoff; int_constant_expr 0x100000000])) in
          begin
