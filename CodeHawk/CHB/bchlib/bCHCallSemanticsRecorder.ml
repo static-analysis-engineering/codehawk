@@ -268,17 +268,23 @@ object (self)
     | XPOBuffer (ty, addr, size) ->
        (match self#termev#xpr_local_stack_address addr with
         | Some offset ->
-           let _ =
-             ch_diagnostics_log#add
-               "record blockread"
-               (LBLOCK [loc#toPretty; STR ": ";
-                        STR "offset: ";
-                        INT offset]) in
            let csize =
              match size with
              | XConst (IntConst n) -> Some n#toInt
              | _ ->
-                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
+                TR.tfold_default
+                  (fun s -> if s >= 4 then Some s else None)
+                  None
+                  (size_of_btype ty) in
+           let _ =
+             log_diagnostics_result
+               ~tag:"record_blockreads"
+               ~msg:(p2s loc#toPretty)
+               __FILE__ __LINE__
+               ["xpo: " ^ (p2s (xpo_predicate_to_pretty xpo));
+                "offset: " ^ (string_of_int offset);
+                "size: " ^
+                  (match csize with Some s -> string_of_int s | _ -> "")] in
            self#finfo#stackframe#add_block_read
              ~offset:(-offset) ~size:csize ~typ:(Some ty) self#loc#ci
         | _ -> ())
@@ -314,10 +320,23 @@ object (self)
              match size with
              | XConst (IntConst n) -> Some n#toInt
              | _ ->
-                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
+                TR.tfold_default
+                  (fun s -> if s > 3 then Some s else None)
+                  None
+                  (size_of_btype ty) in
            let sevalue =
              self#finfo#env#mk_stack_sideeffect_value
                ~btype:(Some ty) self#loc#ci numoffset (bterm_to_string taddr) in
+           let _ =
+             log_diagnostics_result
+               ~tag:"record_sideeffect"
+               ~msg:(p2s loc#toPretty)
+               __FILE__ __LINE__
+               ["xpo: " ^ (p2s (xpo_predicate_to_pretty xpo));
+                "size: "
+                ^ (match csize with Some s -> string_of_int s | _ -> "?");
+                "offset: " ^ (string_of_int offset);
+                "value: " ^ (p2s sevalue#toPretty)] in
            self#finfo#stackframe#add_block_write
              ~offset:(-offset)
              ~size:csize
