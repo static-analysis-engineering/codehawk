@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHFormatStringParser
+open CHTraceResult
 open CHUtil
 
 (* cchlib *)
@@ -61,6 +62,16 @@ let cd = CCHDictionary.cdictionary
 let fenv = CCHFileEnvironment.file_environment
 
 module H = Hashtbl
+module TR = CHTraceResult
+
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+(*
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+ *)
+
 
 let createppos = ref true
 
@@ -120,26 +131,41 @@ let add_lib_proof_obligation
       loc ctxt pred libfname xpred
 
 
-let create_po_dereference add env (context:program_context_int) (e:exp) loc =
+let create_po_dereference add env (context: program_context_int) (e: exp) loc =
   let tgttyp =
-    let t = type_of_exp env e in
-    match t with
-    | TPtr (tt,_) -> tt
-    | _ ->
-      let f = get_current_function () in
-      begin
-	ch_error_log#add "pointer dereference"
-	  (LBLOCK [
-               STR "Target type of Mem is not a pointer (assigning void*): ";
-	       typ_to_pretty t;
-               STR " (";
-               exp_to_pretty e;
-               STR ")";
-	       current_loc_to_pretty loc;
-               STR " in ";
-               STR f.svar.vname]);
-	TVoid []
-      end in
+    TR.tfold
+      ~ok:(fun t ->
+        match t with
+        | TPtr (tt, _) -> tt
+        | _ ->
+           let f = get_current_function () in
+           begin
+             log_error_result
+               ~tag:"create_po_dereference"
+               ~msg:f.svar.vname
+               __FILE__ __LINE__
+               ["Target type of Mem is not a pointer (assigning void*): "
+                ^ (p2s (typ_to_pretty t))
+                ^ " (" ^ (p2s (exp_to_pretty e)) ^ "); "
+                ^ (p2s (current_loc_to_pretty loc))];
+             TVoid []
+           end)
+      ~error:(fun err ->
+        let f = get_current_function () in
+        begin
+          log_error_result
+            ~tag:"create_po_dereference"
+            ~msg:f.svar.vname
+            __FILE__ __LINE__
+            [(String.concat "; " err);
+             "Unable to determine type of expression "
+             ^ (p2s (exp_to_pretty e))
+             ^ " at "
+             ^ (p2s (current_loc_to_pretty loc));
+             "Assigning void*"];
+          TVoid []
+        end)
+      (type_of_exp env e) in
   begin
     add (PNotNull e) context;
     add (PValidMem e) context;
@@ -151,31 +177,47 @@ let create_po_dereference add env (context:program_context_int) (e:exp) loc =
 
 
 let rec create_po_lval
-          env
+          (env: cfundeclarations_int)
           (context:program_context_int)
           ((host, offset):lval) (loc:location) =
   let add p = add_proof_obligation p loc in
   match host with
-  | Var (_vname, vid) ->
-     create_po_offset
-       env context#add_var offset (env#get_varinfo_by_vid vid).vtype loc
+  | Var (vname, vid) ->
+     TR.tfold
+       ~ok:(fun vinfo ->
+         create_po_offset env context#add_var offset vinfo.vtype loc)
+       ~error:(fun err ->
+         log_error_result
+           ~tag:"create_po_lval"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to find variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (env#get_varinfo_by_vid vid)
   | Mem e ->
      let tgttyp =
-       let t = type_of_exp env e in
-       match t with
-       | TPtr (tt,_) -> tt
-       | _ ->
-          let f = get_current_function () in
+       match type_of_exp env e with
+       | Ok (TPtr (tt,_)) -> tt
+       | Error err ->
           begin
-	    ch_error_log#add
-              "pointer dereference"
-	      (LBLOCK [
-                   STR "Target type of Mem is not a pointer (assigning void*): ";
-		   exp_to_pretty e;
-                   current_loc_to_pretty loc;
-                   STR " in ";
-		   STR f.svar.vname]);
-	    TVoid []
+            log_error_result
+              ~tag:"create_po_lval"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err); "e: " ^ (p2s (exp_to_pretty e))];
+            TVoid []
+          end
+       | Ok ty ->
+          begin
+            log_error_result
+              ~tag:"create_po_lval"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+               ["Expected pointer type, but found " ^ (p2s (typ_to_pretty ty));
+               "e: " ^ (p2s (exp_to_pretty e));
+               "loc: " ^ (p2s (current_loc_to_pretty loc))];
+            TVoid []
           end in
      begin
        create_po_exp ~deref:true env context#add_mem e loc;
@@ -195,11 +237,22 @@ and create_po_binop
   loc =
   let add p = add_proof_obligation p loc context in
   let addxop p n = add_proof_obligation p loc (context#add_binop n) in
+  let is_ptr_type (e: exp): bool =
+    TR.tfold
+      ~ok:is_pointer_type
+      ~error:(fun err ->
+        begin
+          log_error_result
+            ~tag:"create_po_binop"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            [(String.concat "; " err); "e: " ^ (p2s (exp_to_pretty e))];
+          false
+        end)
+      (type_of_exp env e) in
   let are_cast_pointer_types e1 e2 =
     match (e1, e2) with
-    | (CastE (_, ee1), CastE (_, ee2)) ->
-       (is_pointer_type (type_of_exp env ee1))
-       && (is_pointer_type (type_of_exp env ee2))
+    | (CastE (_, ee1), CastE (_, ee2)) -> (is_ptr_type ee1) && (is_ptr_type ee2)
     | _ -> false in
   match binop with
 
@@ -218,16 +271,16 @@ and create_po_binop
 	end
       | TFloat _ -> ()
       | _ ->
-	 ch_error_log#add
-           "unknown arithmetic type"
-	   (LBLOCK [
-                exp_to_pretty e1;
-                STR (binop_to_print_string binop);
-		exp_to_pretty e2;
-                STR " : ";
-                typ_to_pretty t;
-                STR " ";
-		current_loc_to_pretty loc])
+         log_error_result
+           ~tag:"create_po_binop"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           ["Unknown arithmetic type in binop expression: "
+            ^ (p2s (exp_to_pretty e1))
+            ^ (binop_to_print_string binop)
+            ^ (p2s (exp_to_pretty e2))
+            ^ ": " ^ (p2s (typ_to_pretty t))
+            ^ " " ^ (p2s (current_loc_to_pretty loc))]
     end
 
   | Shiftlt | Shiftrt ->
@@ -251,16 +304,16 @@ and create_po_binop
                         typ_to_pretty ty]))
 	 end
       | _ ->
-	 ch_error_log#add
-           "unknown shift type"
-	   (LBLOCK [
-                exp_to_pretty e1;
-                STR (binop_to_print_string binop);
-		exp_to_pretty e2;
-                STR " : ";
-                typ_to_pretty t;
-                STR " ";
-		current_loc_to_pretty loc])
+         log_error_result
+           ~tag:"create_po_binop"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           ["Unknown shift type in binop expression: "
+            ^ (p2s (exp_to_pretty e1))
+            ^ (binop_to_print_string binop)
+            ^ (p2s (exp_to_pretty e2))
+            ^ ": " ^ (p2s (typ_to_pretty t))
+            ^ " " ^ (p2s (current_loc_to_pretty loc))]
     end
 
   | Div ->
@@ -280,98 +333,92 @@ and create_po_binop
 	  end
        | TFloat _ -> add (PNotZero e2)
        | _ ->
-	  ch_error_log#add
-            "unknown arithmetic type"
-	    (LBLOCK
-               [exp_to_pretty e1;
-                STR (binop_to_print_string binop);
-		exp_to_pretty e2;
-                STR " : ";
-                typ_to_pretty t;
-                STR " ";
-		current_loc_to_pretty loc])
+         log_error_result
+           ~tag:"create_po_binop"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           ["Unknown arithmetic type in binop expression: "
+            ^ (p2s (exp_to_pretty e1))
+            ^ (binop_to_print_string binop)
+            ^ (p2s (exp_to_pretty e2))
+            ^ ": " ^ (p2s (typ_to_pretty t))
+            ^ " " ^ (p2s (current_loc_to_pretty loc))]
      end
 
   | Mod -> addxop (PNotZero e2) 2
 
   | PlusPI | IndexPI | MinusPI ->
-    let exptyp = fenv#get_type_unrolled t in
-    let tgttyp = match exptyp with
-      | TPtr (tt,_) -> tt
-      | _ ->
-	begin
-	  ch_error_log#add
-            "unknown target type in pointer arithmetic"
-	    (LBLOCK [
-                 exp_to_pretty e1;
-                 STR (binop_to_print_string binop);
-		 exp_to_pretty e2;
-                 STR " : ";
-		 typ_to_pretty exptyp;
-                 current_loc_to_pretty loc]);
-	  TVoid []
-	end in
-    begin
-      addxop (PNotNull e1) 1;
-      addxop (PValidMem e1) 1;
-      addxop (PInScope e1) 1;
-      addxop (PLowerBound (tgttyp, e1)) 1;
-      addxop (PUpperBound (tgttyp, e1)) 1;
-      add (PPtrLowerBound (tgttyp, binop, e1, e2));
-      add (if deref then
-	  PPtrUpperBoundDeref (tgttyp, binop, e1, e2)
-	else
-	  PPtrUpperBound (tgttyp, binop, e1, e2));
-    end
+     let tgttyp =
+       match fenv#get_type_unrolled t with
+       | TPtr (tt,_) -> tt
+       | _ ->
+	  begin
+            log_error_result
+              ~tag:"create_po_binop"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Unknown target type in pointer arithmetic: "
+               ^ (p2s (exp_to_pretty e1))
+               ^ (binop_to_print_string binop)
+               ^ (p2s (exp_to_pretty e2))
+               ^ ": " ^ (p2s (typ_to_pretty t))
+               ^ " " ^ (p2s (current_loc_to_pretty loc))];
+	    TVoid []
+ 	  end in
+     begin
+       addxop (PNotNull e1) 1;
+       addxop (PValidMem e1) 1;
+       addxop (PInScope e1) 1;
+       addxop (PLowerBound (tgttyp, e1)) 1;
+       addxop (PUpperBound (tgttyp, e1)) 1;
+       add (PPtrLowerBound (tgttyp, binop, e1, e2));
+       add (if deref then
+	      PPtrUpperBoundDeref (tgttyp, binop, e1, e2)
+	    else
+	      PPtrUpperBound (tgttyp, binop, e1, e2));
+     end
 
   | MinusPP ->
-    let e1typ = fenv#get_type_unrolled (type_of_exp env e1) in
-    let e2typ = fenv#get_type_unrolled (type_of_exp env e2) in
-    let tgttyp1 = match e1typ with
-      | TPtr (tt, _) -> tt
-      | _ ->
-	begin
-	  ch_error_log#add
-            "unknown target type in pointer arithmetic"
-	    (LBLOCK [
-                 exp_to_pretty e1;
-                 STR (binop_to_print_string binop);
-		 exp_to_pretty e2;
-                 STR " : ";
-		 typ_to_pretty e1typ;
-                 current_loc_to_pretty loc]);
-	  TVoid []
-	end in
-    let tgttyp2 = match e2typ with
-      | TPtr (tt, _) -> tt
-      | _ ->
-	begin
-	  ch_error_log#add
-            "unknown target type in pointer arithmetic"
-	    (LBLOCK [
-                 exp_to_pretty e1;
-                 STR (binop_to_print_string binop);
-		 exp_to_pretty e2;
-                 STR " : ";
-		 typ_to_pretty e1typ;
-                 current_loc_to_pretty loc]);
-	  TVoid []
-	end in
+    let tgttyp1_r = get_pointer_expr_target_type env e1 in
+    let tgttyp2_r = get_pointer_expr_target_type env e2 in
+    let tgttyp1 =
+      match tgttyp1_r with
+      | Ok t -> t
+      | Error err ->
+         begin
+           log_error_result
+             ~tag:"create_po_binop:MinusPP"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err); "e1: " ^ (p2s (exp_to_pretty e1))];
+           TVoid []
+         end in
+    let tgttyp2 =
+      match tgttyp2_r with
+      | Ok t -> t
+      | Error err ->
+         begin
+           log_error_result
+             ~tag:"create_po_binop:MinusPP"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err); "e2: " ^ (p2s (exp_to_pretty e2))];
+           TVoid []
+         end in
     let _ =
       if (typ_compare tgttyp1 tgttyp2) = 0 then
         ()
       else
-	ch_error_log#add
-          "different pointer target types in subtraction"
-	  (LBLOCK [
-               exp_to_pretty e1;
-               STR ": ";
-               typ_to_pretty tgttyp1;
-               STR "; ";
-	       exp_to_pretty e2;
-               STR ": ";
-               typ_to_pretty tgttyp2;
-	       current_loc_to_pretty loc]) in
+        log_error_result
+          ~tag:"create_po_binop:MinusPP"
+          ~msg:env#functionname
+          __FILE__ __LINE__
+          ["Expected equivalent pointer target types in pointer subtraction, "
+           ^ "but found: " ^ (p2s (typ_to_pretty tgttyp1)) ^ " and "
+           ^ (p2s (typ_to_pretty tgttyp2)) ^ " for operands "
+           ^ (p2s (exp_to_pretty e1)) ^ " and "
+           ^ (p2s (exp_to_pretty e2)) ^ " at location "
+           ^ (p2s (current_loc_to_pretty loc))] in
     begin
       addxop (PNotNull e1) 1;
       addxop (PNotNull e2) 2;
@@ -422,14 +469,29 @@ and create_po_binop
 
 and create_po_exp
   ?(deref=false)
-  env
-  (context:program_context_int)
-  (x:exp)
-  (loc:location) =
-  let has_struct_type vid =
-    let vinfo = env#get_varinfo_by_vid vid in
-    match fenv#get_type_unrolled vinfo.vtype with
-    | TComp _ -> true | _ -> false in
+  (env: cfundeclarations_int)
+  (context: program_context_int)
+  (x: exp)
+  (loc: location) =
+  let has_struct_type (vname: string) (vid: int) =
+    TR.tfold
+      ~ok:(fun vinfo ->
+        match fenv#get_type_unrolled vinfo.vtype with
+        | TComp _ -> true
+        | _ -> false)
+      ~error:(fun err ->
+        begin
+          log_error_result
+            ~tag:"create_po_exp"
+            ~msg:"create_po_exp"
+            __FILE__ __LINE__
+            [(String.concat "; " err);
+             "Unable to retrieve varinfo for variable " ^ vname;
+             "x: " ^ (p2s (exp_to_pretty x))];
+          false
+        end)
+      (env#get_varinfo_by_vid vid) in
+
   let add p = add_proof_obligation p loc context in
   let add_int_cast (ikfrom:ikind) (ikto:ikind) (e:exp) =
     if ikfrom = ikto then
@@ -451,8 +513,8 @@ and create_po_exp
    match x with
    | Const _ -> ()
 
-   | Lval (Var (vname, vid), NoOffset) when has_struct_type vid ->
-      let vinfo = env#get_varinfo_by_vid vid in
+   | Lval (Var (vname, vid), NoOffset) when has_struct_type vname vid ->
+      let vinfo = TR.tget_ok (env#get_varinfo_by_vid vid) in
       begin
         match fenv#get_type_unrolled vinfo.vtype with
         | TComp (tckey, _) ->
@@ -463,7 +525,7 @@ and create_po_exp
                    (PInitialized
                       (Var (vname,vid), Field ((f.fname, f.fckey), NoOffset))))
                cinfo.cfields;
-             create_po_lval env context#add_lval (Var (vname,vid),NoOffset) loc
+             create_po_lval env context#add_lval (Var (vname, vid), NoOffset) loc
            end
         | _ -> ()
       end
@@ -502,14 +564,22 @@ and create_po_exp
     end
 
   | CastE (t, e) ->
-    let exptyp = fenv#get_type_unrolled (type_of_exp env e) in
+    let exptyp_r = TR.tmap fenv#get_type_unrolled (type_of_exp env e) in
     let tgttyp = fenv#get_type_unrolled t in
     let _ =
-      match (exptyp, tgttyp)  with
-      | (TInt (ik1, _), TInt (ik2,_ )) -> add_int_cast ik1 ik2 e
-      | (TPtr (tt1, _), TPtr (tt2, _)) ->
+      match (exptyp_r, tgttyp)  with
+      | (Ok (TInt (ik1, _)), TInt (ik2,_ )) -> add_int_cast ik1 ik2 e
+      | (Ok (TPtr (tt1, _)), TPtr (tt2, _)) ->
          add (PPointerCast (tt1,tt2,e))  (* may need additional int cast *)
-      | _ -> add (PCast (exptyp, tgttyp, e)) in
+      | (Ok exptyp, _) -> add (PCast (exptyp, tgttyp, e))
+      | (Error err, _) ->
+         log_error_result
+           ~tag:"create_po_exp:CastE"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to determine type of expression: "
+            ^ (p2s (exp_to_pretty e))] in
     create_po_exp ~deref env context#add_cast e loc
 
   | AddrOf l -> create_po_lval env context#add_addrof l loc
@@ -539,22 +609,23 @@ and create_po_offset
 	    let ftype = fenv#get_field_type ckey fname in
 	    create_po_offset env (context#add_field_offset fname) oo ftype loc
 	  else
-	    ch_error_log#add
-              "field offset: mismatch in host type key and field key"
-	      (LBLOCK [
-                   STR "Field key: ";
-                   INT ckey;
-                   STR "; host key: ";
-                   INT tckey;
-		   current_loc_to_pretty loc])
+            log_error_result
+              ~tag:"create_po_offset:Field"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["field offset: mismatch in host type key and field key";
+               "Field key: " ^ (string_of_int ckey);
+               "host key: " ^ (string_of_int tckey);
+	       (p2s (current_loc_to_pretty loc))]
        | _ ->
-	  ch_error_log#add
-            "field offset: host type is not a struct"
-	    (LBLOCK [
-                 STR "Field: ";
-                 STR fname;
-                 STR "; host type: ";
-		 typ_to_pretty hosttyp; current_loc_to_pretty loc])
+          log_error_result
+            ~tag:"create_po_offset:Field"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            ["field offset: host type is not a struct";
+             "Field: " ^ fname;
+             "host type: " ^ (p2s (typ_to_pretty hosttyp));
+             (p2s (current_loc_to_pretty loc))]
      end
 
   | Index (exp, oo) ->
@@ -568,46 +639,58 @@ and create_po_offset
 	    create_po_offset env context#add_index_offset oo tt loc
 	  end
        | TArray (_, _, _) ->
-	  ch_error_log#add
-            "array without length"
-	    (LBLOCK [
-                 offset_to_pretty o;
-                 STR " on ";
-                 typ_to_pretty hosttyp;
-		 current_loc_to_pretty loc])
+          log_error_result
+            ~tag:"create_po_offset:Index"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            ["array without length";
+             (p2s (offset_to_pretty o)) ^ " on "
+             ^ (p2s (typ_to_pretty hosttyp))
+	     ^ (p2s (current_loc_to_pretty loc))]
        | _ ->
-	  ch_error_log#add
-            "index of non-array type"
-	    (LBLOCK  [
-                 offset_to_pretty o;
-                 STR " on ";
-                 typ_to_pretty hosttyp;
-		 current_loc_to_pretty loc])
+          log_error_result
+            ~tag:"create_po_offset:Index"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            ["index of non-array type";
+             (p2s (offset_to_pretty o)) ^ " on "
+             ^ (p2s (typ_to_pretty hosttyp))
+	     ^ (p2s (current_loc_to_pretty loc))]
      end
 
 
 and _create_po_dereference_range
   add
-  env
+  (env: cfundeclarations_int)
   (context:program_context_int)
   (base:exp)
   (len:exp)
   (loc:location) =
   let add p = add p context in
   let tgttyp =
-    let t = type_of_exp env base in
-    match t with
-    | TPtr (tt,_) -> tt
-    | _ ->
-      begin
-	ch_error_log#add
-          "pointer dereference"
-	  (LBLOCK [
-               STR "Target type of Mem is not a pointer: ";
-	       typ_to_pretty t;
-               current_loc_to_pretty loc]);
-	   TVoid []
-      end in
+    match type_of_exp env base with
+    | Ok (TPtr (tt, _)) -> tt
+    | Ok ty ->
+       begin
+         log_error_result
+           ~tag:"create_po_dereference_range"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           ["Expected pointer type for expression e in Mem e, but found "
+            ^ (p2s (typ_to_pretty ty)) ^ " at "
+            ^ (p2s (current_loc_to_pretty loc))];
+         TVoid []
+       end
+    | Error err ->
+       begin
+         log_error_result
+           ~tag:"create_po_dereference_range"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to determine type of base: " ^ (p2s (exp_to_pretty base))];
+         TVoid []
+       end in
   begin
     add (PNotNull base);
     add (PValidMem base);
@@ -634,11 +717,14 @@ and _create_po_dereference_range_read add env
    Returns:
       (list of predicates, argument expr, argument indices)
  *)
-and get_arg env (s:s_term_t) (args:exp list) =
+and get_arg
+(env: cfundeclarations_int)
+(s:s_term_t)
+(args:exp list): (po_predicate_t list * exp * int list) =
   match s with
   | ArgValue (ParFormal i, ArgNoOffset) ->
      if List.length args >= i then
-       ([],List.nth  args (i-1), [i])
+       ([], List.nth args (i-1), [i])
      else
        raise
          (CCHFailure
@@ -655,8 +741,20 @@ and get_arg env (s:s_term_t) (args:exp list) =
 
   | ArgAddressedValue (ptr, ArgNoOffset) ->
     let (p, a, i) = get_arg env ptr args in
-    let t = type_of_exp env a in
-    let expp = [PLowerBound (t, a); PUpperBound (t, a)] in
+    let expp =
+      TR.tfold
+        ~ok:(fun t -> [PLowerBound (t, a); PUpperBound (t, a)])
+        ~error:(fun err ->
+          begin
+            log_error_result
+              ~tag:"get_arg:ArgAddressedValue"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to determine type of argument " ^ (p2s (exp_to_pretty a))];
+            []
+          end)
+        (type_of_exp env a) in
     (p @ expp, Lval (Mem a,NoOffset),i)
 
   | ArgNullTerminatorPos arg ->
@@ -664,29 +762,86 @@ and get_arg env (s:s_term_t) (args:exp list) =
     (p, CnApp ("ntp", [Some a], TInt (IInt, [])), i)
 
   | ArithmeticExpr (op, arg1, arg2) ->
-     let get_kind e =
+     let get_kind (e: exp) =
        match type_of_exp env e with
-       | TInt (ik, _) -> ik
-       | _ ->
-          raise
-            (CCHFailure
-               (LBLOCK [
-                    STR "Unexpected type in get_kind ";
-		    typ_to_pretty (type_of_exp env e)])) in
+       | Ok (TInt (ik, _)) -> ik
+       | Ok ty ->
+          begin
+            log_error_result
+              ~tag:"get_arg:ArithmeticExpr"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Expected to find Int, but found " ^ (p2s (typ_to_pretty ty))
+               ^ " for expression " ^ (p2s (exp_to_pretty e))];
+            IInt
+          end
+       | Error err ->
+          begin
+            log_error_result
+              ~tag:"get_arg:ArithmeticExpr"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to determine type of expression "
+               ^ (p2s (exp_to_pretty e))];
+            IInt
+          end in
     let (p1, a1, i) = get_arg env arg1 args in
     let (p2, a2, j) = get_arg env arg2 args in
-    let t = type_of_exp env a1 in
-    let expp = if is_pointer_type t then
-	let destType = type_of_tgt_exp env a1 in
-	[PPtrLowerBound (destType, op, a1, a2);
-	 PPtrUpperBoundDeref (destType, op, a1, a2)]
-      else
-	let k = get_kind a1 in
-        if is_signed_type k then
-	  [PIntUnderflow (op, a1, a2, k); PIntOverflow (op, a1, a2, k)]
-        else
-	  [PUIntUnderflow (op, a1, a2, k); PUIntOverflow (op, a1, a2, k)] in
-    (p1 @ p2 @ expp, BinOp (op, a1, a2, type_of_exp env a1), i @ j)
+    let expp =
+      TR.tfold
+        ~ok:(fun t ->
+          if is_pointer_type t then
+            TR.tfold
+              ~ok:(fun destty ->
+	        [PPtrLowerBound (destty, op, a1, a2);
+	         PPtrUpperBoundDeref (destty, op, a1, a2)])
+              ~error:(fun err ->
+                begin
+                  log_error_result
+                    ~tag:"get_arg:ArithmeticExpr"
+                    ~msg:env#functionname
+                    __FILE__ __LINE__
+                    [(String.concat "; " err);
+                     "Unable to determine pointer target expression of argument "
+                     ^ (p2s (exp_to_pretty a1))];
+                  []
+                end)
+              (get_pointer_expr_target_type env a1)
+          else
+	    let k = get_kind a1 in
+            if is_signed_type k then
+	      [PIntUnderflow (op, a1, a2, k); PIntOverflow (op, a1, a2, k)]
+            else
+	      [PUIntUnderflow (op, a1, a2, k); PUIntOverflow (op, a1, a2, k)])
+        ~error:(fun err ->
+          begin
+            log_error_result
+              ~tag:"get_arg:ArithmeticExpr"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to determine signedness of the type of argument: "
+               ^ (p2s (exp_to_pretty a1))];
+            []
+          end)
+        (type_of_exp env a1) in
+    TR.tfold
+      ~ok:(fun t -> (p1 @ p2 @ expp, BinOp (op, a1, a2, t), i @ j))
+      ~error:(fun err ->
+        begin
+          log_error_result
+            ~tag:"get_arg:ArithmeticExpr"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            [(String.concat "; " err);
+             "Unable to determine the type of argument a1: "
+             ^ (p2s (exp_to_pretty a1));
+             "Using signed integer"];
+          (p1 @ p2 @ expp, BinOp (op, a1, a2, TInt (IInt, [])), i @ j)
+        end)
+      (type_of_exp env a1)
+
   | RuntimeValue ->
      ([], CnApp ("runtime-value", [], TInt (IInt, [])), [])
   | _ ->
@@ -700,12 +855,22 @@ and get_arg env (s:s_term_t) (args:exp list) =
 
 and get_input_format_proofobligations env argspec arg =
   let argtype = type_of_exp env arg in
-  let get_po (argtype:typ) (tgttype:typ) =
+  let get_po (argtype: typ traceresult) (tgttype: typ) =
     match argtype with
-    | TPtr (ty,_) ->  PPointerCast (ty,tgttype,arg)
-    | _ -> PFormatCast (argtype,TPtr (tgttype,[]) ,arg) in
-  if argspec#is_scanset then  (* TBD: add user bound *)
-    [get_po argtype (TInt (IChar,[])); PNotNull arg]
+    | Ok (TPtr (ty,_)) ->  [PPointerCast (ty, tgttype, arg)]
+    | Ok ty -> [PFormatCast (ty, TPtr (tgttype, []) ,arg)]
+    | Error err ->
+       begin
+         log_error_result
+           ~tag:"get_input_format_proofobligations"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to determine type of argument: " ^ (p2s (exp_to_pretty arg))];
+         []
+       end in
+  if argspec#is_scanset then (* TBD: add user bound *)
+    (get_po argtype (TInt (IChar, []))) @ [PNotNull arg]
   else
     let conversion = argspec#get_conversion in
     match conversion with
@@ -713,16 +878,16 @@ and get_input_format_proofobligations env argspec arg =
        if argspec#has_lengthmodifier then
          match argspec#get_lengthmodifier with
          | CharModifier ->
-            [get_po argtype (TInt (ISChar, [])); PNotNull arg]
+            (get_po argtype (TInt (ISChar, []))) @ [PNotNull arg]
          | ShortModifier ->
-            [get_po argtype (TInt (IShort, [])); PNotNull arg]
+            (get_po argtype (TInt (IShort, []))) @ [PNotNull arg]
          | LongModifier ->
-            [get_po argtype  (TInt (ILong, [])); PNotNull arg]
+            (get_po argtype (TInt (ILong, []))) @ [PNotNull arg]
          | LongLongModifier ->
-            [get_po argtype (TInt (ILongLong, [])); PNotNull arg]
+            (get_po argtype (TInt (ILongLong, []))) @ [PNotNull arg]
          | IntMaxModifier | SizeModifier | PtrDiffModifier ->
             (* check; may not be correct *)
-            [get_po argtype (TInt (ILong, [])); PNotNull arg]
+            (get_po argtype (TInt (ILong, []))) @ [PNotNull arg]
          | _ ->
             begin
               ch_error_log#add
@@ -731,18 +896,18 @@ and get_input_format_proofobligations env argspec arg =
               []
             end
        else
-         [get_po argtype (TInt (IInt, [])); PNotNull arg]
+         (get_po argtype (TInt (IInt, []))) @ [PNotNull arg]
 
     | UnsignedOctalConverter
       | UnsignedDecimalConverter
       | UnsignedHexConverter _ ->
-       [get_po argtype (TInt (IUInt, [])); PNotNull arg]
+       (get_po argtype (TInt (IUInt, []))) @ [PNotNull arg]
 
     | FixedDoubleConverter _
       | ExpDoubleConverter _
       | FlexDoubleConverter _
       | HexDoubleConverter _ ->
-       [get_po argtype (TFloat (FFloat, [])); PNotNull arg]
+       (get_po argtype (TFloat (FFloat, []))) @ [PNotNull arg]
 
     | UnsignedCharConverter ->
        if argspec#has_lengthmodifier then
@@ -752,20 +917,22 @@ and get_input_format_proofobligations env argspec arg =
               match argspec#get_fieldwidth with
               | FieldwidthConstant i ->
                  let len = Const (CInt (Int64.of_int i, IInt, None)) in
-                 [get_po argtype (TInt (IUShort, [])); PNotNull arg;
-                   PPtrUpperBound (TInt (IUShort, []), PlusPI, arg, len)]
+                 (get_po argtype (TInt (IUShort, [])))
+                 @ [PNotNull arg;
+                    PPtrUpperBound (TInt (IUShort, []), PlusPI, arg, len)]
               | _ ->  (* TBD: add user bound *)
-                 [get_po argtype (TInt (IUShort, [])); PNotNull arg]
+                 (get_po argtype (TInt (IUShort, []))) @ [PNotNull arg]
             end
          | _ ->
             if argspec#has_fieldwidth then
               match argspec#get_fieldwidth with
               | FieldwidthConstant i ->
                  let len = Const (CInt (Int64.of_int i, IInt, None)) in
-                 [get_po argtype (TInt (IChar, [])); PNotNull arg;
-                   PPtrUpperBound (TInt (IChar, []), PlusPI, arg, len)]
+                 (get_po argtype (TInt (IChar, [])))
+                 @ [PNotNull arg;
+                    PPtrUpperBound (TInt (IChar, []), PlusPI, arg, len)]
               | _ -> (* TBD: add user bound *)
-                 [get_po argtype (TInt (IChar, [])); PNotNull arg]
+                 (get_po argtype (TInt (IChar, []))) @ [PNotNull arg]
             else
               []    (* TBD: check *)
        else
@@ -773,10 +940,11 @@ and get_input_format_proofobligations env argspec arg =
            match argspec#get_fieldwidth with
            | FieldwidthConstant i ->
               let len = Const (CInt (Int64.of_int i, IInt, None)) in
-              [get_po argtype (TInt (IChar,[])); PNotNull arg;
-                PPtrUpperBound (TInt (IChar,[]), PlusPI, arg, len)]
+              (get_po argtype (TInt (IChar,[])))
+              @ [PNotNull arg;
+                 PPtrUpperBound (TInt (IChar,[]), PlusPI, arg, len)]
            | _ -> (* TBD: add user bound *)
-              [get_po argtype (TInt (IChar,[])); PNotNull arg]
+              (get_po argtype (TInt (IChar,[]))) @ [PNotNull arg]
          else
            []   (*  TBD: check *)
 
@@ -785,24 +953,24 @@ and get_input_format_proofobligations env argspec arg =
          if argspec#has_lengthmodifier then
            match argspec#get_lengthmodifier with
            | LongModifier | LongLongModifier ->
-              [get_po argtype (TInt (IUShort,[])); PNotNull arg]
+              (get_po argtype (TInt (IUShort,[]))) @ [PNotNull arg]
            | _ ->
-              [get_po argtype (TInt (IChar,[])); PNotNull arg]
+              (get_po argtype (TInt (IChar,[]))) @ [PNotNull arg]
          else
-           [get_po argtype (TInt (IChar,[])); PNotNull arg]
+           (get_po argtype (TInt (IChar,[]))) @ [PNotNull arg]
        end
 
     | PointerConverter ->  (* TBD: add user bound *)
-       [get_po argtype (TPtr (TVoid [], [])); PNotNull arg]
+       (get_po argtype (TPtr (TVoid [], []))) @ [PNotNull arg]
 
     | OutputArgument ->
-       [get_po argtype (TInt (IInt, [])); PNotNull arg]
+       (get_po argtype (TInt (IInt, []))) @ [PNotNull arg]
 
 
 and get_output_format_proofobligations env argspec arg =
   let conversion = argspec#get_conversion in
   let argtype = type_of_exp env arg in
-  let get_int_cast (ikfrom:ikind) (ikto:ikind) (e:exp) =
+  let get_int_cast (ikfrom: ikind) (ikto: ikind) (e: exp) =
     if ikfrom = ikto then
       []
     else if is_signed_type ikfrom && is_signed_type ikto then
@@ -817,8 +985,18 @@ and get_output_format_proofobligations env argspec arg =
       [PUnsignedToUnsignedCast (ikfrom, ikto, e)] in
   let get_po ty2 =
     match (argtype, ty2) with
-    | (TInt (ik1, _), TInt (ik2, _)) -> get_int_cast ik1 ik2 arg
-    | _ -> [PFormatCast (argtype, ty2, arg)] in
+    | (Ok (TInt (ik1, _)), TInt (ik2, _)) -> get_int_cast ik1 ik2 arg
+    | (Ok ty, _) -> [PFormatCast (ty, ty2, arg)]
+    | (Error err, _) ->
+       begin
+         log_error_result
+           ~tag:"get_output_format_proofobligations"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to determine type of argument " ^ (p2s (exp_to_pretty arg))];
+         []
+       end in
   match conversion with
 
   | IntConverter | DecimalConverter ->
@@ -832,13 +1010,27 @@ and get_output_format_proofobligations env argspec arg =
           get_po (TInt (ILong, []))     (* check; may not be correct *)
        | _ ->
           begin
-            ch_error_log#add
-              "format arguments"
-              (LBLOCK [STR "Length modifier does not apply"]);
+            log_error_result
+              ~tag:"get_output_format_proofobligations"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Length modifier does not apply"];
             []
           end
      else
-       [PFormatCast (argtype, TInt (IInt, []), arg)]
+       TR.tfold
+         ~ok:(fun ty -> [PFormatCast (ty, TInt (IInt, []), arg)])
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               [(String.concat "; " err);
+                "Unable to determine type of argument " ^ (p2s (exp_to_pretty arg))];
+             []
+           end)
+         argtype
 
   | UnsignedOctalConverter
     | UnsignedDecimalConverter
@@ -853,12 +1045,28 @@ and get_output_format_proofobligations env argspec arg =
           get_po (TInt (IULong, []))    (* check; may not be correct *)
        | _ ->
           begin
-            ch_error_log#add "format arguments"
-                             (LBLOCK [STR "Length modifier does not apply"]);
+            log_error_result
+              ~tag:"get_output_format_proofobligations"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Length modifier does not apply"];
             []
           end
      else
-       [PFormatCast (argtype, TInt (IUInt, []), arg)]
+       TR.tfold
+         ~ok:(fun ty -> [PFormatCast (ty, TInt (IUInt, []), arg)])
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               [(String.concat "; " err);
+                "Unable to determine type of argument "
+                ^ (p2s (exp_to_pretty arg))];
+             []
+           end)
+         argtype
 
   | FixedDoubleConverter _
     | ExpDoubleConverter _
@@ -866,66 +1074,139 @@ and get_output_format_proofobligations env argspec arg =
     | HexDoubleConverter _ ->
      if argspec#has_lengthmodifier then
        match argspec#get_lengthmodifier with
-       | LongDoubleModifier -> get_po ( TFloat (FLongDouble, []))
+       | LongDoubleModifier -> get_po (TFloat (FLongDouble, []))
        | _ ->
           begin
-            ch_error_log#add "format arguments"
-                             (LBLOCK [STR "length modifier does not apply"]);
+            log_error_result
+              ~tag:"get_output_format_proofobligations"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Length modifier does not apply"];
             []
           end
      else
-       [PFormatCast(argtype, TFloat (FDouble, []), arg)]
+       TR.tfold
+         ~ok:(fun ty -> [PFormatCast(ty, TFloat (FDouble, []), arg)])
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               [(String.concat "; " err);
+                "Unable to determine type of argument "
+                ^ (p2s (exp_to_pretty arg))];
+             []
+           end)
+         argtype
 
-  | UnsignedCharConverter -> get_po ( TInt (IUChar, []))
+  | UnsignedCharConverter -> get_po (TInt (IUChar, []))
 
   | StringConverter ->
-     if is_pointer_type argtype then
-       let argptrtotype = get_pointer_expr_target_type env arg in
-       let lenarg = CnApp ("ntp", [Some arg], TInt (IInt, [])) in
-       (* TBD: may have precision *)
-       let dsttype = TInt (IChar, []) in
-       let ptrcast = PPointerCast(argptrtotype, dsttype, arg) in
-       let notnull = PNotNull arg in
-       let nullterminated = PNullTerminated arg in
-       let ptrupperbound = PPtrUpperBound(dsttype, PlusPI, arg, lenarg) in
-       let initializedrange = PInitializedRange (arg, lenarg) in
-       [ptrcast; notnull; nullterminated; ptrupperbound; initializedrange]
-     else
-       let dsttype = TPtr (TInt (IChar, []),[]) in
-       let cast = PFormatCast(argtype,dsttype,arg) in
-       begin
-         ch_error_log#add
-           "format arguments"
-           (LBLOCK [STR "string argument is not a pointer type"]);
-         [cast]
-       end
+     TR.tfold
+       ~ok:(fun ty ->
+         if is_pointer_type ty then
+           let argptrtotype =
+             TR.tget_ok (get_pointer_expr_target_type env arg) in
+           let lenarg = CnApp ("ntp", [Some arg], TInt (IInt, [])) in
+           (* TBD: may have precision *)
+           let dsttype = TInt (IChar, []) in
+           let ptrcast = PPointerCast(argptrtotype, dsttype, arg) in
+           let notnull = PNotNull arg in
+           let nullterminated = PNullTerminated arg in
+           let ptrupperbound = PPtrUpperBound(dsttype, PlusPI, arg, lenarg) in
+           let initializedrange = PInitializedRange (arg, lenarg) in
+           [ptrcast; notnull; nullterminated; ptrupperbound; initializedrange]
+         else
+           let dsttype = TPtr (TInt (IChar, []), []) in
+           let cast = PFormatCast(ty, dsttype, arg) in
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               ["String argument is not a pointer type: "
+                ^ (p2s (typ_to_pretty ty))];
+             [cast]
+           end)
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"get_output_format_proofobligations"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to determine type of argument "
+              ^ (p2s (exp_to_pretty arg))];
+           []
+         end)
+       argtype
+
   | PointerConverter ->
-     if is_pointer_type argtype then
-       let argptrtotype = get_pointer_expr_target_type env arg in
-       [PPointerCast (argptrtotype, TVoid [], arg)]
-     else
-       begin
-         ch_error_log#add
-           "format arguments"
-           (LBLOCK [STR "pointer argument is not a pointer type"]);
-         []
-       end
+     TR.tfold
+       ~ok:(fun ty ->
+         if is_pointer_type ty then
+           let argptrtotype =
+             TR.tget_ok (get_pointer_expr_target_type env arg) in
+           [PPointerCast (argptrtotype, TVoid [], arg)]
+         else
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               ["Pointer converter argument is not a pointer type: "
+                ^ (p2s (typ_to_pretty ty))];
+             []
+           end)
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"get_output_format_proofobligations"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to determine type of argument: "
+              ^ (p2s (exp_to_pretty arg))];
+           []
+         end)
+       argtype
+
   | OutputArgument ->
-     if is_pointer_type argtype then
-       let argptrtotype = get_pointer_expr_target_type env arg in
-       let ptrcast = PPointerCast (argptrtotype, TInt (IInt, []), arg) in
-       let notnull = PNotNull arg in
-       [ptrcast; notnull]
-     else
-       begin
-         ch_error_log#add
-           "format arguments"
-           (LBLOCK [STR "output argument is not a pointer type"]);
-         []
-       end
+     TR.tfold
+       ~ok:(fun ty ->
+         if is_pointer_type ty then
+           let argptrtotype =
+             TR.tget_ok (get_pointer_expr_target_type env arg) in
+           let ptrcast = PPointerCast (argptrtotype, TInt (IInt, []), arg) in
+           let notnull = PNotNull arg in
+           [ptrcast; notnull]
+         else
+           begin
+             log_error_result
+               ~tag:"get_output_format_proofobligations"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               ["Output argument is not a pointer type: "
+                ^ (p2s (typ_to_pretty ty))];
+             []
+           end)
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"get_outout_format_proofobligations"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to determine type of argument: "
+              ^ (p2s (exp_to_pretty arg))];
+           []
+         end)
+       argtype
 
 
-and get_format_spec (args:exp list) (index:int) (isinput:bool) =
+and get_format_spec
+(env: cfundeclarations_int) (args:exp list) (index:int) (isinput:bool) =
   if List.length args >= index then
     let fmtstring = List.nth args (index - 1) in
     match fmtstring with
@@ -934,13 +1215,12 @@ and get_format_spec (args:exp list) (index:int) (isinput:bool) =
        let (str, ishex, len) = mk_constantstring s in
        if ishex then
          begin
-           ch_error_log#add
-             "format string"
-             (LBLOCK [
-                  STR "Encountered format string with ";
-                  STR "control characters (length: ";
-                  INT len;
-                  STR ")"]);
+           log_error_result
+             ~tag:"get_format_spec"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             ["Encountered format string with control characters";
+              "length: " ^ (string_of_int len)];
            None
          end
        else
@@ -950,36 +1230,38 @@ and get_format_spec (args:exp list) (index:int) (isinput:bool) =
            with
              CHFailure p ->
              begin
-               ch_error_log#add
-                 "format string"
-                 (LBLOCK [
-                      STR "Unable to parse format string: ";
-                      STR str;
-                      STR ": ";
-                      p]);
+               log_error_result
+                 ~tag:"get_format_spec"
+                 ~msg:env#functionname
+                 __FILE__ __LINE__
+                 ["Unable to parse format string: " ^ str; "Error: " ^ (p2s p)];
                None
              end
          end
     | _ ->
        begin
-         ch_error_log#add
-           "format string"
-           (LBLOCK [
-                STR "Format string is not a constant string: ";
-                exp_to_pretty fmtstring]);
+         log_error_result
+           ~tag:"get_format_spec"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           ["Format string is not a constant string: "
+            ^ (p2s (exp_to_pretty fmtstring))];
          None
        end
   else
     begin
-      ch_error_log#add
-        "format arguments"
-        (LBLOCK [STR "Format argument not found in arguments"]);
+      log_error_result
+        ~tag:"get_format_spec"
+        ~msg:env#functionname
+        __FILE__ __LINE__
+        ["Format argument not found in arguments"];
       None
     end
 
 
-and get_formatargs_po env (args:exp list) (index:int) (isinput:bool) =
-  match get_format_spec args index isinput with
+and get_formatargs_po
+(env: cfundeclarations_int) (args: exp list) (index: int) (isinput: bool) =
+  match get_format_spec env args index isinput with
   | Some fmtspec ->
      let argspecs = fmtspec#get_arguments in
      begin
@@ -999,19 +1281,21 @@ and get_formatargs_po env (args:exp list) (index:int) (isinput:bool) =
        | _ ->
           let fmtargs = list_suffix index args in
           begin
-            ch_error_log#add
-              "format arguments"
-              (LBLOCK [STR "Expected number of arguments: ";
-                        INT (List.length argspecs);
-                        STR "; actual number of arguments: ";
-                        INT ((List.length args) - index);
-                        STR " for format string ";
-                        fmtspec#toPretty; STR " at index "; INT index]);
-            ((List.length argspecs,fmtargs),[])
+            log_error_result
+              ~tag:"get_formatargs_po"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              ["Expected " ^ (string_of_int (List.length argspecs))
+               ^ " arguments, but found only "
+               ^ (string_of_int ((List.length args) - index))
+               ^ " arguments for format string: "
+               ^ (p2s fmtspec#toPretty)
+               ^ " at index " ^ (string_of_int index)];
+            ((List.length argspecs,fmtargs), [])
           end
      end
   | _ ->
-     ((-1,[]),[])
+     ((-1, []), [])
 
 
 (* ---------------------------------------------------------------------
@@ -1024,23 +1308,27 @@ and get_formatargs_po env (args:exp list) (index:int) (isinput:bool) =
  * iterate to element n, which is represented by PPtrUpperBound.
  * --------------------------------------------------------------------- *)
 and get_precondition_po_predicates
-  env pre args (context:program_context_int) loc =
-  let get_tgttyp e =
-    try
-     type_of_tgt_exp env e
-    with
-    | CCHFailure p ->
-       begin
-	 ch_error_log#add
-           "precondition pointer dereference"
-	   (LBLOCK [
-                STR "Target type is not a pointer: ";
-                p;
-                STR " (";
-		current_loc_to_pretty loc;
-                STR ")"]);
-	TVoid []
-      end  in
+(env: cfundeclarations_int)
+(pre: xpredicate_t)
+args
+(context:program_context_int)
+(loc: location) =
+  let get_tgttyp (e: exp): typ =
+    TR.tfold
+      ~ok:(fun ty -> ty)
+      ~error:(fun err ->
+        let _ =
+          log_error_result
+            ~tag:"get_precondition_po_predicates"
+            ~msg:env#functionname
+            __FILE__ __LINE__
+            [(String.concat "; " err);
+             "Unable to determine target type of expression "
+             ^ (p2s (exp_to_pretty e));
+             (p2s (current_loc_to_pretty loc))] in
+        TVoid [])
+      (get_pointer_expr_target_type env e) in
+
   let geta t = get_arg env t args in
   let addx argslist predicatelist =
     let x = match argslist with
@@ -1243,16 +1531,19 @@ and create_po_precondition env
     let predicates = get_precondition_po_predicates env pre el context loc in
     match predicates with
     | [] ->
-    (* add (PPre (pre,args)) context *)
-       ch_error_log#add
-         "precondition"
-         (LBLOCK [
-              STR "No representation for precondition ";
-              xpredicate_to_pretty pre;
-              pretty_print_list
-                args
-                (fun (e,_,s) -> LBLOCK [STR s; STR ":"; exp_to_pretty e])
-                "(" "," ")"])
+       (* add (PPre (pre,args)) context *)
+       log_error_result
+         ~tag:"create_po_precondition"
+         ~msg:env#functionname
+         __FILE__ __LINE__
+         ["No representation for precondition "
+          ^ (p2s (xpredicate_to_pretty pre))
+          ^ "("
+          ^ (String.concat
+               ", "
+               (List.map (fun (e, _, s) ->
+                    (s ^ ":" ^ (p2s (exp_to_pretty e)))) args))
+          ^ ")"]
     | _ ->
        List.iter (fun (ctxt,p) -> add p pre ctxt) predicates)
     fs.fs_preconditions
@@ -1351,8 +1642,8 @@ and create_po_assignment
     | _ -> () in
 
   let add_global_proof_obligations () =
-    match fenv#get_type_unrolled (type_of_exp env e) with
-    | (TPtr (tgtTyp,_)) ->
+    match TR.tmap fenv#get_type_unrolled (type_of_exp env e) with
+    | Ok (TPtr (tgtTyp,_)) ->
       begin
 	add (PLowerBound (tgtTyp, e)) context;
 	add (PUpperBound (tgtTyp, e)) context;
@@ -1363,14 +1654,29 @@ and create_po_assignment
 	| TInt (IUChar, _) -> add (PNullTerminated e) context
 	| _ -> ())
       end
-    | _ -> () in
+    | Ok _ -> ()
+    | Error err ->
+       log_error_result
+         ~tag:"create_po_assignment"
+         ~msg:env#functionname
+         __FILE__ __LINE__
+         [(String.concat "; " err);
+          "Unable to determine type of expression "
+          ^ (p2s (exp_to_pretty e))] in
   begin
     create_po_lval env context#add_lhs lval loc;
     create_po_exp ~deref:true env context#add_rhs e loc;
-    (match fenv#get_type_unrolled (type_of_exp env e) with
-     | TPtr _ ->  add  (PStackAddressEscape (Some lval,e)) context
-     | _ -> ());
-
+    (match TR.tmap fenv#get_type_unrolled (type_of_exp env e) with
+     | Ok (TPtr _) ->  add  (PStackAddressEscape (Some lval,e)) context
+     | Ok _ -> ()
+     | Error err ->
+       log_error_result
+         ~tag:"create_po_assignment"
+         ~msg:env#functionname
+         __FILE__ __LINE__
+         [(String.concat "; " err);
+          "Unable to determine type of expression "
+          ^ (p2s (exp_to_pretty e))]);
     if has_global_vars_in_exp env (Lval lval) || is_field_assignment then
       add_global_proof_obligations ();
   end
@@ -1402,8 +1708,19 @@ and create_po_call env
       begin
         create_po_precondition
           env context (function_summary_library#get_summary vname) el loc;
-        spomanager#add_direct_call
-          loc context ~header:("lib:"^header) (env#get_varinfo_by_vid vid) el
+        TR.tfold
+          ~ok:(fun vinfo ->
+            spomanager#add_direct_call
+              loc context ~header:("lib:"^header) vinfo el)
+          ~error:(fun err ->
+            log_error_result
+              ~tag:"create_po_call"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to retrieve varinfo for variable " ^ vname
+               ^ " with vid " ^ (string_of_int vid)])
+          (env#get_varinfo_by_vid vid)
       end
     else if file_contract#has_function_contract vname then
       let fncontract = file_contract#get_function_contract vname in
@@ -1414,31 +1731,57 @@ and create_po_call env
               get_precondition_po_predicates env xpred el context loc in
             List.iter (fun (ctxt, p) ->
                 add_lib_proof_obligation p loc ctxt vname xpred) ctxpl) xpreds;
-        spomanager#add_direct_call
-          loc context (env#get_varinfo_by_vid vid) el
+        TR.tfold
+          ~ok:(fun vinfo -> spomanager#add_direct_call loc context vinfo el)
+          ~error:(fun err ->
+            log_error_result
+              ~tag:"create_po_call"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to retrieve varinfo for variable " ^ vname
+               ^ " with vid " ^ (string_of_int vid)])
+          (env#get_varinfo_by_vid vid)
       end
     else
       begin
 	fApi#add_missing_summary (header ^ "/" ^ vname);
-        spomanager#add_direct_call
-          loc context ~header (env#get_varinfo_by_vid vid) el
+        TR.tfold
+          ~ok:(fun vinfo ->
+            spomanager#add_direct_call loc context ~header vinfo el)
+          ~error:(fun err ->
+            log_error_result
+              ~tag:"create_po_call"
+              ~msg:env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to retrieve varinfo for variable " ^ vname
+               ^ " with vid " ^ (string_of_int vid)])
+          (env#get_varinfo_by_vid vid)
       end in
   begin
     (match optLval with
     | Some lval -> create_po_lval env context#add_lhs lval loc
     | _ -> () );
     (match e with
-      Lval (Var (vname,vid), NoOffset) ->
+      Lval (Var (vname, vid), NoOffset) ->
 	if fenv#has_external_header vname then
 	  let header = fenv#get_external_header vname in
           add_library_call header vname vid
 	else if function_summary_library#has_builtin_summary vname then
           add_library_call "builtins" vname vid
         else
-	  begin
-            spomanager#add_direct_call
-              loc context (env#get_varinfo_by_vid vid) el;
-	  end
+	  TR.tfold
+            ~ok:(fun vinfo -> spomanager#add_direct_call loc context vinfo el)
+            ~error:(fun err ->
+              log_error_result
+                ~tag:"create_po_call"
+                ~msg:env#functionname
+                __FILE__ __LINE__
+                [(String.concat "; " err);
+                 "Unable to retrieve varinfo for variable " ^ vname
+                 ^ " with vid " ^ (string_of_int vid)])
+            (env#get_varinfo_by_vid vid)
     | _ ->
       begin
 	create_po_exp ~deref:true env context#add_ftarget e loc;
@@ -1448,16 +1791,24 @@ and create_po_call env
          let newcontext = context#add_arg (i+1) in
          begin
 	   create_po_exp ~deref:true env newcontext x loc;
-	   (match fenv#get_type_unrolled (type_of_exp env x) with
-	    | (TPtr (tgtTyp, _)) ->
+	   (match TR.tmap fenv#get_type_unrolled (type_of_exp env x) with
+	    | Ok (TPtr (tgtTyp, _)) ->
 	       begin
 	         add (PValidMem x) newcontext;
                  add (PInScope x) newcontext;
 	         add (PLowerBound (tgtTyp,x)) newcontext;
 	         add (PUpperBound (tgtTyp,x)) newcontext
-	  end
-	| _ -> ())
-      end ) el)
+	       end
+	    | Ok _ -> ()
+            | Error err ->
+               log_error_result
+                 ~tag:"create_po_call"
+                 ~msg:env#functionname
+                 __FILE__ __LINE__
+                 [(String.concat "; " err);
+                  "Unable to determine type of expression "
+                  ^ (p2s (exp_to_pretty x))])
+         end) el)
   end
 
 (* Note: may have to create an additional upper-bound proof obligation for
@@ -1477,7 +1828,7 @@ and create_po_return
        create_po_exp ~deref:true env context#add_return x loc;
        (match type_of_exp env x with
         (* require return of valid (if non-null) pointer *)
-        | TPtr (tt, _) ->
+        | Ok (TPtr (tt, _)) ->
 	   begin
 	     add (PValidMem x);
 	     add (PInScope x);
@@ -1486,7 +1837,15 @@ and create_po_return
 	     add (PLowerBound (tt,x));
 	     add (PUpperBound (tt,x))
 	   end
-        | _ -> ());
+        | Ok _ -> ()
+        | Error err ->
+           log_error_result
+             ~tag:"create_po_return"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to determine type for expression "
+              ^ (p2s (exp_to_pretty x))])
      end
   | _ -> ()
 

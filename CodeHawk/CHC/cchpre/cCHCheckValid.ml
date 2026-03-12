@@ -34,6 +34,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 
 (* xprlib *)
 open XprToPretty
@@ -50,6 +51,9 @@ open CCHUtilities
 open CCHPreFileIO
 open CCHPreTypes
 open CCHProofScaffolding
+
+module TR = CHTraceResult
+
 
 let pd = CCHPredicateDictionary.predicate_dictionary
 let fenv = CCHFileEnvironment.file_environment
@@ -104,7 +108,7 @@ let rec is_constant_wide_string e = match e with
   | _ -> false
 
 
-let rec get_num_value env e =
+let rec get_num_value (env: cfundeclarations_int) (e: exp): numerical_t option =
   match e with
   | CastE (_, x) -> get_num_value env x
   | Const (CInt (i64, _, _)) -> Some (mkNumericalFromInt64 i64)
@@ -121,7 +125,21 @@ let rec get_num_value env e =
              (LBLOCK [typ_to_pretty t; STR ": "; xpr_formatter#pr_expr x]);
            None
          end)
-  | SizeOfE e -> get_num_value env (SizeOf (type_of_exp env e))
+  | SizeOfE e ->
+     TR.tfold
+       ~ok:(fun ty -> get_num_value env (SizeOf ty))
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"get_num_value"
+             ~msg:env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to determine type of expression "
+              ^ (p2s (exp_to_pretty e))];
+           None
+         end)
+       (type_of_exp env e)
   | BinOp (binop, e1, e2, _) ->
     begin
       match (binop, get_num_value env e1, get_num_value env e2) with
@@ -192,7 +210,8 @@ let rec get_scalar_value ?(positive=false) env e =
 let get_absolute_memory_address env e =
   match e with
   | CastE (ty, e) when
-         is_pointer_type ty && is_integral_type (type_of_exp env e) ->
+         is_pointer_type ty
+         && TR.tfold_default is_integral_type false (type_of_exp env e) ->
      get_scalar_value ~positive:true env e
   | _ -> None
 
@@ -202,7 +221,10 @@ let is_absolute_memory_address env e =
   | Some _ -> true | _ -> false
 
 
-let rec get_num_range ?(apply_cast=true) env e =
+let rec get_num_range
+          ?(apply_cast=true)
+          (env: cfundeclarations_int)
+          (e: exp): numerical_t option * numerical_t option =
   try
     match get_num_value env e with
     | Some v -> (Some v, Some v)
@@ -239,9 +261,13 @@ let rec get_num_range ?(apply_cast=true) env e =
        | SizeOf (TArray
                    (TInt (IChar, []),
                     Some (Const (CInt (i64, _, _))), [])) ->
-          (Some numerical_zero,Some (mkNumericalFromInt64 i64))
+          (Some numerical_zero, Some (mkNumericalFromInt64 i64))
 
-       | SizeOfE e -> get_num_range env (SizeOf (type_of_exp env e))
+       | SizeOfE e ->
+          TR.tfold_default
+            (fun ty -> get_num_range env (SizeOf ty))
+            (Some numerical_zero, None)
+            (type_of_exp env e)
 
        | BinOp (binop, e1, e2, TInt (k, _)) ->
           let lbk = get_safe_lowerbound k in
@@ -404,7 +430,7 @@ let rec get_num_range ?(apply_cast=true) env e =
 
        | _ ->
           match type_of_exp env e with
-          | TInt (k, _) ->
+          | Ok (TInt (k, _)) ->
              (Some (get_safe_lowerbound  k), Some (get_safe_upperbound k))
           | _ -> (None, None)
   with
@@ -529,7 +555,7 @@ let rec exp_size_kind e k =
 	       exp_to_pretty e]))
 
 
-let rec get_not_zero_evidence (env:cfundeclarations_int) (x:exp) =
+let rec get_not_zero_evidence (env: cfundeclarations_int) (x: exp) =
   match x with
   | Const (CInt (i64, _, _)) when (not ((Int64.compare i64 Int64.zero) = 0)) ->
      Some ("value is " ^ (Int64.to_string i64))
@@ -544,7 +570,10 @@ let rec get_not_zero_evidence (env:cfundeclarations_int) (x:exp) =
      get_not_zero_evidence env (SizeOf (fenv#get_type_unrolled tt))
 
   | SizeOfE e ->
-     get_not_zero_evidence env (SizeOf (type_of_exp env e))
+     TR.tfold_default
+       (fun ty -> get_not_zero_evidence env (SizeOf ty))
+       None
+       (type_of_exp env e)
 
   | CastE (_, e) -> get_not_zero_evidence env e
 
@@ -569,7 +598,8 @@ let rec is_global_address (e:exp) =
 let check_ppo_validity
       (fname:string) (env:cfundeclarations_int) (ppo:proof_obligation_int) =
 
-  let get_varinfo = env#get_varinfo_by_vid in
+  let get_varinfo (vid: int): varinfo traceresult =
+    env#get_varinfo_by_vid  vid in
 
   let set_diagnostic =  ppo#add_diagnostic_msg in
 
@@ -762,27 +792,38 @@ let check_ppo_validity
     | PStackAddressEscape (_, CastE (_, AddrOf (Var (vname, vid), offset)))
     | PStackAddressEscape (_, CastE (_, StartOf (Var (vname, vid), offset)))
        when vid > 0 ->
-     let vinfo = get_varinfo vid in
-     let poffset = match offset with
-       | NoOffset -> ""
-       | _ -> "."  ^ (p2s (offset_to_pretty offset)) in
-    if vinfo.vglob then
-      make
-        ("address of global variable "
-         ^ vname
-         ^ poffset
-	 ^ (match vinfo.vstorage with Static -> " (static)" | _ -> ""))
-    else
-      make_violation
-        ("address of local variable "
-         ^ vname
-         ^ poffset
-         ^ " cannot leave local scope")
+     TR.tfold
+     ~ok:(fun vinfo ->
+       let poffset = match offset with
+         | NoOffset -> ""
+         | _ -> "."  ^ (p2s (offset_to_pretty offset)) in
+       if vinfo.vglob then
+         make
+           ("address of global variable "
+            ^ vname
+            ^ poffset
+	    ^ (match vinfo.vstorage with Static -> " (static)" | _ -> ""))
+       else
+         make_violation
+           ("address of local variable "
+            ^ vname
+            ^ poffset
+            ^ " cannot leave local scope"))
+     ~error:(fun err ->
+       log_diagnostics_result
+         ~tag:"check_ppo_validity"
+         ~msg:env#functionname
+         __FILE__ __LINE__
+         [(String.concat "; " err);
+          "Unable to retrieve varinfo for variable " ^ vname
+          ^ " with vid " ^ (string_of_int vid)])
+     (get_varinfo vid)
 
   | PInScope e when is_null_pointer e ->
      make "null pointer is always in scope"
 
-  | PInScope e when is_function_type (type_of_tgt_exp env e) ->
+  | PInScope e when
+         TR.tfold_default is_function_type false (type_of_tgt_exp env e) ->
      make "function pointer is global"
 
   | PInScope e when has_embedded_null_dereference e ->
@@ -806,7 +847,9 @@ let check_ppo_validity
      make ("library variable " ^ vname ^ " is in scope")
 
   | PInScope (Lval (Var (vname, vid), _))
-       when vid > 0 && (get_varinfo vid).vglob ->
+       when vid > 0
+            && TR.tfold_default
+                 (fun vinfo -> vinfo.vglob) false (get_varinfo vid) ->
      make ("variable " ^ vname ^ " is global")
 
   | PInScope (AddrOf (Mem (CastE (TPtr _, (Const (CInt (i64, _, _))))), _))
@@ -815,25 +858,45 @@ let check_ppo_validity
 
   | PInScope (AddrOf (Var (vname, vid),_))
     | PInScope (StartOf (Var (vname,vid),_)) when vid > 0 ->
-     let vinfo = get_varinfo vid in
-     if vinfo.vglob then
-       make
-         ("address of global variable "
-          ^  vname
-          ^ (match vinfo.vstorage with Static -> "(static)" | _ -> ""))
-     else
-       make ("address of local variable " ^ vname)
+     TR.tfold
+       ~ok:(fun vinfo ->
+         if vinfo.vglob then
+           make
+             ("address of global variable "
+              ^  vname
+              ^ (match vinfo.vstorage with Static -> "(static)" | _ -> ""))
+         else
+           make ("address of local variable " ^ vname))
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity:PInScope"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PInScope (CastE (_, AddrOf (Var (vname,vid), _)))
     | PInScope (CastE (_, StartOf (Var (vname,vid),_))) when vid > 0 ->
-     let vinfo = get_varinfo vid in
-     if vinfo.vglob then
-       make
-         ("address of global variable "
-          ^ vname
-	  ^ (match vinfo.vstorage with Static -> " (static)" | _ -> ""))
-     else
-       make ("address of local variable " ^ vname)
+     TR.tfold
+       ~ok:(fun vinfo ->
+         if vinfo.vglob then
+           make
+             ("address of global variable "
+              ^ vname
+	      ^ (match vinfo.vstorage with Static -> " (static)" | _ -> ""))
+         else
+           make ("address of local variable " ^ vname))
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity:PInScope"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with name " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PInScope e when is_constant_string e ->
      make ("address of constant string")
@@ -943,10 +1006,13 @@ let check_ppo_validity
      make ("embedded null dereference: null dereference is checked separately")
 
   | PPointerCast (TVoid _, TInt _,
-                  CastE (TPtr ((TVoid _),_), AddrOf (Var (vname,vid),NoOffset)))
+                  CastE (TPtr ((TVoid _),_), AddrOf (Var (vname, vid), NoOffset)))
        when  vid > 0
-             && (let vinfo = get_varinfo vid in
-                 match vinfo.vtype with TInt _ -> true | _ -> false) ->
+             && (TR.tfold_default
+                   (fun vinfo ->
+                     match vinfo.vtype with TInt _ -> true | _ -> false)
+                   false
+                   (get_varinfo vid)) ->
      make ("original type of " ^ vname ^ " is integer")
 
   | PCast (TInt _, TEnum (ename,_), (Const _ as e))
@@ -996,26 +1062,34 @@ let check_ppo_validity
      let its = int_type_to_string in
      make ("casting expression " ^ (exp_size_kind e ik2) ^ " to " ^ (its ik2))
 
-  | PSignedToSignedCastLB (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
-    | PSignedToSignedCastUB (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
-    | PSignedToUnsignedCastLB (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
-    | PSignedToUnsignedCastUB (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
-    | PUnsignedToSignedCast (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
-    | PUnsignedToUnsignedCast (_, ik2, Lval (Var (_, vid), Index (_, NoOffset)))
+  | PSignedToSignedCastLB (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
+    | PSignedToSignedCastUB (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
+    | PSignedToUnsignedCastLB (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
+    | PSignedToUnsignedCastUB (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
+    | PUnsignedToSignedCast (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
+    | PUnsignedToUnsignedCast (_, ik2, Lval (Var (vname, vid), Index (_, NoOffset)))
        when vid > 0 ->
-     let vinfo = get_varinfo vid in
      let its = int_type_to_string in
-     begin
-       match vinfo.vtype with
-       | TArray (TInt (ikt, _), _, _) when is_safe_int_cast ikt ik2 ->
-          make
-            ("casting expression of original type "
-             ^ (its ikt)
-             ^ " to "
-             ^ (its ik2)
-             ^ " is safe")
-       | _ -> ()
-     end
+     TR.tfold
+       ~ok:(fun vinfo ->
+         match vinfo.vtype with
+         | TArray (TInt (ikt, _), _, _) when is_safe_int_cast ikt ik2 ->
+            make
+              ("casting expression of original type "
+               ^ (its ikt)
+               ^ " to "
+               ^ (its ik2)
+               ^ " is safe")
+         | _ -> ())
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity:PSignedToSignedCastLB"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PSignedToUnsignedCastLB (_,_,e)
     | PSignedToUnsignedCastUB (_,_,e)
@@ -1312,7 +1386,8 @@ let check_ppo_validity
           | _ -> ()
      end
 
-  | POutputParameterScalar (_, e) when not (is_pointer_type (type_of_exp env e)) ->
+  | POutputParameterScalar (_, e)
+       when not (TR.tfold_default is_pointer_type false (type_of_exp env e)) ->
      make ("expression " ^ (e2s e) ^ " is not a pointer type")
 
   | POutputParameterScalar (_, e) when is_null_pointer e ->
@@ -1560,34 +1635,43 @@ let check_ppo_validity
   | PPtrUpperBoundDeref (_, IndexPI, _, e) when is_zero e ->
      make "add zero"
 
-  | PPtrUpperBound (_, PlusPI, StartOf (Var (_, vid),NoOffset), (Const _ as e))
+  | PPtrUpperBound (_, PlusPI, StartOf (Var (vname, vid),NoOffset), (Const _ as e))
     | PPtrUpperBound
-        (_, PlusPI, CastE(_, StartOf (Var (_, vid), NoOffset)), (Const _ as e))
+        (_, PlusPI, CastE(_, StartOf (Var (vname, vid), NoOffset)), (Const _ as e))
     | PPtrUpperBound
-        (_, PlusPI,CastE(_,StartOf (Var (_, vid),NoOffset)),
+        (_, PlusPI,CastE(_,StartOf (Var (vname, vid),NoOffset)),
 	 CastE (_, (Const _ as e))) when vid > 0 ->
-     begin
-      match (get_num_value env e, (get_varinfo vid).vtype) with
-      | (Some v, TArray (_, Some (Const _ as clen), _)) when
-	     (match get_num_value env clen with
-              | Some _len -> true
-              | _ -> false) ->
-	let len = Option.get (get_num_value env clen) in
-	if v#leq len then
-	  make
-            ("adding "
-             ^ v#toString
-             ^ " to the start of an array of length "
-             ^ len#toString)
-	else
-	  make_violation
-            ("adding "
-             ^ v#toString
-             ^ " to the start of an array of length "
-             ^ len#toString
-             ^ " violates the one-beyond-upperbound")
-      | _ -> ()
-    end
+     TR.tfold
+       ~ok:(fun vinfo ->
+         match (get_num_value env e, vinfo.vtype) with
+         | (Some v, TArray (_, Some (Const _ as clen), _)) when
+	        (match get_num_value env clen with
+                 | Some _len -> true
+                 | _ -> false) ->
+	    let len = Option.get (get_num_value env clen) in
+	    if v#leq len then
+	      make
+                ("adding "
+                 ^ v#toString
+                 ^ " to the start of an array of length "
+                 ^ len#toString)
+	    else
+	      make_violation
+                ("adding "
+                 ^ v#toString
+                 ^ " to the start of an array of length "
+                 ^ len#toString
+                 ^ " violates the one-beyond-upperbound")
+         | _ -> ())
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity:PPtrUpperBound"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PPtrUpperBound (_, PlusPI, StartOf (Var (vname,vid), NoOffset),
 		    CnApp ("ntp", [Some (CastE(_, Const (CStr s)))], _))
@@ -1597,33 +1681,42 @@ let check_ppo_validity
 		    CnApp ("ntp", [Some (Const (CStr s))], _) )
   | PPtrUpperBound (_, PlusPI,CastE(_, StartOf (Var (vname, vid), NoOffset)),
 		    CnApp ("ntp", [Some (Const (CStr s))], _) ) when vid > 0 ->
-     begin
-       match (get_varinfo vid).vtype with
-       | TArray (_,Some (Const _ as clen), _) ->
-	  begin
-	    match (get_num_value env clen) with
-	    | Some length ->
-               let (_, _, strlen) = mk_constantstring s in
-	       if length#gt (mkNumerical strlen) then
-	         make
-                   ("constant string with length "
-                    ^ (stri strlen)
-                    ^ " fits in "
-                    ^ vname
-                    ^ " of size "
-                    ^ length#toString)
-	       else
-	         make_violation
-                   ("constant string with length "
-                    ^ (stri strlen)
-                    ^ " does not fit in "
-                    ^ vname
-                    ^ " of size "
-                    ^ length#toString)
-	  | _ -> ()
-	end
-      | _ -> ()
-    end
+     TR.tfold
+       ~ok:(fun vinfo ->
+         match vinfo.vtype with
+         | TArray (_,Some (Const _ as clen), _) ->
+	    begin
+	      match (get_num_value env clen) with
+	      | Some length ->
+                 let (_, _, strlen) = mk_constantstring s in
+	         if length#gt (mkNumerical strlen) then
+	           make
+                     ("constant string with length "
+                      ^ (stri strlen)
+                      ^ " fits in "
+                      ^ vname
+                      ^ " of size "
+                      ^ length#toString)
+	         else
+	           make_violation
+                     ("constant string with length "
+                      ^ (stri strlen)
+                      ^ " does not fit in "
+                      ^ vname
+                      ^ " of size "
+                      ^ length#toString)
+	      | _ -> ()
+	    end
+         | _ -> ())
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity:PPtrUpperBound"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PPtrUpperBound (_, PlusPI,AddrOf (Var (vname, vid), NoOffset),
 		    SizeOfE (Lval (Var (wname, wid), NoOffset)))
@@ -1659,23 +1752,32 @@ let check_ppo_validity
 
   | PPtrUpperBound (_, PlusPI,CastE(_, AddrOf lval1), ub)
     | PPtrUpperBound (_, PlusPI, CastE(_, StartOf lval1), ub) ->
-     (match (get_num_value env (SizeOf (type_of_lval env lval1)),
-             get_num_value env ub) with
-        (Some s1, Some s2) ->
-        if s1#geq s2 then
-          make
-            ("adding "
-             ^ s2#toString
-             ^ " to start of variable of size "
-             ^ s1#toString)
-        else
-          make_violation
-            ("adding "
-             ^ s2#toString
-             ^ " to start of variable of size "
-             ^ s1#toString
-             ^ " violates the upper bound")
-      | _ -> ())
+     (match type_of_lval env lval1 with
+      | Ok ty ->
+         (match (get_num_value env (SizeOf ty), get_num_value env ub) with
+          | (Some s1, Some s2) ->
+             if s1#geq s2 then
+               make
+                 ("adding "
+                  ^ s2#toString
+                  ^ " to start of variable of size "
+                  ^ s1#toString)
+             else
+               make_violation
+                 ("adding "
+                  ^ s2#toString
+                  ^ " to start of variable of size "
+                  ^ s1#toString
+                  ^ " violates the upper bound")
+          | _ -> ())
+      | Error err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to determine type of lval "
+            ^ (p2s (lval_to_pretty lval1))])
 
   | PPtrUpperBound (_, PlusPI,Const (CStr s1),
 		    CnApp ("ntp", [Some (Const (CStr s2))], _))
@@ -1726,29 +1828,38 @@ let check_ppo_validity
 
   | PPtrUpperBoundDeref (_,
                          PlusPI,
-                         StartOf (Var (_, vid), NoOffset), (Const _ as e))
+                         StartOf (Var (vname, vid), NoOffset), (Const _ as e))
        when vid > 0 ->
-    begin
-      match (get_num_value env e, (get_varinfo vid).vtype) with
-      | (Some v, TArray (_, Some (Const _ as clen), _)) when
-	     (match get_num_value env clen with
-              | Some _ -> true | _ -> false) ->
-	let len = Option.get (get_num_value env clen) in
-	if v#lt len then
-	  make
-            ("adding "
-             ^ v#toString
-             ^ " to the start of an array of length "
-             ^ len#toString)
-	else
-	  make_violation
-            ("adding "
-             ^ v#toString
-             ^ " to the start of an array of length "
-             ^ len#toString
-             ^ " violates the upperbound")
-      | _ -> ()
-    end
+     TR.tfold
+       ~ok:(fun vinfo ->
+         match (get_num_value env e, vinfo.vtype) with
+         | (Some v, TArray (_, Some (Const _ as clen), _)) when
+	        (match get_num_value env clen with
+                 | Some _ -> true | _ -> false) ->
+	    let len = Option.get (get_num_value env clen) in
+	    if v#lt len then
+	      make
+                ("adding "
+                 ^ v#toString
+                 ^ " to the start of an array of length "
+                 ^ len#toString)
+	    else
+	      make_violation
+                ("adding "
+                 ^ v#toString
+                 ^ " to the start of an array of length "
+                 ^ len#toString
+                 ^ " violates the upperbound")
+         | _ -> ())
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PLowerBound (_, Const (CStr _))
   | PLowerBound (_, CastE (_, Const (CStr _))) ->
@@ -1870,37 +1981,48 @@ let check_ppo_validity
        ("null pointer cannot be dereferenced; acceptability of null "
         ^ "pointer is checked separately")
 
-  | PUpperBound (_, BinOp (IndexPI,StartOf (Var (_, vid),NoOffset), c, _))
-  | PUpperBound (_,BinOp (PlusPI,StartOf (Var (_, vid), NoOffset), c, _)) when
+  | PUpperBound (_, BinOp (IndexPI,StartOf (Var (vname, vid),NoOffset), c, _))
+  | PUpperBound (_,BinOp (PlusPI,StartOf (Var (vname, vid), NoOffset), c, _)) when
          vid > 0
          && (match get_num_value env c with
              | Some _ -> true | _ -> false) ->
-     let vty = fenv#get_type_unrolled (get_varinfo vid).vtype in
-     begin
-       match vty with
-       | TArray (_, Some e, _) ->
-	  begin
-	    match get_num_value env e with
-	    | Some k ->
-	       let inc = Option.get (get_num_value env c) in
-	       if inc#lt k then
-	         make
-                   ("offset ("
-                    ^ inc#toString
-                    ^ ") is less than array size ("
-                    ^ k#toString
-                    ^ ")")
-	       else
-	         make_violation
-                   ("offset ("
-                    ^ inc#toString
-                    ^ ") is greater than or equal to array size ("
-                    ^ k#toString
-                    ^ ")")
-	    | _ -> ()
-	  end
-       | _ -> ()
-     end
+     TR.tfold
+       ~ok:(fun vinfo ->
+         let vty = fenv#get_type_unrolled vinfo.vtype in
+         begin
+           match vty with
+           | TArray (_, Some e, _) ->
+	      begin
+	        match get_num_value env e with
+	        | Some k ->
+	           let inc = Option.get (get_num_value env c) in
+	           if inc#lt k then
+	             make
+                       ("offset ("
+                        ^ inc#toString
+                        ^ ") is less than array size ("
+                        ^ k#toString
+                        ^ ")")
+	           else
+	             make_violation
+                       ("offset ("
+                        ^ inc#toString
+                        ^ ") is greater than or equal to array size ("
+                        ^ k#toString
+                        ^ ")")
+	        | _ -> ()
+	      end
+           | _ -> ()
+         end)
+       ~error:(fun err ->
+         log_diagnostics_result
+           ~tag:"check_ppo_validity"
+           ~msg:env#functionname
+           __FILE__ __LINE__
+           [(String.concat "; " err);
+            "Unable to retrieve varinfo for variable " ^ vname
+            ^ " with vid " ^ (string_of_int vid)])
+       (get_varinfo vid)
 
   | PUpperBound (_, BinOp _) ->
      make
@@ -1910,7 +2032,8 @@ let check_ppo_validity
   | PUpperBound (_, e) when is_null_pointer e ->
      make "null pointer does not violate bounds"
 
-  | PIndexLowerBound e when is_unsigned_integral_type (type_of_exp env e) ->
+  | PIndexLowerBound e when
+         TR.tfold_default is_unsigned_integral_type false (type_of_exp env e) ->
      make ("unsigned value is always non-negative")
 
   | PIndexLowerBound (BinOp (BAnd, _, Const (CInt (j64, _, _)), _)) ->
@@ -1976,7 +2099,9 @@ let check_ppo_validity
          (recursively) according to these rules.
    *)
   | PInitialized (Var (vname, vid), _)
-       when vid > 0 && (env#has_varinfo vid) && (get_varinfo vid).vglob ->
+       when vid > 0
+            && (env#has_varinfo vid)
+            && (TR.tget_ok (get_varinfo vid)).vglob ->
      make (vname ^ " is global")
 
   | PInitialized (Mem e, NoOffset) when is_absolute_memory_address env e ->
@@ -2052,9 +2177,11 @@ let check_ppo_validity
                     NoOffset) ->
      make ("library variable " ^ vname ^ " is guaranteed to be initialized")
 
-  | PInitialized (Mem (AddrOf (Var (vname,vid), _)), _)
+  | PInitialized (Mem (AddrOf (Var (vname, vid), _)), _)
     | PInitialized (Mem (CastE (_, AddrOf (Var (vname, vid), _))), _)
-       when vid > 0 && (env#has_varinfo vid) && (get_varinfo vid).vglob ->
+       when vid > 0
+            && (env#has_varinfo vid)
+            && (TR.tget_ok (get_varinfo vid)).vglob ->
      make (vname ^ " is global")
 
   | PInitialized (Mem e, _offset) when is_global_address e ->

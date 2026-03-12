@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,10 @@
 open CHNumerical
 open CHPretty
 
+(* chutil *)
+open CHLogger
+open CHTraceResult
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHExternalPredicate
@@ -46,6 +50,16 @@ open CCHUtilities
 (* cchpre *)
 open CCHPreSumTypeSerializer
 open CCHPreTypes
+
+module TR = CHTraceResult
+
+let (let*) x f = CHTraceResult.tbind f x
+
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "          
 
 
 let po_predicate_tag p =
@@ -948,7 +962,21 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
 let get_global_vars_in_exp (env:cfundeclarations_int) (e:exp) =
   let is_global_var e =
     match e with
-    | Lval (Var (_,vid),_) when vid > 0 -> (env#get_varinfo_by_vid vid).vglob
+    | Lval (Var (vname ,vid),_) when vid > 0 ->
+       TR.tfold
+         ~ok:(fun vinfo -> vinfo.vglob)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"get_global_vars_in_exp"
+               ~msg:env#functionname
+               __FILE__ __LINE__
+               [(String.concat "; " err);
+                "Unable to retrieve varinfo for variable " ^ vname
+                ^ " with vid " ^ (string_of_int vid)];
+             false
+           end)
+         (env#get_varinfo_by_vid vid)
     | _ -> false in
   let ewalker = new find_exp_walker_t is_global_var in
   let _ = ewalker#walk_exp e in
@@ -1004,181 +1032,285 @@ let check_assumption_predicates
     _ -> Some p
 
 
-let rec offset_to_s_offset (o:offset) =
+let rec offset_to_s_offset (o: offset): s_offset_t traceresult =
   match o with
-  | NoOffset ->  ArgNoOffset
-  | Field ((fname,_),t) -> ArgFieldOffset (fname,offset_to_s_offset t)
-  | Index (Const (CInt (i64,_,_)),t) ->
-     ArgIndexOffset (mkNumericalFromInt64 i64,offset_to_s_offset t)
+  | NoOffset ->  Ok ArgNoOffset
+  | Field ((fname, _), t) ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> ArgFieldOffset (fname, s))
+       (offset_to_s_offset t)
+  | Index (Const (CInt (i64, _, _)), t) ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> ArgIndexOffset (mkNumericalFromInt64 i64, s))
+       (offset_to_s_offset t)
   | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "offset cannot be converted to s_offset:";
-               offset_to_pretty o]))
+     Error [(elocm __LINE__) ^ "offset_to_s_offset";
+            "Offset cannot be converted to s_offset: "
+            ^ (p2s (offset_to_pretty o))]
 
 
-let rec exp_to_sterm (fdecls:cfundeclarations_int) (e:exp) =
+let rec exp_to_sterm
+          (fdecls:cfundeclarations_int) (e:exp): s_term_t traceresult =
   let es = exp_to_sterm fdecls in
   match e with
   | Const (CInt (i64,_,_)) ->
-     NumConstant (mkNumericalFromString (Int64.to_string i64))
+     Ok (NumConstant (mkNumericalFromString (Int64.to_string i64)))
+    
   | Lval (Var (vname,vid),offset) when vid = (-1) ->
-     ArgValue (ParGlobal vname, offset_to_s_offset offset)
-  | Lval (Var (vname,vid),offset) ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset offset)
+    
+  | Lval (Var (vname, vid),offset) ->
      if fdecls#is_formal vid then
-       let vinfo = fdecls#get_varinfo_by_vid vid in
-       ArgValue (ParFormal vinfo.vparam, offset_to_s_offset offset)
+       TR.tbind
+         ~msg:((elocm __LINE__) ^ "exp_to_sterm")
+         (fun vinfo ->
+           TR.tmap
+             ~msg:(eloc __LINE__)
+             (fun s -> ArgValue (ParFormal vinfo.vparam, s))
+             (offset_to_s_offset offset))
+         (fdecls#get_varinfo_by_vid vid)
      else if fdecls#is_local vid then
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Local variable cannot be converted to s_term: ";
-                 STR vname]))
+       Error [(elocm __LINE__) ^ "exp_to_sterm";
+              "Variable " ^ vname ^ " cannot be converted to an s_term "
+              ^ "because it is a local variable"]
      else
-       ArgValue (ParGlobal vname, offset_to_s_offset offset)
-  | Lval (Mem (Lval (Var (vname,vid),voffset)),moffset) when vid = (-1) ->
-     let arg = ArgValue (ParGlobal vname, offset_to_s_offset voffset) in
-     ArgAddressedValue (arg,offset_to_s_offset moffset)
-  | Lval (Mem (Lval (Var (vname,vid),voffset)),moffset) ->
-     let arg =
+       TR.tmap
+         ~msg:(eloc __LINE__)
+         (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset offset)
+                 
+  | Lval (Mem (Lval (Var (vname,vid), voffset)),moffset) when vid = (-1) ->
+     let arg_r =
+       TR.tmap
+         ~msg:(eloc __LINE__)
+         (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset voffset) in
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> ArgAddressedValue (s1, s2)) arg_r (offset_to_s_offset moffset)
+    
+  | Lval (Mem (Lval (Var (vname,vid),voffset)), moffset) ->
+     let arg_r =
        if fdecls#is_formal vid then
-       let vinfo = fdecls#get_varinfo_by_vid vid in
-       ArgValue (ParFormal vinfo.vparam, offset_to_s_offset voffset)
-     else if fdecls#is_local vid then
-         raise
-           (CCHFailure
-              (LBLOCK [
-                   STR "Local variable cannot be converted to s_term: ";
-                   STR vname]))
+         TR.tbind
+           ~msg:((elocm __LINE__) ^ "exp_to_sterm")           
+           (fun vinfo ->
+             TR.tmap
+               ~msg:(eloc __LINE__)
+               (fun s -> ArgValue (ParFormal vinfo.vparam, s))
+               (offset_to_s_offset voffset))
+           (fdecls#get_varinfo_by_vid vid)
+       else if fdecls#is_local vid then
+         Error [(elocm __LINE__) ^ "exp_to_sterm";
+                "Variable " ^ vname ^ " cannot be converted to an s_term "
+                ^ "because it is a local variable"]
      else
-       ArgValue (ParGlobal vname, offset_to_s_offset voffset) in
-     ArgAddressedValue (arg,offset_to_s_offset moffset)
-  | BinOp (op, e1, e2, _) -> ArithmeticExpr (op, es e1, es e2)
+       TR.tmap
+         ~msg:(eloc __LINE__)
+         (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset voffset) in
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 ->  ArgAddressedValue (s1, s2))
+       arg_r (offset_to_s_offset moffset)
+     
+  | BinOp (op, e1, e2, _) ->
+     TR.tbind2 (fun s1 s2 -> Ok (ArithmeticExpr (op, s1, s2))) (es e1) (es e2)
+    
   | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "exp cannot be converted to s_term: "; exp_to_pretty e]))
+     Error [(elocm __LINE__) ^ "exp_to_sterm";
+            "Expression cannot be converted to s_term: "
+            ^ (p2s (exp_to_pretty e))]
 
 
-let po_predicate_to_xpredicate (fdecls:cfundeclarations_int) (p:po_predicate_t) =
+let po_predicate_to_xpredicate
+      (fdecls: cfundeclarations_int) (p: po_predicate_t): xpredicate_t traceresult =
   let es = exp_to_sterm fdecls in
   let numzero = NumConstant numerical_zero in
   match p with
-  | PHeapAddress e -> XHeapAddress (es e)
-  | PGlobalAddress e -> XGlobalAddress (es e)
-  | PNotNull e -> XNotNull (es e)
-  | PNull e -> XNull (es e)
-  | PControlledResource (r,e) ->  XControlledResource (r, es e)
-  | PAllocationBase e -> XAllocationBase (es e)
-  | PIndexLowerBound e -> XRelationalExpr (Ge, (es e), numzero)
-  | PIndexUpperBound (e1,e2) -> XRelationalExpr (Lt, (es e1), (es e2))
-  | PInitialized lval -> XInitialized (es (Lval lval))
-  | PInitializedRange (e1,e2) -> XInitializedRange (es e1, es e2)
-  | PNotZero e -> XRelationalExpr (Ne, es e, numzero)
-  | PNonNegative e -> XRelationalExpr (Gt, es e, numzero)
-  | PNullTerminated e -> XNullTerminated (es e)
-  | PNoOverlap (e1,e2) -> XNoOverlap (es e1, es e2)
+  | PHeapAddress e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XHeapAddress s) (es e)
+  | PGlobalAddress e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XGlobalAddress s) (es e)
+  | PNotNull e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XNotNull s) (es e)
+  | PNull e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XNull s) (es e)
+  | PControlledResource (r, e) ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XControlledResource (r, s)) (es e)
+  | PAllocationBase e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XAllocationBase s) (es e)
+  | PIndexLowerBound e ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ge, s, numzero))
+       (es e)
+  | PIndexUpperBound (e1, e2) ->
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> XRelationalExpr (Lt, s1, s2))
+       (es e1) (es e2)
+  | PInitialized lval ->
+     TR.tmap
+       ~msg:(eloc __LINE__) (fun s -> XInitialized s) (es (Lval lval))
+  | PInitializedRange (e1, e2) ->
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> XInitializedRange (s1, s2))
+       (es e1) (es e2)
+  | PNotZero e ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ne, s, numzero))
+       (es e)
+  | PNonNegative e ->
+     TR.tmap
+       ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Gt, s, numzero))
+       (es e)
+  | PNullTerminated e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XNullTerminated s) (es e)
+  | PNoOverlap (e1, e2) ->
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> XNoOverlap (s1, s2))
+       (es e1) (es e2)
   | PValueConstraint e ->
      (match e with
       | BinOp (op, e1, e2, _) when is_relational_operator op ->
-         XRelationalExpr (op, es e1, es e2)
+         TR.tmap2
+           ~msg1:(eloc __LINE__)
+           ~msg2:(eloc __LINE__)
+           (fun s1 s2 -> XRelationalExpr (op, s1, s2))
+           (es e1) (es e2)                       
       | _ ->
-         raise
-           (CCHFailure
-              (LBLOCK [
-                   STR "Value constraint cannot be converted to xpredicate: ";
-                   po_predicate_to_pretty p])))
-  | PConfined e -> XConfined (es e)
-  | PMemoryPreserved e -> XPreservesMemory (es e)
-  | PUniquePointer e -> XUniquePointer (es e)
-  | PValidMem  e -> XValidMem (es e)
-  | PPreservedAllMemory -> XPreservesAllMemory
-  | PPreservedAllMemoryX l -> XPreservesAllMemoryX (List.map es l)
-  | PBuffer (e1, e2) -> XBuffer (es e1, es e2)
-  | PRevBuffer (e1,e2) -> XRevBuffer (es e1, es e2)
-  | PNewMemory e -> XNewMemory (es e)
+         Error [(elocm __LINE__) ^ "po_predicate_to_xpredicate";
+                "Value constraint cannot be converted to xpredicate: "
+                ^ (p2s (po_predicate_to_pretty p))])
+  | PConfined e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XConfined s) (es e)
+  | PMemoryPreserved e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XPreservesMemory s) (es e)
+  | PUniquePointer e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XUniquePointer s) (es e)
+  | PValidMem e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XValidMem s) (es e)
+  | PPreservedAllMemory -> Ok XPreservesAllMemory
+  | PPreservedAllMemoryX l ->
+     List.fold_left
+       (fun acc s ->
+         match acc with
+         | Error e -> Error e
+         | Ok (XPreservesAllMemoryX sl) ->
+            (match s with
+             | Error e -> Error e
+             | Ok v -> Ok (XPreservesAllMemoryX (v :: sl)))
+         | _ ->
+            Error [(elocm __LINE__)
+                   ^ "Internal error in po_predicate_to_xpredicate: "
+                   ^ (p2s (po_predicate_to_pretty p))])
+       (Ok (XPreservesAllMemoryX []))
+       (List.map es l)
+  | PBuffer (e1, e2) ->
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> XBuffer (s1, s2))
+       (es e1) (es e2)
+  | PRevBuffer (e1, e2) ->
+     TR.tmap2
+       ~msg1:(eloc __LINE__)
+       ~msg2:(eloc __LINE__)
+       (fun s1 s2 -> XRevBuffer (s1, s2))
+       (es e1) (es e2)
+  | PNewMemory e ->
+     TR.tmap ~msg:(eloc __LINE__) (fun s -> XNewMemory s) (es e)
   | PIntOverflow (op, e1, e2, k)
     | PUIntOverflow (op, e1, e2, k) ->
      let safeub = get_safe_upperbound k in
-     let exp = BinOp (op, e1, e2, TInt (k,[])) in
-     XRelationalExpr (Le, es exp, NumConstant safeub)
+     let exp = BinOp (op, e1, e2, TInt (k, [])) in
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Le, s, NumConstant safeub)) (es exp)
   | PIntUnderflow (op, e1, e2, k) ->
      let safelb = get_safe_lowerbound k in
      let exp = BinOp (op, e1, e2, TInt (k,[])) in
-     XRelationalExpr (Ge, es exp, NumConstant safelb)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ge, s, NumConstant safelb)) (es exp)
   | PUIntUnderflow (op, e1, e2, k) ->
      let exp = BinOp (op, e1, e2, TInt (k,[])) in
-     XRelationalExpr (Ge, es exp, NumConstant numerical_zero)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ge, s, NumConstant numerical_zero)) (es exp)
   | PSignedToSignedCastLB (_, ikto, e) ->
      let safelb = get_safe_lowerbound ikto in
-     XRelationalExpr (Ge, es e, NumConstant safelb)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ge, s, NumConstant safelb)) (es e)
   | PSignedToSignedCastUB (_, ikto, e) ->
      let safeub = get_safe_upperbound ikto in
-     XRelationalExpr (Le, es e, NumConstant safeub)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Le, s, NumConstant safeub)) (es e)
   | PSignedToUnsignedCastLB (_, _, e) ->
-     XRelationalExpr (Ge, es e, NumConstant numerical_zero)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Ge, s, NumConstant numerical_zero)) (es e)
   | PSignedToUnsignedCastUB (_, ikto, e) ->
      let safeub = get_safe_upperbound ikto in
-     XRelationalExpr (Le, es e, NumConstant safeub)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Le, s, NumConstant safeub)) (es e)
   | PUnsignedToSignedCast (_, ikto, e)
     | PUnsignedToUnsignedCast (_, ikto, e) ->
      let safeub = get_safe_upperbound ikto in
-     XRelationalExpr (Le, es e, NumConstant safeub)
+     TR.tmap ~msg:(eloc __LINE__)
+       (fun s -> XRelationalExpr (Le, s, NumConstant safeub)) (es e)
   | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "Predicate cannot be converted to xpredicate: ";
-               po_predicate_to_pretty p]))
+     Error [(elocm __LINE__) ^ "po_predicate_to_xpredicate";
+            "Predicate cannot be converted to xpredicate: "
+            ^ (p2s (po_predicate_to_pretty p))]
 
 
-let rec s_offset_to_offset (tgttype:typ) (s:s_offset_t) =
+let rec s_offset_to_offset (tgttype: typ) (s: s_offset_t): offset traceresult =
   match s with
-  | ArgNoOffset -> NoOffset
-  | ArgFieldOffset (fname,ss) ->
+  | ArgNoOffset -> Ok NoOffset
+  | ArgFieldOffset (fname, ss) ->
      begin
        match file_environment#get_type_unrolled tgttype with
        | TComp (ckey,_) ->
           let cinfo = file_environment#get_comp ckey in
-          let finfo =
+          let* finfo =
             try
-              List.find (fun finfo -> finfo.fname = fname) cinfo.cfields
+              Ok (List.find (fun finfo -> finfo.fname = fname) cinfo.cfields)
             with
             | Not_found ->
-               raise
-                 (CCHFailure
-                    (LBLOCK [
-                         STR "Field ";
-                         STR fname;
-                         STR " not found in struct ";
-                         STR cinfo.cname; STR " (";
-                         INT ckey;
-                         STR ")"])) in
-          Field ((fname, ckey), s_offset_to_offset finfo. ftype ss)
+               Error [(elocm __LINE__) ^ "s_offset_to_offset";
+                      "Field " ^ fname ^ " not found in struct "
+                      ^ cinfo.cname ^ " (" ^ (string_of_int ckey) ^ ")"] in
+          TR.tmap
+            ~msg:(eloc __LINE__)
+            (fun s -> Field ((fname, ckey), s))
+            (s_offset_to_offset finfo.ftype ss)
        | _ ->
-          raise
-            (CCHFailure
-               (LBLOCK [
-                    STR "Unexpected target type for field: ";
-                    STR fname;
-                    STR "; offset: ";
-                    typ_to_pretty tgttype]))
+          Error [(elocm __LINE__) ^ "s_offset_to_offset";
+                 "Unexpected target type for field " ^ fname ^ ": offset: "
+                 ^ (p2s (typ_to_pretty tgttype))]
      end
-  | ArgIndexOffset (n,ArgNoOffset) when n#equal numerical_zero -> NoOffset
-  | ArgIndexOffset (n,ss) ->
+  | ArgIndexOffset (n, ArgNoOffset) when n#equal numerical_zero -> Ok NoOffset
+  | ArgIndexOffset (n, ss) ->
      match tgttype with
-     | TArray (tt,_,_) | TPtr (tt,_) ->
-        Index (make_constant_exp n, s_offset_to_offset tt ss)
+     | TArray (tt,_,_) | TPtr (tt, _) ->
+        TR.tmap
+          ~msg:(eloc __LINE__)
+          (fun s -> Index (make_constant_exp n, s))
+          (s_offset_to_offset tt ss)
      | _ ->
-        raise
-          (CCHFailure
-             (LBLOCK [
-                  STR "Unexpected target type for index offset: ";
-                  typ_to_pretty tgttype]))
+        Error [(elocm __LINE__) ^ "s_offset_to_offset";
+               "Unexpected target type for index offset: "
+               ^ (p2s (typ_to_pretty tgttype))]
 
-
+       
 let rec sterm_to_exp
           ?(returnexp=None) (fdecls:cfundeclarations_int) (t:s_term_t) =
   let te = sterm_to_exp ~returnexp fdecls in

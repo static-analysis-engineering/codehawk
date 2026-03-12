@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,10 +47,16 @@ open CCHPreSumTypeSerializer
 open CCHPreTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
+
+(*
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+ *)
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
@@ -79,24 +85,54 @@ let mk_assignment
       asg_loc = loc;
       asg_context = ctxt } in
   match lhs with
-  | (Var (vname,vid),NoOffset) ->
-     let vinfo = env#get_varinfo_by_vid vid in
-     if vinfo.vglob then
-       match vinfo.vstorage with
-       | Static -> Some (StaticAssignment (fname,vname,vid,data))
-       | _ -> Some (GlobalAssignment (fname,vname,vid,data))
-     else
-       None
-  | (Var (vname,vid),Index (Const (CInt (i64,_,_)),NoOffset)) ->
-     let vinfo = env#get_varinfo_by_vid vid in
-     if vinfo.vglob then
-       let index = Int64.to_int i64 in
-       match vinfo.vstorage with
-       | Static -> Some (StaticIndexAssignment (fname,vname,vid,index,data))
-       | _ -> Some (GlobalIndexAssignment (fname,vname,vid,index,data))
-     else
-       None
-  | (_,o) when isfield ->
+  | (Var (vname, vid), NoOffset) ->
+     TR.tfold
+       ~ok:(fun vinfo ->
+         if vinfo.vglob then
+           match vinfo.vstorage with
+           | Static ->
+              Some (StaticAssignment (fname, vname, vid, data))
+           | _ ->
+              Some (GlobalAssignment (fname, vname, vid, data))
+         else
+           None)
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"mk_assignment"
+             ~msg:fname
+             __FILE__ __LINE__
+             [(String.concat "; " e);
+              "Varinfo for variable with name " ^ vname ^ " and vid "
+              ^ (string_of_int vid) ^ " not found"];
+           None
+         end)
+       (env#get_varinfo_by_vid vid)
+  | (Var (vname, vid), Index (Const (CInt (i64,_,_)), NoOffset)) ->
+     TR.tfold
+       ~ok:(fun vinfo ->
+         if vinfo.vglob then
+           let index = Int64.to_int i64 in
+           match vinfo.vstorage with
+           | Static ->
+              Some (StaticIndexAssignment (fname, vname, vid, index, data))
+           | _ ->
+              Some (GlobalIndexAssignment (fname, vname, vid, index, data))
+         else
+           None)
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"mk_assignment"
+             ~msg:fname
+             __FILE__ __LINE__
+             [(String.concat "; " e);
+              "Varinfo for variable with name " ^ vname ^ " and vid "
+              ^ (string_of_int vid) ^ " not found"];
+           None
+         end)
+       (env#get_varinfo_by_vid vid)
+  | (_, o) when isfield ->
      let (fieldname,ckey) = get_field_offset o in
      Some (FieldAssignment (fname, fieldname, ckey, lhs, data))
   | _ ->

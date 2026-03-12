@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025  Aarno Labs LLC
+   Copyright (c) 2025-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ open CCHPreTypes
 open CCHProofScaffolding
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 let (let* ) x f = CHTraceResult.tbind f x
 
@@ -186,7 +187,13 @@ object (self)
           begin
             self#create_po_exp context#add_return x loc;
             (match type_of_exp self#env x with
-             | TPtr _ -> self#add_ppo (PValidMem x) loc context#add_return
+             | Ok (TPtr _) -> self#add_ppo (PValidMem x) loc context#add_return
+             | Error err ->
+                log_error_result
+                  ~tag:"create_po_return"
+                  ~msg:self#env#functionname
+                  __FILE__ __LINE__
+                  [(String.concat "; " err); "x: " ^ (p2s (exp_to_pretty x))]
              | _ -> ())
           end
        | _ -> ());
@@ -223,15 +230,36 @@ object (self)
     let _ =
       ch_info_log#add "create_po_call" (STR vname) in
     let is_ref_arg (arg: exp) =
-      is_pointer_type (fenv#get_type_unrolled (type_of_exp self#env arg)) in
+      TR.tfold
+        ~ok:(fun ty -> is_pointer_type (fenv#get_type_unrolled ty))
+        ~error:(fun err ->
+          begin
+            log_error_result
+              ~tag:"create_po_call"
+              ~msg:self#env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err); "arg: " ^ (p2s (exp_to_pretty arg))];
+            false
+          end)
+        (type_of_exp self#env arg) in
     begin
       (match lval_o with
        | Some lval -> self#create_po_lval context#add_lhs lval loc
        | _ -> ());
       (match e with
-       | Lval (Var (_vname, vid), NoOffset) ->
-          self#spomanager#add_direct_call
-            loc context (self#env#get_varinfo_by_vid vid) el;
+       | Lval (Var (vname, vid), NoOffset) ->
+          TR.tfold
+            ~ok:(fun vinfo ->
+              self#spomanager#add_direct_call loc context vinfo el)
+            ~error:(fun err ->
+              log_error_result
+                ~tag:"create_po_call"
+                ~msg:self#env#functionname
+                __FILE__ __LINE__
+                [(String.concat "; " err);
+                 "Unable to retrieve varinfo for variable " ^ vname
+                 ^ " with vid: " ^ (string_of_int vid)])
+            (self#env#get_varinfo_by_vid vid);
        | _ ->
           begin
             self#create_po_exp context#add_ftarget e loc;
@@ -249,26 +277,35 @@ object (self)
            let newcontext = context#add_arg (i + 1) in
            begin
              self#create_po_exp newcontext x loc;
-             (match fenv#get_type_unrolled (type_of_exp self#env x) with
-              | TPtr _ ->
-                 begin
-                   self#add_ppo (PValidMem x) loc newcontext;
-                   begin
-                     self#add_ppo (POutputParameterArgument x) loc newcontext;
-                     (List.iter (fun vinfo ->
-                          self#add_ppo
-                            (POutputParameterNoEscape (vinfo, x)) loc newcontext)
-                        self#active_params);
-                     self#analysisdigest#add_callee_callsite_arg
-                       loc context newcontext x;
-                     self#analysisdigest#add_call_dependency_arg
-                       loc context newcontext x;
-                     ch_info_log#add
-                       "add_callee_callsite_arg"
-                       (LBLOCK [STR vname; STR ": "; INT i])
-                   end
-                 end
-              | _ -> ())
+             TR.tfold
+               ~ok:(fun ty ->
+                 match fenv#get_type_unrolled ty with
+                 | TPtr _ ->
+                    begin
+                      self#add_ppo (PValidMem x) loc newcontext;
+                      begin
+                        self#add_ppo (POutputParameterArgument x) loc newcontext;
+                        (List.iter (fun vinfo ->
+                             self#add_ppo
+                               (POutputParameterNoEscape (vinfo, x)) loc newcontext)
+                           self#active_params);
+                        self#analysisdigest#add_callee_callsite_arg
+                          loc context newcontext x;
+                        self#analysisdigest#add_call_dependency_arg
+                          loc context newcontext x;
+                        ch_info_log#add
+                          "add_callee_callsite_arg"
+                          (LBLOCK [STR vname; STR ": "; INT i])
+                      end
+                    end
+                 | _ -> ())
+               ~error:(fun err ->
+                 log_error_result
+                   ~tag:"create_po_call"
+                   ~msg:self#env#functionname
+                   __FILE__ __LINE__
+                   [(String.concat "; " err); "x: " ^ (p2s (exp_to_pretty x))])
+               (type_of_exp self#env x)
            end) el)
       end
 
@@ -277,10 +314,22 @@ object (self)
                    (x: exp)
                    (loc: location) =
     let has_struct_type vid =
-      let vinfo = self#env#get_varinfo_by_vid vid in
-      match fenv#get_type_unrolled vinfo.vtype with
-      | TComp _ -> true
-      | _ -> false in
+      TR.tfold
+        ~ok:(fun vinfo ->
+          match fenv#get_type_unrolled vinfo.vtype with
+          | TComp _ -> true
+          | _ -> false)
+        ~error:(fun err ->
+          begin
+            log_error_result
+              ~tag:"create_po_exp"
+              ~msg:self#env#functionname
+              __FILE__ __LINE__
+              [(String.concat "; " err);
+               "Unable to retrieve varinfo for vid: " ^ (string_of_int vid)];
+            false
+          end)
+        (self#env#get_varinfo_by_vid vid) in
     let _ =
       List.iter (fun vinfo ->
           self#add_ppo (POutputParameterScalar (vinfo, x)) loc context)
@@ -289,31 +338,41 @@ object (self)
     | Const _ -> ()
 
     | Lval (Var (vname, vid), NoOffset) when has_struct_type vid ->
-       let vinfo = self#env#get_varinfo_by_vid vid in
-       begin
-         match fenv#get_type_unrolled vinfo.vtype with
-         | TComp (tckey, _) ->
-            let cinfo = fenv#get_comp tckey in
-            begin
-              List.iter (fun f ->
-                  begin
-                    self#add_ppo
-                      (PInitialized
-                         (Var (vname, vid), Field ((f.fname, f.fckey), NoOffset)))
-                      loc
-                      context;
-                    (List.iter (fun pvinfo ->
-                         self#add_ppo
-                           (PLocallyInitialized
-                              (pvinfo,
-                               (Var (vname, vid),
-                                Field ((f.fname, f.fckey), NoOffset)))) loc context)
-                       self#active_params)
-                  end) cinfo.cfields;
-              self#create_po_lval context#add_lval (Var (vname, vid), NoOffset) loc
-            end
-         | _ -> ()
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             match fenv#get_type_unrolled vinfo.vtype with
+             | TComp (tckey, _) ->
+                let cinfo = fenv#get_comp tckey in
+                begin
+                  List.iter (fun f ->
+                      begin
+                        self#add_ppo
+                          (PInitialized
+                             (Var (vname, vid), Field ((f.fname, f.fckey), NoOffset)))
+                          loc
+                          context;
+                        (List.iter (fun pvinfo ->
+                             self#add_ppo
+                               (PLocallyInitialized
+                                  (pvinfo,
+                                   (Var (vname, vid),
+                                    Field ((f.fname, f.fckey), NoOffset)))) loc context)
+                           self#active_params)
+                      end) cinfo.cfields;
+                  self#create_po_lval context#add_lval (Var (vname, vid), NoOffset) loc
+                end
+             | _ -> ()
+           end)
+         ~error:(fun err ->
+           log_error_result
+             ~tag:"create_po_exp"
+             ~msg:self#env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to retrieve varinfo for variable " ^ vname
+              ^ " with vid " ^ (string_of_int vid)])
+         (self#env#get_varinfo_by_vid vid)
 
     | Lval ((Var _, NoOffset) as lval) ->
        self#add_ppo (PInitialized lval) loc context
@@ -362,15 +421,44 @@ object (self)
                    ((host, offset): lval)
                    (loc: location) =
     match host with
-    | Var (_vname, vid) ->
-       let ty = (self#env#get_varinfo_by_vid vid).vtype in
-       self#create_po_offset context#add_var offset ty loc
+    | Var (vname, vid) ->
+       TR.tfold
+         ~ok:(fun vinfo ->
+           self#create_po_offset context#add_var offset vinfo.vtype loc)
+         ~error:(fun err ->
+           log_error_result
+             ~tag:"create_po_lval"
+             ~msg:self#env#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err);
+              "Unable to retrieve varinfo for variable " ^ vname
+              ^ " with vid " ^ (string_of_int vid)])
+       (self#env#get_varinfo_by_vid vid)
+
     | Mem e ->
        let tgttyp =
-         let t = type_of_exp self#env e in
-         match t with
-         | TPtr (tt, _) -> tt
-         | _ -> TVoid [] in
+         match type_of_exp self#env e with
+         | Ok (TPtr (tt, _)) -> tt
+         | Error err ->
+            begin
+              log_error_result
+                ~tag:"create_po_lval"
+                ~msg:self#env#functionname
+                __FILE__ __LINE__
+                [(String.concat "; " err);
+                 "Unable to determine type of " ^ (p2s (exp_to_pretty e))];
+              TVoid []
+            end
+         | Ok ty ->
+            begin
+              log_error_result
+                ~tag:"create_po_lval"
+                ~msg:self#env#functionname
+                __FILE__ __LINE__
+                ["Expected pointer type; found: " ^ (p2s (typ_to_pretty ty))
+                 ^ " for Mem expression " ^ (p2s (exp_to_pretty e))];
+              TVoid []
+            end in
        begin
          self#create_po_exp context#add_mem e loc;
          self#create_po_dereference context#add_mem e loc;
@@ -427,7 +515,7 @@ let get_pointer_parameters (fundec: fundec): (int * varinfo) list =
      let funargs = List.mapi (fun i a -> (i, a)) funargs in
      List.fold_left (fun acc (i, (vname, ty, _)) ->
          match ty with
-         | TPtr _ -> (i + 1, fdecls#get_varinfo_by_name vname) :: acc
+         | TPtr _ -> (i + 1, TR.tget_ok (fdecls#get_varinfo_by_name vname)) :: acc
          | _ -> acc) [] funargs
   | _ -> []
 
@@ -476,9 +564,6 @@ let initialize_output_parameters
               Error [__FILE__ ^ ":" ^ (string_of_int __LINE__);
                      "validate output parameters: unexpected non-pointer type: ";
                      (p2s (typ_to_pretty ptype))]) (Ok ()) ptrparams
-
-
-let (let*) x f = CHTraceResult.tbind f x;;
 
 
 let process_function (fname:string): unit traceresult =

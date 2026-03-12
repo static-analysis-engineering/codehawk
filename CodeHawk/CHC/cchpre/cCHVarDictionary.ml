@@ -50,6 +50,9 @@ let cd = CCHDictionary.cdictionary
 let ccd = CCHContext.ccontexts
 let cdecls = CCHDeclarations.cdeclarations
 
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
   let msg =
@@ -211,12 +214,27 @@ object (self)
 
   method get_constant_value_variable (index:int) =
     let name = "constant_value_variable" in
-    let (tags,args) = constant_value_variable_table#retrieve index in
+    let (tags, args) = constant_value_variable_table#retrieve index in
     let t = t name tags in
     let a = a name args in
     let xargs lst =
       List.map (fun x -> if x = (-1) then None else Some (xd#get_xpr x)) lst in
     let get_opt_xpr i = if i = (-1) then None else Some (xd#get_xpr i) in
+    let get_varinfo_by_vid (vid: int) =
+      match fdecls#get_varinfo_by_vid vid with
+      | Ok vinfo -> vinfo
+      | Error e ->
+         begin
+           log_error_result
+             ~tag:"get_constant_value_variable"
+             __FILE__ __LINE__
+             [(String.concat "; " e);
+              "varinfo not found for index " ^ (string_of_int vid)];
+           raise
+             (CCHFailure
+                (LBLOCK [STR (elocm __LINE__);
+                         STR "varinfo not found for index "; INT vid]))
+         end in
     match (t 0) with
     | "iv" -> InitialValue (xd#get_variable (a 0), cd#get_typ (a 1))
     | "frv" ->
@@ -224,7 +242,7 @@ object (self)
        FunctionReturnValue
          (cdecls#get_location (a 0),
           ccd#get_context (a 1),
-          fdecls#get_varinfo_by_vid (a 2),
+          get_varinfo_by_vid (a 2),
           arglist)
     | "erv" ->
        let arglist = xargs (get_list_suffix args 4) in
@@ -239,7 +257,7 @@ object (self)
        FunctionSideEffectValue
          (cdecls#get_location (a 0),
           ccd#get_context (a 1),
-          fdecls#get_varinfo_by_vid (a 2),
+          get_varinfo_by_vid (a 2),
           arglist,
           a 3,cd#get_typ (a 4))
     | "esev" ->
@@ -294,11 +312,26 @@ object (self)
     let name = "c_variable_denotation" in
     let t = t name tags in
     let a = a name args in
+    let get_varinfo_by_vid (vid: int) =
+      match fdecls#get_varinfo_by_vid vid with
+      | Ok vinfo -> vinfo
+      | Error e ->
+         begin
+           log_error_result
+             ~tag:"get_constant_value_variable"
+             __FILE__ __LINE__
+             [(String.concat "; " e);
+              "varinfo not found for index " ^ (string_of_int vid)];
+           raise
+             (CCHFailure
+                (LBLOCK [STR (elocm __LINE__);
+                         STR "varinfo not found for index "; INT vid]))
+         end in
     match (t 0) with
     | "lv" ->
-       LocalVariable (fdecls#get_varinfo_by_vid (a 0),cd#get_offset (a 1))
+       LocalVariable (get_varinfo_by_vid (a 0),cd#get_offset (a 1))
     | "gv" ->
-       GlobalVariable (fdecls#get_varinfo_by_vid (a 0), cd#get_offset (a 1))
+       GlobalVariable (get_varinfo_by_vid (a 0), cd#get_offset (a 1))
     | "es" -> ExternalStateVariable (t 1)
     | "mv" -> MemoryVariable (a 0, cd#get_offset (a 1))
     | "mrv" -> MemoryRegionVariable (a 0)
@@ -311,7 +344,6 @@ object (self)
     | "av" -> AuxiliaryVariable (self#get_constant_value_variable (a 0))
     | "xv" -> AugmentationVariable (t 1, t 2, a 0)
     | s -> raise_tag_error name s c_variable_denotation_mcts#tags
-
 
   method write_xml_memory_base
            ?(tag="imb") (node:xml_element_int) (b:memory_base_t) =
