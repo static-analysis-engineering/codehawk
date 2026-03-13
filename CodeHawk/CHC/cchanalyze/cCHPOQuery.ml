@@ -476,7 +476,13 @@ object (self)
           | PPtrUpperBoundDeref (_,
                                  IndexPI,
                                  Lval (Var (_, vid), NoOffset),
-                                 Const (CInt (i64, _, _))) when is_argv vid ->
+                                 Const (CInt (i64, _, _)))
+            | PPtrUpperBoundDeref (_,
+                                   PlusPI,
+                                   Lval (Var (_, vid), NoOffset),
+                                   Const (CInt (i64, _, _)))
+               when is_argv vid ->
+             (* This supports argv[index] or * (argv + index) *)
              let index = Int64.to_int i64 in
              (match self#is_valid_argv_index index with
               | Some (ideps, imsg) ->
