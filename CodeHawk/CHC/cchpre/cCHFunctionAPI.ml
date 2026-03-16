@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHPretty
 open CHUtils
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* cchlib *)
@@ -48,11 +49,19 @@ open CCHPostRequest
 open CCHPreTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
 
+(*
+let (let* ) x f = CHTraceResult.tbind f x
+ *)
 
 let pd = CCHPredicateDictionary.predicate_dictionary
 let id = CCHInterfaceDictionary.interface_dictionary
 
+(*
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+ *)
 
 class function_api_t (fname:string):function_api_int =
 object (self)
@@ -81,15 +90,24 @@ object (self)
   val unevaluated = H.create 3
 
   method add_contract_precondition
-           (fdecls:cfundeclarations_int) (ix:int) =    (* xpredicate index *)
+           (fdecls: cfundeclarations_int) (ix: int) =    (* xpredicate index *)
     let precondition = id#get_xpredicate ix in
-    let pred = xpredicate_to_po_predicate fdecls precondition in
-    let predid = pd#index_po_predicate pred in
-    if H.mem api_assumptions predid then
-      ()
-    else
-      let a = mk_api_assumption ~isglobal:true predid in
-      H.add api_assumptions predid a
+    let pred_r = xpredicate_to_po_predicate fdecls precondition in
+    let predid_r = TR.tmap pd#index_po_predicate pred_r in
+    TR.titer
+      ~ok:(fun predid ->
+        if H.mem api_assumptions predid then
+          ()
+        else
+          let a = mk_api_assumption ~isglobal:true predid in
+          H.add api_assumptions predid a)
+      ~error:(fun e ->
+        log_error_result
+          ~tag:"add_contract_precondition"
+          ~msg:fdecls#functionname
+          __FILE__ __LINE__
+          [(String.concat "; " e)])
+      predid_r
 
   method add_contract_condition_failure (name:string) (desc:string) =
     contractcondition_failures <- (name,desc) :: contractcondition_failures

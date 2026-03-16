@@ -63,10 +63,10 @@ val po_predicate_to_xpredicate:
 val s_offset_to_offset: typ -> s_offset_t -> offset traceresult
 
 val sterm_to_exp:
-  ?returnexp:exp option -> cfundeclarations_int -> s_term_t -> exp
+  ?returnexp:exp option -> cfundeclarations_int -> s_term_t -> exp traceresult
 
 val xpredicate_to_po_predicate:
   ?returnexp:exp option
   -> cfundeclarations_int
   -> xpredicate_t
-  -> po_predicate_t
+  -> po_predicate_t traceresult

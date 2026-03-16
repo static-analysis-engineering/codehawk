@@ -45,7 +45,6 @@ open CCHTypesCompare
 open CCHTypesToPretty
 open CCHTypesTransformer
 open CCHTypesUtil
-open CCHUtilities
 
 (* cchpre *)
 open CCHPreSumTypeSerializer
@@ -59,7 +58,7 @@ let (let*) x f = CHTraceResult.tbind f x
 let p2s = CHPrettyUtil.pretty_to_string
 
 let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
-let elocm (line: int): string = (eloc line) ^ ": "          
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let po_predicate_tag p =
@@ -1057,12 +1056,12 @@ let rec exp_to_sterm
   match e with
   | Const (CInt (i64,_,_)) ->
      Ok (NumConstant (mkNumericalFromString (Int64.to_string i64)))
-    
+
   | Lval (Var (vname,vid),offset) when vid = (-1) ->
      TR.tmap
        ~msg:(eloc __LINE__)
        (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset offset)
-    
+
   | Lval (Var (vname, vid),offset) ->
      if fdecls#is_formal vid then
        TR.tbind
@@ -1081,7 +1080,7 @@ let rec exp_to_sterm
        TR.tmap
          ~msg:(eloc __LINE__)
          (fun s -> ArgValue (ParGlobal vname, s)) (offset_to_s_offset offset)
-                 
+
   | Lval (Mem (Lval (Var (vname,vid), voffset)),moffset) when vid = (-1) ->
      let arg_r =
        TR.tmap
@@ -1091,12 +1090,12 @@ let rec exp_to_sterm
        ~msg1:(eloc __LINE__)
        ~msg2:(eloc __LINE__)
        (fun s1 s2 -> ArgAddressedValue (s1, s2)) arg_r (offset_to_s_offset moffset)
-    
+
   | Lval (Mem (Lval (Var (vname,vid),voffset)), moffset) ->
      let arg_r =
        if fdecls#is_formal vid then
          TR.tbind
-           ~msg:((elocm __LINE__) ^ "exp_to_sterm")           
+           ~msg:((elocm __LINE__) ^ "exp_to_sterm")
            (fun vinfo ->
              TR.tmap
                ~msg:(eloc __LINE__)
@@ -1116,10 +1115,10 @@ let rec exp_to_sterm
        ~msg2:(eloc __LINE__)
        (fun s1 s2 ->  ArgAddressedValue (s1, s2))
        arg_r (offset_to_s_offset moffset)
-     
+
   | BinOp (op, e1, e2, _) ->
      TR.tbind2 (fun s1 s2 -> Ok (ArithmeticExpr (op, s1, s2))) (es e1) (es e2)
-    
+
   | _ ->
      Error [(elocm __LINE__) ^ "exp_to_sterm";
             "Expression cannot be converted to s_term: "
@@ -1188,7 +1187,7 @@ let po_predicate_to_xpredicate
            ~msg1:(eloc __LINE__)
            ~msg2:(eloc __LINE__)
            (fun s1 s2 -> XRelationalExpr (op, s1, s2))
-           (es e1) (es e2)                       
+           (es e1) (es e2)
       | _ ->
          Error [(elocm __LINE__) ^ "po_predicate_to_xpredicate";
                 "Value constraint cannot be converted to xpredicate: "
@@ -1285,17 +1284,19 @@ let rec s_offset_to_offset (tgttype: typ) (s: s_offset_t): offset traceresult =
               Ok (List.find (fun finfo -> finfo.fname = fname) cinfo.cfields)
             with
             | Not_found ->
-               Error [(elocm __LINE__) ^ "s_offset_to_offset";
-                      "Field " ^ fname ^ " not found in struct "
-                      ^ cinfo.cname ^ " (" ^ (string_of_int ckey) ^ ")"] in
+               Error [
+                   (elocm __LINE__) ^ "s_offset_to_offset";
+                   "Field " ^ fname ^ " not found in struct "
+                   ^ cinfo.cname ^ " (" ^ (string_of_int ckey) ^ ")"] in
           TR.tmap
             ~msg:(eloc __LINE__)
             (fun s -> Field ((fname, ckey), s))
             (s_offset_to_offset finfo.ftype ss)
        | _ ->
-          Error [(elocm __LINE__) ^ "s_offset_to_offset";
-                 "Unexpected target type for field " ^ fname ^ ": offset: "
-                 ^ (p2s (typ_to_pretty tgttype))]
+          Error [
+              (elocm __LINE__) ^ "s_offset_to_offset";
+              "Unexpected target type for field " ^ fname ^ ": offset: "
+              ^ (p2s (typ_to_pretty tgttype))]
      end
   | ArgIndexOffset (n, ArgNoOffset) when n#equal numerical_zero -> Ok NoOffset
   | ArgIndexOffset (n, ss) ->
@@ -1306,87 +1307,125 @@ let rec s_offset_to_offset (tgttype: typ) (s: s_offset_t): offset traceresult =
           (fun s -> Index (make_constant_exp n, s))
           (s_offset_to_offset tt ss)
      | _ ->
-        Error [(elocm __LINE__) ^ "s_offset_to_offset";
-               "Unexpected target type for index offset: "
-               ^ (p2s (typ_to_pretty tgttype))]
+        Error [
+            (elocm __LINE__) ^ "s_offset_to_offset";
+            "Unexpected target type for index offset: "
+            ^ (p2s (typ_to_pretty tgttype))]
 
-       
+
 let rec sterm_to_exp
-          ?(returnexp=None) (fdecls:cfundeclarations_int) (t:s_term_t) =
+          ?(returnexp: exp option = None)
+          (fdecls: cfundeclarations_int)
+          (t: s_term_t): exp traceresult =
   let te = sterm_to_exp ~returnexp fdecls in
   match t with
   | ReturnValue ->
      (match returnexp with
-      | Some e -> e
+      | Some e -> Ok e
       | _ ->
-         raise
-           (CCHFailure
-              (LBLOCK [
-                   STR "Unable to convert return value (no expression provided): ";
-                   s_term_to_pretty t])))
+         Error [
+             (elocm __LINE__) ^ fdecls#functionname ^ ":strem_to_exp";
+             "Unable to convert return value (no expression provided): "
+             ^ (p2s (s_term_to_pretty t))])
   | ArgValue (ParFormal n, soff) ->
      let vinfo = fdecls#get_formal n in
-     let offset = s_offset_to_offset vinfo.vtype soff in
-     Lval (Var (vinfo.vname, vinfo.vid), offset)
+     let* offset = s_offset_to_offset vinfo.vtype soff in
+     Ok (Lval (Var (vinfo.vname, vinfo.vid), offset))
   | ArgValue (ParGlobal name, soff) ->
      let vinfo = file_environment#get_globalvar_by_name name in
-     let offset = s_offset_to_offset vinfo.vtype soff in
-     Lval (Var (vinfo.vname, vinfo.vid), offset)
-  | NumConstant i -> Const (CInt (Int64.of_string i#toString, IInt, None))
-  | ArithmeticExpr (op, t1, t2) -> BinOp (op, te t1, te t2, TInt (IInt,[]))
+     let* offset = s_offset_to_offset vinfo.vtype soff in
+     Ok (Lval (Var (vinfo.vname, vinfo.vid), offset))
+  | NumConstant i ->
+     Ok (Const (CInt (Int64.of_string i#toString, IInt, None)))
+  | ArithmeticExpr (op, t1, t2) ->
+     TR.tmap2 (fun s1 s2 -> BinOp (op, s1, s2, TInt (IInt,[]))) (te t1) (te t2)
   | ArgAddressedValue (t, soff) ->
-     let base = te t in
-     let tgttype = type_of_tgt_exp fdecls base in
-     let offset = s_offset_to_offset tgttype soff in
-     Lval (Mem base, offset)
+     let* base = te t in
+     let* tgttype = type_of_tgt_exp fdecls base in
+     let* offset = s_offset_to_offset tgttype soff in
+     Ok (Lval (Mem base, offset))
   | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "Conversion of s_term: "; s_term_to_pretty t;
-               STR " currently not supported"]))
+     Error [
+         (elocm __LINE__) ^ fdecls#functionname ^ ": s_term_to_exp";
+         "Conversion of s_term: " ^ (p2s (s_term_to_pretty t))
+         ^ " currently not supported"]
 
 
 let xpredicate_to_po_predicate
-      ?(returnexp=None) (fdecls:cfundeclarations_int) (p:xpredicate_t) =
+      ?(returnexp=None)
+      (fdecls: cfundeclarations_int)
+      (p: xpredicate_t): po_predicate_t traceresult =
   let te = sterm_to_exp ~returnexp fdecls in
   match p with
-  | XAllocationBase t -> PAllocationBase (te t)
-  | XControlledResource (r, t) -> PControlledResource (r, te t)
-  | XNewMemory t -> PNewMemory (te t)
-  | XConfined t -> PConfined (te t)
+  | XAllocationBase t ->
+     TR.tmap (fun s -> PAllocationBase s) (te t)
+  | XControlledResource (r, t) ->
+     TR.tmap (fun s -> PControlledResource (r, s)) (te t)
+  | XNewMemory t ->
+     TR.tmap (fun s -> PNewMemory s) (te t)
+  | XConfined t ->
+     TR.tmap (fun s -> PConfined s) (te t)
   | XInitialized t ->
      (match te t with
-      | Lval lval -> PInitialized lval
-      | e ->
-         raise
-           (CCHFailure
-              (LBLOCK [
-                   STR "Dereferenced initialized values not yet implemented ";
-                   exp_to_pretty e])))
-  | XInitializedRange (t1,t2) -> PInitializedRange (te t1, te t2)
-  | XBuffer (t1, t2) -> PBuffer (te t1, te t2)
-  | XRevBuffer (t1, t2) -> PRevBuffer (te t1, te t2)
-  | XGlobalAddress t -> PGlobalAddress (te t)
-  | XHeapAddress t -> PHeapAddress (te t)
-  | XNoOverlap (t1,t2) -> PNoOverlap (te t1, te t2)
-  | XNotNull t -> PNotNull (te t)
-  | XNotZero t -> PNotZero (te t)
-  | XNonNegative t -> PNonNegative (te t)
-  | XNull t -> PNull (te t)
-  | XValidMem t -> PValidMem (te t)
-  | XNullTerminated t -> PNullTerminated (te t)
-  | XOutputFormatString t -> PFormatString (te t)
-  | XPreservesAllMemory -> PPreservedAllMemory
-  | XPreservesAllMemoryX l -> PPreservedAllMemoryX (List.map te l)
-  | XPreservesMemory t -> PMemoryPreserved (te t)
-  | XRelationalExpr (op,t1,t2) ->
-     PValueConstraint (BinOp (op, te t1,te t2, TInt (IBool,[])))
-  | XUniquePointer t -> PUniquePointer (te t)
+      | Ok (Lval lval) -> Ok (PInitialized lval)
+      | Error e ->
+         Error [
+             (elocm __LINE__) ^ fdecls#functionname ^ ": xpredicate_to_predicate";
+             "Encountered error in transforming: "
+             ^ (p2s (xpredicate_to_pretty p));
+             (String.concat "; " e)]
+      | Ok exp ->
+         Error [
+             (elocm __LINE__) ^ fdecls#functionname ^ ": xpredicate_to_predicate";
+             "Dereferenced initialized values not yet implemented: "
+             ^ (p2s (exp_to_pretty exp))])
+  | XInitializedRange (t1,t2) ->
+     TR.tmap2 (fun s1 s2 -> PInitializedRange (s1, s2)) (te t1) (te t2)
+  | XBuffer (t1, t2) ->
+     TR.tmap2 (fun s1 s2 -> PBuffer (s1, s2)) (te t1) (te t2)
+  | XRevBuffer (t1, t2) ->
+     TR.tmap2 (fun s1 s2 -> PRevBuffer (s1, s2)) (te t1) (te t2)
+  | XGlobalAddress t ->
+     TR.tmap (fun s -> PGlobalAddress s) (te t)
+  | XHeapAddress t ->
+     TR.tmap (fun s -> PHeapAddress s) (te t)
+  | XNoOverlap (t1, t2) ->
+     TR.tmap2 (fun s1 s2 -> PNoOverlap (s1, s2)) (te t1) (te t2)
+  | XNotNull t ->
+     TR.tmap (fun s -> PNotNull s) (te t)
+  | XNotZero t ->
+     TR.tmap (fun s -> PNotZero s) (te t)
+  | XNonNegative t ->
+     TR.tmap (fun s -> PNonNegative s) (te t)
+  | XNull t ->
+     TR.tmap (fun s -> PNull s) (te t)
+  | XValidMem t ->
+     TR.tmap (fun s -> PValidMem s) (te t)
+  | XNullTerminated t ->
+     TR.tmap (fun s -> PNullTerminated s) (te t)
+  | XOutputFormatString t ->
+     TR.tmap (fun s -> PFormatString s) (te t)
+  | XPreservesAllMemory -> Ok PPreservedAllMemory
+  | XPreservesAllMemoryX l ->
+     let* sl =
+       List.fold_left (fun acc i ->
+           match acc with
+           | Error e -> Error e
+           | Ok sl ->
+              (match te i with
+               | Ok si -> Ok (sl @ [si])
+               | Error e -> Error e)) (Ok []) l in
+     Ok (PPreservedAllMemoryX sl)
+  | XPreservesMemory t ->
+     TR.tmap (fun s -> PMemoryPreserved s) (te t)
+  | XRelationalExpr (op,t1, t2) ->
+     TR.tmap2
+       (fun s1 s2 -> PValueConstraint (BinOp (op, s1, s2, TInt (IBool,[]))))
+       (te t1) (te t2)
+  | XUniquePointer t ->
+     TR.tmap (fun s -> PUniquePointer s) (te t)
   | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "Conversion of xpredicate ";
-               xpredicate_to_pretty p;
-               STR " currently not supported"]))
+     Error [
+         (elocm __LINE__) ^ fdecls#functionname ^ ": xpredicate_to_po_predicate";
+         "Conversion of xpredicate " ^ (p2s (xpredicate_to_pretty p))
+         ^ " not yet supported"]

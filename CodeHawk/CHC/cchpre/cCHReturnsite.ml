@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHTimingLog
+open CHTraceResult
 open CHXmlDocument
 
 (* cchlib *)
@@ -43,6 +44,7 @@ open CCHContext
 open CCHFileContract
 open CCHFileEnvironment
 open CCHLibTypes
+open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -51,32 +53,41 @@ open CCHProofObligation
 open CCHPOPredicate
 
 module H = Hashtbl
+module TR = CHTraceResult
 
+let (let*) x f = CHTraceResult.tbind f x
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
 let id = CCHInterfaceDictionary.interface_dictionary
 
+(*
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+ *)
+
+let p2s = CHPrettyUtil.pretty_to_string
+
 
 let create_pc_spos
-      (pod:podictionary_int)
-      (pcid:int)
-      (loc:location)
-      (ctxt:program_context_int)
-      (exp:exp option) =
+      (pod: podictionary_int)
+      (pcid: int)
+      (loc: location)
+      (ctxt: program_context_int)
+      (exp: exp option): proof_obligation_int traceresult =
   let postcondition = id#get_xpredicate pcid in
-  let pred =
+  let* pred =
     xpredicate_to_po_predicate ~returnexp:exp pod#fdecls postcondition  in
-  let spotype = ReturnsiteSPO (loc,ctxt,pred,postcondition) in
-  mk_returnsite_spo pod spotype
+  let spotype = ReturnsiteSPO (loc, ctxt, pred, postcondition) in
+  Ok (mk_returnsite_spo pod spotype)
 
 
 class returnsite_t
-        (pod:podictionary_int)
+        (pod: podictionary_int)
         ?(pcspos:(int * proof_obligation_int list) list=[])
-        (loc:location)
-        (ctxt:program_context_int)
-        (exp:exp option) =
+        (loc: location)
+        (ctxt: program_context_int)
+        (exp: exp option) =
 object (self)
 
   val spos = H.create 3      (* xpredicate id -> spo list *)
@@ -85,11 +96,17 @@ object (self)
     List.iter (fun (k, v) ->
         match v with
         | [] ->
-           (try
-              H.add spos k [(create_pc_spos pod k loc ctxt exp)]
-            with
-            | CCHFailure p -> ch_error_log#add "postcondition" p)
-        | _ -> H.add spos k v) pcspos
+           TR.tfold
+             ~ok:(fun po -> H.add spos k [po])
+             ~error:(fun e ->
+               log_error_result
+                 ~tag:"returnsite_t:initializer"
+                 ~msg:(p2s (location_to_pretty loc))
+                 __FILE__ __LINE__
+                 [String.concat "; " e])
+             (create_pc_spos pod k loc ctxt exp)
+        | _ ->
+           H.add spos k v) pcspos
 
   method add_postcondition (index:int) =
     match id#get_xpredicate index with
@@ -100,7 +117,15 @@ object (self)
          (if H.mem spos index then
             ()
           else
-            H.add spos index [(create_pc_spos pod index loc ctxt exp)])
+            TR.tfold
+              ~ok:(fun po -> H.add spos index [po])
+              ~error:(fun e ->
+                log_error_result
+                  ~tag:"returnsite_t:add_postcondition"
+                  ~msg:(p2s (location_to_pretty loc))
+                  __FILE__ __LINE__
+                  [String.concat "; " e])
+              (create_pc_spos pod index loc ctxt exp))
        end
 
   method add_preservation_condition (gv: globalvar_contract_int) =
