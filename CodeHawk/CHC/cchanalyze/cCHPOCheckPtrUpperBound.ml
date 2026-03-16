@@ -32,6 +32,7 @@ open CHLanguage
 open CHNumerical
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -54,6 +55,9 @@ open CCHProofObligation
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -299,9 +303,19 @@ object (self)
                 ^ (p2s (po_predicate_to_pretty pred)) in
               Some (gdeps,msg)
            | _ ->
-              let xpred = po_predicate_to_xpredicate poq#fenv gpred in
+              let xpred_r = po_predicate_to_xpredicate poq#fenv gpred in
               begin
-                poq#mk_global_request xpred;
+                TR.tfold
+                  ~ok:poq#mk_global_request
+                  ~error:(fun e ->
+                    log_diagnostics_result
+                      ~tag:"buffer_implies_pluspi_safe"
+                      ~msg:poq#fname
+                      __FILE__ __LINE__
+                      ["Unable to convert predicate to xpredicate: "
+                       ^ (p2s (po_predicate_to_pretty gpred));
+                       String.concat "; " e])
+                  xpred_r;
                 None
               end
          end
