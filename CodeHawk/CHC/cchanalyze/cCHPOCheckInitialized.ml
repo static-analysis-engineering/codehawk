@@ -59,6 +59,8 @@ open CCHProofObligation
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+module TR = CHTraceResult
+
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
@@ -78,8 +80,8 @@ object (self)
        | l  -> "(" ^ (String.concat "" l) ^ ")")
 
   method private is_function_pointer (memlval: lval) =
-    match fenv#get_type_unrolled (type_of_lval poq#env#get_fdecls memlval) with
-    | TPtr (TFun _,_) -> true
+    match TR.tmap fenv#get_type_unrolled (type_of_lval poq#env#get_fdecls memlval) with
+    | Ok (TPtr (TFun _, _)) -> true
     | _ -> false
 
   method private memref_to_string (memref: memory_reference_int) =
@@ -294,15 +296,30 @@ object (self)
       let request () =
         match memoffset with
         | NoOffset | Field _ ->
-           let xpred =
-             XInitialized
-               (ArgAddressedValue (ReturnValue, offset_to_s_offset memoffset)) in
            if List.mem callee.vname ["malloc"; "calloc"; "realloc"] then
              poq#set_diagnostic
                ~site:(Some (__FILE__, __LINE__, mname))
                "[action]:identify side effects of intervening calls"
            else
-             poq#mk_postcondition_request xpred callee
+             TR.tfold
+               ~ok:(fun offset ->
+                 let xpred =
+                   XInitialized (ArgAddressedValue (ReturnValue, offset)) in
+                 poq#mk_postcondition_request xpred callee)
+               ~error:(fun e ->
+                 begin
+                   log_diagnostics_result
+                     ~tag:"memlval_vinv_memref_basevar_implies_safe"
+                     ~msg:poq#fname
+                     __FILE__ __LINE__
+                     [String.concat "; " e;
+                      "Unable to convert offset: "
+                      ^ (p2s (offset_to_pretty memoffset))];
+                   poq#set_diagnostic
+                     ~site:(Some (__FILE__, __LINE__, mname))
+                     "[failure]:unable to convert offset to create external predicate"
+                 end)
+               (offset_to_s_offset memoffset)
         | _ -> poq#set_diagnostic_arg
                  ~site:(Some (__FILE__, __LINE__, mname))
                  1
@@ -338,28 +355,43 @@ object (self)
                | Some _  -> facc
                | _ ->
                   match pc with
-                  | XInitialized (ArgAddressedValue (ReturnValue, soff))
-                       when (offset_compare
-                               (s_offset_to_offset tgttype soff) memoffset) = 0 ->
-                     let deps =
-                       DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
-                     let rec offset_s o = match o with
-                       | NoOffset -> ""
-                       | Field ((fname, _), oo) -> "." ^ fname ^ (offset_s oo)
-                       | Index (_e, oo) -> "[.]" ^ (offset_s oo) in
-                     let offsetstring o =
-                       let s = offset_s o in
-                       if (String.length s) > 0 then
-                         " (offset: " ^ s ^ ") "
-                       else
-                         "" in
-                     let msg =
-                       "value addressed by return value from "
-                       ^ callee.vname
-                       ^ (offsetstring memoffset)
-                       ^ " is initialized" in
-                     let site = Some (__FILE__, __LINE__, mname) in
-                     Some (deps, msg, site)
+                  | XInitialized (ArgAddressedValue (ReturnValue, soff)) ->
+                     TR.tfold
+                       ~ok:(fun offset ->
+                         if (offset_compare offset memoffset) = 0 then
+                           (* (s_offset_to_offset tgttype soff) memoffset) = 0 -> *)
+                           let deps =
+                             DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
+                           let rec offset_s o = match o with
+                             | NoOffset -> ""
+                             | Field ((fname, _), oo) -> "." ^ fname ^ (offset_s oo)
+                             | Index (_e, oo) -> "[.]" ^ (offset_s oo) in
+                           let offsetstring o =
+                             let s = offset_s o in
+                             if (String.length s) > 0 then
+                               " (offset: " ^ s ^ ") "
+                             else
+                               "" in
+                           let msg =
+                             "value addressed by return value from "
+                             ^ callee.vname
+                             ^ (offsetstring memoffset)
+                             ^ " is initialized" in
+                           let site = Some (__FILE__, __LINE__, mname) in
+                           Some (deps, msg, site)
+                         else
+                           None)
+                       ~error:(fun e ->
+                         begin
+                           log_diagnostics_result
+                             ~tag:"memlval_vinv_memref_basevar_implies_safe"
+                             ~msg:poq#fname
+                             __FILE__ __LINE__
+                             [String.concat "; " e;
+                              "Unable to convert offset"];
+                           None
+                         end)
+                       (s_offset_to_offset tgttype soff)
                   | _ -> None) None pcs in
          match r with
          | Some _ -> r
@@ -400,9 +432,18 @@ object (self)
                       let site = Some (__FILE__, __LINE__, mname) in
                       Some (deps, msg, site)
                    | _ ->
-                      let xpred = po_predicate_to_xpredicate poq#fenv pred in
                       begin
-                        poq#mk_global_request xpred;
+                        TR.tfold
+                          ~ok:poq#mk_global_request
+                          ~error:(fun e ->
+                            log_diagnostics_result
+                              ~tag:"memlval_vinv_memref_implies_safe"
+                              ~msg:poq#fname
+                              __FILE__ __LINE__
+                            ["Unable to convert predicate to xpredicate: "
+                             ^ (p2s (po_predicate_to_pretty pred));
+                             String.concat "; " e])
+                        (po_predicate_to_xpredicate poq#fenv pred);
                         None
                       end
                  end
@@ -465,9 +506,18 @@ object (self)
               let site = Some (__FILE__, __LINE__, mname) in
               Some (deps, msg, site)
            | _ ->
-              let xpred = po_predicate_to_xpredicate poq#fenv pred in
               begin
-                poq#mk_global_request xpred;
+                TR.tfold
+                  ~ok:poq#mk_global_request
+                  ~error:(fun e ->
+                    log_diagnostics_result
+                      ~tag:"memlval_vinv_implies_safe"
+                      ~msg:poq#fname
+                      __FILE__ __LINE__
+                      ["Unable to convert predicate to xpredicate: "
+                       ^ (p2s (po_predicate_to_pretty pred));
+                       String.concat "; " e])
+                  (po_predicate_to_xpredicate poq#fenv pred);
                 None
               end
          end
