@@ -438,7 +438,7 @@ object (self)
        *)
       let stdsummary =
         self#has_summary_with_stdheader
-          ["in"; "inet"; "socket"; "stdio"; "stdlib"; "string"; ] name in
+          ["in"; "inet"; "socket"; "stdio"; "stdlib"; "string"; "errno" ] name in
       if stdsummary then
         true
       else
