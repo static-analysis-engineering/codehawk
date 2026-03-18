@@ -181,6 +181,8 @@ object (self)
     match op with
     | Neg -> XOp (XNeg, [self#translate_expr x])
     | BNot -> XOp (XBNot, [self#translate_expr x])
+    | LNot when is_pointer_type (type_of_exp fdecls x) ->
+      XOp (XEq, [self#translate_expr x; XConst (IntConst numerical_zero)])
     | LNot -> XOp (XLNot, [self#translate_expr x])
 
   method private translate_address lval ftype:xpr_t =
