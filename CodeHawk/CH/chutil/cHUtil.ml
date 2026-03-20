@@ -261,6 +261,37 @@ let list_compare_r (l1: 'a list) (l2: 'b list) (f: 'a -> 'b -> int): int =
       (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
 
 
+let pair_compare
+      (p1: ('a * 'b))
+      (p2: ('a * 'b))
+      (f1: 'a -> 'a -> int)
+      (f2: 'b -> 'b -> int): int =
+  let l0 = f1 (fst p1) (fst p2) in
+  if l0 = 0 then
+    f2 (snd p1) (snd p2)
+  else
+    l0
+
+
+let triple_compare
+      (p1: ('a * 'b * 'c))
+      (p2: ('a * 'b * 'c))
+      (f1: 'a -> 'a -> int)
+      (f2: 'b -> 'b -> int)
+      (f3: 'c -> 'c -> int) =
+  let (x1, y1, z1) = p1 in
+  let (x2, y2, z2) = p2 in
+  let l0 = f1 x1 x2 in
+  if l0 = 0 then
+    let l1 = f2 y1 y2 in
+    if l1 = 0 then
+      f3 z1 z2
+    else
+      l1
+  else
+    l0
+
+
   (* Compares to optional values, with the Some value smaller than None,
      two None values are considered equal, and otherwise the provided
      function decides *)
