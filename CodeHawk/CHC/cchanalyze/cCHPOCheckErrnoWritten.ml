@@ -89,14 +89,13 @@ object (self)
     | _ -> None 
 
   method private find_constant_proof vid =
-    let take_opt (take_second: numerical_t -> numerical_t -> bool) (x: numerical_t option) (y: numerical_t option): bool * numerical_t option =
+    let take_opt take_second x y =
       match x, y with
       | Some x', Some y' ->  if take_second x' y' then (true, Some y') else (false, Some x')
       | Some x', None -> false, Some x'
       | None, Some y' -> false, Some y'
       | _ -> false, None
     in
-
 
     let exact_interval x (i : invariant_int) = 
       match i#get_fact with
@@ -105,7 +104,7 @@ object (self)
       | _ -> None
     in
 
-    let interval_of_inv x i = match i#get_fact with
+    let interval_of_inv x (i: invariant_int) = match i#get_fact with
     | NonRelationalFact (vv, _) when equalities#find (vv#getName#getSeqNumber) = equalities#find x -> 
       i#lower_bound, i#upper_bound
     | ParameterConstraint e -> 
