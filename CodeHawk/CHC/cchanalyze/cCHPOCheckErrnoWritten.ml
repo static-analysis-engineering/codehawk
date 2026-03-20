@@ -88,7 +88,7 @@ object (self)
       end (Some []) syms
     | _ -> None 
 
-  method private find_constant_proof vid =
+  method private meet_intervals vid =
     let take_opt take_second x y =
       match x, y with
       | Some x', Some y' ->  if take_second x' y' then (true, Some y') else (false, Some x')
@@ -136,10 +136,12 @@ object (self)
       | _ -> refine_interval x (deps, lb, ub) i
     in
 
-    match List.fold_left (meet_invariants (equalities#find vid)) ([], None, None) locinv#get_invariants with 
+    List.fold_left (meet_invariants (equalities#find vid)) ([], None, None) locinv#get_invariants
+  
+  method private find_constant_proof x =
+    match self#meet_intervals x with
       | deps, Some lb, Some ub when lb#equal ub -> Some (deps, lb)
       | _ -> None
-
 
   method private check_condition_safe (wc: ErrnoP.t): dependencies_t option =
     let prove_eq_this_const x c =
@@ -152,8 +154,19 @@ object (self)
     | True -> 
       Some (DLocal [])
 
-    | VarEqVal (v, c) -> 
-        prove_eq_this_const v (mkNumerical c)
+    | VarInt (v, l, u) -> 
+      let deps, l', u' = self#meet_intervals v in
+
+      (* Check computed interval is within bound of requested (l, u)*)
+      let lt_ok = match l, l' with
+      | None, _ -> true
+      | Some l_spec, Some l_found -> (mkNumerical l_spec)#leq l_found
+      | _ -> false
+      in let ub_ok = match u, u' with
+      | None, _ -> true
+      | Some u_spec, Some u_found -> u_found#leq (mkNumerical u_spec)
+       | _ -> false
+      in if lt_ok && ub_ok then Some (DLocal deps) else None
 
     | VarNull v -> 
       prove_eq_this_const v numerical_zero
