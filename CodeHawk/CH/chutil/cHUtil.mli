@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,26 @@ val list_compare: 'a list -> 'a list -> ('a -> 'a -> int) -> int
     than [lst2] and otherwise returns the element-wise comparison of [lst1]
     and [lst2] starting from the last element.*)
 val list_compare_r: 'a list -> 'a list -> ('a -> 'a -> int) -> int
+
+
+(** [pair_compare p1 p2 f1 f2] returns the result of the element-wise comparison
+    of pairs [p1] and [p2] using [f1] and [f2] as comparison function for the
+    first and second element of the pair respectively.*)
+val pair_compare:
+  ('a * 'b) -> ('a * 'b) -> ('a -> 'a -> int) -> ('b -> 'b -> int) -> int
+
+
+  (** [triple_compare t1 t2 returns the result of the element-wise comparison
+      of triples [t1] and [t2], using [f1], [f2], and [f3] as comparison
+      functions for the three elements, respectively.*)
+val triple_compare:
+    ('a * 'b * 'c)
+  -> ('a * 'b * 'c)
+  -> ('a -> 'a -> int)
+  -> ('b -> 'b -> int)
+  -> ('c -> 'c -> int)
+  -> int
+
 
 val list_union_f: 'a list -> 'a list -> ('a -> 'a -> bool) -> 'a list
 
