@@ -1321,12 +1321,19 @@ object (self)
     let (_pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
     let errno_sideeffect ps = 
       if List.exists (function XWritesErrno, _ -> true | _ -> false) ps then 
+        (* Make sure cond is disjoint...*)
         match optrvar, List.filter (function (XWritesErrno, _) -> false | _ -> true) ps with
         | Some rvar, [XNull ReturnValue, _] -> 
             let idx = rvar#getName#getSeqNumber in
             let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
             [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
-          |  _ -> 
+
+        | Some rvar, [XRelationalExpr (Eq, ReturnValue, NumConstant c), _] ->
+            pr_debug [ STR "HERE!!" ; NL ];
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarEqVal(idx, c#toInt)) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+        |  _ -> 
             []
       else
         [] in

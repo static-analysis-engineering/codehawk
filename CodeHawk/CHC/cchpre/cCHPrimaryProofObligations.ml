@@ -554,7 +554,7 @@ and create_po_exp
       add (PInitialized lval);
       (match lval, !errnos with
       | (Mem (Lval (Var x, NoOffset)), NoOffset), Some es when es#has (snd x) -> 
-        add_proof_obligation PErrnoWritten loc context#add_lval#add_mem
+        add_proof_obligation PErrnoWritten loc context
       | _ -> ());
       create_po_lval env context#add_lval lval loc
     end

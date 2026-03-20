@@ -31,7 +31,7 @@
 open CHNumerical
 
 (* xprlib *)
-(* open XprTypes *)
+open XprTypes
 
 (* cchlib *)
 (* open CCHBasicTypes
@@ -45,13 +45,35 @@ open CCHPreTypes
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+module VarUF = CHUnionFind.Make
+    (struct 
+      type t = int
+      let toPretty v = CHPretty.INT v
+      let compare = compare
+    end)
+
 module ErrnoP = CCHErrnoWritePredicateSymbol
+
 
 class errno_written_checker_t
   (poq: po_query_int)
   (locinv: location_invariant_int)
   (invs: invariant_int list) =
 object (self)
+
+  val equalities =
+    begin
+      let uf = new VarUF.union_find_t in
+      locinv#get_invariants
+      |> List.iter begin fun i -> 
+          match i#get_fact with
+          | NonRelationalFact (x, FSymbolicExpr (XVar y)) -> uf#union (x#getName#getSeqNumber) (y#getName#getSeqNumber)
+          | _ -> ()
+      end;
+      uf
+    end
+
+  method private simplify = Xsimplify.simplify_xpr
 
   method private get_conditions (i: invariant_int): ErrnoP.t list option =
     match i#get_fact with
@@ -66,25 +88,76 @@ object (self)
       end (Some []) syms
     | _ -> None 
 
+  method private find_constant_proof vid =
+    let take_opt (take_second: numerical_t -> numerical_t -> bool) (x: numerical_t option) (y: numerical_t option): bool * numerical_t option =
+      match x, y with
+      | Some x', Some y' ->  if take_second x' y' then (true, Some y') else (false, Some x')
+      | Some x', None -> false, Some x'
+      | None, Some y' -> false, Some y'
+      | _ -> false, None
+    in
+
+
+    let exact_interval x (i : invariant_int) = 
+      match i#get_fact with
+      | NonRelationalFact (vv, FIntervalValue (Some lb, Some ub)) when 
+        equalities#find (vv#getName#getSeqNumber) = (equalities#find x) && lb#equal ub -> Some lb
+      | _ -> None
+    in
+
+    let interval_of_inv x i = match i#get_fact with
+    | NonRelationalFact (vv, _) when equalities#find (vv#getName#getSeqNumber) = equalities#find x -> 
+      i#lower_bound, i#upper_bound
+    | ParameterConstraint e -> 
+      begin match self#simplify e with
+      | XOp (op, [XVar vv; XConst (IntConst c)]) when equalities#find(vv#getName#getSeqNumber) = equalities#find x ->
+        begin match op with
+        | XLe -> None, Some (c)
+        | XLt -> None, Some (c#sub numerical_one)
+        | XGt -> Some (c#add numerical_one), None
+        | XGe -> Some c, None
+        | _   -> None, None
+        end
+      | _ -> None, None
+    end
+    | _ -> None, None
+    in
+
+    let refine_interval x (deps, lb, ub) (i : invariant_int) =
+      let lbi, ubi = interval_of_inv x i in
+      let improved_l, lb' = take_opt (fun x y -> y#gt x) lb lbi in
+      let improved_u, ub' = take_opt (fun x y -> y#lt x) ub ubi in
+      let deps' = if improved_l || improved_u then i#index :: deps else deps in
+      (deps', lb', ub')
+    in
+
+    let meet_invariants x (deps, lb, ub) i =
+      match exact_interval x i with   
+      | Some v -> ([i#index], Some v, Some v)
+      | _ -> refine_interval x (deps, lb, ub) i
+    in
+
+    match List.fold_left (meet_invariants (equalities#find vid)) ([], None, None) locinv#get_invariants with 
+      | deps, Some lb, Some ub when lb#equal ub -> Some (deps, lb)
+      | _ -> None
+
+
   method private check_condition_safe (wc: ErrnoP.t): dependencies_t option =
+    let prove_eq_this_const x c =
+      Option.bind (self#find_constant_proof x) begin fun (deps, k) ->
+        if k#equal c then Some (DLocal deps) else None
+      end
+    in
+
     match wc with
     | True -> 
       Some (DLocal [])
 
+    | VarEqVal (v, c) -> 
+        prove_eq_this_const v (mkNumerical c)
+
     | VarNull v -> 
-      let v_invs = List.filter_map begin fun inv ->
-        match inv#get_fact with
-        | NonRelationalFact (vv, _) when vv#getName#getSeqNumber = v -> 
-          Some(inv)
-        | _ -> None
-      end locinv#get_invariants in
-      (* Do any of these prove v not null*)
-      let find_proof (i: invariant_int) = 
-        match i#const_value with
-        | Some v when v#equal numerical_zero -> Some (DLocal [])
-        | _ -> None
-      in
-      List.find_map find_proof v_invs
+      prove_eq_this_const v numerical_zero
 
   method check_safe : bool = 
     let disjuncts = List.filter_map self#get_conditions invs in
