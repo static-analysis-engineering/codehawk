@@ -12,15 +12,14 @@
     <preconditions/>
     <postconditions>
       <post>
-       <math><apply><eq><return/><cn>0</cn></eq></apply></math>
+       <math><apply><eq/><return/><cn>0</cn></apply></math>
       </post>
       <error-post>
-        <math><apply><lt><return/><cn>0</cn></lt></apply></math>
+        <math><apply><lt/><return/><cn>0</cn></apply></math>
       </error-post>
       <error-post>
-        <writes-errno/>
+        <math><apply><writes-errno/></apply></math>
       </error-post>
-      <zero-negone/>
     </postconditions>
     <sideeffects>
       <sideeffect>
