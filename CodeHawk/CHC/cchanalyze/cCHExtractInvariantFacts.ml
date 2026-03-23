@@ -334,12 +334,11 @@ let extract_external_value_facts
 
 
 let extract_ranges
-      (env:c_environment_int)
+      (_env:c_environment_int)
       (invio:invariant_io_int)
       (invariants:(string, (string,atlas_t) H.t) H.t) =
   let get_bound b =
     match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
-  let is_cvv v = env#is_fixed_value v in
   H.iter (fun k v ->
     if H.mem v intervals_domain then
       let inv = H.find v intervals_domain in
@@ -349,7 +348,7 @@ let extract_ranges
         invio#add_fact context (Unreachable "intervals")
       else
 	let vars = domain#observer#getObservedVariables in
-	let programVars = List.filter (fun v -> not (is_cvv v || v#isTmp)) vars in
+	let programVars = List.filter (fun v -> not v#isTmp) vars in
 	let varObserver = domain#observer#getNonRelationalVariableObserver in
 	List.iter(fun v ->
 	    let index = v#getName#getSeqNumber in
