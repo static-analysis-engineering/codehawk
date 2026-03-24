@@ -61,6 +61,7 @@ let cmds = [
     "gc";
     "undefined-behavior-primary";
     "outputparameters-primary";
+    "errno-primary";
     "localinvs";
     "globalinvs";
     "check";
@@ -190,6 +191,17 @@ let main () =
         system_settings#set_output_parameter_analysis;
 	let _ =
           CCHCreateOutputParameterPOs.output_parameter_po_process_file () in
+        log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
+	save_log_files "primary";
+        log_info
+          "primary proof obligations log files saved [%s:%d]" __FILE__ __LINE__
+      end
+
+    else if !cmd = "errno-primary" then
+      begin
+        system_settings#set_output_parameter_analysis;
+	let _ =
+          CCHCreateErrnoPOs.errno_po_process_file () in
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";
         log_info

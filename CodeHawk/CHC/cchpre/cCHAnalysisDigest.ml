@@ -40,6 +40,7 @@ let elocm (line: int): string = (eloc line) ^ ": "
 let analysis_digest_name (kind: analysis_digest_kind_t): string =
   match kind with
   | UndefinedBehaviorAnalysis -> "undefined-behavior"
+  | ErrnoAnalysis _ -> "errno"
   | OutputParameterAnalysis _ -> "output parameters"
                              
    
@@ -53,6 +54,7 @@ object (self)
     match kind with
     | UndefinedBehaviorAnalysis -> true
     | OutputParameterAnalysis digest -> digest#is_active po_s
+    | ErrnoAnalysis digest -> digest#is_active po_s
 
   method kind = kind
 
@@ -66,6 +68,7 @@ object (self)
     match self#kind with
     | UndefinedBehaviorAnalysis -> Ok ()
     | OutputParameterAnalysis digest -> digest#read_xml node 
+    | ErrnoAnalysis digest -> digest#read_xml node 
 
 end
 
@@ -80,6 +83,10 @@ let mk_output_parameter_analysis_digest
   let opdigest = CCHOutputParameterAnalysis.mk_analysis_digest fname pod in
   new analysis_digest_t fname pod (OutputParameterAnalysis opdigest)
 
+let mk_errno_analysis_digest
+      (fname: string) (pod: podictionary_int): analysis_digest_int =
+  let opdigest = CCHErrnoAnalysis.mk_analysis_digest fname pod in
+  new analysis_digest_t fname pod (ErrnoAnalysis opdigest)
 
 let read_xml_analysis_digest
       (node: xml_element_int)
@@ -89,6 +96,9 @@ let read_xml_analysis_digest
   match name with
   | "undefined-behavior" ->
      Ok (mk_undefined_behavior_analysis_digest fname pod)
+  | "errno" ->
+     let digest = mk_errno_analysis_digest fname pod in
+     Ok digest
   | "output parameters" ->
      let digest = mk_output_parameter_analysis_digest fname pod in
      let _ = digest#read_xml node in

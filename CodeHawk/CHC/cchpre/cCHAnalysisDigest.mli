@@ -43,6 +43,8 @@ val mk_undefined_behavior_analysis_digest:
 val mk_output_parameter_analysis_digest:
   string -> podictionary_int -> analysis_digest_int
 
+val mk_errno_analysis_digest:
+  string -> podictionary_int -> analysis_digest_int
 
 val read_xml_analysis_digest:
   xml_element_int
