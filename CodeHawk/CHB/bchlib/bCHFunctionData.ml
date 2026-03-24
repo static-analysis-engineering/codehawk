@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,8 +56,25 @@ let p2s = CHPrettyUtil.pretty_to_string
 let bd = BCHDictionary.bdictionary
 
 
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+
+
 let sanitize_function_name (s: string) =
   string_replace '.' "_" s
+
+
+let get_default_functionsummary_name (faddr: string): string traceresult =
+  if (String.length faddr) > 2 && (String.sub faddr 0 2) = "0x" then
+    let len = String.length faddr in
+    Ok ("sub_" ^ (String.sub faddr 2 (len - 2)))
+  else
+    Error [elocm __LINE__;
+           "Invalid string for default function summary name: " ^ faddr]
+
+
+let get_default_functionsummary_name_dw (faddr: doubleword_int): string =
+  TR.tget_ok (get_default_functionsummary_name faddr#to_hex_string)
 
 
 let regvar_intro_to_string (rvi: regvar_intro_t) =
