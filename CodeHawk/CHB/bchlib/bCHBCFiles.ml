@@ -198,7 +198,7 @@ object (self)
          (bcd#index_compinfo cinfo, i loc)
     | _ -> ()
 
-  method add_fundef (name: string) (ty: btype_t) =
+  method add_fundef ?(attrs=[]) (name: string) (ty: btype_t) =
     if H.mem gfuns name then
       (* function already exists *)
       ()
@@ -228,7 +228,7 @@ object (self)
                bvdecl = loc;
                bvinline = false;
                bvid = self#get_varinfo_id;
-               bvattr = [];
+               bvattr = attrs;
                bvaddrof = false;
                bvparam = 0
              } in
