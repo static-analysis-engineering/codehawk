@@ -1,19 +1,24 @@
+(* chlib *)
 open CHPretty
+open CHUtils
+
+(* chtuil *)
 open CHTimingLog
 open CHTraceResult
 
-open CHUtils
-
+(* cchlib *)
 open CCHBasicTypes
 open CCHContext
 open CCHBasicUtil
 open CCHDeclarations
 open CCHLibTypes
 open CCHFileContract
+open CCHSettings
+
+(* cchpre *)
 open CCHPreFileIO
 open CCHPreTypes
 open CCHProofScaffolding
-open CCHSettings
 
 module H = Hashtbl
 let (let* ) x f = CHTraceResult.tbind f x
@@ -223,8 +228,6 @@ let process_function (fname:string): unit traceresult =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
   let fundec = read_function_semantics fname in
   let _ = read_proof_files fname fundec.sdecls in
-  let* _ = proof_scaffolding#initialize_errno_analysis fname in
-  let* _analysisdigest = proof_scaffolding#get_errno_analysis fname in
   let* errnos = match errno_transform_ok_block fundec.sdecls fundec.sbody with
   | None -> Error ["Can not run errno analysis, found code we can not analyze"]
   | Some errnos -> Ok errnos
@@ -246,7 +249,6 @@ let errno_po_process_file () =
     let _ = fenv#initialize cfile in
     let _ = cdeclarations#index_location call_sink in
     let functions = fenv#get_application_functions in
-    (* let functions = List.filter (fun f -> not (f.vname = "main")) functions in *)
     let _ =
       log_info
         "Cfile %s initialized with %d functions [%s:%d]"
@@ -258,7 +260,6 @@ let errno_po_process_file () =
     let u_r =
       List.fold_left (fun acc f ->
           tbind (fun () -> process_function f.vname) acc) (Ok ()) functions in
-      (*  List.iter process_global cfile.globals; *)
     tbind (fun () ->
         begin
           save_cfile_assignment_dictionary ();

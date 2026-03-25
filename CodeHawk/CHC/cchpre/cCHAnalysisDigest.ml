@@ -40,7 +40,7 @@ let elocm (line: int): string = (eloc line) ^ ": "
 let analysis_digest_name (kind: analysis_digest_kind_t): string =
   match kind with
   | UndefinedBehaviorAnalysis -> "undefined-behavior"
-  | ErrnoAnalysis _ -> "errno"
+  | ErrnoAnalysis -> "errno"
   | OutputParameterAnalysis _ -> "output parameters"
                              
    
@@ -53,8 +53,8 @@ object (self)
   method is_active (po_s: proof_obligation_int list) =
     match kind with
     | UndefinedBehaviorAnalysis -> true
+    | ErrnoAnalysis -> true
     | OutputParameterAnalysis digest -> digest#is_active po_s
-    | ErrnoAnalysis digest -> digest#is_active po_s
 
   method kind = kind
 
@@ -68,7 +68,7 @@ object (self)
     match self#kind with
     | UndefinedBehaviorAnalysis -> Ok ()
     | OutputParameterAnalysis digest -> digest#read_xml node 
-    | ErrnoAnalysis digest -> digest#read_xml node 
+    | ErrnoAnalysis -> Ok ()
 
 end
 
@@ -85,8 +85,7 @@ let mk_output_parameter_analysis_digest
 
 let mk_errno_analysis_digest
       (fname: string) (pod: podictionary_int): analysis_digest_int =
-  let opdigest = CCHErrnoAnalysis.mk_analysis_digest fname pod in
-  new analysis_digest_t fname pod (ErrnoAnalysis opdigest)
+  new analysis_digest_t fname pod ErrnoAnalysis
 
 let read_xml_analysis_digest
       (node: xml_element_int)

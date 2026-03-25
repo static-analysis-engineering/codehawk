@@ -105,30 +105,6 @@ object (self)
     with
     | Not_found -> []
 
-  method initialize_errno_analysis (fname: string): unit traceresult = 
-      let pod = self#get_pod fname in
-    let digest =
-      CCHAnalysisDigest.mk_errno_analysis_digest fname  pod in
-      self#add_analysis_digest fname digest
-
-  method get_errno_analysis
-    (fname: string): errno_analysis_digest_int traceresult = 
-    if H.mem analysis_digests fname then
-      List.fold_left (fun acc d ->
-          match acc with
-          | Ok _ -> acc
-          | _ ->
-             match d#kind with
-             | ErrnoAnalysis digest -> Ok digest
-             | _ -> acc)
-        (Error [(elocm __LINE__)
-                ^ "No errno analysis found for function "
-                ^ fname])
-        (H.find analysis_digests fname)
-    else
-      Error [(elocm __LINE__)
-             ^ "No analysis digests found for function " ^ fname]
-
   method get_output_parameter_analysis
            (fname: string): output_parameter_analysis_digest_int traceresult =
     if H.mem analysis_digests fname then

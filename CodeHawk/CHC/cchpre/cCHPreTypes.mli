@@ -1602,8 +1602,8 @@ class type output_parameter_analysis_digest_int =
 
 type analysis_digest_kind_t =
   | UndefinedBehaviorAnalysis
+  | ErrnoAnalysis
   | OutputParameterAnalysis of output_parameter_analysis_digest_int
-  | ErrnoAnalysis of errno_analysis_digest_int
 
 
 class type analysis_digest_int =
@@ -1652,9 +1652,6 @@ class type proof_scaffolding_int =
     method get_output_parameter_analysis:
              string -> output_parameter_analysis_digest_int traceresult
 
-
-    method initialize_errno_analysis: string -> unit traceresult
-    method get_errno_analysis: string -> errno_analysis_digest_int traceresult
 
     method has_output_parameter_analysis: string -> bool
 
