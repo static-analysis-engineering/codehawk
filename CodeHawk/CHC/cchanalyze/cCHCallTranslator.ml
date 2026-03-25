@@ -193,6 +193,31 @@ let call_does_not_return
   List.exists (fun (p, _) -> match p with XFalse -> true | _ -> false) post
 
 
+let is_writes_errno = function XWritesErrno, _ -> true | _ -> false
+let is_not_writes_errno x = not (is_writes_errno x)
+let has_writes_errno = List.exists is_writes_errno
+
+let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
+  let int_of_ret op c = 
+    match op with 
+    | Eq -> CHIntervals.mkInterval c c
+    | Lt -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num (c#sub numerical_one))
+    | Le -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num c)
+    | Gt -> new CHIntervals.interval_t (CHBounds.bound_of_num (c#add numerical_one)) CHBounds.plus_inf_bound
+    | Ge -> new CHIntervals.interval_t (CHBounds.bound_of_num c) CHBounds.plus_inf_bound
+    | _ -> CHIntervals.topInterval
+  in
+
+  match fst p, fst q with
+  | XNull ReturnValue, XNotNull ReturnValue -> true
+
+  | XRelationalExpr (op, ReturnValue, NumConstant v), 
+    XRelationalExpr (op', ReturnValue, NumConstant v') ->
+    let pi = int_of_ret op v in
+    let qi = int_of_ret op' v' in
+    pi#getMax#lt qi#getMin || qi#getMax#lt pi#getMin
+  | _ -> false
+
 class num_call_translator_t
         (env:c_environment_int)
         (orakel:orakel_int)
@@ -1309,6 +1334,46 @@ object (self)
                 None
            | _ -> acc) (Some []) sideeffects
 
+  method private get_errno_sideeffect 
+                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list) 
+                  (optrvar: variable_t option) =
+    let (pcs, epcs) = postconditions in 
+
+    let non_errno_pcs, non_errno_epcs = 
+          List.filter is_not_writes_errno pcs, List.filter is_not_writes_errno epcs in
+
+    let rv_interval op c =
+      match op with
+      | Eq -> (Some c#toInt, Some c#toInt)
+      | Lt -> (None, Some (c#toInt - 1))
+      | Le -> (None, Some c#toInt)
+      | Gt -> (Some (c#toInt + 1), None)
+      | Ge -> (Some c#toInt, None)
+      | _ -> (None, None)
+    in
+
+    let errno_sideeffect = 
+      if has_writes_errno epcs then 
+        (* Make sure cond is disjoint...*)
+        match optrvar, non_errno_epcs with
+        | Some rvar, [XNull ReturnValue, _ as p] when List.exists (disjoint p) non_errno_pcs ->
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+
+        | Some rvar, [XRelationalExpr (op, ReturnValue, NumConstant c), _ as p] when List.exists (disjoint p) non_errno_pcs ->
+            let (lb, ub) = rv_interval op c in
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, lb, ub)) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+
+        |  _ -> 
+            []
+      else
+        []
+      
+      in errno_sideeffect
+
   method private get_sideeffect
                    (fname:string)
                    (fvid:int)
@@ -1317,32 +1382,8 @@ object (self)
                    optrvar
                    =
     let vinfo = fdecls#get_varinfo_by_vid fvid in
-    (* TODO generalize *)
-    let (_pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
-    let errno_sideeffect ps = 
-      if List.exists (function XWritesErrno, _ -> true | _ -> false) ps then 
-        (* Make sure cond is disjoint...*)
-        match optrvar, List.filter (function (XWritesErrno, _) -> false | _ -> true) ps with
-        | Some rvar, [XNull ReturnValue, _] -> 
-            let idx = rvar#getName#getSeqNumber in
-            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
-            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
-
-        | Some rvar, [XRelationalExpr (Eq, ReturnValue, NumConstant c), _] ->
-            let idx = rvar#getName#getSeqNumber in
-            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, Some c#toInt, Some c#toInt)) in
-            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
-
-        | Some rvar, [XRelationalExpr (Lt, ReturnValue, NumConstant c), _] ->
-            let idx = rvar#getName#getSeqNumber in
-            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, None, Some ((c#toInt - 1)))) in
-            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
-
-        |  _ -> 
-            []
-      else
-        [] in
-    let errno_sideeffect = errno_sideeffect epcs in
+    let (pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
+    let errno_sideeffect = self#get_errno_sideeffect (pcs, epcs) optrvar in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
     let (sitevars,xsitevars) = env#get_site_call_vars context in
     let fnzargs = List.map (fun _ -> None) fnargs in

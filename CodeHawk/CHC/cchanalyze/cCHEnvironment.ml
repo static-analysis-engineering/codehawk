@@ -86,7 +86,6 @@ let is_errno_location_call (e:exp) =
   | Lval (Var ("__errno_location", _), NoOffset) -> true
   | _ -> false
 
-(* TODO: move me *)
 class errno_collector_t =
 object
   inherit CCHTypesTransformer.block_walker_t

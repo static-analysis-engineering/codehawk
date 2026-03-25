@@ -28,18 +28,17 @@
    ============================================================================= *)
 
 (* chlib *)
+open CHBounds
+open CHIntervals
 open CHNumerical
+
+(* chutil *)
+open CHPrettyUtil
 
 (* xprlib *)
 open XprTypes
 
-(* cchlib *)
-(* open CCHBasicTypes
-open CCHLibTypes
-open CCHTypesToPretty *)
-
 (* cchpre *)
-(* open CCHPOPredicate *)
 open CCHPreTypes
 
 (* cchanalyze *)
@@ -54,6 +53,10 @@ module VarUF = CHUnionFind.Make
 
 module ErrnoP = CCHErrnoWritePredicateSymbol
 
+let interval_of_bounds lb ub = 
+  let l = Option.fold ~none:minus_inf_bound ~some:bound_of_num lb in
+  let u = Option.fold ~none:plus_inf_bound ~some:bound_of_num ub in
+  new interval_t l u
 
 class errno_written_checker_t
   (poq: po_query_int)
@@ -75,6 +78,25 @@ object (self)
 
   method private simplify = Xsimplify.simplify_xpr
 
+  method private message_of_cond (c: ErrnoP.t): string =
+    let str_of_vid x = 
+      let v = poq#env#get_variable_manager#get_variable x in
+      pretty_to_string (v#toPretty) 
+    in
+    match c with
+    | True -> 
+        "(unconditional)"
+
+    | VarInt (x, lb, ub) -> 
+      let name = str_of_vid x in
+      let int = interval_of_bounds (Option.map mkNumerical lb) (Option.map mkNumerical ub) in
+      let int_str = pretty_to_string int#toPretty in
+      name ^ " in range " ^ int_str
+
+    | VarNull x -> 
+      let name = str_of_vid x in
+      name ^ " is NULL"
+
   method private get_conditions (i: invariant_int): ErrnoP.t list option =
     match i#get_fact with
     | NonRelationalFact (_, FInitializedSet syms) -> 
@@ -89,105 +111,90 @@ object (self)
     | _ -> None 
 
   method private meet_intervals vid =
-    let take_opt take_second x y =
-      match x, y with
-      | Some x', Some y' ->  if take_second x' y' then (true, Some y') else (false, Some x')
-      | Some x', None -> false, Some x'
-      | None, Some y' -> false, Some y'
-      | _ -> false, None
-    in
-
-    let exact_interval x (i : invariant_int) = 
-      match i#get_fact with
-      | NonRelationalFact (vv, FIntervalValue (Some lb, Some ub)) when 
-        equalities#find (vv#getName#getSeqNumber) = (equalities#find x) && lb#equal ub -> Some lb
-      | _ -> None
-    in
-
     let interval_of_inv x (i: invariant_int) = match i#get_fact with
     | NonRelationalFact (vv, _) when equalities#find (vv#getName#getSeqNumber) = equalities#find x -> 
-      i#lower_bound, i#upper_bound
+      interval_of_bounds i#lower_bound i#upper_bound
+
     | ParameterConstraint e -> 
       begin match self#simplify e with
       | XOp (op, [XVar vv; XConst (IntConst c)]) when equalities#find(vv#getName#getSeqNumber) = equalities#find x ->
         begin match op with
-        | XLe -> None, Some (c)
-        | XLt -> None, Some (c#sub numerical_one)
-        | XGt -> Some (c#add numerical_one), None
-        | XGe -> Some c, None
-        | _   -> None, None
+        | XLe -> interval_of_bounds None (Some c)
+        | XLt -> interval_of_bounds None (Some (c#sub numerical_one))
+        | XGt -> interval_of_bounds (Some (c#add numerical_one)) None
+        | XGe -> interval_of_bounds (Some c) None
+        | _   -> topInterval
         end
-      | _ -> None, None
+      | _ -> topInterval
     end
-    | _ -> None, None
+    | _ -> topInterval
     in
 
-    let refine_interval x (deps, lb, ub) (i : invariant_int) =
-      let lbi, ubi = interval_of_inv x i in
-      let improved_l, lb' = take_opt (fun x y -> y#gt x) lb lbi in
-      let improved_u, ub' = take_opt (fun x y -> y#lt x) ub ubi in
-      let deps' = if improved_l || improved_u then i#index :: deps else deps in
-      (deps', lb', ub')
+    let refine_interval x (deps, int) (i : invariant_int) =
+      let int' = int#meet (interval_of_inv x i) in
+      if int'#equal int then
+        (deps, int')
+      else
+        (i#index :: deps, int')
     in
 
-    let meet_invariants x (deps, lb, ub) i =
-      match exact_interval x i with   
-      | Some v -> ([i#index], Some v, Some v)
-      | _ -> refine_interval x (deps, lb, ub) i
-    in
-
-    List.fold_left (meet_invariants (equalities#find vid)) ([], None, None) locinv#get_invariants
+    List.fold_left (refine_interval (equalities#find vid)) ([], interval_of_bounds None None) locinv#get_invariants
   
   method private find_constant_proof x =
-    match self#meet_intervals x with
-      | deps, Some lb, Some ub when lb#equal ub -> Some (deps, lb)
-      | _ -> None
+    let deps, int = self#meet_intervals x in
+    Option.bind int#singleton (fun v -> Some (deps, v))
 
-  method private check_condition_safe (wc: ErrnoP.t): dependencies_t option =
+  method private check_condition_safe (wc: ErrnoP.t): int list option =
     let prove_eq_this_const x c =
       Option.bind (self#find_constant_proof x) begin fun (deps, k) ->
-        if k#equal c then Some (DLocal deps) else None
+        if k#equal c then Some deps else None
       end
     in
 
     match wc with
     | True -> 
-      Some (DLocal [])
+      Some []
 
     | VarInt (v, l, u) -> 
-      let deps, l', u' = self#meet_intervals v in
-
-      (* Check computed interval is within bound of requested (l, u)*)
-      let lt_ok = match l, l' with
-      | None, _ -> true
-      | Some l_spec, Some l_found -> (mkNumerical l_spec)#leq l_found
-      | _ -> false
-      in let ub_ok = match u, u' with
-      | None, _ -> true
-      | Some u_spec, Some u_found -> u_found#leq (mkNumerical u_spec)
-       | _ -> false
-      in if lt_ok && ub_ok then Some (DLocal deps) else None
+      let spec = interval_of_bounds (Option.map mkNumerical l) (Option.map mkNumerical u) in
+      let deps, v_int = self#meet_intervals v in
+      CHPretty.(pr_debug [STR "VarInt: "; v_int#toPretty; STR " <= "; spec#toPretty; STR (string_of_bool (v_int#leq spec)) ; NL ]);
+      if v_int#leq spec then 
+        (* Computed interval is contained in spec*)
+        Some deps
+      else 
+        None
 
     | VarNull v -> 
       prove_eq_this_const v numerical_zero
 
   method check_safe : bool = 
     let disjuncts = List.filter_map self#get_conditions invs in
+    CHPretty.(pr_debug [ INT (List.length disjuncts); STR " alternative." ; NL ]);
     let check_all = 
         List.fold_left begin fun acc c -> 
           match acc with
-          | Some (_) -> 
-            Option.bind (self#check_condition_safe c) (fun _ -> Some (DLocal []))
+          | Some (results) -> 
+            Option.bind (self#check_condition_safe c) (fun deps -> 
+              Some ((deps, c) :: results)
+            )
           | _ -> None
-          end (Some (DLocal []))
+          end (Some [])
     in
     let check_alternatives = List.find_map check_all in
     let pf = check_alternatives disjuncts in
     match pf with
-    | Some deps -> 
-      poq#record_safe_result deps ":)"; true
+    | Some results -> 
+      let deps, conds = List.split results in
+      let pre_msg = 
+        begin match conds with
+        | [] -> "(empty)" (*I think, conds is a conjunction so empty is trivially true but this shouldn't be possible*)
+        | [c] -> self#message_of_cond c
+        | c::cs -> List.fold_left (fun msgs c -> msgs ^", " ^ self#message_of_cond c) (self#message_of_cond c) cs
+        end in
+      let msg = "errno is set written if: " ^ pre_msg in
+      poq#record_safe_result (DLocal (List.concat deps)) msg; true
     | _ -> false
-
 end
 let check_errno_written poq locinv = 
   let invs = poq#get_errno_write_invariants in
