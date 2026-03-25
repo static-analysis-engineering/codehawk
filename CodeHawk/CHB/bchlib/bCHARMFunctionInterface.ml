@@ -677,13 +677,13 @@ let get_arm_format_spec_parameters
     List.fold_left
       (fun aas p ->
         match p.apar_location with
-        | [RegisterParameter (ARMRegister r, _)] ->
+        | [RegisterParameter (ARMRegister r, _, _)] ->
            update_core_reg aas r
-        | [RegisterParameter (ARMDoubleRegister (r1, r2), _)] ->
+        | [RegisterParameter (ARMDoubleRegister (r1, r2), _, _)] ->
            update_core_double_reg aas r1 r2
-        | [RegisterParameter (ARMExtensionRegister r, _)] ->
+        | [RegisterParameter (ARMExtensionRegister r, _, _)] ->
            update_extension_reg aas r
-        | [StackParameter (offset, pld)] ->
+        | [StackParameter (offset, pld, _)] ->
            update_stack_offset aas offset pld.pld_size
         | _ ->
            raise

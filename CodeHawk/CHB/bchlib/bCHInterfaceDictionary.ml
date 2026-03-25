@@ -76,6 +76,9 @@ object (self)
   val parameter_location_table = mk_index_table "parameter-location-table"
   val parameter_location_list_table =
     mk_index_table "parameter-location-list-table"
+  val parameter_destination_table = mk_index_table "parameter-destination-table"
+  val parameter_destination_list_table =
+    mk_index_table "parameter-destination-list-table"
   val role_table = mk_index_table "role-table"
   val roles_table = mk_index_table "roles-table"
   val fts_parameter_table = mk_index_table "fts-parameter-table"
@@ -103,6 +106,8 @@ object (self)
       parameter_location_detail_table;
       parameter_location_table;
       parameter_location_list_table;
+      parameter_destination_table;
+      parameter_destination_list_table;
       role_table;
       roles_table;
       fts_parameter_table;
@@ -180,10 +185,13 @@ object (self)
   method index_parameter_location (p:parameter_location_t) =
     let idetail (d: parameter_location_detail_t) =
       self#index_parameter_location_detail d in
+    let idest (dl: parameter_destination_t list) =
+      self#index_parameter_destination_list dl in
     let tags = [parameter_location_mcts#ts p] in
     let key = match p with
-      | StackParameter (i, d) -> (tags, [i; idetail d])
-      | RegisterParameter (r, d) -> (tags, [bd#index_register r; idetail d])
+      | StackParameter (i, d, pdl) -> (tags, [i; idetail d; idest pdl])
+      | RegisterParameter (r, d, pdl) ->
+         (tags, [bd#index_register r; idetail d; idest pdl])
       | GlobalParameter (a, d) -> (tags, [bd#index_address a; idetail d])
       | UnknownParameterLocation d -> (tags, [idetail d]) in
     parameter_location_table#add key
@@ -192,11 +200,12 @@ object (self)
     let name = "parameter_location" in
     let (tags,args) = parameter_location_table#retrieve index in
     let gdetail (i: int) = self#get_parameter_location_detail i in
+    let gdest (i: int) = self#get_parameter_destination_list i in
     let t = t name tags in
     let a = a name args in
     match (t 0) with
-    | "s" -> StackParameter (a 0, gdetail (a 1))
-    | "r" -> RegisterParameter (bd#get_register (a 0), gdetail (a 1))
+    | "s" -> StackParameter (a 0, gdetail (a 1), gdest (a 2))
+    | "r" -> RegisterParameter (bd#get_register (a 0), gdetail (a 1), gdest (a 2))
     | "g" -> GlobalParameter (bd#get_address (a 0), gdetail (a 1))
     | "u" -> UnknownParameterLocation (gdetail (a 0))
     | s -> raise_tag_error name s parameter_location_mcts#tags
@@ -208,6 +217,34 @@ object (self)
   method get_parameter_location_list (index: int): parameter_location_t list =
     let (_, args) = parameter_location_list_table#retrieve index in
     List.map self#get_parameter_location args
+
+  method index_parameter_destination (p: parameter_destination_t) =
+    let tags = [parameter_destination_mcts#ts p] in
+    let key = match p with
+      | CalleeArg (name, argindex, mode) ->
+         (tags @ [name; arg_io_mfts#ts mode], [argindex])
+      | ZeroComparison -> (tags, [])
+      | NonzeroComparison -> (tags, []) in
+    parameter_destination_table#add key
+
+  method get_parameter_destination (index: int): parameter_destination_t =
+    let name = "parameter_destination" in
+    let (tags, args) = parameter_destination_table#retrieve index in
+    let t = t name tags in
+    let a = a name args in
+    match (t 0) with
+    | "c" -> CalleeArg (t 1, a 0, arg_io_mfts#fs (t 2))
+    | "z" -> ZeroComparison
+    | "n" -> NonzeroComparison
+    | s -> raise_tag_error name s parameter_destination_mcts#tags
+
+  method index_parameter_destination_list (l: parameter_destination_t list): int =
+    let key = ([], List.map self#index_parameter_destination l) in
+    parameter_destination_list_table#add key
+
+  method get_parameter_destination_list (index: int): parameter_destination_t list =
+    let (_, args) = parameter_destination_list_table#retrieve index in
+    List.map self#get_parameter_destination args
 
   method index_role (r:(string * string)) =
     let key = ([], [bd#index_string (fst r); bd#index_string (snd r)]) in
@@ -237,7 +274,8 @@ object (self)
         bd#index_string p.apar_desc;
         self#index_roles p.apar_roles;
         p.apar_size;
-        self#index_parameter_location_list p.apar_location
+        self#index_parameter_location_list p.apar_location;
+        self#index_parameter_destination_list p.apar_destinations
       ] in
     fts_parameter_table#add (tags, args)
 
@@ -254,7 +292,9 @@ object (self)
       apar_io = arg_io_mfts#fs (t 0);
       apar_fmt = formatstring_type_mfts#fs (t 1);
       apar_size = a 5;
-      apar_location = self#get_parameter_location_list (a 6) }
+      apar_location = self#get_parameter_location_list (a 6);
+      apar_destinations = self#get_parameter_destination_list (a 7)
+    }
 
   method index_bterm (t:bterm_t) =
     let tags = [bterm_mcts#ts t] in

@@ -38,6 +38,7 @@ open CHXmlDocument
 open BCHBCAttributes
 open BCHBCTypePretty
 open BCHBCTypes
+open BCHBCTypeUtil
 open BCHExternalPredicate
 open BCHFunctionInterface
 open BCHPrecondition
@@ -338,3 +339,40 @@ let bvarinfo_to_function_semantics
     fsem
   else
     default_function_semantics
+
+
+let get_type_arg_mode
+      (sem: function_semantics_t) (argindex: int) (argtype: btype_t)
+    : type_arg_mode_t option =
+  if is_scalar argtype && (not (is_pointer argtype)) then
+    Some ArgScalarValue
+  else if is_function_type argtype then
+    Some ArgFunctionPointer
+  else
+    let predicates = sem.fsem_pre @ sem.fsem_sideeffects in
+    let mode =
+      List.fold_left (fun acc p ->
+          match acc with
+          | Some _ -> acc
+          | _ ->
+             match p with
+             | XXBlockWrite (_, ArgValue param, _)
+                  when Option.is_some param.apar_index
+                       && (Option.get param.apar_index) = argindex ->
+                Some (ArgDerefWrite None)
+             | _ -> None) None predicates in
+    let mode =
+      if Option.is_none mode then
+        List.fold_left (fun acc p ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               match p with
+               | XXBuffer (_, ArgValue param, _)
+                 when Option.is_some param.apar_index
+                 && (Option.get param.apar_index) = argindex ->
+                  Some (ArgDerefRead None)
+               | _ -> None) None predicates
+      else
+        mode in
+    mode

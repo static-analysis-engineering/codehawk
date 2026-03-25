@@ -3102,11 +3102,11 @@ object (self)
 
    method private evaluate_fts_argument (p: fts_parameter_t): xpr_t =
      match p.apar_location with
-     | [StackParameter (offset, _)] ->
+     | [StackParameter (offset, _, _)] ->
         let index = offset / 4 in
         let argvar = self#env#mk_bridge_value self#cia index in
         self#get_bridge_variable_value index argvar
-     | [RegisterParameter (r, _)] ->
+     | [RegisterParameter (r, _, _)] ->
         let argvar = self#env#mk_register_variable r in
         self#rewrite_variable_to_external argvar
      | [GlobalParameter (a, _)] when not (a#equal wordzero) ->
@@ -3141,7 +3141,7 @@ object (self)
    method private evaluate_fts_address_argument
                     (p: fts_parameter_t):variable_t option =
      match p.apar_location with
-     | [RegisterParameter (r, _)] ->
+     | [RegisterParameter (r, _, _)] ->
         let argvar = self#env#mk_register_variable r in
         let xpr = self#rewrite_variable_to_external argvar in
         (match xpr with
