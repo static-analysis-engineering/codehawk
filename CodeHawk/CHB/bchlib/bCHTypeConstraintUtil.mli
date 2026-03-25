@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -116,6 +116,9 @@ val mk_reglhs_typevar: register_t -> string -> string -> type_variable_t
 val mk_localstack_lhs_typevar: int -> string -> string -> type_variable_t
 
 
+val has_function_parameter_basevar: string -> type_term_t -> bool
+
+
 val has_reg_lhs_basevar: register_t -> string -> string -> type_term_t -> bool
 
 
@@ -209,6 +212,32 @@ val add_fstack_param_capability:
   ?size:int -> int -> type_variable_t -> type_variable_t
 
 
+(** [add_flows_to_arg_capability callsite name argindex mode tv] returns a new type
+    variable that adds a moves_to_arg capability to type variable [tv] (which
+    is expected to represent a function parameter), indicating that the value
+    of the function parameter flows into the argument [argindex] (starting at 1)
+    of callee [name] with the given [mode].*)
+val add_flows_to_arg_capability:
+  string -> string -> int -> type_arg_mode_t -> type_variable_t -> type_variable_t
+
+
+(** [add_flows_to_operation_capability op term tv] returns a new type variable
+    that adds a moves_to_operation capability to type variable [tv] (which is
+    expected to represent a function parameter), indicating that the value of
+    the function parameter flow into one of the operands of operation [op],
+    with an optional term [t] as the other operand.*)
+val add_flows_to_operation_capability:
+  type_operation_kind_t -> bterm_t option -> type_variable_t -> type_variable_t
+
+
+(** [add_flows_from_capability t tv] returns a new type variable that adds a
+    moves_from capability to type variable [tv] (which is expected to represent
+    a function return value), indicating that the return value flows from the
+    optional term [t]. *)
+val add_flows_from_capability:
+  bterm_t option -> type_variable_t -> type_variable_t
+
+
 (** [add_stack_address_capability offset] returns a new type variable that adds
     a stack address capability to a type variable representing a function type,
     indicating that the function type lets a stack address at offset [offset]
@@ -225,6 +254,10 @@ val drop_deref_capability: type_variable_t -> type_variable_t
 val pop_capability: type_term_t -> (type_term_t * type_cap_label_t) option
 
 
+val convert_function_capabilities_to_attributes:
+  int -> type_cap_label_t list -> b_attributes_t
+
+
 (** {1 Type terms} *)
 
 (** Returns a type-constant type-term. *)
@@ -239,14 +272,15 @@ val mk_vty_term: type_variable_t -> type_term_t
 
 val type_constraint_terms: type_constraint_t -> type_term_t list
 
-(** [ground_btype_constraint tvar ty] returns a grounded type constraint that
+(** [mk_btype_constraint tvar ty] returns a grounded type constraint that
     equates [tvar] or a derived variable of [tvar] to [ty] or a derivative of
     [ty].
 
     A ground type constraint is used if external type information is incorporated
     in the type constraint. The most common form is an externally provided type
     signature for a function. *)
-val mk_btype_constraint: type_variable_t -> btype_t -> type_constraint_t option
+val mk_btype_constraint:
+  ?use_voidptr:bool -> type_variable_t -> btype_t -> type_constraint_t option
 
 
 (** {1 Comparison} *)
