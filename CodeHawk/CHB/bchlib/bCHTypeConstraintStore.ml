@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -257,7 +257,16 @@ object (self)
 
   method get_function_type_constraints (faddr: string): type_constraint_t list =
     if H.mem functiontypes faddr then
-      List.map tcd#get_type_constraint (H.find functiontypes faddr)
+      let konstraints =
+        List.map tcd#get_type_constraint (H.find functiontypes faddr) in
+      let _ =
+        log_diagnostics_result
+          ~tag:"get_function_type_constraints"
+          ~msg:faddr
+          __FILE__ __LINE__
+          [String.concat "; "
+             (List.map type_constraint_to_string konstraints)] in
+      konstraints
     else
       []
 
@@ -302,6 +311,86 @@ object (self)
         []
     else
       []
+
+  method evaluate_function_type (faddr: string)
+         : (type_variable_t list * type_constant_t list) list =
+    let konstraints = self#get_function_type_constraints faddr in
+    let termset = new IntCollections.set_t in
+    let constraintset = new IntCollections.set_t in
+    let _ =
+      List.iter (fun c ->
+          begin
+            termset#addList
+              (List.map tcd#index_type_term (type_constraint_terms c));
+            constraintset#add (tcd#index_type_constraint c)
+          end) konstraints in
+    let changed = ref true in
+    while !changed do
+      begin
+        changed := false;
+        H.iter (fun ixc c ->
+            if constraintset#has ixc then
+              ()
+            else
+              let cterms = type_constraint_terms c in
+              let prefixterms =
+                List.concat (List.map type_term_prefix_closure cterms) in
+              let cterms = List.map tcd#index_type_term prefixterms in
+              match cterms with
+              | [] -> ()
+              | [_] -> ()
+              | _ ->
+                 if List.exists termset#has cterms then
+                   begin
+                     List.iter termset#add cterms;
+                     constraintset#add ixc;
+                     changed := true
+                   end
+                 else
+                   ()) store
+      end
+    done;
+    let tygraph = mk_type_constraint_graph () in
+    begin
+      tygraph#initialize (List.map tcd#get_type_term termset#toList);
+      constraintset#iter (fun ixc ->
+          let c = tcd#get_type_constraint ixc in
+          tygraph#add_constraint c);
+      let newgraph = tygraph#saturate in
+      let newgraph = newgraph#saturate in
+      let newgraph = newgraph#saturate in
+      let partition = newgraph#partition in
+      let result =
+        List.fold_left (fun acc s ->
+            let terms = List.map tcd#get_type_term s#toList in
+            let params =
+              List.fold_left (fun acc t ->
+                  match t with
+                  | TyVariable tv when has_function_parameter_basevar faddr t ->
+                     tv :: acc
+                  | _ -> acc) [] terms in
+            let tyconsts =
+              List.fold_left (fun acc t ->
+                  match t with
+                  | TyConstant c -> c :: acc
+                  | _ -> acc) [] terms in
+            match (params, tyconsts) with
+            | ([], _) -> acc
+            | (_, []) -> acc
+            | _ -> (params, tyconsts) :: acc) [] partition in
+      let _ =
+        log_diagnostics_result
+          ~tag:"evaluate_function_types"
+          ~msg:faddr
+          __FILE__ __LINE__
+          [String.concat "; "
+             (List.map (fun (params, consts) ->
+                  (String.concat ", " (List.map type_variable_to_string params))
+                  ^ ":"
+                  ^ (String.concat ", " (List.map type_constant_to_string consts)))
+                result)] in
+      result
+    end
 
   method evaluate_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string)
@@ -472,6 +561,188 @@ object (self)
           | (_, []) -> acc
           | _ -> (stacklhsvars, tyconsts) :: acc) [] partition
     end
+
+  method resolve_function_type
+           (faddr: string)
+         : (register_t * btype_t option * b_attributes_t) list * btype_t option =
+    let evaluation = self#evaluate_function_type faddr in
+    let result = H.create 4 in
+    let returnresult = ref None in
+    let add_result (key: string) (ty: btype_t option) =
+      let _ =
+        log_diagnostics_result
+          ~tag:"resolve_function_type:add_result"
+          __FILE__ __LINE__
+          ["key: " ^ key;
+           "type: " ^
+             (match ty with Some ty -> btype_to_string ty | _ -> "?")] in
+      let entry =
+        if H.mem result key then
+          H.find result key
+        else
+          let c = new IntCollections.set_t in
+          begin
+            H.add result key c;
+            c
+          end in
+      match ty with
+      | Some (TVoid _) -> ()
+      | Some (TPtr (TVoid _, _)) when not entry#isEmpty -> ()
+      | Some ty -> entry#add (bcd#index_typ ty)
+      | _ -> () in
+    let capresult = H.create 4 in
+    let add_capresult (key: string) (caps: type_cap_label_t list) =
+      let entry =
+        if H.mem capresult key then
+          H.find capresult key
+        else
+          begin
+            H.add capresult key [];
+            []
+          end in
+      H.replace capresult key (caps :: entry) in
+    let _ =
+      List.iter (fun (vars, _) ->
+          List.iter (fun v ->
+              match v.tv_capabilities with
+              | (FRegParameter reg) :: caps ->
+                 add_capresult (register_to_string reg) caps
+              | _ -> ()) vars) evaluation in
+    let _ =
+      List.iter (fun (vars, consts) ->
+          let jointy = type_constant_join consts in
+          List.iter (fun v ->
+              match jointy with
+              | TyTUnknown -> ()
+              | _ ->
+                 match v.tv_capabilities with
+                 | [FRegParameter reg]
+                   | [FRegParameter reg; _] ->
+                    add_result
+                      (register_to_string reg)
+                      (Some (type_constant_to_btype jointy))
+                 | [FReturn] ->
+                    add_result "return" (Some (type_constant_to_btype jointy))
+                 | [FReturn; Deref] ->
+                    add_result "return"
+                      (Some (t_ptrto (type_constant_to_btype jointy)))
+                 | [FRegParameter reg; _; Deref] ->
+                    add_result
+                      (register_to_string reg)
+                      (Some (t_ptrto (type_constant_to_btype jointy)))
+                 | (FRegParameter reg) :: caps ->
+                    begin
+                      log_diagnostics_result
+                        ~tag:"resolve_function_type"
+                        ~msg:faddr
+                        __FILE__ __LINE__
+                        ["v: " ^ (type_variable_to_string v);
+                         "capabilities: "
+                         ^ (String.concat "; "
+                              (List.map type_cap_label_to_string caps))];
+                      (let ty =
+                         if List.exists
+                              (fun c -> c = Deref || c = Load || c = Store) caps then
+                           Some t_voidptr
+                         else
+                           None in
+                        add_result
+                          (register_to_string reg) ty)
+                    end
+                 | caps ->
+                    log_diagnostics_result
+                      ~tag:"resolve_function_type"
+                      ~msg:faddr
+                      __FILE__ __LINE__
+                      ["v: " ^ (type_variable_to_string v);
+                       "capabilities: "
+                       ^ (String.concat "; "
+                            (List.map type_cap_label_to_string caps))])
+            vars) evaluation in
+    let result =
+      H.fold (fun k v a ->
+          if v#isEmpty then
+            if k = "return" then
+              let _ =
+                log_diagnostics_result
+                  ~tag:"resolve_function_type"
+                  ~msg:faddr
+                  __FILE__ __LINE__
+                  ["No types found for return type"] in
+              a
+            else
+              let _ =
+                log_diagnostics_result
+                  ~tag:"resolve_function_type"
+                  ~msg:faddr
+                  __FILE__ __LINE__
+                  ["No types found for parameter type "
+                   ^ k] in
+              (register_from_string k, None, []) :: a
+          else
+            match v#singleton with
+            | Some ixty ->
+               if k = "return" then
+                 begin returnresult := Some (bcd#get_typ ixty); a end
+               else
+                 let optparamindex =
+                   match k with
+                   | "R0" -> Some 1
+                   | "R1" -> Some 2
+                   | "R2" -> Some 3
+                   | "R3" -> Some 4
+                   | _ -> None in
+                 let attrs =
+                   match optparamindex with
+                   | Some index ->
+                      if H.mem capresult k then
+                        let caps = H.find capresult k in
+                        List.flatten
+                          (List.map (convert_function_capabilities_to_attributes index) caps)
+                      else
+                        []
+                   | _ -> [] in
+                 (register_from_string k, Some (bcd#get_typ ixty), attrs) :: a
+            | _ ->
+               if k = "return" then
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"resolve_function_type"
+                     ~msg:faddr
+                     __FILE__ __LINE__
+                     ["Multiple types found for return type: "
+                      ^ (String.concat ", "
+                           (List.map (fun ix -> btype_to_string (bcd#get_typ ix)) v#toList))] in
+                 a
+               else
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"resolve_function_type"
+                     ~msg:faddr
+                     __FILE__ __LINE__
+                     ["Multiple types found for parameter type "
+                      ^ k;
+                      (String.concat ", "
+                         (List.map
+                            (fun ix ->
+                              btype_to_string (bcd#get_typ ix)) v#toList))] in
+                 (register_from_string k, None, []) :: a) result [] in
+    let _ =
+      log_diagnostics_result
+        ~tag:"resolve_function_type"
+        ~msg:faddr
+        __FILE__ __LINE__
+        ["parameters: "
+           ^ (String.concat "; "
+                (List.map (fun (key, ty, _attrs) ->
+                     "(" ^ (register_to_string key) ^ ": "
+                     ^ (match ty with
+                        | Some ty -> btype_to_string ty
+                        | _ -> "?")) result));
+         "return: " ^ (match !returnresult with
+                       | Some ty -> btype_to_string ty
+                       | _ -> "?")] in
+    (result, !returnresult)
 
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
