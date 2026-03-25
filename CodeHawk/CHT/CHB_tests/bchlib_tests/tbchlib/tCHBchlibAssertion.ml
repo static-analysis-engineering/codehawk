@@ -7,7 +7,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -330,20 +330,20 @@ let equal_function_parameters
       () =
   let convert_paramloc (l: parameter_location_t): x_fts_loc_t =
     match l with
-    | StackParameter (i, pld) ->
+    | StackParameter (i, pld, _) ->
        { xftsl_kind = "s";
          xftsl_type = pld.pld_type;
          xftsl_offset = string_of_int i;
          xftsl_reg = "none"
        }
-    | RegisterParameter (r, pld) when Option.is_some pld.pld_extract ->
+    | RegisterParameter (r, pld, _) when Option.is_some pld.pld_extract ->
        { xftsl_kind = "rp";
          xftsl_type = pld.pld_type;
          xftsl_offset =
            string_of_int (fst (Option.get pld.pld_extract));
          xftsl_reg = register_to_string r
        }
-    | RegisterParameter (r, pld) ->
+    | RegisterParameter (r, pld, _) ->
         { xftsl_kind = "r";
           xftsl_type = pld.pld_type;
           xftsl_offset = "-1";
