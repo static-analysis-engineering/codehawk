@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -94,12 +94,12 @@ let get_x86_fts_parameters (fname: string) (locs: parameter_location_t list) =
   let (_, _, params) =
     List.fold_left (fun (nextindex, nextoffset, params) loc ->
         match loc with
-        | StackParameter (offset, pd) when offset = nextoffset ->
+        | StackParameter (offset, pd, _) when offset = nextoffset ->
            let par =
              mk_indexed_stack_parameter
                ~btype:pd.pld_type ~size:pd.pld_size offset nextindex in
            (nextindex + 1, offset + pd.pld_size, par :: params)
-        | StackParameter (offset, pd) when offset > nextoffset ->
+        | StackParameter (offset, pd, _) when offset > nextoffset ->
            let (nxtindex, fillinpars) =
              fill_in_stack_parameters nextindex nextoffset offset [] in
            let _ =
@@ -185,7 +185,7 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
   let (_, _, params) =
     List.fold_left (fun (nextindex, ma_state, params) loc ->
         match loc with
-        | RegisterParameter (MIPSRegister reg, pd) ->
+        | RegisterParameter (MIPSRegister reg, pd, _) ->
            (match ma_state.mas_next_arg_reg with
             | Some nxtreg when reg = nxtreg ->
                let par =
@@ -227,7 +227,7 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
                     (LBLOCK [
                          STR "Unexpected register parameter in locations: ";
                          STR (mipsreg_to_string reg)])))
-        | StackParameter (offset, pd) ->
+        | StackParameter (offset, pd, _) ->
            (match ma_state.mas_next_arg_reg with
             | Some nxtreg ->
                let (nextindex, rfillinparams) =
@@ -304,9 +304,183 @@ let get_mips_fts_parameters (fname: string) (locs: parameter_location_t list) =
   params
 
 
-let get_arm_fts_parameters (_fname: string) (_locs: parameter_location_t list) =
-  []
+type arm_argument_state_t = {
+    aas_next_arg_reg: arm_reg_t option;
+    aas_next_offset: int option
+  }
 
+
+let aas_start_state = {
+    aas_next_arg_reg = Some AR0;
+    aas_next_offset = None
+  }
+
+
+let get_next_arm_arg_reg (r: arm_reg_t) =
+  match r with
+  | AR0 -> Some AR1
+  | AR1 -> Some AR2
+  | AR2 -> Some AR3
+  | _ -> None
+
+
+let rec get_fillin_arm_arg_regs
+          (nxtindex: int)
+          (nxtreg: arm_reg_t)
+          (reg: arm_reg_t)
+          (accparams: fts_parameter_t list): (int * fts_parameter_t list) =
+  if nxtreg = reg then
+    (nxtindex, List.rev accparams)
+  else
+    let register = register_of_arm_register nxtreg in
+    let optnextreg = get_next_arm_arg_reg nxtreg in
+    match optnextreg with
+    | Some nextreg ->
+       let par = mk_indexed_register_parameter register nxtindex in
+       get_fillin_arm_arg_regs (nxtindex + 1) nextreg reg (par :: accparams)
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Error in get_fillin_arm_arg_regs"]))
+
+
+let rec get_all_reg_fillin_arm_arg_regs
+          (nxtindex: int)
+          (optnxtreg: arm_reg_t option)
+          (accparams: fts_parameter_t list): (int * fts_parameter_t list) =
+  match optnxtreg with
+  | Some  nxtreg ->
+     let register = register_of_arm_register nxtreg in
+     let par = mk_indexed_register_parameter register nxtindex in
+     get_all_reg_fillin_arm_arg_regs
+       (nxtindex + 1) (get_next_arm_arg_reg nxtreg) (par :: accparams)
+  | _ ->
+     (nxtindex, accparams)
+
+
+let get_arm_fts_parameters (fname: string) (locs: parameter_location_t list) =
+  let (_, _, params) =
+    List.fold_left (fun (nextindex, aa_state, params) loc ->
+        match loc with
+        | RegisterParameter (ARMRegister reg, pd, _destinations) ->
+           (match aa_state.aas_next_arg_reg with
+            | Some nxtreg when reg = nxtreg ->
+               let par =
+                   mk_indexed_register_parameter
+                     ~btype:pd.pld_type
+                     ~size:pd.pld_size
+                 (register_of_arm_register reg)
+                 nextindex in
+               let ncr = get_next_arm_arg_reg reg in
+               let nmas =
+                 match ncr with
+                 | Some _ -> {aa_state with aas_next_arg_reg = ncr}
+                 | _ ->
+                    { aas_next_arg_reg = None;
+                      aas_next_offset = Some 0
+                    } in
+               (nextindex + 1, nmas, par :: params)
+            | Some nxtreg ->
+               let (nextindex, fillinparams) =
+                 get_fillin_arm_arg_regs nextindex nxtreg reg [] in
+               let par =
+                 mk_indexed_register_parameter
+                   ~btype:pd.pld_type
+                   ~size:pd.pld_size
+                   (register_of_arm_register reg)
+                   nextindex in
+               let ncr = get_next_arm_arg_reg reg in
+               let nmas =
+                 match ncr with
+                 | Some _ -> {aa_state with aas_next_arg_reg = ncr}
+                 | _ ->
+                    { aas_next_arg_reg = None;
+                      aas_next_offset = Some 0
+                    } in
+               (nextindex + 1, nmas, par :: (fillinparams @ params))
+            | _ ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Unexpected register parameter in locations: ";
+                         STR (armreg_to_string reg)])))
+        | StackParameter (offset, pd, _) ->
+           (match aa_state.aas_next_arg_reg with
+            | Some nxtreg ->
+               let (nextindex, rfillinparams) =
+                 get_all_reg_fillin_arm_arg_regs nextindex (Some nxtreg) [] in
+               if offset = 0 then
+                 let par =
+                   mk_indexed_stack_parameter
+                     ~btype:pd.pld_type
+                     ~size:pd.pld_size
+                     0
+                     nextindex in
+                 let nmas = {
+                     aas_next_arg_reg = None;
+                     aas_next_offset = Some (pd.pld_size)
+                   } in
+                 (nextindex + 1, nmas, par :: (rfillinparams @ params))
+               else
+                 let (nextindex, sfillinparams) =
+                   fill_in_stack_parameters nextindex 0 offset [] in
+                 let par =
+                   mk_indexed_stack_parameter
+                     ~btype:pd.pld_type
+                     ~size:pd.pld_size
+                     offset
+                     nextindex in
+                 let nmas = {
+                     aas_next_arg_reg = None;
+                     aas_next_offset = Some pd.pld_size
+                   } in
+                 (nextindex + 1,
+                  nmas,
+                  par :: (rfillinparams @ sfillinparams @ params))
+            | _ ->
+               match aa_state.aas_next_offset with
+               | Some nxtoffset when offset = nxtoffset ->
+                  let par =
+                    mk_indexed_stack_parameter
+                      ~btype:pd.pld_type
+                      ~size:pd.pld_size
+                      nxtoffset
+                  nextindex in
+                  let nmas =
+                    { aa_state with
+                      aas_next_offset = Some (nxtoffset + pd.pld_size) } in
+                  (nextindex + 1, nmas, par :: params)
+               | Some nxtoffset when offset > nxtoffset ->
+                  let (nextindex, sfillinparams) =
+                    fill_in_stack_parameters nextindex nxtoffset offset [] in
+                  let par =
+                    mk_indexed_stack_parameter
+                      ~btype:pd.pld_type
+                      ~size:pd.pld_size
+                      offset
+                      nextindex in
+                  let nmas =
+                    { aa_state with
+                      aas_next_offset = Some (offset + pd.pld_size) } in
+                  (nextindex + 1, nmas, par :: (sfillinparams @ params))
+               | _ ->
+                  raise
+                    (BCH_failure
+                       (LBLOCK [
+                            STR "Error in get_arm_fts_parameters ";
+                            STR fname])))
+        | _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [
+                     STR "Unexpected parameter location: ";
+                     STR fname;
+                     STR ": ";
+                     STR (parameter_location_to_string loc)]))
+
+      ) (1, aas_start_state, []) locs in
+  params
 
 
 let get_fts_parameters (fintf: function_interface_t): fts_parameter_t list =
@@ -395,6 +569,14 @@ let get_fintf_fts (fintf: function_interface_t): function_signature_t =
        match btype_meet fintf.fintf_returntypes with
        | Some t -> t
        | _ -> t_unknown in
+     let _ =
+       log_diagnostics_result
+         ~tag:"get_fintf_fts"
+         ~msg:fintf.fintf_name
+         __FILE__ __LINE__
+         ["fintf_returntypes: "
+          ^ (String.concat ", " (List.map btype_to_string fintf.fintf_returntypes));
+          "returntype: " ^ (btype_to_string returntype)] in
      {fintf.fintf_type_signature with
        fts_returntype = returntype; fts_parameters = params}
 
@@ -409,16 +591,23 @@ let get_fts_stack_adjustment (fintf: function_interface_t): int option =
 
 (* ----------------------------------------------------------------- printing *)
 
+(* This only works for architectures with only stack parameters, or for the
+   standard summary representations, where all parameters are specified as
+   stack parameters.
+
+   For printing function signatures derived from analysis results, use
+   function_interface_inferred_to_signature_string. *)
 let function_interface_to_prototype_string
       ?(fullname=None) (fintf: function_interface_t) =
   let fts = fintf.fintf_type_signature in
+  (* let fts = get_fintf_fts fintf in *)
   let name =
     match fullname with
     | Some n -> n
     | _ -> fintf.fintf_name in
   let stackPars = List.fold_left (fun a p ->
     match p.apar_location with
-    | [StackParameter (offset, _)] -> (offset, p.apar_name, p.apar_type)::a
+    | [StackParameter (offset, _, _)] -> (offset, p.apar_name, p.apar_type)::a
     | _ -> a) [] fts.fts_parameters in
   let stackPars =
     List.sort (fun (off1, _, _) (off2, _, _) ->
@@ -430,6 +619,38 @@ let function_interface_to_prototype_string
   ^ "("
   ^ (String.concat ", " (List.map par_string stackPars))
   ^ ")"
+
+
+let function_interface_inferred_to_signature_string
+      (fintf: function_interface_t) =
+  let fts = get_fintf_fts fintf in
+  let name = fintf.fintf_name in
+  let regPars =
+    List.fold_left (fun a p ->
+        match p.apar_location with
+        | [RegisterParameter (reg, _, _)] -> (reg, p.apar_name, p.apar_type) :: a
+        | _ -> a) [] fts.fts_parameters in
+  let regPars =
+    List.sort (fun (reg1, _, _) (reg2, _, _) ->
+        BCHCPURegisters.register_compare reg1 reg2) regPars in
+  let stackPars = List.fold_left (fun a p ->
+    match p.apar_location with
+    | [StackParameter (offset, _, _)] -> (offset, p.apar_name, p.apar_type)::a
+    | _ -> a) [] fts.fts_parameters in
+  let stackPars =
+    List.sort (fun (off1, _, _) (off2, _, _) ->
+        Stdlib.compare off1 off2) stackPars in
+  let par_string (_, name, ty) = (btype_to_string ty) ^ " " ^ name in
+  (btype_to_string fts.fts_returntype)
+  ^ " "
+  ^ name
+  ^ "("
+  ^ (String.concat ", " (List.map par_string regPars))
+  ^ (match stackPars with
+     | [] -> ")"
+     | _ ->
+        ", " ^ (String.concat ", " (List.map par_string stackPars))
+        ^ ")")
 
 
 let function_interface_to_pretty (fintf: function_interface_t) =
@@ -467,7 +688,7 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
   (* first four arguments are in $a0-$a3, subsequent arguments are
      on the stack, starting at offset 16.*)
   match p.apar_location with
-  | [StackParameter (offset, _pdef)] when offset <= 16 ->
+  | [StackParameter (offset, _pdef, _)] when offset <= 16 ->
      let index = offset / 4 in
      let reg =
        (match offset with
@@ -487,7 +708,7 @@ let convert_xml_fts_parameter_mips (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (stackoffset, _pdef)] ->
+  | [StackParameter (stackoffset, _pdef, _)] ->
      let index = stackoffset / 4 in
      let offset = stackoffset - 4 in
      mk_indexed_stack_parameter
@@ -517,7 +738,7 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
      below for arbitrary header-provided signatures.
    *)
   match p.apar_location with
-  | [StackParameter (offset, _pdef)] when offset <= 16 ->
+  | [StackParameter (offset, _pdef, _)] when offset <= 16 ->
      let index = offset / 4 in
      let btype = p.apar_type in
      let register =
@@ -542,7 +763,7 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
        ~fmt:p.apar_fmt
        register
        index
-  | [StackParameter (stackoffset, _pdef)] ->
+  | [StackParameter (stackoffset, _pdef, _)] ->
      let index = stackoffset / 4 in
      let offset = stackoffset - 20 in
      mk_indexed_stack_parameter
@@ -561,7 +782,6 @@ let convert_xml_fts_parameter_arm (p: fts_parameter_t): fts_parameter_t =
           (LBLOCK [
                STR "arm: convert_xml_fts_parameter: not supported: ";
                fts_parameter_to_pretty p]))
-
 
 
 let convert_xml_fts_parameter (p: fts_parameter_t): fts_parameter_t =
@@ -671,15 +891,15 @@ let add_function_register_parameter_location
   match fintf.fintf_bctype with
   | None ->
      let locdetail = default_parameter_location_detail ~ty size in
-     let loc = RegisterParameter (reg, locdetail) in
+     let loc = RegisterParameter (reg, locdetail, []) in
      let eq (loc1: parameter_location_t) (loc2: parameter_location_t): bool =
        match (loc1, loc2) with
-       | (RegisterParameter (r1, _), RegisterParameter (r2, _)) ->
+       | (RegisterParameter (r1, _, _), RegisterParameter (r2, _, _)) ->
           register_equal r1 r2
        | _ -> false in
      let better (loc1: parameter_location_t) (loc2: parameter_location_t): bool =
        match (loc1, loc2) with
-       | (RegisterParameter (r1, pd1), RegisterParameter (r2, pd2))
+       | (RegisterParameter (r1, pd1, _), RegisterParameter (r2, pd2, _))
             when register_equal r1 r2 ->
           if btype_equal pd1.pld_type pd2.pld_type then
             false
@@ -691,7 +911,7 @@ let add_function_register_parameter_location
      let newlocations =
        if List.exists (fun l ->
               match l with
-              | RegisterParameter (r, _) -> register_equal r reg
+              | RegisterParameter (r, _, _) -> register_equal r reg
               | _ -> false) fintf.fintf_parameter_locations then
          list_update fintf.fintf_parameter_locations loc eq better
        else
@@ -715,14 +935,14 @@ let add_function_stack_parameter_location
   match fintf.fintf_bctype with
   | None ->
      let locdetail = default_parameter_location_detail ~ty size in
-     let loc = StackParameter (offset, locdetail) in
+     let loc = StackParameter (offset, locdetail, []) in
      let eq (loc1: parameter_location_t) (loc2: parameter_location_t): bool =
        match (loc1, loc2) with
-       | (StackParameter (o1, _), StackParameter (o2, _)) -> o1 = o2
+       | (StackParameter (o1, _, _), StackParameter (o2, _, _)) -> o1 = o2
        | _ -> false in
      let better (loc1: parameter_location_t) (loc2: parameter_location_t): bool =
        match (loc1, loc2) with
-       | (StackParameter (o1, pd1), StackParameter (o2, pd2)) when o1 = o2 ->
+       | (StackParameter (o1, pd1, _), StackParameter (o2, pd2, _)) when o1 = o2 ->
           if btype_equal pd1.pld_type pd2.pld_type then
             false
           else if is_unknown_type pd1.pld_type then
@@ -733,7 +953,7 @@ let add_function_stack_parameter_location
      let newlocations =
        if List.exists (fun l ->
               match l with
-              | StackParameter (o, _) -> o = offset
+              | StackParameter (o, _, _) -> o = offset
               | _ -> false) fintf.fintf_parameter_locations then
          list_update fintf.fintf_parameter_locations loc eq better
        else
@@ -797,7 +1017,7 @@ let get_stack_parameter (fintf: function_interface_t) (index:int) =
   try
     List.find (fun p ->
         match p.apar_location with
-        | [StackParameter (n, _)] -> n = index
+        | [StackParameter (n, _, _)] -> n = index
         | _ -> false) fts.fts_parameters
   with
     Not_found ->
@@ -816,7 +1036,7 @@ let get_stack_parameter_names (fintf: function_interface_t) =
   List.sort (fun (i1,_) (i2,_) -> Stdlib.compare i1 i2)
     (List.fold_left (fun acc p ->
       match p.apar_location with
-      | [StackParameter (i, _)] -> (i,p.apar_name) :: acc
+      | [StackParameter (i, _, _)] -> (i,p.apar_name) :: acc
       | _ -> acc) [] fts.fts_parameters)
 
 
@@ -872,12 +1092,13 @@ let demangled_name_to_function_interface (dm: demangled_name_t) =
        let locdetail = default_parameter_location_detail ~ty typsize in
        {
          apar_index = None;
-         apar_name = templated_btype_to_name ty (index + 1) ;
-         apar_type = ty ;
-         apar_desc = "" ;
-         apar_roles = [] ;
+         apar_name = templated_btype_to_name ty (index + 1);
+         apar_type = ty;
+         apar_desc = "";
+         apar_roles = [];
          apar_io = ArgReadWrite ;
-         apar_location = [StackParameter (index + 1, locdetail)];
+         apar_location = [StackParameter (index + 1, locdetail, [])];
+         apar_destinations = [];
          apar_size = typsize;
          apar_fmt = NoFormat
        } in
@@ -1096,6 +1317,47 @@ let bvarinfo_to_function_interface (vinfo: bvarinfo_t): function_interface_t =
   bfuntype_to_function_interface vname vtype
 
 
+let function_interface_to_bfuntype (fintf: function_interface_t): btype_t =
+  let fts = get_fintf_fts fintf in
+  let regPars =
+    List.fold_left (fun a p ->
+        match p.apar_location with
+        | [RegisterParameter (reg, _, _)] -> (reg, p.apar_name, p.apar_type) :: a
+        | _ -> a) [] fts.fts_parameters in
+  let regPars =
+    List.sort (fun (reg1, _, _) (reg2, _, _) ->
+        BCHCPURegisters.register_compare reg1 reg2) regPars in
+  let stackPars = List.fold_left (fun a p ->
+    match p.apar_location with
+    | [StackParameter (offset, _, _)] -> (offset, p.apar_name, p.apar_type)::a
+    | _ -> a) [] fts.fts_parameters in
+  let stackPars =
+    List.sort (fun (off1, _, _) (off2, _, _) ->
+        Stdlib.compare off1 off2) stackPars in
+  let par_funarg (_, name, ty) = (name, ty, []) in
+  let funargs =
+    Some ((List.map par_funarg regPars) @ (List.map par_funarg stackPars)) in
+  TFun (fts.fts_returntype, funargs, false, [])
+
+
+let function_type_resolvents_to_bfuntype
+      (name: string)
+      (resolvents: (register_t * btype_t option * b_attributes_t) list
+       * btype_t option): btype_t =
+  let fintf = default_function_interface name in
+  let (regtypes, returntype) = resolvents in
+  let fintf =
+    List.fold_left (fun fintf (reg, optty, _) ->
+        match optty with
+        | Some ty -> add_function_register_parameter_location fintf reg ty 4
+        | _ -> fintf) fintf regtypes in
+  let fintf =
+    match returntype with
+    | Some ty -> set_function_interface_returntype fintf ty
+    | _ -> fintf in
+  function_interface_to_bfuntype fintf
+
+
 (* Note: this currently works correctly only if the function interface has been
    constructed from a header file or function summary, because the parameters
    are added to the type signature. To support the general case requires the
@@ -1151,7 +1413,7 @@ let record_function_interface_type_constraints
               if List.length(args) = List.length(ftsparams) then
                 List.iter2 (fun (_, ty, _) ftsparam ->
                     match ftsparam.apar_location with
-                    | [RegisterParameter (reg, _)] ->
+                    | [RegisterParameter (reg, _, _)] ->
                        let pvar = add_freg_param_capability reg ftypevar in
                        (match mk_btype_constraint pvar ty with
                         | Some tyc ->
