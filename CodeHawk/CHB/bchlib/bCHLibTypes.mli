@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1407,6 +1407,7 @@ object
   method set_verbose: unit
   method set_ssa: unit
   method set_collect_data: unit
+  method set_construct_signatures: unit
   method set_show_function_timing: unit
   method set_gc_compact_function_interval: int -> unit
   method set_lineq_instr_cutoff: int -> unit
@@ -1452,6 +1453,7 @@ object
   method has_thumb: bool
   method use_ssa: bool
   method collect_data: bool
+  method construct_signatures: bool
   method fail_on_function_failure: bool
   method generate_varinvs: bool
   method include_arm_extension_registers: bool
@@ -2079,6 +2081,20 @@ class type invdictionary_int =
    type of the parameter to which it belongs.
  *)
 
+(** Mode of access for a parameter.*)
+type arg_io_t =
+| ArgRead
+| ArgReadWrite
+| ArgWrite
+
+
+(** Possible destination of a function parameter.*)
+type parameter_destination_t =
+  | CalleeArg of string * int * arg_io_t
+  | ZeroComparison
+  | NonzeroComparison
+
+
 type pld_position_t =
   | FieldPosition of int * int * string  (* ckey, field offset, field name *)
   | ArrayPosition of int   (* array element index (o-based) *)
@@ -2093,12 +2109,14 @@ type parameter_location_detail_t = {
   }
 
 type parameter_location_t =
-  | StackParameter of int * parameter_location_detail_t
+  | StackParameter of
+      int * parameter_location_detail_t * parameter_destination_t list
   (** [StackParameter(offset, _)] indicates the stack parameter that
       starts at [offset] bytes above the stackpointer at function
       entry.*)
 
-  | RegisterParameter of register_t * parameter_location_detail_t
+  | RegisterParameter of
+      register_t * parameter_location_detail_t * parameter_destination_t list
   | GlobalParameter of doubleword_int * parameter_location_detail_t
   | UnknownParameterLocation of parameter_location_detail_t
 
@@ -2108,13 +2126,6 @@ type formatstring_type_t =
   | NoFormat
   | PrintFormat
   | ScanFormat
-
-
-(** Mode of access for a parameter.*)
-type arg_io_t =
-| ArgRead
-| ArgReadWrite
-| ArgWrite
 
 
 (** Function type signature parameter.
@@ -2160,6 +2171,7 @@ type fts_parameter_t = {
     apar_type: btype_t;
     apar_desc: string;
     apar_roles: (string * string) list;
+    apar_destinations: parameter_destination_t list;
     apar_io: arg_io_t;
     apar_size: int;
     apar_location: parameter_location_t list;
@@ -2719,24 +2731,39 @@ class type interface_dictionary_int =
     method reset: unit
 
     (** {1 Parameter location}*)
+
     method index_pld_position: pld_position_t -> int
     method get_pld_position: int -> pld_position_t
+
     method index_pld_position_list: pld_position_t list -> int
     method get_pld_position_list: int -> pld_position_t list
+
     method index_parameter_location_detail: parameter_location_detail_t -> int
     method get_parameter_location_detail: int -> parameter_location_detail_t
+
     method index_parameter_location: parameter_location_t -> int
     method get_parameter_location: int -> parameter_location_t
+
     method index_parameter_location_list: parameter_location_t list -> int
     method get_parameter_location_list: int -> parameter_location_t list
+
     method write_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t -> unit
     method read_xml_parameter_location:
              ?tag:string -> xml_element_int -> parameter_location_t
+
     method write_xml_parameter_location_list:
              ?tag:string -> xml_element_int -> parameter_location_t list -> unit
     method read_xml_parameter_location_list:
              ?tag:string -> xml_element_int -> parameter_location_t list
+
+    (** {1 Parameter destination}*)
+
+    method index_parameter_destination: parameter_destination_t -> int
+    method get_parameter_destination: int -> parameter_destination_t
+
+    method index_parameter_destination_list: parameter_destination_t list -> int
+    method get_parameter_destination_list: int -> parameter_destination_t list
 
     (** {1 Parameter role}*)
 
@@ -3210,7 +3237,21 @@ type type_base_variable_t =
   (** assignment (function, instruction) hex address *)
 
   | LocalStackLhsType of int * string * string
-  (** assignment offset in bytes, (function, instruction) hex address *)
+(** assignment offset in bytes, (function, instruction) hex address *)
+
+
+type type_arg_mode_t =
+  | ArgDerefReadWrite of int option
+  | ArgDerefRead of int option
+  | ArgDerefWrite of int option
+  | ArgFunctionPointer
+  | ArgScalarValue
+
+
+type type_operation_kind_t =
+  | OpComparison
+  | OpArithmetic
+  | OpDefault
 
 
 type type_cap_label_t =
@@ -3218,6 +3259,12 @@ type type_cap_label_t =
   | FStackParameter of int * int (** size, offset in bytes *)
   | FLocStackAddress of int
   (** address on local stackframe that escapes, offset in bytes *)
+
+  | FlowsToArg of string * string * int * type_arg_mode_t
+  (** callsite, callee, argument index, read/write *)
+
+  | FlowsToOperation of type_operation_kind_t * bterm_t option
+  | FlowsFrom of bterm_t option
 
   | FReturn  (** for now limited to the default return register *)
   | Load
@@ -3248,7 +3295,7 @@ type type_constant_t =
   | TyTInt of signedness_t * int
   | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
-  | TyVoidPtr   (** only to be used in the context of a void pointer *)
+  | TyVoid   (** only to be used in the context of a void pointer *)
   | TyTUnknown  (** top in type lattice *)
   | TyBottom  (** bottom in type lattice *)
 
@@ -3277,6 +3324,9 @@ class type type_constraint_dictionary_int =
   object
 
     method reset: unit
+
+    method index_type_arg_mode: type_arg_mode_t -> int
+    method get_type_arg_mode: int -> type_arg_mode_t
 
     method index_type_basevar: type_base_variable_t -> int
     method get_type_basevar: int -> type_base_variable_t
@@ -3355,6 +3405,9 @@ class type type_constraint_store_int =
     method get_stack_lhs_constraints:
              int -> string -> type_constraint_t list
 
+    method evaluate_function_type:
+             string -> (type_variable_t list * type_constant_t list) list
+
     method evaluate_reglhs_type:
              register_t
              -> string
@@ -3365,6 +3418,11 @@ class type type_constraint_store_int =
              int
              -> string
              -> (type_variable_t list * type_constant_t list) list
+
+    method resolve_function_type:
+             string
+             -> (register_t * btype_t option * b_attributes_t) list
+                * btype_t option
 
     method resolve_reglhs_type:
              register_t -> string -> string -> btype_t option
