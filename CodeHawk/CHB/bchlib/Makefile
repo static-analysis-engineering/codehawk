@@ -144,10 +144,6 @@ SOURCES := \
 	bCHInvDictionary \
 	bCHVarInvDictionary \
 	bCHTypeDefinitions \
-	bCHTypeConstraintDictionary \
-	bCHTypeConstraintUtil \
-	bCHTypeConstraintGraph \
-	bCHTypeConstraintStore \
 	bCHJavaSignatures \
 	bCHVariableNames \
 	bCHCodegraph \
@@ -164,8 +160,12 @@ SOURCES := \
 	bCHFtsParameter \
 	bCHARMFunctionInterface \
 	bCHMIPSFunctionInterface \
-	bCHFunctionInterface \
 	bCHBTerm \
+	bCHTypeConstraintDictionary \
+	bCHTypeConstraintUtil \
+	bCHTypeConstraintGraph \
+	bCHTypeConstraintStore \
+	bCHFunctionInterface \
 	bCHFunctionStub \
 	bCHCallTarget \
 	bCHCStructConstant \
