@@ -262,7 +262,7 @@ object (self)
 
   method set_argument_structconstant par sc =
     match par.apar_location with
-    | [StackParameter (i, _)] ->
+    | [StackParameter (i, _, _)] ->
       let memref = self#mk_local_stack_reference  in
       let argvar =
         self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
@@ -1678,9 +1678,8 @@ object (self)
   val mutable nonreturning = false
   val mutable user_summary = None     (* to be deprecated *)
   val mutable appsummary =
-    let hexfaddr = faddr#to_hex_string in
-    let lenfaddr = String.length hexfaddr in
-    default_summary ("sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)))
+    let name = BCHFunctionData.get_default_functionsummary_name_dw faddr in
+    default_summary name
 
   val cc_setter_to_user = H.create 3                      (* to be saved ? *)
   val mutable complete = true
@@ -2613,10 +2612,7 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
        else
          ()
      else
-       let fname =
-         let hexfaddr = faddr#to_hex_string in
-         let lenfaddr = String.length hexfaddr in
-         "sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)) in
+       let fname = BCHFunctionData.get_default_functionsummary_name_dw faddr in
        if bcfiles#has_varinfo ~prefix:true fname then
          let vinfo = bcfiles#get_varinfo ~prefix:true fname in
          let bcsum = function_summary_of_bvarinfo vinfo in

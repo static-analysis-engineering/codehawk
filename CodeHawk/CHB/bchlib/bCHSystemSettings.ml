@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,7 @@ let _ =
       ("ASR-rdef", "enable");
       ("BXLR-rdef", "enable");
       ("CMP-rdef", "enable");
+      ("CMP-param", "enable");
       ("LSL_rdef", "enable");
       ("LSR_rdef", "enable");
       ("MOV-c", "enable");
@@ -68,6 +69,8 @@ let _ =
       ("MVN-rdef", "enable");
       ("ORR-rdef", "enable");
       ("POP-rdef", "enable");
+      ("POP-rdef-return", "enable");
+      ("POP-rdef-inv", "enable");
       ("RSB-rdef", "enable");
       ("SMULL-rdef", "enable");
       ("STR-rdef", "enable");
@@ -94,6 +97,7 @@ let _ =
 
       (* misc rules *)
       ("ADD-global", "enable");
+      ("BL-arg-param", "enable");
       ("BL-sig-regarg", "enable");
       ("BL-sig-stackarg", "enable");
       ("BL-sig-rv", "enable");
@@ -163,10 +167,13 @@ object (self)
   val mutable exclude_debug = false
   val mutable ssa = false
   val mutable collectdata = false
+  val mutable construct_signatures = false
   val mutable generate_varinvs = true
   val mutable fail_on_function_failure = false
 
   method set_collect_data = collectdata <- true
+
+  method set_construct_signatures = construct_signatures <- true
 
   method set_fail_on_function_failure = fail_on_function_failure <- true
 
@@ -175,6 +182,8 @@ object (self)
   method set_no_varinvs = generate_varinvs <- false
 
   method collect_data = collectdata
+
+  method construct_signatures = construct_signatures
 
   method set_architecture (name: string) =
     if List.mem name ["arm"; "mips"; "power"; "x86"] then

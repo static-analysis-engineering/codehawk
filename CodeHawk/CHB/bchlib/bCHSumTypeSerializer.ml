@@ -256,6 +256,25 @@ end
 let pld_position_mcts: pld_position_t mfts_int = new pld_position_mcts_t
 
 
+class parameter_destination_mcts_t: [parameter_destination_t] mfts_int =
+object
+
+  inherit [parameter_destination_t] mcts_t "parameter_destination"
+
+  method !ts (p: parameter_destination_t) =
+    match p with
+    | CalleeArg _ -> "c"
+    | ZeroComparison -> "z"
+    | NonzeroComparison -> "n"
+
+  method !tags = ["c"; "n"; "z"]
+
+end
+
+let parameter_destination_mcts: parameter_destination_t mfts_int =
+  new parameter_destination_mcts_t
+
+
 class parameter_location_mcts_t: [parameter_location_t] mfts_int =
 object
 
@@ -493,6 +512,33 @@ end
 let xpo_predicate_mcts: xpo_predicate_t mfts_int = new xpo_predicate_mcts_t
 
 
+let type_operation_kind_mfts: type_operation_kind_t mfts_int =
+  mk_mfts
+    "type_operation_kind_t"
+    [ (OpComparison, "c"); (OpArithmetic, "a"); (OpDefault, "d")]
+
+
+class type_arg_mode_mcts_t: [type_arg_mode_t] mfts_int =
+object
+
+  inherit [type_arg_mode_t] mcts_t "type_arg_mode_t"
+
+  method !ts (m: type_arg_mode_t) =
+    match m with
+    | ArgDerefReadWrite _ -> "rw"
+    | ArgDerefRead _ -> "r"
+    | ArgDerefWrite _ -> "w"
+    | ArgFunctionPointer -> "fp"
+    | ArgScalarValue -> "s"
+
+  method !tags = ["fp"; "r"; "rw"; "s"; "w"]
+
+end
+
+let type_arg_mode_mcts: type_arg_mode_t mfts_int =
+  new type_arg_mode_mcts_t
+
+
 class type_base_variable_mcts_t: [type_base_variable_t] mfts_int =
 object
 
@@ -525,6 +571,9 @@ object
     | FStackParameter _ -> "fs"
     | FLocStackAddress _ -> "sa"
     | FReturn -> "fx"
+    | FlowsToArg _ -> "fta"
+    | FlowsToOperation _ -> "fto"
+    | FlowsFrom _ -> "ffm"
     | Load -> "l"
     | Store -> "s"
     | Deref -> "d"
@@ -533,7 +582,9 @@ object
     | OffsetAccess _ -> "a"
     | OffsetAccessA _ -> "aa"
 
-  method !tags = ["a"; "aa"; "d"; "fr"; "fs"; "fx"; "l"; "lsb"; "lsh"; "s"; "sa"]
+  method !tags = [
+      "a"; "aa"; "d"; "faw"; "ffm"; "fr"; "fs"; "fta"; "fto"; "fx"; "l";
+      "lsb"; "lsh"; "s"; "sa"]
 
 end
 
@@ -559,7 +610,7 @@ object
     | TyTInt _ -> "ti"
     | TyTStruct _ -> "ts"
     | TyTFloat _ -> "tf"
-    | TyVoidPtr -> "vp"
+    | TyVoid -> "vp"
     | TyTUnknown -> "u"
     | TyBottom -> "b"
 
