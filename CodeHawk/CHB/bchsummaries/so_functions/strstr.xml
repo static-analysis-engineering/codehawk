@@ -42,7 +42,7 @@
     <preconditions/>
     <postconditions>
       <notnull-null/>
-      <post><math><apply><geq/><return/><ci>s2</ci></apply></math></post>
+      <post><math><apply><geq/><return/><ci>s1</ci></apply></math></post>
       <post>
 	<math>
 	  <apply>
@@ -51,7 +51,7 @@
 	    <apply>
 	      <plus/>
 	      <ci>s2</ci>
-	      <apply><null-terminator-pos/><ci>s2</ci></apply>
+	      <apply><null-terminator-pos/><ci>s1</ci></apply>
 	    </apply>
 	  </apply>
 	</math>
