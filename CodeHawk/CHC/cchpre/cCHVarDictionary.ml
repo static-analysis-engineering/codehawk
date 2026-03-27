@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -118,8 +118,9 @@ object (self)
       | CNull i -> (tags,[i])
       | CStringLiteral s -> (tags,[cd#index_string s])
       | CStackAddress v
-        | CGlobalAddress v
-        | CBaseVar v -> (tags, [xd#index_variable v])
+        | CGlobalAddress v -> (tags, [xd#index_variable v])
+      | CBaseVar (v, nullity) ->
+         (tags @ [null_attribute_mfts#ts nullity], [xd#index_variable v])
       | CUninterpreted s -> (tags @ [s],[]) in
     memory_base_table#add key
 
@@ -133,7 +134,8 @@ object (self)
     | "str" ->  CStringLiteral (cd#get_string (a 0))
     | "sa" -> CStackAddress (xd#get_variable (a 0))
     | "ga" -> CGlobalAddress (xd#get_variable (a 0))
-    | "bv" -> CBaseVar (xd#get_variable (a 0))
+    | "bv" ->
+       CBaseVar (xd#get_variable (a 0), null_attribute_mfts#fs (t 1))
     | "ui" -> CUninterpreted (t 1)
     | s -> raise_tag_error name s memory_base_mcts#tags
 
@@ -203,7 +205,8 @@ object (self)
       | SymbolicValue (x, t) ->
          let args = [xd#index_xpr x; cd#index_typ t] in
          (tags,args)
-      | MemoryAddress (i, o) -> (tags, [i; cd#index_offset o]) in
+      | MemoryAddress (i, o, r) ->
+         (tags @ [ref_attribute_mfts#ts r], [i; cd#index_offset o]) in
     constant_value_variable_table#add key
 
   method get_constant_value_variable (index:int) =
@@ -256,7 +259,7 @@ object (self)
           get_opt_xpr (a 2),
           cd#get_typ (a 3))
     | "bs" -> ByteSequence (xd#get_variable (a 0), get_opt_xpr (a 1))
-    | "ma" -> MemoryAddress (a 0, cd#get_offset (a 1))
+    | "ma" -> MemoryAddress (a 0, cd#get_offset (a 1), ref_attribute_mfts#fs (t 1))
     | s -> raise_tag_error name s constant_value_variable_mcts#tags
 
   method index_c_variable_denotation (v:c_variable_denotation_t) =

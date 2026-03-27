@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -455,21 +455,6 @@ object (self)
                    | _ -> false) acc1 invs2) false invs1
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed to be valid to access"
-                                          ^ " for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate access of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e1 safemsg vmsg dmsg ||
     match self#null_terminated_string_implies_pluspi_safe with
     | Some (deps,msg) ->
        begin
@@ -758,7 +743,7 @@ object (self)
     else if poq#env#is_memory_address v1 then
       let (memref, _offset) = poq#env#get_memory_address v1 in
       match memref#get_base with
-      | CBaseVar basevar ->
+      | CBaseVar (basevar, _) ->
          self#var_const_implies_delegation invindices basevar n
       | _ -> None
     else
@@ -777,11 +762,45 @@ object (self)
     else  if poq#env#is_memory_address v1 then
       let (memref, _offset) = poq#env#get_memory_address v1 in
       match memref#get_base with
-      | CBaseVar basevar ->
+      | CBaseVar (basevar, _) ->
          self#var_api_implies_delegation invindices basevar a2
       | _ -> None
     else
       None
+
+  method private inv1_implies_delegation (inv: invariant_int) =
+    let r = None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+               | Some a1 when poq#is_api_expression (XVar v) ->
+                  (match e2 with
+                   | CnApp ("ntp", [Some len], xx)
+                     | CastE (_, CnApp ("ntp", [Some len], xx))
+                        when (cd#index_exp e1) = (cd#index_exp len) ->
+                      let a2 = CnApp ("ntp", [Some a1], xx) in
+                      let pred = self#get_predicate a1 a2 in
+                      let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                      let msg =
+                        "exclusive reference " ^ (p2s v#toPretty)
+                        ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                        ^ " delegated to the api" in
+                      Some (deps, msg)
+                   | _ -> None)
+               | _ ->
+                  begin
+                    poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                    None
+                  end)
+            end
+         | _ -> None in
+    r
 
   method private inv_implies_delegation
                    (inv1: invariant_int) (inv2: invariant_int) =
@@ -876,7 +895,17 @@ object (self)
 
   method check_delegation =
     match (invs1, invs2) with
-    | ([], _) | (_, []) -> false
+    | ([], _) -> false
+    | (_, []) ->
+       List.fold_left (fun acc1 inv1 ->
+           acc1 ||
+             match self#inv1_implies_delegation inv1 with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_safe_result deps msg;
+                  true
+                end
+             | _ -> false) false invs1
     | _ ->
        List.fold_left (fun acc1 inv1 ->
            acc1 ||

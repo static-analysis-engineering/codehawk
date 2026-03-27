@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs LLC
+   Copyright (c) 2021-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -213,6 +213,8 @@ object (self)
     let dNode = xmlElement "instr-dictionary" in
     let iiNode = xmlElement "instructions" in
     let sfNode = xmlElement "stackframe" in
+    let xpodNode = xmlElement "xpodictionary" in
+    let poNode = xmlElement "proofobligations" in
     let grNode = xmlElement "global-references" in
     (* let bNode = xmlElement "btypes" in *)
     begin
@@ -223,7 +225,9 @@ object (self)
       mmap#write_xml_references faddr vard grNode;
       (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
-      append [cNode; dNode; iiNode; jjNode; sfNode; grNode]
+      finfo#proofobligations#write_xml poNode;
+      finfo#xpod#write_xml xpodNode;
+      append [cNode; dNode; iiNode; jjNode; sfNode; grNode; xpodNode; poNode]
     end
 
   method write_xml_register_types
@@ -288,8 +292,14 @@ object (self)
   method record_results ?(save=true) (fn:arm_assembly_function_int) =
     let fnadata = new fn_analysis_results_t fn in
     let vard = (get_function_info fn#get_address)#env#varmgr#vard in
+    let finfo = get_function_info fn#get_address in
+    let fintf = finfo#get_summary#get_function_interface in
+    let mksignature =
+      BCHSystemSettings.system_settings#construct_signatures
+      && Option.is_none fintf.fintf_bctype in
     let typeconstraints =
-      mk_arm_fn_type_constraints typeconstraintstore fn in
+      mk_arm_fn_type_constraints typeconstraintstore fn mksignature in
+
     let node = xmlElement "application-results" in
     begin
       (if save then
@@ -297,6 +307,19 @@ object (self)
          let fndata = BCHFunctionData.functions_data#get_function fn#get_address in
          begin
            typeconstraints#record_type_constraints;
+           (ignore (typeconstraintstore#get_function_type_constraints faddr));
+           (ignore (typeconstraintstore#evaluate_function_type faddr));
+           (if mksignature then
+              let fname =
+                BCHFunctionData.get_default_functionsummary_name_dw
+                  fn#get_address in
+              let resolvents = typeconstraintstore#resolve_function_type faddr in
+              let ftype =
+                BCHFunctionInterface.function_type_resolvents_to_bfuntype
+                  fname resolvents in
+              let (regtypes, _) = resolvents in
+              let attrs = List.concat (List.map (fun (_, _, a) -> a) regtypes) in
+              BCHBCFiles.bcfiles#add_fundef ~attrs fname ftype);
            fndata#set_reglhs_types (typeconstraintstore#resolve_reglhs_types faddr);
            fndata#set_stack_offset_types
              (typeconstraintstore#resolve_local_stack_lhs_types faddr);

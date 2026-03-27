@@ -74,6 +74,8 @@ val float_fits_kind: float -> fkind -> bool
 
 val enum_fits_kind: string -> ikind -> bool
 
+val get_typ_attributes: typ -> attribute list
+
 val has_const_attribute: typ -> bool
 
 val has_deref_const_attribute: typ -> bool
@@ -132,6 +134,8 @@ val is_constant_string: exp -> bool
 
 val is_enum_constant: string -> exp -> bool
 
+val mk_constant_index_offset: numerical_t -> offset
+
 val get_field_offset: offset -> string * int
 
 val get_scalar_struct_offsets: typ -> offset list
@@ -143,6 +147,8 @@ val get_field_lval_exp: exp -> string * int
 val is_field_offset: offset -> bool
 
 val is_constant_offset: offset -> bool
+
+val is_zero_memory_offset: offset -> bool
 
 val is_field_lval_exp: exp -> bool
 

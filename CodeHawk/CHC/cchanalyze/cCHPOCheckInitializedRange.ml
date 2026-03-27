@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -46,6 +47,7 @@ open CCHUtilities
 
 (* cchpre *)
 open CCHMemoryBase
+open CCHPOPredicate
 open CCHPreTypes
 open CCHProofObligation
 
@@ -121,26 +123,69 @@ object (self)
               | _ -> None)  None invs2
     | _ -> None
 
-  method private get_initialization_length (vinfo: varinfo) =
-    let vinfovalues = poq#get_vinfo_offset_values vinfo in
-    List.fold_left (fun acc (inv,offset) ->
+  method private get_initialization_length_from_memory_variable (vinfo: varinfo) =
+    let memvar =
+      poq#env#mk_stack_memory_variable vinfo NoOffset vinfo.vtype SYM_VAR_TYPE in
+    let varinvs = poq#get_var_invariants memvar in
+    let _ =
+      log_diagnostics_result
+        ~tag:"get_initialization_length_from_memory_variable"
+        __FILE__ __LINE__
+        ["vinfo: " ^ vinfo.vname;
+         "memvar: " ^ (p2s memvar#toPretty);
+         "memvar-invariants: " ^
+           (String.concat ", " (List.map (fun inv -> p2s inv#toPretty) varinvs))] in
+    List.fold_left (fun acc inv ->
         match acc with
         | Some _ -> acc
         | _ ->
-           match offset with
-           | Field _ | Index _ -> None
-           | NoOffset ->
-              match inv#get_fact with
-              | NonRelationalFact(_,FInitializedSet [sym])
-                   when is_initialized_range sym ->
-                 begin
-                   match get_initialized_range_len sym with
-                   | Some (irname, irlen) ->
-                      let deps = DLocal [inv#index] in
-                      Some (deps, irname,irlen)
-                   | _ -> None
-                 end
-              | _ -> None) None vinfovalues
+           match inv#get_fact with
+           | NonRelationalFact(_, FInitializedSet [sym])
+                when is_initialized_range sym ->
+              begin
+                match get_initialized_range_len sym with
+                | Some (irname, irlen) ->
+                   let deps = DLocal [inv#index] in
+                   Some (deps, irname, irlen)
+                | _ -> None
+              end
+           | _ -> None) None varinvs
+
+  method private get_initialization_length (vinfo: varinfo) =
+    let vinfovalues = poq#get_vinfo_offset_values vinfo in
+    let _ =
+      log_diagnostics_result
+        ~tag:"get_initialization_length"
+        ~msg:poq#env#get_functionname
+        __FILE__ __LINE__
+        ["vinfo: " ^ vinfo.vname;
+         "vinfo-values: " ^
+           (String.concat ", "
+              (List.map (fun (inv, offset) ->
+                   "(" ^ (p2s inv#toPretty) ^ ", " ^ (p2s (offset_to_pretty offset)))
+                 vinfovalues))] in
+    match vinfovalues with
+    | [] ->
+       self#get_initialization_length_from_memory_variable vinfo
+    | _ ->
+       List.fold_left (fun acc (inv, offset) ->
+           match acc with
+           | Some _ -> acc
+           | _ ->
+              match offset with
+              | Field _ | Index _ -> None
+              | NoOffset ->
+                 match inv#get_fact with
+                 | NonRelationalFact(_,FInitializedSet [sym])
+                      when is_initialized_range sym ->
+                    begin
+                      match get_initialized_range_len sym with
+                      | Some (irname, irlen) ->
+                         let deps = DLocal [inv#index] in
+                         Some (deps, irname,irlen)
+                      | _ -> None
+                    end
+                 | _ -> None) None vinfovalues
 
   method private get_element_initializations (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
@@ -320,20 +365,6 @@ object (self)
     | _ -> None
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed initialized for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate initialization of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e1 safemsg vmsg dmsg ||
     match self#unsigned_length_conflict with
     | Some _ -> false
     | _ ->
@@ -361,7 +392,54 @@ object (self)
     | _ -> false
 
   (* ----------------------- delegation ------------------------------------- *)
-  method check_delegation = false
+
+  method private inv_implies_delegation (inv: invariant_int) =
+    let r = None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+               | Some a1 when poq#is_api_expression (XVar v) ->
+                  (match e2 with
+                   | CnApp ("ntp", [Some len], xx)
+                     | CastE (_, CnApp ("ntp", [Some len], xx))
+                        when (cd#index_exp e1) = (cd#index_exp len) ->
+                      let a2 = CnApp ("ntp", [Some a1], xx) in
+                      let pred = PInitializedRange (a1, a2) in
+                      let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                      let msg =
+                        "exclusive reference " ^ (p2s v#toPretty)
+                        ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                        ^ " delegated to the api" in
+                      Some (deps, msg)
+                   | _ -> None)
+               | _ ->
+                  begin
+                    poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                    None
+                  end)
+            end
+         | _ -> None in
+    r
+
+  method check_delegation =
+    match invs1 with
+    | [] -> false
+    | _ ->
+       List.fold_left (fun acc inv ->
+           acc ||
+             (match self#inv_implies_delegation inv with
+              | Some (deps, msg) ->
+                 begin
+                   poq#record_safe_result deps msg;
+                   true
+                 end
+              | _ -> false)) false invs1
 end
 
 

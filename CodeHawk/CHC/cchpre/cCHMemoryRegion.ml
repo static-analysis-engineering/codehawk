@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ module H = Hashtbl
 
 let pr2s = CHPrettyUtil.pretty_to_string
 
+
 class memory_region_t
         ~(vard:vardictionary_int)
         ~(index:int)
@@ -69,7 +70,7 @@ object (self:'a)
 
   method get_base_var =
     match memory_base with
-    | CBaseVar v -> v
+    | CBaseVar (v, _) -> v
     | _ ->
        raise
          (CCHFailure
@@ -175,8 +176,8 @@ object (self)
   method mk_global_region (v:variable_t) =
     self#mk_memory_region (CGlobalAddress v)
 
-  method mk_external_region (v:variable_t) =
-    self#mk_memory_region (CBaseVar v)
+  method mk_external_region ?(nullattr=CanBeNull) (v:variable_t) =
+    self#mk_memory_region (CBaseVar (v, nullattr))
 
   method mk_uninterpreted_region (s:string) =
     let s = if s = "" then "none" else s in
@@ -200,8 +201,8 @@ object (self)
   method mk_global_region_sym (v:variable_t) =
     self#mk_sym (self#mk_global_region v)
 
-  method mk_external_region_sym (v:variable_t) =
-    self#mk_sym (self#mk_external_region v)
+  method mk_external_region_sym ?(nullattr=CanBeNull) (v:variable_t) =
+    self#mk_sym (self#mk_external_region ~nullattr v)
 
   method mk_uninterpreted_sym (s:string) =
     self#mk_sym (self#mk_uninterpreted_region s)
@@ -235,5 +236,6 @@ object (self)
     (self#get_memory_region index)#is_uninterpreted
 
 end
+
 
 let mk_memory_region_manager = new memory_region_manager_t

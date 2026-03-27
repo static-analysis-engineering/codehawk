@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -807,6 +807,11 @@ object
   method get_executable_sections: (elf_section_header_int * string) list
   method get_executable_segments: (elf_program_header_int * string) list
   method get_string_at_address: doubleword_int -> string option
+
+  (** [get_xsubstring addr size] returns the string of bytes starting at
+      virtual address [addr] with length size bytes.
+      Note: see comment for has_xsubstring below
+   *)
   method get_xsubstring: doubleword_int -> int -> string
   method get_relocation: doubleword_int -> string option
   method get_containing_section: doubleword_int -> elf_raw_section_int option
@@ -832,6 +837,21 @@ object
 
   method is_uninitialized_data_address: doubleword_int -> bool
   method is_global_offset_table_address: doubleword_int -> bool
+
+  (** [has_xsubstring addr size] returns true if the section that contains
+      virtual address [addr] has at least [size] bytes starting from address
+      [addr].
+
+      Note: the check performed is
+         [addr - section_start_address) + size <= section_size]
+      In some cases the less than equal check may be problematic: if the
+      section is the last section of the file, or perhaps if there is a
+      gap between this section and the next, the equal sign may make the
+      check succeed, but the retrieval of the corresponding bytes, by calling
+      [get_xsubstring] with the same arguments, may fail.
+      However, if a less-than check is used the last library stub in a plt
+      may be missed.
+   *)
   method has_xsubstring: doubleword_int -> int -> bool
   method has_debug_info: bool
   method has_debug_abbrev: bool

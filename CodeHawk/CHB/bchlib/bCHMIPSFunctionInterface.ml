@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -117,9 +117,9 @@ let get_mips_format_spec_parameters
     List.fold_left
       (fun mas p ->
         match p.apar_location with
-        | [RegisterParameter (MIPSRegister r, _)] ->
+        | [RegisterParameter (MIPSRegister r, _, _)] ->
            update_core_reg mas r
-        | [StackParameter (offset, pld)] ->
+        | [StackParameter (offset, pld, _)] ->
            update_stack_offset mas offset pld.pld_size
         | _ ->
            raise

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,9 @@
 (* cchpre *)
 open CCHPreTypes
 
+
+val memory_reference_data_to_pretty:
+  memory_reference_data_t -> CHPretty.pretty_t
 
 val mk_memory_reference_manager:
   vardictionary_int -> memory_reference_manager_int

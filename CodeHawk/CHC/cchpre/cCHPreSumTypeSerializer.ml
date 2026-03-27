@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,16 @@ let po_status_mfts: po_status_t mfts_int =
 
 let address_type_mfts: address_type_t mfts_int =
   mk_mfts  "address_type_t" [(Heap, "h"); (Stack, "s"); (External, "x")]
+
+
+let ref_attribute_mfts: ref_attribute_t mfts_int =
+  mk_mfts
+    "ref_attribute_t"
+    [(MutableRef, "m"); (ImmutableRef, "i"); (RawPointer, "r")]
+
+
+let null_attribute_mfts: null_attribute_t mfts_int =
+  mk_mfts "null_attribute_t" [(NotNull, "nn"); (CanBeNull, "pn")]
 
 
 class output_parameter_rejection_reason_mcts_t:

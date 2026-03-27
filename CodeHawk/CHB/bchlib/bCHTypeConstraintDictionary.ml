@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ open BCHSumTypeSerializer
 
 
 let bd = BCHDictionary.bdictionary
+let id = BCHInterfaceDictionary.interface_dictionary
 
 
 let raise_tag_error (name:string) (tag:string) (accepted:string list) =
@@ -61,6 +62,7 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class type_constraint_dictionary_t: type_constraint_dictionary_int =
 object (self)
 
+  val type_arg_mode_table = mk_index_table "type-arg-mode"
   val type_basevar_table = mk_index_table "type-base-variable"
   val type_caplabel_table = mk_index_table "type-cap-label-table"
   val type_variable_table = mk_index_table "type-variable-table"
@@ -72,6 +74,7 @@ object (self)
 
   initializer
     tables <- [
+      type_arg_mode_table;
       type_basevar_table;
       type_caplabel_table;
       type_variable_table;
@@ -79,6 +82,32 @@ object (self)
       type_term_table;
       type_constraint_table
     ]
+
+  method index_type_arg_mode (m: type_arg_mode_t) =
+    let index_opt i = match i with Some i -> i | _ -> (-1) in
+    let tags = [type_arg_mode_mcts#ts m] in
+    let key =
+      match m with
+      | ArgDerefReadWrite optsize
+        | ArgDerefRead optsize
+        | ArgDerefWrite optsize -> (tags, [index_opt optsize])
+      | ArgFunctionPointer
+        | ArgScalarValue -> (tags, []) in
+    type_arg_mode_table#add key
+
+  method get_type_arg_mode (index: int): type_arg_mode_t =
+    let name = "type_arg_mode_t" in
+    let (tags, args) = type_arg_mode_table#retrieve index in
+    let t = t name tags in
+    let a = a name args in
+    let getsize () = if (a 0) = (-1) then None else Some (a 0) in
+    match (t 0) with
+    | "fp" -> ArgFunctionPointer
+    | "r" -> ArgDerefRead (getsize ())
+    | "rw" -> ArgDerefReadWrite (getsize ())
+    | "s" -> ArgScalarValue
+    | "w" -> ArgDerefWrite (getsize ())
+    | s -> raise_tag_error name s type_arg_mode_mcts#tags
 
   method index_type_basevar (v: type_base_variable_t) =
     let tags = [type_base_variable_mcts#ts v] in
@@ -114,6 +143,14 @@ object (self)
       | FStackParameter (size, offset) -> (tags, [size; offset])
       | FLocStackAddress offset -> (tags, [offset])
       | FReturn -> (tags, [])
+      | FlowsToArg (callsite, name, argindex, argmode) ->
+         (tags @ [callsite; name], [argindex; self#index_type_arg_mode argmode])
+      | FlowsToOperation (op, t) ->
+         (tags @ [type_operation_kind_mfts#ts op],
+          [match t with Some t -> id#index_bterm t | _ -> (-1)])
+      | FlowsFrom t ->
+         (tags,
+          [match t with Some t -> id#index_bterm t | _ -> (-1)])
       | Load -> (tags, [])
       | Store -> (tags, [])
       | Deref -> (tags, [])
@@ -138,6 +175,12 @@ object (self)
     | "d" -> Deref
     | "lsb" -> LeastSignificantByte
     | "lsh" -> LeastSignificantHalfword
+    | "fta" -> FlowsToArg (t 1, t 2, a 0, self#get_type_arg_mode (a 1))
+    | "fmf" ->
+       FlowsFrom (if (a 0) = (-1) then None else Some (id#get_bterm (a 0)))
+    | "fto" ->
+       FlowsToOperation (type_operation_kind_mfts#fs (t 1),
+                         if (a 0) = (-1) then None else Some (id#get_bterm (a 0)))
     | "a" -> OffsetAccess (a 0, a 1)
     | "aa" -> OffsetAccessA (a 0, a 1)
     | s -> raise_tag_error name s type_cap_label_mcts#tags
@@ -171,7 +214,7 @@ object (self)
       | TyTInt (sg, si) -> (tags @ [signedness_mfts#ts sg], [si])
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
-      | TyVoidPtr -> (tags, [])
+      | TyVoid -> (tags, [])
       | TyBottom -> (tags, [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
@@ -193,7 +236,7 @@ object (self)
     | "ti" -> TyTInt (signedness_mfts#fs (t 1), a 0)
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
-    | "vp" -> TyVoidPtr
+    | "vp" -> TyVoid
     | "b" -> TyBottom
     | "u" -> TyTUnknown
     | s -> raise_tag_error name s type_constant_mcts#tags

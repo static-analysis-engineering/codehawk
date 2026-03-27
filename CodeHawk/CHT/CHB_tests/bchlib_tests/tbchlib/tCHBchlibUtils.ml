@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2023  Aarno Labs LLC
+   Copyright (c) 2022-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -137,12 +137,12 @@ let input_parameter_location_to_parameter_location
       pld_extract = None;
       pld_position = []} in
   match kind with
-  | "s" -> StackParameter (int_of_string ldata, pld)
+  | "s" -> StackParameter (int_of_string ldata, pld, [])
   | "r" ->
      (match arch with
       | "mips" ->
          RegisterParameter
-           (MIPSRegister (mipsreg_from_string ldata), pld)
+           (MIPSRegister (mipsreg_from_string ldata), pld, [])
       | _ ->
          raise
            (BCH_failure

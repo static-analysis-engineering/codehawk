@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,7 @@ val register_mcts: register_t mfts_int
 
 (** {1 Interface types} *)
 
+val parameter_destination_mcts: parameter_destination_t mfts_int
 val pld_position_mcts: pld_position_t mfts_int
 val parameter_location_mcts: parameter_location_t mfts_int
 val bterm_mcts: bterm_t mfts_int
@@ -86,6 +87,8 @@ val xpo_predicate_mcts: xpo_predicate_t mfts_int
 
 (** {1 Type inference} *)
 
+val type_operation_kind_mfts: type_operation_kind_t mfts_int
+val type_arg_mode_mcts: type_arg_mode_t mfts_int
 val type_base_variable_mcts: type_base_variable_t mfts_int
 val type_cap_label_mcts: type_cap_label_t mfts_int
 val type_constant_mcts: type_constant_t mfts_int

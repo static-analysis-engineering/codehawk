@@ -158,6 +158,9 @@ let convert_attribute_to_function_conditions
   | Attr ("returns_nonnull", []) ->
      ([], [XNotNull ReturnValue], [])
 
+  | Attr ("chkc_returns_addressed_initialized", []) ->
+     ([], [XInitialized (ArgAddressedValue (ReturnValue, ArgNoOffset))], [])
+
   | Attr ("chkc_returns_null_terminated_string", []) ->
      ([], [XNullTerminated ReturnValue], [])
 

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -112,11 +112,25 @@ object
   method mk_call_var: string -> int -> variable_t
   method mk_call_vars: variable_t
 
-  method mk_base_address_value: variable_t -> offset -> typ -> variable_t
+  (** [mk_base_address_memory_variable_init basevar offset type vt] returns a
+      memory variable with base address held in (constant-value) variable
+      [basevar], offset [offset], type [type], and chif-var type [vt],
+      together with a symbolic initial value for that variable.
+   *)
+  method mk_base_address_memory_variable_init:
+           variable_t -> offset -> typ -> variable_type_t -> (variable_t * variable_t)
+
+  (** [mk_base_address_memory_variable_init basevar offset type vt] returns a
+      memory variable with base address held in (constant-value) variable
+      [basevar], offset [offset], type [type], and chif-var type [vt]
+   *)
+  method mk_base_address_memory_variable:
+           variable_t -> offset -> typ -> variable_type_t -> variable_t
   method mk_global_address_value: varinfo -> offset -> typ -> variable_t
   method mk_stack_address_value: varinfo -> offset -> typ -> variable_t
   method mk_memory_address_value: int -> offset -> variable_t
   method mk_string_address: string -> offset -> typ -> variable_t
+  method mk_initial_value: variable_t -> typ -> variable_type_t -> variable_t
 
   method mk_function_return_value:
            location
@@ -157,7 +171,14 @@ object
            -> offset
            -> typ
            -> variable_type_t
-           -> (variable_t * variable_t * variable_t * variable_t)
+           -> (variable_t * variable_t)
+
+  method mk_array_par_deref:
+           varinfo
+           -> typ
+           -> int
+           -> variable_type_t
+           -> (variable_t * variable_t) list
 
   method mk_struct_par_deref:
            varinfo
@@ -199,7 +220,14 @@ object
   method get_variable_type: variable_t -> typ
   method get_local_variable: variable_t -> (varinfo * offset)
   method get_global_variable: variable_t -> (varinfo * offset)
+
+  (** [get_memory_variable v] returns the memory reference associated with the
+      base of variable [v], and the offset from that base.
+
+      @raise [BCH_failure] if [v] is not a memory variable
+   *)
   method get_memory_variable: variable_t -> (memory_reference_int * offset)
+
   method get_memory_address: variable_t -> (memory_reference_int * offset)
   method get_memory_region: symbol_t -> memory_region_int
   method get_vinfo_offset: variable_t -> varinfo -> offset option
@@ -207,9 +235,6 @@ object
 
   method get_declared_type_value_range:
            variable_t -> numerical_t option * numerical_t option
-
-  method get_external_addresses: variable_t list
-  method get_symbolic_dereferences: variable_t list
 
   method get_parameter_exp: variable_t -> exp
   method get_global_exp: variable_t -> exp
@@ -224,9 +249,13 @@ object
   method get_tainted_value_bounds: variable_t -> xpr_t option * xpr_t option
   method get_byte_sequence_origin: variable_t -> variable_t
   method get_memory_reference : variable_t -> memory_reference_int
+  method get_string_literal_address_string: variable_t -> string
 
   method get_region_name: int -> string   (* memory region index *)
   method get_indicator: variable_t -> int  (* augmentation variable *)
+
+  method get_initial_parameter_vinfo: variable_t -> varinfo * offset
+  method get_memory_address_wrapped_value: variable_t -> variable_t option
 
   (** {1 Predicates} *)
 
@@ -238,7 +267,10 @@ object
   method is_global_variable: variable_t -> bool
   method is_fixed_value: variable_t -> bool
   method is_memory_variable: variable_t -> bool
+  method is_string_literal_address: variable_t -> bool
   method is_memory_address: variable_t -> bool
+  method is_mut_memory_address: variable_t -> bool
+  method is_ref_memory_address: variable_t -> bool
   method is_fixed_xpr: xpr_t -> bool
   method is_initial_value: variable_t -> bool
   method is_initial_parameter_value: variable_t -> bool
@@ -577,32 +609,6 @@ class type po_query_int =
 
     (** {1 Checks} *)
 
-    (** {2 Command-line argument check} *)
-
-    (** [check_command_line_argument exp safemsg vmsg dmsg] checks if [exp] is a
-        command-line argument, and if so, checks whether its index is less than
-        the argument count. If less the PO is set to safe, if greater than or
-        equal the PO is set to violation, and if no argument count is found, a
-        diagnostic message is set according to [dmsg].*)
-    method check_command_line_argument:
-             exp
-             -> (int -> int -> string)
-             -> (int -> int -> string)
-             -> (int -> string)
-             -> bool
-
-    (** Returns the index of the supporting invariant fact and the
-        command-line argument count if this function is main and an invariant
-        fact is available with that information. Otherwise returns None.*)
-    method get_command_line_argument_count: (int * int) option
-
-    (** [get_command_line_argument_index exp] returns the (0-based) function
-        argument index if exp is a function argument.
-
-        raise [CCHFailure] if [exp] is not a command-line argument.*)
-    method get_command_line_argument_index: exp -> int
-
-
     method check_implied_by_assumptions: po_predicate_t -> po_predicate_t option
 
     (** {1 Information} *)
@@ -620,6 +626,15 @@ class type po_query_int =
 
     (** same as [get_invariants], but with the result sorted by upper bound.*)
     method get_invariants_ub: int -> invariant_int list
+
+    (** [get_var_invariants var] returns a list of invariants for variable [var]
+        at the same cfg context as the proof obligation.
+
+        This may be useful if a derived variable is constructed from the results
+        of another invariants, but invariants for that variable are not tied to
+        the proof obligation.
+     *)
+    method get_var_invariants: variable_t -> invariant_int list
 
     (** [get_pepr_bounds argindex] returns a list of invariants for the PO
         argument with argument index (1-based) [argindex] generated by the
@@ -852,7 +867,7 @@ class type po_query_int =
     method is_api_expression: xpr_t -> bool
     method is_global_expression: xpr_t -> bool
     method is_function_return: xpr_t -> bool
-    method is_command_line_argument: exp -> bool
+
     method is_memory_base_address: variable_t -> string option
 
     (** {1 Printing} *)

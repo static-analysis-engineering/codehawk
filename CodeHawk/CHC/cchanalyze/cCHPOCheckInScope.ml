@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -123,7 +123,7 @@ object (self)
     let deps = DLocal [invindex] in
     match memrefbase with
     | CStackAddress stackvar when poq#env#is_local_variable stackvar ->
-       let (vinfo,offset) = poq#env#get_local_variable stackvar in
+       let (vinfo, offset) = poq#env#get_local_variable stackvar in
        let msg = self#var_address_to_string vinfo offset in
        Some (deps, msg)
     | CStringLiteral _ ->
@@ -133,7 +133,7 @@ object (self)
        let (vinfo, offset) = poq#env#get_global_variable gvar in
        let msg = self#var_address_to_string vinfo offset in
        Some (deps, msg)
-    | CBaseVar v -> self#var_implies_safe invindex v
+    | CBaseVar (v, _) -> self#var_implies_safe invindex v
     | _ -> None
 
   method private var_implies_safe (invindex: int) (v: variable_t) =
@@ -230,21 +230,6 @@ object (self)
     r
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed to be in scope"
-                                          ^ " for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate scope of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e safemsg vmsg dmsg ||
     match invs with
     | [] ->
        begin

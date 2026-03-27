@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023-2025 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -573,24 +573,6 @@ let check_ppo_validity
 
   let set_diagnostic =  ppo#add_diagnostic_msg in
 
-  let is_argv (vid:int) =
-    vid > 0
-    && fname = "main"
-    && env#is_formal vid
-    && (get_varinfo vid).vparam = 2 in
-
-  let rec is_program_name (e:exp) =
-    fname = "main" &&
-      (match e with
-       | CastE (_, ee) -> is_program_name ee
-       | Lval (Mem (BinOp
-                      ((PlusPI | IndexPI),
-                       Lval (Var (_, vid), NoOffset),
-                       Const (CInt (i64, _, _)), _)),
-               NoOffset) ->
-          is_argv vid && (get_varinfo vid).vparam = 2 && (Int64.to_int i64) = 0
-       | _ -> false) in
-
   let make_record status mth explanation =
     begin
       ppo#set_status status;
@@ -628,14 +610,6 @@ let check_ppo_validity
             ("upper-bound on " ^ (e2s e) ^ " is negative: " ^ ub#toString)
        | _ -> ()
      end
-
-  | PNotNull e when is_program_name e ->
-     make
-       ("pointer to program name is guaranteed not null by operating system")
-
-  | PNotNull (Lval (Var (_vname, vid), NoOffset)) when is_argv vid ->
-     make
-       ("second argument to main is guaranteed not-null by the operating system")
 
   | PNotNull (AddrOf (Var v,_))
   | PNotNull (StartOf (Var v,_))
@@ -708,11 +682,6 @@ let check_ppo_validity
                      (Var ((("stdin"|"stdout"|"stderr") as vname), _),
                       NoOffset))) ->
      make ("library variable " ^ vname ^ " is valid")
-
-  | PValidMem e when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
 
   | PValidMem e when is_null_pointer e ->
      make "null pointer"
@@ -1562,11 +1531,6 @@ let check_ppo_validity
        | _ -> ()
      end
 
-  | PPtrUpperBound (_, _, e, _) when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
-
   | PPtrUpperBound (_, _, e, _) when is_null_pointer e ->
      make ("not-null of first argument is checked separately")
 
@@ -1786,11 +1750,6 @@ let check_ppo_validity
       | _ -> ()
     end
 
-  | PLowerBound (_, e) when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
-
   | PLowerBound (_, Const (CStr _))
   | PLowerBound (_, CastE (_, Const (CStr _))) ->
      make "constant string is allocated by compiler"
@@ -1861,11 +1820,6 @@ let check_ppo_validity
                                   (Var ((("stdin"|"stdout"|"stderr") as vname), _),
                                    NoOffset))) ->
      make ("library variable " ^ vname ^ " satisfies upper bound")
-
-  | PUpperBound (_,e) when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
 
   | PUpperBound (_, Const (CStr _))
     | PUpperBound (_, CastE (_, Const (CStr _))) ->
@@ -2119,11 +2073,6 @@ let check_ppo_validity
   | PInitialized (Mem e, NoOffset) when is_constant_string e ->
      make ("constant string is guaranteed to have at least one character")
 
-  | PInitializedRange (e, _) when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
-
   | PInitializedRange (e, _) when is_null_pointer e ->
      make "null pointer does have any range, so this is trivially valid"
 
@@ -2211,11 +2160,6 @@ let check_ppo_validity
 
   | PNullTerminated (Const (CWStr _))
     | PNullTerminated (CastE (_, Const (CWStr _))) -> make "wide string literal"
-
-  | PNullTerminated e when is_program_name e ->
-     make
-       ("validity of pointer to program name is guaranteed by the "
-        ^ "operating system")
 
   | PNullTerminated e when is_null_pointer e ->
     make "null pointer is not subject to null-termination"

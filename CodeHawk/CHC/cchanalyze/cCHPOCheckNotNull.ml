@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -57,7 +57,7 @@ let x2s x = p2s (x2p x)
 let e2s e = p2s (exp_to_pretty e)
 
 
-class not_null_checker_t (poq:po_query_int) (e:exp) (invs:invariant_int list) =
+class not_null_checker_t (poq:po_query_int) (_e:exp) (invs:invariant_int list) =
 object (self)
 
   method private memref_to_string memref =
@@ -158,7 +158,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps, msg)
-    | CBaseVar v -> self#xpr_implies_safe invindex (XVar v)
+    | CBaseVar (v, _) -> self#xpr_implies_safe invindex (XVar v)
     | _ -> None
 
   method private memory_variable_safe (_invindex: int) (v: variable_t) =
@@ -277,30 +277,15 @@ object (self)
     r
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed not null"
-                                          ^ " for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate not-null of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e safemsg vmsg dmsg
-    || (List.fold_left (fun acc inv ->
-            acc ||
-              match self#inv_implies_safe inv with
-              | Some (deps,msg) ->
-                 begin
-                   poq#record_safe_result deps msg;
-                   true
-                 end
-              | _ -> false) false invs)
+    (List.fold_left (fun acc inv ->
+         acc ||
+           match self#inv_implies_safe inv with
+           | Some (deps,msg) ->
+              begin
+                poq#record_safe_result deps msg;
+                true
+              end
+           | _ -> false) false invs)
 
 
   (* ----------------------- violation -------------------------------------- *)
@@ -311,7 +296,7 @@ object (self)
   method private memref_implies_delegation
                    (invindex: int) (memref: memory_reference_int) =
     match memref#get_base with
-    | CBaseVar v when poq#is_api_expression (XVar v) ->
+    | CBaseVar (v, _) when poq#is_api_expression (XVar v) ->
        let a = poq#get_api_expression (XVar v) in
        let pred = PNotNull a in
        let deps = DEnvC ([invindex],[ApiAssumption  pred]) in

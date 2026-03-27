@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -84,6 +84,7 @@ val mk_indexed_stack_parameter:
   -> ?size:int
   -> ?fmt:formatstring_type_t
   -> ?locations:parameter_location_t list
+  -> ?destinations:parameter_destination_t list
   -> int   (* offset *)
   -> int   (* index *)
   -> fts_parameter_t
@@ -97,6 +98,7 @@ val mk_register_parameter:
   -> ?io:arg_io_t
   -> ?size:int
   -> ?fmt:formatstring_type_t
+  -> ?destinations:parameter_destination_t list
   -> register_t
   -> fts_parameter_t
 
@@ -110,6 +112,7 @@ val mk_indexed_register_parameter:
   -> ?size:int
   -> ?fmt:formatstring_type_t
   -> ?locations:parameter_location_t list
+  -> ?destinations:parameter_destination_t list
   -> register_t
   -> int   (* index *)
   -> fts_parameter_t
@@ -139,6 +142,7 @@ val mk_indexed_multiple_locations_parameter:
   -> ?roles:(string * string) list
   -> ?io: arg_io_t
   -> ?size:int
+  -> ?destinations:parameter_destination_t list
   -> parameter_location_t list
   -> int    (* index *)
   -> fts_parameter_t

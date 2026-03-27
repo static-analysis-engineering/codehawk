@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2025  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -157,7 +157,9 @@ object (self)
       simplify_xpr (XOp (XMinus, [xpr; int_constant_expr self#offset])) in
     let xoff =
       match xoff with
-      | XOp (XPlus, [_; XConst (IntConst n)]) when n#geq (mkNumerical 0x100000000) ->
+      | XConst (IntConst n)
+        | XOp (XPlus, [_; XConst (IntConst n)])
+           when n#geq (mkNumerical 0x100000000) ->
          let rresult =
            simplify_xpr (XOp (XMinus, [xoff; int_constant_expr 0x100000000])) in
          begin
@@ -549,7 +551,7 @@ object (self)
           ~tag:"duplicate stack slot"
           ~msg:("Stack slot at offset "
                 ^ (string_of_int offset)
-                ^ "already exists")
+                ^ " already exists")
           __FILE__ __LINE__ [];
         Ok (H.find stackslots offset)
       end

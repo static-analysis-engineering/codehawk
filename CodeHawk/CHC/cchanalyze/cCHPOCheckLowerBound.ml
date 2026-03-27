@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ object (self)
        let (vinfo, _offset) = poq#env#get_local_variable svar in
        let msg = "address of stack variable: " ^ vinfo.vname in
        Some (deps, msg)
-    | CBaseVar svar ->
+    | CBaseVar (svar, _) ->
        let msg =
          "address of externally provided variable/field: "
          ^ svar#getName#getBaseName in
@@ -198,21 +198,6 @@ object (self)
           | _ -> None
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed to be valid to access"
-                                          ^ " for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate access of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e safemsg vmsg dmsg ||
     match invs with
     | [] ->
        begin
@@ -270,7 +255,7 @@ object (self)
               None
          | _ -> None
        end
-    | CBaseVar v ->
+    | CBaseVar (v, _) ->
        self#var_offset_implies_universal_violation invindex v xoffset
     | _ -> None
 

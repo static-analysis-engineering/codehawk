@@ -102,10 +102,14 @@ let constant_value_variable_compare c1 c2 =
   | (ByteSequence (v1, _), ByteSequence (v2, _)) -> v1#compare v2
   | (ByteSequence _, _) -> -1
   | (_, ByteSequence _) -> 1
-  | (MemoryAddress (i1, o1), MemoryAddress (i2, o2)) ->
+  | (MemoryAddress (i1, o1, r1), MemoryAddress (i2, o2, r2)) ->
      let l0 = Stdlib.compare i1 i2 in
-     if l0 = 0 then offset_compare o1 o2 else l0
-
+     if l0 = 0 then
+       let l1 = offset_compare o1 o2 in
+       if l1 = 0 then
+         Stdlib.compare r1 r2
+       else l1
+     else l0
 
 let _c_variable_denotation_compare v1 v2 =
   match (v1, v2) with
@@ -217,11 +221,23 @@ let constant_value_variable_to_pretty c =
          STR "_len:";
          optx_to_pretty optlen;
          STR ")"]
-  | MemoryAddress (i,o) ->
+  | MemoryAddress (i, o, r) ->
+     let pr =
+       STR (
+           "_"
+             ^ match r with MutableRef -> "mut" | ImmutableRef -> "ref" | _ -> "raw") in
      match o with
-     | NoOffset ->  LBLOCK [STR "memaddr-"; INT i]
-     | _ ->
-        LBLOCK [STR "memaddr-"; INT i; STR ":"; offset_to_pretty o]
+     | NoOffset ->  LBLOCK [STR "memaddr-"; INT i; pr]
+     | Field _ ->
+        LBLOCK [STR "memaddr-"; INT i; offset_to_pretty o; pr]
+     | Index (e, offset) ->
+        LBLOCK [
+            STR "(memaddr-";
+            INT i;
+            STR " + ";
+            exp_to_pretty e; STR ")";
+            offset_to_pretty offset;
+            pr]
 
 
 let c_variable_denotation_to_pretty v =
@@ -230,8 +246,14 @@ let c_variable_denotation_to_pretty v =
     | GlobalVariable (vinfo,offset) ->
      LBLOCK [STR vinfo.vname; offset_to_pretty offset]
   | ExternalStateVariable s -> STR s
-  | MemoryVariable (i,offset) ->
-     LBLOCK [STR "memvar-"; INT i; offset_to_pretty offset]
+  | MemoryVariable (i, offset) ->
+     (match offset with
+      | NoOffset -> LBLOCK [STR "memvar-"; INT i; STR ".0"]
+      | Field _ ->
+         LBLOCK [STR "memvar-"; INT i; offset_to_pretty offset]
+      | Index (e, suboffset) ->
+         LBLOCK [STR "memvar-"; INT i; STR "."; exp_to_pretty e;
+                 offset_to_pretty suboffset])
   | MemoryRegionVariable i ->
      LBLOCK [STR "memreg-"; INT i]
   | ReturnVariable _ -> STR "return"
@@ -312,7 +334,7 @@ object (self:'a)
          | SymbolicValue (_, t) -> t
          | TaintedValue (_, _, _, t) -> t
          | ByteSequence _ -> TVoid []
-         | MemoryAddress (i, offset) ->
+         | MemoryAddress (i, offset, _) ->
             TPtr
               (type_of_offset
                  fdecls
@@ -637,12 +659,12 @@ object (self)
   method mk_symbolic_value (x:xpr_t) (t:typ) =
     self#mk_variable (AuxiliaryVariable (SymbolicValue (x, t)))
 
-  method mk_memory_address (mindex:int) (offset:offset)=
-    self#mk_variable (AuxiliaryVariable (MemoryAddress (mindex, offset)))
+  method mk_memory_address ?(refattr=RawPointer) (mindex:int) (offset:offset)=
+    self#mk_variable (AuxiliaryVariable (MemoryAddress (mindex, offset, refattr)))
 
   method mk_string_address (s:string) (offset:offset) (t:typ):c_variable_int =
     let memref = memrefmgr#mk_string_reference s t in
-    self#mk_memory_address memref#index offset
+    self#mk_memory_address ~refattr:ImmutableRef memref#index offset
 
   method mk_check_variable l t =
     self#mk_variable (CheckVariable (l,t))
@@ -799,9 +821,46 @@ object (self)
       (match (self#get_variable index)#get_denotation with
 	 AuxiliaryVariable (MemoryAddress _) -> true | _ -> false)
 
+  method is_mut_memory_address (index: int) =
+    index  >= 0 &&
+      (match (self#get_variable index)#get_denotation with
+         AuxiliaryVariable (MemoryAddress (_, _, MutableRef)) -> true | _ -> false)
+
+  method is_ref_memory_address (index: int) =
+    index >= 0 &&
+      (match (self#get_variable index)#get_denotation with
+         AuxiliaryVariable (MemoryAddress (_, _, ImmutableRef)) -> true | _ -> false)
+
+  method is_string_literal_address (index: int) =
+    (self#is_memory_address index) &&
+      (match (self#get_variable index)#get_denotation with
+       | AuxiliaryVariable (MemoryAddress (i, _, _)) ->
+          let memref = memrefmgr#get_memory_reference i in
+          memref#is_string_reference
+       | _ -> false)
+
+  method get_string_literal_address_string (index: int) =
+    if self#is_string_literal_address index then
+      (match (self#get_variable index)#get_denotation with
+       | AuxiliaryVariable (MemoryAddress (i, _, _)) ->
+          let memref = memrefmgr#get_memory_reference i in
+          memref#get_string_literal_base
+       | _ ->
+          raise
+            (CCHFailure
+               (LBLOCK [
+                    STR "Not a string literal address reference: ";
+                    INT index])))
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Not a string literal address reference: ";
+                INT index]))
+
   method get_memory_reference (index:int) =
     match (self#get_variable index)#get_denotation with
-    | AuxiliaryVariable (MemoryAddress (i, _offset)) ->
+    | AuxiliaryVariable (MemoryAddress (i, _offset, _)) ->
        memrefmgr#get_memory_reference i
     | MemoryVariable (i, _offset) ->
        memrefmgr#get_memory_reference i
@@ -858,12 +917,25 @@ object (self)
   method get_memory_address (index:int) =
     if index > 0 then
       (match (self#get_variable index)#get_denotation with
-       | AuxiliaryVariable (MemoryAddress (i,offset)) ->
+       | AuxiliaryVariable (MemoryAddress (i,offset, _)) ->
           (memrefmgr#get_memory_reference i, offset)
        | _ ->
           raise (CCHFailure (LBLOCK [STR "Not a memory address: "; INT index])))
     else
       raise (CCHFailure (LBLOCK [STR "Not a memory address: "; INT index]))
+
+  method get_memory_address_wrapped_value (index: int): variable_t option =
+    if index > 0 then
+      (match (self#get_variable index)#get_denotation with
+       | AuxiliaryVariable (MemoryAddress (i, _, _)) ->
+          let memref = memrefmgr#get_memory_reference i in
+          if memref#has_external_base then
+            Some memref#get_external_basevar
+          else
+            None
+       | _ -> None)
+    else
+      None
 
   method get_purpose (index:int) =
     if self#is_augmentation_variable index then
@@ -941,6 +1013,25 @@ object (self)
              | LocalVariable _ -> true
              | _ -> false))
 
+  method get_initial_parameter_vinfo (index: int): varinfo * offset =
+    if self#is_initial_parameter_value index then
+      let initvar = (self#get_variable index)#get_initial_value_variable in
+      let initindex = initvar#getName#getSeqNumber in
+      match (self#get_variable initindex)#get_denotation with
+      | LocalVariable (vinfo, offset) -> (vinfo, offset)
+      | _ ->
+         raise
+           (CCHFailure
+              (LBLOCK [
+                   STR "Variable ";
+                   initvar#toPretty;
+                   STR " is not an initial parameter"]))
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Variable "; INT index; STR " is not an initial parameter"]))
+
   method is_initial_parameter_deref_value (index:int) =
     (self#is_initial_value index)
     && (let initvar = (self#get_variable index)#get_initial_value_variable in
@@ -952,12 +1043,11 @@ object (self)
                let memrefbase = memref#get_base in
                begin
                  match memrefbase with
-                 | CBaseVar v ->
+                 | CBaseVar (v, _) ->
                     self#is_initial_parameter_value v#getName#getSeqNumber
                  | _ -> false
                end
             | _ -> false))
-
 
   method is_initial_global_value (index:int) =
     (self#is_initial_value index)

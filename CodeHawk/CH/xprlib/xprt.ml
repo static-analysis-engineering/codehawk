@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -135,6 +135,16 @@ let _is_non_zero_int (x: xpr_t) =
 let is_intconst (x: xpr_t) =
   match x with
   | XConst (IntConst _ ) -> true
+  | _ -> false
+
+let is_equality (x: xpr_t) =
+  match x with
+  | XOp (XEq, _) -> true
+  | _ -> false
+
+let is_inequality (x: xpr_t) =
+  match x with
+  | XOp ((XGe | XGt | XLe | XLt), _) -> true
   | _ -> false
 
 let is_conjunction (x: xpr_t) =

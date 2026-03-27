@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,12 @@ open CHLanguage
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
+open CCHTypesToPretty
 open CCHUtilities
 
 (* cchpre *)
@@ -43,6 +45,13 @@ open CCHPreTypes
 open CCHMemoryBase
 
 module H = Hashtbl
+
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+
+let memory_reference_data_to_pretty (d: memory_reference_data_t) =
+  LBLOCK [memory_base_to_pretty d.memrefbase; STR "; "; typ_to_pretty d.memreftype]
 
 
 class memory_reference_t
@@ -74,7 +83,7 @@ object (self:'a)
     match  data.memrefbase with
     | CStackAddress v
       | CGlobalAddress v
-      | CBaseVar v -> v
+      | CBaseVar (v, _) -> v
     | _ ->
        raise
          (CCHFailure
@@ -101,11 +110,19 @@ object (self:'a)
 
   method get_external_basevar =
     match data.memrefbase with
-    | CBaseVar v -> v
+    | CBaseVar (v, _) -> v
     | _ ->
        raise
          (CCHFailure
 	    (LBLOCK [STR "Not a base variable: "; STR self#get_name]))
+
+  method get_string_literal_base =
+    match data.memrefbase with
+    | CStringLiteral s -> s
+    | _ ->
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Not a string literal reference: "; STR self#get_name]))
 
   method has_external_base =
     match data.memrefbase with CBaseVar _ -> true | _ -> false
@@ -115,6 +132,9 @@ object (self:'a)
 
   method is_global_reference =
     match data.memrefbase with CGlobalAddress _ -> true | _ -> false
+
+  method is_string_reference =
+    match data.memrefbase with CStringLiteral _ -> true | _ -> false
 
   method write_xml (node:xml_element_int) =
     begin
@@ -152,6 +172,12 @@ object (self)
 
   method private mk_memory_reference (data:memory_reference_data_t) =
     let index = vard#index_memory_reference_data data in
+    let _ =
+      log_diagnostics_result
+        ~tag:"mk_memory_reference"
+        __FILE__ __LINE__
+        ["data: " ^ (p2s (memory_reference_data_to_pretty data));
+         "index: " ^ (string_of_int index)] in
     if H.mem table index then
       H.find table index
     else
@@ -173,10 +199,11 @@ object (self)
     let data = { memrefbase = CGlobalAddress v; memreftype = typ } in
     self#mk_memory_reference data
 
-  method mk_external_reference (v:variable_t) (typ:typ) =
-    let data = { memrefbase = CBaseVar v; memreftype = typ } in
+  method mk_external_reference ?(nullattr=CanBeNull) (v:variable_t) (typ:typ) =
+    let data = { memrefbase = CBaseVar (v, nullattr); memreftype = typ } in
     self#mk_memory_reference data
 
 end
+
 
 let mk_memory_reference_manager = new memory_reference_manager_t

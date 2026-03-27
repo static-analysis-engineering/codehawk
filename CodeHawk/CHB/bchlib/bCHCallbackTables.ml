@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -379,7 +379,7 @@ object (self)
       if functiondata#has_name then
         functiondata#get_function_name
       else
-        "sub_" ^ (String.sub addr 2 ((String.length addr) - 2)) in
+        BCHFunctionData.get_default_functionsummary_name_dw dw in
     bcfiles#add_fundef fname fty
 
   method table_variables =

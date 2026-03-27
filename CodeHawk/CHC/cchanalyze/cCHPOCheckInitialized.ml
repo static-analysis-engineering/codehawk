@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,60 +71,6 @@ class initialized_checker_t
         (poq:po_query_int) (lval:lval) (invs:invariant_int list)  =
 object (self)
 
-  method private check_program_name =
-    if poq#is_command_line_argument (Lval lval) then
-      let index = poq#get_command_line_argument_index (Lval lval) in
-      if index == 0 then
-        begin
-          (* first index into argv is always safe, it is the program name *)
-          poq#record_safe_result
-            (DLocal [])
-            ("command-line argument "
-             ^ (string_of_int index)
-             ^ " is guaranteed initialized by the operating system");
-          true
-        end
-      else
-        false
-    else
-      false
-
-  method private check_command_line_argument =
-    if poq#is_command_line_argument (Lval lval) then
-      let index = poq#get_command_line_argument_index (Lval lval) in
-      match poq#get_command_line_argument_count with
-      | Some (inv, arg_count) ->
-         if index < arg_count then
-           begin
-             poq#record_safe_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is guaranteed initialized for argument count "
-                ^ (string_of_int arg_count));
-             true
-           end
-         else
-           begin
-             poq#record_violation_result
-               (DLocal [inv])
-               ("command-line argument "
-                ^ (string_of_int index)
-                ^ " is not included in argument count of "
-                ^ (string_of_int arg_count));
-             true
-           end
-      | _ ->
-         begin
-           poq#set_diagnostic
-             ("no invariant found for argument count; unable to validate access of "
-              ^ "command-line argument "
-              ^ (string_of_int index));
-           false
-         end
-    else
-      false
-
   method private get_symbol_name (s: symbol_t) =
     s#getBaseName
     ^ (match s#getAttributes with
@@ -153,8 +99,6 @@ object (self)
   (* ----------------------------- safe ------------------------------------- *)
   (* check_safe
      - inv_implies_safe
-       - inv_xpr_implies_safe
-       - inv_bounded_xpr_implies_safe
      - check_safe_command_line_argument
      - check_safe_lval
        - check_safe_memlval
@@ -164,28 +108,29 @@ object (self)
              - memlval_vinv_memref_basevar_implies_safe
    *)
 
-  method private inv_xpr_implies_safe (invindex: int) (x: xpr_t) =
-    let deps = DLocal [invindex] in
-    let msg =
-      "variable "
-      ^ (p2s (lval_to_pretty lval))
-      ^ " has the value "
-      ^ (x2s x) in
-    let site = Some (__FILE__, __LINE__, "inv_xpr_implies_safe") in
-    Some (deps, msg, site)
-
-  method private inv_bounded_xpr_implies_safe
-                   (invindex: int) (lb: xpr_t) (ub: xpr_t) =
-    let deps = DLocal [invindex] in
-    let msg =
-      "variable "
-      ^ (p2s (lval_to_pretty lval))
-      ^ " is bounded by LB: "
-      ^ (x2s lb)
-      ^ " and UB: "
-      ^ (x2s ub) in
-    let site = Some (__FILE__, __LINE__, "inv_bounded_xpr_implies_safe") in
-    Some (deps, msg, site)
+  method private postcondition_implies_safe
+                   (invindex: int)
+                   (callee: varinfo)
+                   (pcs: annotated_xpredicate_t list) =
+    let mname = "postcondition_implies_safe" in
+    match pcs with
+    | [] -> None
+    | _ ->
+       List.fold_left (fun facc (pc, _) ->
+           match facc with
+           | Some _ -> facc
+           | _ ->
+              match pc with
+              | XInitialized (ArgAddressedValue (ReturnValue, ArgNoOffset)) ->
+                 let deps =
+                   DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
+                 let msg =
+                   "value addressed by return value from "
+                   ^ callee.vname
+                   ^ " is initialized" in
+                 let site = Some (__FILE__, __LINE__, mname) in
+                 Some (deps, msg, site)
+              | _ -> None) None pcs
 
   method private inv_implies_safe (inv: invariant_int) =
     let mname = "inv_implies_safe" in
@@ -206,12 +151,54 @@ object (self)
        end
     | _ ->
        match inv#expr with
-       | Some x -> self#inv_xpr_implies_safe inv#index x
+       | Some (XVar v) when poq#env#is_initial_value v ->
+          let var = poq#env#get_initial_value_variable v in
+          if poq#env#is_memory_variable var then
+            let (memref, offset) = poq#env#get_memory_variable var in
+            if is_zero_memory_offset offset then
+              if memref#has_external_base then
+                let basevar = memref#get_external_basevar in
+                if poq#env#is_function_return_value basevar then
+                  let callee = poq#env#get_callvar_callee basevar in
+                  let (pcs, epcs) = poq#get_postconditions basevar in
+                  let r =
+                    match epcs with
+                    | [] ->
+                       self#postcondition_implies_safe inv#index callee pcs
+                    | _ -> None in
+                  match r with
+                  | None ->
+                     let pcr =
+                       XInitialized
+                         (ArgAddressedValue (ReturnValue, ArgNoOffset)) in
+                     begin
+                       poq#mk_postcondition_request pcr callee;
+                       poq#set_diagnostic
+                         ("Unable to determine if memory pointed at by the return "
+                          ^ "value from "
+                          ^ callee.vname
+                          ^ " is initialized.");
+                       None
+                     end
+                  | Some _ -> r
+                else
+                   begin
+                     poq#set_diagnostic_arg
+                       1 ("memvar:base: " ^ (p2s memref#toPretty));
+                 None
+               end
+            else
+               None
+          else
+            begin
+              poq#set_diagnostic_arg
+                1 ("initial-value: " ^ (p2s v#toPretty));
+              None
+            end
+          else
+            None
        | _ ->
-          match (inv#lower_bound_xpr, inv#upper_bound_xpr) with
-          | (Some lb, Some ub) ->
-             self#inv_bounded_xpr_implies_safe inv#index lb ub
-          | _ -> None
+          None
 
   method private check_safe_functionpointer (vinfo: varinfo) =
     let vinfovalues = poq#get_vinfo_offset_values vinfo in
@@ -436,7 +423,7 @@ object (self)
                 self#memlval_vinv_memref_stackvar_implies_safe invindex vinfo
              | _ -> None)
 
-         | CBaseVar v ->
+         | CBaseVar (v, _) ->
             (try
                self#memlval_vinv_memref_basevar_implies_safe invindex v memoffset
              with
@@ -556,8 +543,7 @@ object (self)
     | _ -> false
 
   method check_safe =
-    self#check_command_line_argument
-    || (List.fold_left (fun acc inv ->
+    (List.fold_left (fun acc inv ->
             acc ||
               match self#inv_implies_safe inv with
               | Some (deps, msg, site) ->
@@ -666,9 +652,39 @@ object (self)
       None
 
   method private inv_implies_delegation (inv: invariant_int) =
-    match inv#expr with
-    | Some x -> self#xpr_implies_delegation inv#index x
-    | _ -> None
+    let mname = "inv_implies_delegation" in
+    let r = None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+               | Some a1 when poq#is_api_expression (XVar v) ->
+                  (match a1 with
+                   | Lval lval ->
+                      let pred = PInitialized lval in
+                      let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                      let msg =
+                        "exclusive reference " ^ (p2s v#toPretty)
+                        ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                        ^ " delegated to the api" in
+                      let site = Some (__FILE__, __LINE__, mname) in
+                      Some (deps, msg, site)
+                   | _ -> None)
+              | _ ->
+                 begin
+                   poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                   None
+                 end)
+            end
+         | Some x ->
+            self#xpr_implies_delegation inv#index x
+         | _ -> None in
+    r
 
   method private check_delegation_invs =
     match invs with
@@ -805,10 +821,7 @@ object (self)
     | _ -> false
 
   method check_delegation =
-    if self#check_program_name then
-      false
-    else
-      self#check_delegation_invs || self#check_delegation_lval
+    self#check_delegation_invs || self#check_delegation_lval
 
 end
 

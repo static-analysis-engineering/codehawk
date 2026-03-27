@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2025 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,14 +51,36 @@ class type idregistry_int =
     method read_xml: xml_element_int -> unit
   end
 
+
+type ref_attribute_t =
+  | MutableRef
+  | ImmutableRef
+  | RawPointer
+
+
+type null_attribute_t =
+  | NotNull
+  | CanBeNull
+
+
 (** {1 Memory representations}*)
 
 (** {2 Memory base} *)
 
 (** The memory_base_t type denotes the (symbolic) address of the base of a memory
-   region that is used as the ground type in a memory reference (a representation
-   of a memory variable) and in a memory region (a representation of the entire
-   memory region identified by this base.
+    region that is used as the ground type in a memory reference (a representation
+    of a memory variable) and in a memory region (a representation of the entire
+    memory region identified by this base.
+
+    If the memory base includes a variable two distinct representations for the
+    same logical memory location may exist: one with the NUM_VAR_TYPE variable,
+    and one for the SYM_VAR_TYPE variable, resulting in two distinct memref
+    indices. This is not a problem for aliasing, as they are used in different
+    domains. However, it may be inconvenient in proof obligation discharge, as
+    it may be necessary to create the corresponding alternative representation
+    to retrieve invariants from that domain. An example of this is the method
+    [get_initialization_length_from_memory_variable vinfo] in the po checker
+    class file [cCHPOCheckInitializedRange].
  *)
 type memory_base_t =
   | CNull of int
@@ -73,7 +95,7 @@ type memory_base_t =
   | CGlobalAddress of variable_t
   (** base address of a global memory region: global variable *)
 
-  | CBaseVar of variable_t
+  | CBaseVar of (variable_t * null_attribute_t)
   (** address provided by contents of an externally controlled variable *)
 
   | CUninterpreted of string
@@ -138,7 +160,10 @@ class type memory_region_manager_int =
     method mk_global_region: variable_t -> memory_region_int
 
     (** [mk_external_region base] returns a memory with base pointer [base]*)
-    method mk_external_region: variable_t -> memory_region_int
+    method mk_external_region:
+             ?nullattr: null_attribute_t
+             -> variable_t
+             -> memory_region_int
     method mk_uninterpreted_region: string -> memory_region_int
 
     method mk_null_sym: int -> symbol_t
@@ -146,7 +171,10 @@ class type memory_region_manager_int =
     method mk_stack_region_sym : variable_t -> symbol_t
 
     method mk_global_region_sym: variable_t -> symbol_t
-    method mk_external_region_sym: variable_t -> symbol_t
+    method mk_external_region_sym:
+             ?nullattr: null_attribute_t
+             -> variable_t
+             -> symbol_t
     method mk_uninterpreted_sym: string -> symbol_t
     method mk_base_region_sym: memory_base_t -> symbol_t
 
@@ -169,12 +197,12 @@ class type memory_region_manager_int =
 
 (** {2 Memory reference} *)
 
-(* A memory reference is a memory base address;
-   points to the storage location of a variable at that location in memory
- *)
+    (** A memory reference is an encapsulated memory base combined with the
+        type of the memory location pointed at. *)
+
 type memory_reference_data_t = {
     memrefbase: memory_base_t ;
-    memreftype: typ
+    memreftype: typ                          (* type of memory pointed at *)
   }
 
 
@@ -190,11 +218,14 @@ object ('a)
   (* accessors *)
   method get_data: memory_reference_data_t
   method get_base: memory_base_t
+
+  (** Returns the type of the memory pointed at by this reference. *)
   method get_type: typ
   method get_name: string
   method get_external_basevar: variable_t
   method get_stack_address_var: variable_t
   method get_global_address_var: variable_t
+  method get_string_literal_base: string
   method get_base_variable: variable_t
 
   (* predicates *)
@@ -202,6 +233,7 @@ object ('a)
   method has_external_base: bool
   method is_stack_reference: bool
   method is_global_reference: bool
+  method is_string_reference: bool
 
   (* xml *)
   method write_xml: xml_element_int -> unit
@@ -218,7 +250,11 @@ object ('a)
   method mk_string_reference: string -> typ -> memory_reference_int
   method mk_stack_reference: variable_t -> typ -> memory_reference_int
   method mk_global_reference: variable_t -> typ -> memory_reference_int
-  method mk_external_reference: variable_t -> typ -> memory_reference_int
+  method mk_external_reference:
+           ?nullattr:null_attribute_t
+           -> variable_t
+           -> typ
+           -> memory_reference_int
 
   (* accessors *)
   method get_memory_reference: int -> memory_reference_int
@@ -265,8 +301,16 @@ type constant_value_variable_t =
   | ByteSequence of variable_t * xpr_t option
   (** byte sequence written by v with length x *)
 
-  | MemoryAddress of int * offset
-  (** memory reference index *)
+  | MemoryAddress of int * offset * ref_attribute_t
+  (** constant that represents the address indicated by a memory reference index
+      and offset.
+
+      Note that the offset in this case is interpreted differently than for the
+      variable MemoryVariable. Here the offsets mean:
+      NoOffset: base-address + 0
+      FieldOffset(f): base-address.field
+      IndexOffset(n): base-address + n
+*)
 
 
 (** {2 Unique storage location} *)
@@ -294,7 +338,18 @@ type c_variable_denotation_t =
    *)
 
   | MemoryVariable of int * offset
-  (** variable identified by memory reference index *)
+  (** variable identified by memory reference index
+
+      The meaning of this variable for a memory reference with basevar v is
+      NoOffset: *v
+      FieldOffset(f): v->f  or ( *v ).f    (memvar-x.f)
+      IndexOffset(n): v[n]  or *(v + n)  (memvar-x.n)
+
+      The meaning of this variable for a memory reference with a stack address
+      of global address a, where a is declared as an array or struct is
+      FieldOffset(f): a.f
+      IndexOffset(n): a[n]
+   *)
 
   | MemoryRegionVariable of int
   (** variable used for valid-mem region analysis *)
@@ -427,7 +482,8 @@ object
 
   (** mk_memory_address memindex [offset] returns a memory address from memory
       reference index [memindex] and an offset*)
-  method mk_memory_address: int -> offset -> c_variable_int
+  method mk_memory_address:
+           ?refattr:ref_attribute_t -> int -> offset -> c_variable_int
 
   method mk_string_address: string -> offset -> typ -> c_variable_int
 
@@ -489,6 +545,8 @@ object
    *)
   method get_parameter_exp: int -> exp
 
+  method get_initial_parameter_vinfo: int -> varinfo * offset
+
   (** [get_global_exp varindex] returns the expression associated with the
       initial-value variable with index [varindex] of a global variable.
 
@@ -530,6 +588,9 @@ object
   method get_memory_variable: int -> (memory_reference_int * offset)
 
   method get_memory_address: int -> (memory_reference_int * offset)
+
+  method get_memory_address_wrapped_value: int -> variable_t option
+
   method get_initial_value_variable: int -> variable_t
 
   (** [get_purpose varindex] returns the purpose associated with the
@@ -557,6 +618,8 @@ object
    *)
   method get_canonical_fnvar_index: int -> int
 
+  method get_string_literal_address_string: int -> string
+
   (** {1 Predicates on variables}*)
 
   method is_symbolic_value: int -> bool
@@ -572,6 +635,12 @@ object
   method is_memory_variable: int -> bool
 
   method is_memory_address: int -> bool
+
+  method is_mut_memory_address: int -> bool
+
+  method is_ref_memory_address: int -> bool
+
+  method is_string_literal_address: int -> bool
 
   method is_program_variable: int -> bool
 

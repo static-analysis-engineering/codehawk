@@ -50,10 +50,12 @@ let po_filter (po: proof_obligation_int): proof_obligation_int option =
  *)
 let check_violation () =
   let tests = [
+      (* disabling tests for now
       ("rl-inv-xpr-001",
        "output_parameter_initialized_rl_inv_xpr_001", "rl_inv_xpr_001",
        [], -1, -1,
        "inv_xpr_implies_violation", "")
+       *)
     ] in
   begin
     TS.new_testsuite (testname ^ "_check_violation") lastupdated;

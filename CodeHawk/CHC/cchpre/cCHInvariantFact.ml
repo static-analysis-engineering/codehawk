@@ -621,7 +621,13 @@ object (self)
             else
               inv :: entry in
        H.replace table vindex newentry
-    | _ -> ()
+    | _ ->
+       let _ =
+         log_diagnostics_result
+           ~tag:"integrate_fact:ignored"
+           __FILE__ __LINE__
+           [p2s inv#toPretty] in
+       ()
 
   method write_xml (node:xml_element_int) =
     let invs = List.sort Stdlib.compare (H.fold (fun k _ a -> k::a) facts []) in

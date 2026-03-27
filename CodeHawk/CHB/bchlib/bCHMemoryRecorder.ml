@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2025  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -364,6 +364,13 @@ object (self)
            ~(var_r: variable_t traceresult)
            ~(size: int)
            ~(vtype: btype_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_load_r"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["addr: " ^ (TR.tfold_default x2s "?" addr_r);
+         "var: " ^ (TR.tfold_default (fun v -> p2s v#toPretty) "?" var_r)] in
     TR.tfold
       ~ok:(fun var ->
         if self#env#is_stack_variable var then

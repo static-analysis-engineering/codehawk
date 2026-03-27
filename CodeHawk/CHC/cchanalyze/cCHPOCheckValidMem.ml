@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -216,7 +216,7 @@ object (self)
     | CStringLiteral _ ->
        let msg = "address of string literal" in
        Some (deps,msg)
-    | CBaseVar  v -> self#var_implies_safe invindex v
+    | CBaseVar  (v, _) -> self#var_implies_safe invindex v
     | _ -> None
 
   method private call_preserves_validity_excludes
@@ -330,17 +330,25 @@ object (self)
 
   method private initial_value_implies_safe (invindex: int) (v: variable_t) =
     if poq#env#is_initial_parameter_value v then
-      let vv = poq#env#get_initial_value_variable v in
-      let deps = DLocal [invindex] in
-      let msg = "initial value of argument: " ^ vv#getName#getBaseName in
-      let _ =
-        poq#set_diagnostic_arg 1 ("initial value of " ^ (p2s (vv#toPretty))) in
-      match self#validity_maintenance v poq#env#get_fn_entry_call_var with
-      | Some (d, m) ->
-         let deps = join_dependencies deps d in
-         let msg = msg ^ ";  " ^  m in
-         Some (deps, msg)
-      | _ -> None
+      let (vinfo, _) = poq#env#get_initial_parameter_vinfo v in
+      let vtype =
+        CCHFileEnvironment.file_environment#get_type_unrolled vinfo.vtype in
+      if CCHTypesUtil.has_deref_const_attribute vtype then
+        let deps = DLocal [invindex] in
+        let msg = "function parameter " ^ vinfo.vname ^ " is a const parameter" in
+        Some (deps, msg)
+      else
+        let vv = poq#env#get_initial_value_variable v in
+        let deps = DLocal [invindex] in
+        let msg = "initial value of argument: " ^ vv#getName#getBaseName in
+        let _ =
+          poq#set_diagnostic_arg 1 ("initial value of " ^ (p2s (vv#toPretty))) in
+        match self#validity_maintenance v poq#env#get_fn_entry_call_var with
+        | Some (d, m) ->
+           let deps = join_dependencies deps d in
+           let msg = msg ^ ";  " ^  m in
+           Some (deps, msg)
+        | _ -> None
     else if poq#is_global_expression (XVar v) then
       match self#global_implies_safe
               invindex (poq#get_global_expression (XVar v)) with
@@ -359,7 +367,7 @@ object (self)
       if poq#env#is_memory_variable vv then
         let (memref, offset) = poq#env#get_memory_variable vv in
         match memref#get_base with
-        | CBaseVar v ->
+        | CBaseVar (v, _) ->
            begin
              poq#set_diagnostic_arg
                1
@@ -447,22 +455,7 @@ object (self)
     r
 
   method check_safe =
-    let safemsg = fun index arg_count -> ("command-line argument"
-                                          ^ (string_of_int index)
-                                          ^ " is guaranteed to have valid memory"
-                                          ^ " for argument count "
-                                          ^ (string_of_int arg_count)) in
-    let vmsg = fun index arg_count -> ("command-line argument "
-                                       ^ (string_of_int index)
-                                       ^ " is not included in argument count of "
-                                       ^ (string_of_int arg_count)) in
-    let dmsg = fun index -> ("no invariant found for argument count; "
-                             ^ "unable to validate memory validity of "
-                             ^ "command-line argument "
-                             ^ (string_of_int index)) in
-
-    poq#check_command_line_argument e safemsg vmsg dmsg
-    || self#global_free
+    self#global_free
     || (match invs with
         | [] -> false
         | _  ->
@@ -505,7 +498,7 @@ object (self)
     if poq#env#is_memory_variable vi then
       let (memref, offset) = poq#env#get_memory_variable vi in
       match memref#get_base with
-      | CBaseVar bv when poq#is_api_expression (XVar bv) ->
+      | CBaseVar (bv, _) when poq#is_api_expression (XVar bv) ->
          let a = poq#get_api_expression (XVar bv) in
          let pred = PValidMem (Lval (Mem a, offset)) in
          let deps = DEnvC ([invindex], [ApiAssumption pred]) in
@@ -539,6 +532,31 @@ object (self)
       | _ ->
          match inv#lower_bound_xpr with
          | Some x -> self#xpr_implies_delegation inv#index x
+         | _ -> None in
+    let r =
+      match r with
+      | Some _ -> r
+      | _ ->
+         match inv#expr with
+         | Some (XVar v) when
+                poq#env#is_mut_memory_address v || poq#env#is_ref_memory_address v ->
+            begin
+              (match poq#x2api (XVar v) with
+              | Some a1 when poq#is_api_expression (XVar v) ->
+                 let pred = PValidMem a1 in
+                 let deps = DEnvC ([inv#index], [ApiAssumption pred]) in
+                 let msg =
+                   "exclusive reference " ^ (p2s v#toPretty)
+                   ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                   ^ " delegated to the api" in
+                 let site = Some (__FILE__, __LINE__, "inv_implies_delegation") in
+                 Some (deps, msg, site)
+              | _ ->
+                 begin
+                   poq#set_diagnostic ("exclusive reference: " ^ (p2s v#toPretty));
+                   None
+                 end)
+            end
          | _ -> None in
     r
 

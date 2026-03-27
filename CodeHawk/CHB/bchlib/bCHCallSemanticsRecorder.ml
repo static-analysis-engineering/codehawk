@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2025  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -233,6 +233,12 @@ object (self)
   method record_precondition (pre: xxpredicate_t) =
     let xpo = xxp_to_xpo_predicate self#termev self#loc pre in
     let status = self#simplify_precondition xpo in
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_precondition"
+        ~msg:(p2s loc#toPretty)
+        __FILE__ __LINE__
+        ["pre: " ^ (p2s (xxpredicate_to_pretty pre))] in
     match status with
     | Discharged _ -> self#add_po xpo status
     | _ ->
@@ -262,23 +268,35 @@ object (self)
     | XPOBuffer (ty, addr, size) ->
        (match self#termev#xpr_local_stack_address addr with
         | Some offset ->
-           let _ =
-             ch_diagnostics_log#add
-               "record blockread"
-               (LBLOCK [loc#toPretty; STR ": ";
-                        STR "offset: ";
-                        INT offset]) in
            let csize =
              match size with
              | XConst (IntConst n) -> Some n#toInt
              | _ ->
-                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
+                TR.tfold_default
+                  (fun s -> if s >= 4 then Some s else None)
+                  None
+                  (size_of_btype ty) in
+           let _ =
+             log_diagnostics_result
+               ~tag:"record_blockreads"
+               ~msg:(p2s loc#toPretty)
+               __FILE__ __LINE__
+               ["xpo: " ^ (p2s (xpo_predicate_to_pretty xpo));
+                "offset: " ^ (string_of_int offset);
+                "size: " ^
+                  (match csize with Some s -> string_of_int s | _ -> "")] in
            self#finfo#stackframe#add_block_read
              ~offset:(-offset) ~size:csize ~typ:(Some ty) self#loc#ci
         | _ -> ())
     | _ -> ()
 
   method private add_po (xpo: xpo_predicate_t) (status: po_status_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_po"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["po: " ^ (p2s (xpo_predicate_to_pretty xpo))] in
     self#finfo#proofobligations#add_proofobligation self#loc#ci xpo status
 
   method private add_gpo (dw: doubleword_int) (xxp: xxpredicate_t) =
@@ -302,10 +320,23 @@ object (self)
              match size with
              | XConst (IntConst n) -> Some n#toInt
              | _ ->
-                TR.tfold_default (fun s -> Some s) None (size_of_btype ty) in
+                TR.tfold_default
+                  (fun s -> if s > 3 then Some s else None)
+                  None
+                  (size_of_btype ty) in
            let sevalue =
              self#finfo#env#mk_stack_sideeffect_value
                ~btype:(Some ty) self#loc#ci numoffset (bterm_to_string taddr) in
+           let _ =
+             log_diagnostics_result
+               ~tag:"record_sideeffect"
+               ~msg:(p2s loc#toPretty)
+               __FILE__ __LINE__
+               ["xpo: " ^ (p2s (xpo_predicate_to_pretty xpo));
+                "size: "
+                ^ (match csize with Some s -> string_of_int s | _ -> "?");
+                "offset: " ^ (string_of_int offset);
+                "value: " ^ (p2s sevalue#toPretty)] in
            self#finfo#stackframe#add_block_write
              ~offset:(-offset)
              ~size:csize
@@ -339,6 +370,16 @@ object (self)
          (LBLOCK [self#loc#toPretty; STR ": "; (xpo_predicate_to_pretty xpo)])
 
   method record_callsemantics =
+    let _ =
+      log_diagnostics_result
+        ~tag:"record_callsemantics"
+        ~msg:(p2s self#loc#toPretty)
+        __FILE__ __LINE__
+        ["call target: " ^ (p2s self#calltargetinfo#toPretty);
+         "preconditions: "
+         ^ ((String.concat ", "
+               (List.map (fun p -> (p2s (xxpredicate_to_pretty p)))
+                  self#calltargetinfo#get_preconditions)))] in
     begin
       List.iter self#record_precondition self#calltargetinfo#get_preconditions;
       List.iter self#record_sideeffect self#calltargetinfo#get_sideeffects;
