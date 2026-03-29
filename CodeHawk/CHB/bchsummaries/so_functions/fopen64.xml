@@ -16,7 +16,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="fopen64">
-    <returntype><ptr>FILE</ptr></returntype>
+    <returntype><ptr>ch_FILE</ptr></returntype>
     <par loc="stack" io="r" name="filename" rep="hex" nr="1">
       <type><ptr>char</ptr></type>
      <roles>

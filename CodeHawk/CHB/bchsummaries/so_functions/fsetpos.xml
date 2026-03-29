@@ -22,7 +22,7 @@
    </documentation>
    <api adj="0" cc="cdecl" name="fsetpos">
     <par loc="stack" io="r" name="stream" rep="hex" nr="1">
-     <type><ptr>FILE</ptr></type>
+     <type><ptr>ch_FILE</ptr></type>
      <roles>
       <role rt="ioc:filesystem" rn="file" />
      </roles>

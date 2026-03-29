@@ -29,7 +29,7 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read/></pre>
       </par>
-      <returntype><ptr>FILE</ptr></returntype>
+      <returntype><ptr>ch_FILE</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>

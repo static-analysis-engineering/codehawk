@@ -25,7 +25,7 @@
      <type>int</type>
     </par>
     <par loc="stack" name="stream" io="r" rep="hex"  nr="2">
-     <type><ptr>FILE</ptr></type>
+     <type><ptr>ch_FILE</ptr></type>
      <roles>
        <role rt="ioc:filesystem" rn="file"/>
      </roles>

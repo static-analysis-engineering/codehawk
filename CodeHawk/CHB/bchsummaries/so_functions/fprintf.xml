@@ -25,7 +25,7 @@
    <api adj="0" cc="cdecl" name="fprintf" varargs="yes">
      <returntype>int</returntype>
      <par loc="stack" name="stream" io="r" nr="1">
-       <type><ptr>FILE</ptr></type>
+       <type><ptr>ch_FILE</ptr></type>
        <pre><deref-read/></pre>
        <roles>
 	 <role rt="ioc:filesystem" rn="file"/>
