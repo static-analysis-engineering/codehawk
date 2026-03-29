@@ -528,10 +528,11 @@ object
     | ArgDerefReadWrite _ -> "rw"
     | ArgDerefRead _ -> "r"
     | ArgDerefWrite _ -> "w"
+    | ArgDeallocate -> "d"
     | ArgFunctionPointer -> "fp"
     | ArgScalarValue -> "s"
 
-  method !tags = ["fp"; "r"; "rw"; "s"; "w"]
+  method !tags = ["d"; "fp"; "r"; "rw"; "s"; "w"]
 
 end
 

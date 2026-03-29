@@ -3244,6 +3244,7 @@ type type_arg_mode_t =
   | ArgDerefReadWrite of int option
   | ArgDerefRead of int option
   | ArgDerefWrite of int option
+  | ArgDeallocate
   | ArgFunctionPointer
   | ArgScalarValue
 
