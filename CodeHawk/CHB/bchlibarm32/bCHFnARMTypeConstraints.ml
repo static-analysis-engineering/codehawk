@@ -313,7 +313,13 @@ object (self)
                           end
                         else
                           log_type_constraint_rule_disabled __LINE__ rule tc
-                     | _ -> ())
+                     | _ ->
+                        log_diagnostics_result
+                          ~tag:"propagate_arg_to_param:no constraint"
+                          ~msg:(p2s floc#l#toPretty)
+                          __FILE__ __LINE__
+                          ["x: " ^ (x2s x);
+                           "btype: " ^ (btype_to_string argtype)])
                    ~error:(fun e ->
                      log_diagnostics_result
                        ~tag:mnem

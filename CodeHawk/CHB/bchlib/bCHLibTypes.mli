@@ -3296,6 +3296,7 @@ type type_constant_t =
   | TyTStruct of int * string  (** bckey, bcname *)
   | TyTFloat of fkind_t
   | TyVoid   (** only to be used in the context of a void pointer *)
+  | TyNamed of string
   | TyTUnknown  (** top in type lattice *)
   | TyBottom  (** bottom in type lattice *)
 

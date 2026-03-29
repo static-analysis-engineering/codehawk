@@ -59,6 +59,14 @@ let raise_error (node: xml_element_int) (msg: pretty_t) =
   end
 
 
+let ch_named_struct_types = [
+    "ch_FILE"
+  ]
+
+let register_ch_named_struct_types () =
+  List.iter BCHBCFiles.bcfiles#add_ch_named_struct_type ch_named_struct_types
+
+
 (* Convert some standard type names as used in the legacy summaries to
    btype enumerations*)
 let get_standard_txt_type (t: string): btype_t option =
@@ -76,9 +84,12 @@ let get_standard_txt_type (t: string): btype_t option =
   | "Integer" -> Some (TInt (IInt, []))
   | "long" -> Some (TInt (ILong, []))
   | "LONG" -> Some (TInt (ILong, []))
+  | "off_t" -> Some (TInt (IULong, []))
   | "OLECHAR" -> Some (TInt (IWChar, []))
   | "size_t" -> Some (TInt (IUInt, []))
   | "SIZE_T" -> Some (TInt (IUInt, []))
+  | "ssize_t" -> Some (TInt (ILong, []))
+  | "time_t" -> Some (TInt (ILong, []))
   | "UINT" -> Some (TInt (IUInt, []))
   | "uint16_t" -> Some (TInt (IUShort, []))
   | "uint32_t" -> Some (TInt (IUInt, []))
@@ -88,8 +99,22 @@ let get_standard_txt_type (t: string): btype_t option =
   | "VOID" -> Some (TVoid ([]))
   | "wchar_t" -> Some (TInt (IWChar, []))
   | _ ->
-     let _ = chlog#add "legacy type name" (STR t) in
-     None
+     if List.mem t ch_named_struct_types then
+       begin
+         log_result
+           ~tag:"get_standard_txt_type:provided by typedef"
+           __FILE__ __LINE__
+           [t];
+         None
+       end
+     else
+       begin
+         log_result
+           ~tag:"get_standard_txt_type:legacy type not covered"
+           __FILE__ __LINE__
+           [t];
+         None
+       end
 
 
 let read_xml_summary_type (node: xml_element_int): btype_t =

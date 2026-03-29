@@ -97,13 +97,50 @@ object (self)
   val vinfo_srcmap = H.create 3
   (* varinfo.ix -> (ix(filename), linenr, binloc, [ix(notes)]) *)
 
-  val mutable varinfo_vid_counter = 10000
+  val mutable varinfo_vid_counter = 100000
+  val mutable compinfo_ckey_counter = 100000
 
   method private get_varinfo_id =
     begin
       varinfo_vid_counter <- varinfo_vid_counter + 1;
       varinfo_vid_counter
     end
+
+  method private get_compinfo_ckey =
+    begin
+      compinfo_ckey_counter <- compinfo_ckey_counter + 1;
+      compinfo_ckey_counter
+    end
+
+  method add_ch_named_struct_type (name: string) =
+    if H.mem gtypes name then
+      ()
+    else
+      let loc = {line = (-1); file = ""; byte = (-1)} in
+      let locix = bcd#index_location loc in
+      let structname = "_" ^ name ^ "_st" in
+      let ckey = self#get_compinfo_ckey in
+      let compinfo = {
+          bcstruct = true;
+          bcname = structname;
+          bckey = ckey;
+          bcfields = [];
+          bcattr = []
+        } in
+      let typeinfo = { btname = name; bttype = TComp (ckey, []) } in
+      begin
+        ignore (bcd#index_typeinfo typeinfo);
+        H.add gtypes name (bcd#index_typ typeinfo.bttype, locix);
+        H.replace
+          gcomptagdecls
+          (compinfo.bcname, compinfo.bckey)
+          (bcd#index_compinfo compinfo, locix);
+        log_result
+          ~tag:"add_ch_named_struct_type"
+          ~msg:name
+          __FILE__ __LINE__
+          [btype_to_string (typeinfo.bttype)]
+      end
 
   method add_bcfile (f: bcfile_t) =
     let i = bcd#index_location in
