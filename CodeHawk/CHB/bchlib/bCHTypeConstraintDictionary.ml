@@ -91,7 +91,8 @@ object (self)
       | ArgDerefReadWrite optsize
         | ArgDerefRead optsize
         | ArgDerefWrite optsize -> (tags, [index_opt optsize])
-      | ArgFunctionPointer
+      | ArgDeallocate
+        | ArgFunctionPointer
         | ArgScalarValue -> (tags, []) in
     type_arg_mode_table#add key
 
@@ -102,6 +103,7 @@ object (self)
     let a = a name args in
     let getsize () = if (a 0) = (-1) then None else Some (a 0) in
     match (t 0) with
+    | "d" -> ArgDeallocate
     | "fp" -> ArgFunctionPointer
     | "r" -> ArgDerefRead (getsize ())
     | "rw" -> ArgDerefReadWrite (getsize ())

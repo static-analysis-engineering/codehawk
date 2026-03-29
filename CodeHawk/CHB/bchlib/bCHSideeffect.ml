@@ -146,6 +146,7 @@ let read_xml_sideeffect
       XXBlockWrite (get_type (arg 0), get_term (arg 1), get_term (arg 2))
     (* | "allocates-stack-memory" -> AllocatesStackMemory (get_term (arg 0)) *)
     | "modifies" -> XXModified (get_term (arg 0))
+    | "frees" -> XXFreed (get_term (arg 0))
     | "starts-thread" ->
       XXStartsThread (get_term (arg 0), List.map get_term (List.tl argNodes))
     | "invalidates" -> XXInvalidated (get_term (arg 0))

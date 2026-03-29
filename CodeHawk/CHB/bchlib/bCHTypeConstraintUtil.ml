@@ -64,6 +64,9 @@ let _type_arg_mode_compare (m1: type_arg_mode_t) (m2: type_arg_mode_t): int =
      optvalue_compare i1 i2 Stdlib.compare
   | (ArgDerefWrite _, _) -> -1
   | (_, ArgDerefWrite _) -> 1
+  | (ArgDeallocate, ArgDeallocate) -> 0
+  | (ArgDeallocate, _) -> -1
+  | (_, ArgDeallocate) -> 1
   | (ArgFunctionPointer, ArgFunctionPointer) -> 0
   | (ArgFunctionPointer, _) -> -1
   | (_, ArgFunctionPointer) -> 1
@@ -139,6 +142,7 @@ let type_arg_mode_to_string (m: type_arg_mode_t) =
   | ArgDerefReadWrite i -> "rw" ^ (optsize_to_string i)
   | ArgDerefRead i -> "r" ^ (optsize_to_string i)
   | ArgDerefWrite i -> "w" ^ (optsize_to_string i)
+  | ArgDeallocate -> "d"
   | ArgFunctionPointer -> "fp"
   | ArgScalarValue -> "sv"
 
@@ -468,6 +472,7 @@ let convert_function_capabilities_to_attributes
     | ArgDerefReadWrite _ -> "read_write"
     | ArgDerefRead _ -> "read_only"
     | ArgDerefWrite _ -> "write_only"
+    | ArgDeallocate -> "deallocate"
     | ArgFunctionPointer -> "fp"
     | ArgScalarValue -> "sv" in
   let result = new CHUtils.IntCollections.set_t in
