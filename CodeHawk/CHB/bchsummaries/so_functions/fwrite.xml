@@ -36,7 +36,7 @@
       <type>size_t</type>
     </par>
     <par loc="stack" io="r" name="stream" nr="4">
-      <type><ptr>FILE</ptr></type>
+      <type><ptr>ch_FILE</ptr></type>
       <pre><deref-read/></pre>
       <roles>
          <role rt="filesystem" rn="file"/>

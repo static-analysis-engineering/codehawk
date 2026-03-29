@@ -34,7 +34,7 @@
     <api adj="0" cc="cdecl" name="realpath">
       <par loc="stack" name="file_name" nr="1">
 	<pre><deref-read-nt/></pre>
-        <type><ptr>char></ptr></type>
+        <type><ptr>char</ptr></type>
       </par>
       <par loc="stack" name="resolved_name" nr="2">
         <type><ptr>char</ptr></type>

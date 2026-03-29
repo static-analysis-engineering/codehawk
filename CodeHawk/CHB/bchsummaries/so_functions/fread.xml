@@ -41,7 +41,7 @@
       <pre><non-negative/></pre>
     </par>
     <par loc="stack" desc="file" io="r" name="stream" nr="4">
-      <type><ptr>FILE</ptr></type>
+      <type><ptr>ch_FILE</ptr></type>
       <roles>
         <role rt="ioc:filesystem" rn="file"/>
      </roles>
