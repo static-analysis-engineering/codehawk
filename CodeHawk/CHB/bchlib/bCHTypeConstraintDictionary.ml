@@ -215,6 +215,7 @@ object (self)
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
       | TyVoid -> (tags, [])
+      | TyNamed s -> (tags @ [s], [])
       | TyBottom -> (tags, [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
@@ -236,6 +237,7 @@ object (self)
     | "ti" -> TyTInt (signedness_mfts#fs (t 1), a 0)
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
+    | "n" -> TyNamed (t 1)
     | "vp" -> TyVoid
     | "b" -> TyBottom
     | "u" -> TyTUnknown

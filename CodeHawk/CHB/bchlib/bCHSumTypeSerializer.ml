@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyrigth (c) 2021-2025 Aarno Labs LLC
+   Copyrigth (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -611,11 +611,12 @@ object
     | TyTStruct _ -> "ts"
     | TyTFloat _ -> "tf"
     | TyVoid -> "vp"
+    | TyNamed _ -> "n"
     | TyTUnknown -> "u"
     | TyBottom -> "b"
 
   method !tags = [
-      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "b"; "i";
+      "a"; "ac"; "acl"; "ap"; "asl"; "ax"; "b"; "i"; "n";
       "s"; "ti"; "tf"; "ts"; "u"; "vp"; "z"]
 
 end

@@ -223,6 +223,7 @@ let type_constant_to_string (c: type_constant_t) =
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyVoid -> "t_void"
+  | TyNamed name -> "t_named " ^ name
   | TyTUnknown -> "t_top"
   | TyBottom -> "t_bottom"
 
@@ -339,6 +340,9 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
       | _ -> TyTUnknown)
   | TyTInt _, _ -> t1
   | _, TyTInt _ -> t2
+  | TyNamed s1, TyNamed s2 when s1 = s2 -> t1
+  | TyNamed _, _ -> TyTUnknown
+  | _, TyNamed _ -> TyTUnknown
   | _, _ -> TyTInt (SignedNeutral, 8)
 
 
@@ -477,7 +481,7 @@ let convert_function_capabilities_to_attributes
                     AStr callsite;
                     AStr callee;
                     AInt argindex;
-                    ACons (type_arg_mode_to_attr_string mode, [])]) in
+                    AStr (type_arg_mode_to_attr_string mode)]) in
            result#add (bcd#index_attribute attr)
         | _ -> ()) caps in
   List.map bcd#get_attribute result#toList
@@ -575,6 +579,8 @@ let rec mk_btype_constraint
      end
   | Ok ty ->
      match ty with
+     | TNamed (s, _) ->
+        Some (TyGround (TyVariable tv, TyConstant (TyNamed s)))
      | TInt (ikind, _) ->
         let (signedness, size) = ikind_to_signedsize ikind in
         Some (TyGround
@@ -587,6 +593,9 @@ let rec mk_btype_constraint
      | TPtr (TVoid _, _) when use_voidptr ->
         let ptv = add_deref_capability tv in
         Some (TyGround (TyVariable ptv, TyConstant TyVoid))
+     | TPtr (TNamed (s, _), _) when use_voidptr ->
+        let ptv = add_deref_capability tv in
+        Some (TyGround (TyVariable ptv, TyConstant (TyNamed s)))
      | TPtr (TVoid _, _) -> None
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
@@ -665,6 +674,7 @@ let type_constant_to_btype (tc: type_constant_t) =
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
   | TyVoid -> t_void
+  | TyNamed s -> t_named s
   | TyBottom -> t_unknown
   | TyTUnknown -> t_unknown
 
