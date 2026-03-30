@@ -467,14 +467,18 @@ let add_stack_address_capability (offset: int) (tv: type_variable_t)
 
 let convert_function_capabilities_to_attributes
       (paramindex: int) (caps: type_cap_label_t list): b_attributes_t =
-  let type_arg_mode_to_attr_string (m: type_arg_mode_t) =
+  let type_arg_mode_to_cons_attrparam (m: type_arg_mode_t) =
+    let mkcons (s: string) (i: int option) =
+      match i with
+      | Some i -> ACons (s, [AInt i])
+      | _ -> ACons (s, []) in
     match m with
-    | ArgDerefReadWrite _ -> "read_write"
-    | ArgDerefRead _ -> "read_only"
-    | ArgDerefWrite _ -> "write_only"
-    | ArgDeallocate -> "deallocate"
-    | ArgFunctionPointer -> "fp"
-    | ArgScalarValue -> "sv" in
+    | ArgDerefReadWrite size -> mkcons "read_write" size
+    | ArgDerefRead size -> mkcons "read_only" size
+    | ArgDerefWrite size -> mkcons "write_only" size
+    | ArgDeallocate -> ACons ("deallocate", [])
+    | ArgFunctionPointer -> ACons ("fp", [])
+    | ArgScalarValue -> ACons ("sv", []) in
   let result = new CHUtils.IntCollections.set_t in
   let _ =
     List.iter (fun cap ->
@@ -486,7 +490,7 @@ let convert_function_capabilities_to_attributes
                     AStr callsite;
                     AStr callee;
                     AInt argindex;
-                    AStr (type_arg_mode_to_attr_string mode)]) in
+                    type_arg_mode_to_cons_attrparam mode]) in
            result#add (bcd#index_attribute attr)
         | _ -> ()) caps in
   List.map bcd#get_attribute result#toList
