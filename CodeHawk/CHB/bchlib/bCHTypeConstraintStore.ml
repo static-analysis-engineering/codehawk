@@ -660,6 +660,10 @@ object (self)
                             (List.map type_cap_label_to_string caps))])
             vars) evaluation in
     let result =
+      let promote (ty: btype_t): btype_t =
+        match ty with
+        | TInt _ -> BCHBCTypeUtil.promote_int ty
+        | _ -> ty in
       H.fold (fun k v a ->
           if v#isEmpty then
             if k = "return" then
@@ -683,7 +687,10 @@ object (self)
             match v#singleton with
             | Some ixty ->
                if k = "return" then
-                 begin returnresult := Some (bcd#get_typ ixty); a end
+                 begin
+                   returnresult := Some (promote (bcd#get_typ ixty));
+                   a
+                 end
                else
                  let optparamindex =
                    match k with
@@ -698,11 +705,14 @@ object (self)
                       if H.mem capresult k then
                         let caps = H.find capresult k in
                         List.flatten
-                          (List.map (convert_function_capabilities_to_attributes index) caps)
+                          (List.map
+                             (convert_function_capabilities_to_attributes index)
+                             caps)
                       else
                         []
                    | _ -> [] in
-                 (register_from_string k, Some (bcd#get_typ ixty), attrs) :: a
+                 let regty = promote (bcd#get_typ ixty) in
+                 (register_from_string k, Some regty, attrs) :: a
             | _ ->
                if k = "return" then
                  let _ =
