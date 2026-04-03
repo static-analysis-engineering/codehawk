@@ -879,10 +879,3 @@ class type po_query_int =
              (int * offset * non_relational_value_t) list -> pretty_t
 
   end
-
-module type PREDICATE = 
-sig 
-  type t
-  val from_symbol : symbol_t -> t option
-  val to_symbol : t -> symbol_t
-end
