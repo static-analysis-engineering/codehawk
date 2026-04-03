@@ -256,7 +256,6 @@ let errno_po_process_file () =
         __FILE__ __LINE__ in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
-    CHPretty.(pr_debug [STR "About to process..." ; NL]);
     let u_r =
       List.fold_left (fun acc f ->
           tbind (fun () -> process_function f.vname) acc) (Ok ()) functions in

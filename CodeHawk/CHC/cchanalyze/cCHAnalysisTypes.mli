@@ -216,6 +216,7 @@ object
   method get_call_vars: variable_t list
   method get_fn_entry_call_var: variable_t
   method get_errno_write_var: program_context_int -> variable_t
+  method get_errno_write_vars: variable_t list
 
   method get_variable_type: variable_t -> typ
   method get_local_variable: variable_t -> (varinfo * offset)

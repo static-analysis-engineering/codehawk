@@ -3,9 +3,12 @@ open CHLanguage
 
 type t =
   | True 
+  | Unknown
   | VarInt of (int * int option * int option) (* vid; val *)
   | VarNull of int
 
+
+let unknown_cstr = "unkown"
 let null_var_cstr = "null-var"
 let var_int_cstr = "var-int"
 let true_cstr = "tt"
@@ -27,7 +30,8 @@ let from_symbol (sym: symbol_t): t option =
         let lb = decode_bound l in
         let ub = decode_bound u in
         Some (VarInt (int_of_string v, lb, ub))
-      | [k] when k = true_cstr-> Some True
+      | [k] when k = true_cstr -> Some True
+      | [k] when k = unknown_cstr -> Some Unknown
       | _ -> None (* these should throw*)
     end
   | _ -> None
@@ -39,8 +43,10 @@ let to_symbol: t -> symbol_t = function
     let lb = encode_bound l in
     let ub = encode_bound u in
     new symbol_t (var_int_cstr ^ ":" ^ string_of_int v ^ ":" ^ lb ^ ":" ^ ub)
+  | Unknown -> new symbol_t unknown_cstr
 
 let to_pretty = function
+| Unknown -> STR "?"
 | True -> STR "T"
 | VarNull i -> LBLOCK [ STR "Null("; INT i; STR ")" ]
 | VarInt (v, l, u) -> 

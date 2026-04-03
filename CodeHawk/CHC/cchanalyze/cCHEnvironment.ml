@@ -390,7 +390,9 @@ object(self)
 
   method get_errno_write_var (context:program_context_int) = 
     let ictxt = ccontexts#index_context context in
-    self#mk_augmentation_variable "$errno_written$" "errno_write" (ictxt) SYM_VAR_TYPE
+    let v = self#mk_augmentation_variable "$errno_written$" "errno_write" (ictxt) SYM_VAR_TYPE in
+    H.add errno_write_variables v#getIndex v;
+    v
 
   method mk_call_vars =
     let directcallsites =
@@ -458,6 +460,9 @@ object(self)
   method get_call_vars =
     let callvars = H.fold (fun _ v acc -> v @ acc) callvariables [] in
     self#mk_fn_entry_call_var :: callvars
+
+  method get_errno_write_vars =
+    H.to_seq_values errno_write_variables |> List.of_seq
 
   method mk_initial_value (v:variable_t) (t:typ) (vt:variable_type_t) =
     let aVal = vmgr#mk_initial_value v t in

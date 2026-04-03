@@ -3,6 +3,7 @@ open CHLanguage
 
 type t =
   | True 
+  | Unknown
   | VarInt of (int * int option * int option) (* vid; lb; ub *)
   | VarNull of int
 

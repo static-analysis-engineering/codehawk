@@ -76,6 +76,13 @@ let fenv = CCHFileEnvironment.file_environment
 let is_assert_fail_function fname =  fname = "__assert_fail"
 
 
+let is_library_function (fname:string): bool =
+  if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
+    let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
+    String.starts_with ~prefix:"/" varinfo.vdecl.file
+  else
+    false
+
 let get_function_summary (fname:string) =
     if fenv#has_external_header fname then
       let header = fenv#get_external_header fname in
@@ -1280,7 +1287,7 @@ object (self)
             let sym =
               new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
             [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
-       callop :: rcode
+       callop :: (self#havoc_errno_write @ rcode)
 
   method private get_postconditions
                    (fname:string) (args:exp list) (_fnargs:xpr_t list) =
@@ -1359,10 +1366,19 @@ object (self)
                 None
            | _ -> acc) (Some []) sideeffects
 
+  method private havoc_errno_write =
+      let unknownSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.Unknown in
+      List.map (fun v -> make_c_cmd (ASSIGN_SYM (v, SYM unknownSym))) env#get_errno_write_vars
+
   method private get_errno_sideeffect 
+                  (fname: string)
                   (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list) 
                   (optrvar: variable_t option) =
     let (pcs, epcs) = postconditions in 
+
+    if not (is_library_function fname) then 
+      self#havoc_errno_write
+    else 
 
     let non_errno_pcs, non_errno_epcs = 
           List.filter is_not_writes_errno pcs, List.filter is_not_writes_errno epcs in
@@ -1377,16 +1393,20 @@ object (self)
       | _ -> (None, None)
     in
 
+    (* We want to make sure that the success and failure cases are disjoint, otherwise
+       we may be able to prove that errno was written in the success case even though it wasn't specified. 
+       This is almost certainly an error in the specification, but we don't want that error to propagate here. *)
+    let success_no_write p = List.exists (disjoint p) non_errno_pcs in
+
     let errno_sideeffect = 
       if has_writes_errno epcs then 
-        (* Make sure cond is disjoint...*)
         match optrvar, non_errno_epcs with
-        | Some rvar, [XNull ReturnValue, _ as p] when List.exists (disjoint p) non_errno_pcs ->
+        | Some rvar, [XNull ReturnValue, _ as p] when success_no_write p ->
             let idx = rvar#getName#getSeqNumber in
             let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
             [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
 
-        | Some rvar, [XRelationalExpr (op, ReturnValue, NumConstant c), _ as p] when List.exists (disjoint p) non_errno_pcs ->
+        | Some rvar, [XRelationalExpr (op, ReturnValue, NumConstant c), _ as p] when success_no_write p ->
             let (lb, ub) = rv_interval op c in
             let idx = rvar#getName#getSeqNumber in
             let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, lb, ub)) in
@@ -1408,7 +1428,7 @@ object (self)
                    =
     let vinfo = fdecls#get_varinfo_by_vid fvid in
     let (pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
-    let errno_sideeffect = self#get_errno_sideeffect (pcs, epcs) optrvar in
+    let errno_sideeffect = self#get_errno_sideeffect fname (pcs, epcs) optrvar in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
     let _ =
       log_diagnostics_result

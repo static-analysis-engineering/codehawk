@@ -84,6 +84,9 @@ object (self)
       pretty_to_string (v#toPretty) 
     in
     match c with
+    | Unknown ->
+        "(unknown)" (* This is not actually provable unless it is unreachable*)
+
     | True -> 
         "(unconditional)"
 
@@ -152,6 +155,9 @@ object (self)
     in
 
     match wc with
+    | Unknown ->
+      None
+
     | True -> 
       Some []
 
