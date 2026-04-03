@@ -53,6 +53,8 @@ module VarUF = CHUnionFind.Make
 
 module ErrnoP = CCHErrnoWritePredicateSymbol
 
+let (let*) = Option.bind
+
 let interval_of_bounds lb ub = 
   let l = Option.fold ~none:minus_inf_bound ~some:bound_of_num lb in
   let u = Option.fold ~none:plus_inf_bound ~some:bound_of_num ub in
@@ -105,10 +107,9 @@ object (self)
     | NonRelationalFact (_, FInitializedSet syms) -> 
       List.fold_left begin fun acc s ->
           match acc with
-          | Some l ->
-            Option.bind
-             (ErrnoP.from_symbol s) 
-             (fun (c : ErrnoP.t) -> Some (c :: l))
+          | Some l -> 
+            let* c = ErrnoP.from_symbol s
+            in Some(c :: l)
           | None -> None
       end (Some []) syms
     | _ -> None 
@@ -145,13 +146,13 @@ object (self)
   
   method private find_constant_proof x =
     let deps, int = self#meet_intervals x in
-    Option.bind int#singleton (fun v -> Some (deps, v))
+    let* v = int#singleton in
+    Some (deps, v)
 
   method private check_condition_safe (wc: ErrnoP.t): int list option =
     let prove_eq_this_const x c =
-      Option.bind (self#find_constant_proof x) begin fun (deps, k) ->
-        if k#equal c then Some deps else None
-      end
+      let* (deps, k) = self#find_constant_proof x in
+      if k#equal c then Some deps else None
     in
 
     match wc with
@@ -181,9 +182,8 @@ object (self)
         List.fold_left begin fun acc c -> 
           match acc with
           | Some (results) -> 
-            Option.bind (self#check_condition_safe c) (fun deps -> 
-              Some ((deps, c) :: results)
-            )
+            let* deps = self#check_condition_safe c
+            in Some ((deps, c) :: results)
           | _ -> None
           end (Some [])
     in
