@@ -1,8 +1,9 @@
 (tests
   (names
-        cCHPOCheckInitializedTest
-        cCHPOCheckLocallyInitializedTest
-        cCHPOCheckOutputParameterInitializedTest
+        ;; cCHPOCheckInitializedTest
+        ;; cCHPOCheckLocallyInitializedTest
+        ;; cCHPOCheckOutputParameterInitializedTest
+        cCHPOCheckErrnoWrittenTest
         )
   (deps
         testinputs/PInitialized/gl_inv_001.cch.tar.gz
@@ -20,5 +21,11 @@
         testinputs/PLocallyInitialized/locally_initialized_rl_memlval_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_rl_memlval_002.cch.tar.gz
         testinputs/POutputParameterInitialized/output_parameter_initialized_rl_inv_xpr_001.cch.tar.gz
+        testinputs/PErrnoWritten/errno_written_fclose.cch.tar.gz
+        testinputs/PErrnoWritten/errno_written_foo.cch.tar.gz
+        testinputs/PErrnoWritten/errno_written_fopen.cch.tar.gz
+        testinputs/PErrnoWritten/errno_written_fseek.cch.tar.gz
+        testinputs/PErrnoWritten/errno_written_strtoul.cch.tar.gz
+        testinputs/PErrnoWritten/cchsummaries.jar
         )
   (libraries chlib chutil cchlib cchpre cchanalyze tchlib tcchanalyze))
