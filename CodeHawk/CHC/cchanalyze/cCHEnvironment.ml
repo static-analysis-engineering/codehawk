@@ -89,11 +89,12 @@ module ProgramContextCollections =
 
 let fenv = CCHFileEnvironment.file_environment
 
-let is_errno_location_call (e:exp) =
+let is_errno_location_call (e:exp): bool =
   match e with
   | Lval (Var ("__errno_location", _), NoOffset) -> true
   | _ -> false
 
+(* This collects all temps that are assigned by calls to __errno_location()*)
 class errno_collector_t =
 object
   inherit CCHTypesTransformer.block_walker_t
