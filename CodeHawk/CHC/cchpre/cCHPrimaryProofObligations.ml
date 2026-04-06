@@ -28,7 +28,6 @@
    ============================================================================= *)
 
 (* chlib *)
-open CHUtils
 open CHCommon
 open CHNumerical
 open CHPretty
@@ -71,9 +70,6 @@ let current_function = ref None
 
 let set_current_function f = current_function := Some f
 
-let errnos = ref None
-let set_errnos es = errnos := Some es
-
 let get_current_function () =
   match !current_function with
   | Some f -> f
@@ -103,91 +99,6 @@ let get_missing_summaries () =
   let result = ref [] in
   let _ = H.iter (fun k v -> result := (k,v) :: !result) missing_summaries in
   !result
-
-let is_errno_location_call (e:exp) =
-  match e with
-  | Lval (Var ("__errno_location", _), NoOffset) -> true
-  | _ -> false
-
-let is_int_ptr env v =
-  let ty = (env#get_varinfo_by_vid v).vtype in
-  let ty_unroll = CCHFileEnvironment.file_environment#get_type_unrolled ty in
-  match ty_unroll with
-  | TPtr (TInt _, _) -> true
-  | _ -> false
-
-class pointer_use_expr_walker_t (env:cfundeclarations_int) =
-object
-  inherit CCHTypesTransformer.exp_walker_t as super
-
-  val vars = new IntCollections.set_t
-
-  method get_vars = vars#toList
-
-  method! walk_lval (l:lval) =
-    match l with
-    | Mem (Lval (Var _, NoOffset)), NoOffset -> ()
-    | Var x, _ when is_int_ptr env (snd x) -> vars#add (snd x)
-    | _ -> super#walk_lval l
-end
-
-let blacklistable_pointers_of_exp env e =
-  let walker = new pointer_use_expr_walker_t env in
-  let _ = walker#walk_exp e in
-  walker#get_vars
-  
-class errno_location_block_walker_t (env:cfundeclarations_int) =
-object (self)
-  inherit CCHTypesTransformer.block_walker_t as super
-
-  (* vids *)
-  val errno_pointers = new IntCollections.set_t
-
-  (* 
-     These are vids of pointers, x, whose uses in the program are anything _EXCEPT_
-     1) x = __errno_location()
-     2) *x
-
-     e.g. the following instructions or expressions would result in adding x
-     to this set:
-     y = x, x + 1, 
-  *)
-  val blacklist_pointers = new IntCollections.set_t
-
-  method invalid_errno_uses =
-     errno_pointers#inter blacklist_pointers
-  
-  method errno_pointers = errno_pointers
-
-  method! walk_instr (i:instr) =
-    match i with
-    | Call (Some (Var x, _), f, [], _) when is_errno_location_call f -> 
-      self#add_errno_pointer (snd x);
-      super#walk_instr i
-
-    | _ -> 
-      super#walk_instr i
-
-  method! walk_rhs (e:exp) = self#blacklist_exp_ptrs e
-
-  method! walk_arg (e:exp) = self#blacklist_exp_ptrs e
-
-  method private blacklist_exp_ptrs (e:exp) =
-    blacklistable_pointers_of_exp env e
-    |> List.iter self#add_blacklist
-
-  method private add_errno_pointer (ptr:int) =
-    errno_pointers#add ptr
-
-  method private add_blacklist(ptr:int) =
-    blacklist_pointers#add ptr
-
-end
-
-let errno_transform_ok_block env b = 
-  let block_walker = new errno_location_block_walker_t env in
-  let _ = block_walker#walk_block b in
-  (block_walker#errno_pointers, (block_walker#invalid_errno_uses)#isEmpty)
 
 let add_proof_obligation pred loc (ctxt:program_context_int) =
   if !createppos then
@@ -558,10 +469,6 @@ and create_po_exp
   | Lval lval ->
     begin
       add (PInitialized lval);
-      (match lval, !errnos with
-      | (Mem (Lval (Var x, NoOffset)), NoOffset), Some es when es#has (snd x) -> 
-        add_proof_obligation PErrnoWritten loc context
-      | _ -> ());
       create_po_lval env context#add_lval lval loc
     end
 
@@ -1636,9 +1543,6 @@ let create_proof_obligations ?(createppos=true) (f:fundec) =
     (if not createppos then chlog#add "no ppos created" (STR f.svar.vname));
     set_current_function f;
     reset_missing_summaries ();
-    let (errnos, errno_ok) = errno_transform_ok_block f.sdecls f.sbody in
-    set_errnos errnos;
-    pr_debug [ STR "ERRNO_OK RESULT: "; STR (string_of_bool errno_ok)];
     create_po_block f.sdecls (mk_program_context ()) f.sbody;
     create_contract_proof_obligations ()
   end

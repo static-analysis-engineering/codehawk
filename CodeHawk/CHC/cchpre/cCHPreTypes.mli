@@ -755,6 +755,7 @@ class type assignment_dictionary_int =
     state.*)
 type po_predicate_t =
   | PErrnoWritten
+  (** errno must have been set by some known local statement or library call *)
 
   | PNotNull of exp
   (** Pointer expression [exp] is not null.*)

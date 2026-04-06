@@ -1,12 +1,10 @@
 (* =============================================================================
    CodeHawk C Analyzer
-   Author: Henny Sipma
+   Author: Alexander Bakst
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +53,7 @@ module ErrnoP = CCHErrnoWritePredicateSymbol
 
 let (let*) = Option.bind
 
-let interval_of_bounds lb ub = 
+let interval_of_bounds (lb: numerical_t option) (ub: numerical_t option): interval_t = 
   let l = Option.fold ~none:minus_inf_bound ~some:bound_of_num lb in
   let u = Option.fold ~none:plus_inf_bound ~some:bound_of_num ub in
   new interval_t l u
@@ -66,7 +64,8 @@ class errno_written_checker_t
   (invs: invariant_int list) =
 object (self)
 
-  val equalities =
+  (* Used to implement a substitution on invariants to rewrite vars to an (arbitrary) canonical representative *)
+  val equalities: VarUF.union_find_t =
     begin
       let uf = new VarUF.union_find_t in
       locinv#get_invariants
@@ -78,7 +77,7 @@ object (self)
       uf
     end
 
-  method private simplify = Xsimplify.simplify_xpr
+  method private simplify: xpr_t -> xpr_t = Xsimplify.simplify_xpr
 
   method private message_of_cond (c: ErrnoP.t): string =
     let str_of_vid x = 
@@ -115,31 +114,33 @@ object (self)
     | _ -> None 
 
   method private meet_intervals vid =
-    let interval_of_inv x (i: invariant_int) = match i#get_fact with
-    | NonRelationalFact (vv, _) when equalities#find (vv#getName#getSeqNumber) = equalities#find x -> 
-      interval_of_bounds i#lower_bound i#upper_bound
+    let interval_of_inv (x: int) (i: invariant_int): interval_t = 
+      match i#get_fact with
+      | NonRelationalFact (vv, _) when equalities#find (vv#getName#getSeqNumber) = equalities#find x -> 
+        interval_of_bounds i#lower_bound i#upper_bound
 
-    | ParameterConstraint e -> 
-      begin match self#simplify e with
-      | XOp (op, [XVar vv; XConst (IntConst c)]) when equalities#find(vv#getName#getSeqNumber) = equalities#find x ->
-        begin match op with
-        | XLe -> interval_of_bounds None (Some c)
-        | XLt -> interval_of_bounds None (Some (c#sub numerical_one))
-        | XGt -> interval_of_bounds (Some (c#add numerical_one)) None
-        | XGe -> interval_of_bounds (Some c) None
-        | _   -> topInterval
+      | ParameterConstraint e -> 
+        begin match self#simplify e with
+        | XOp (op, [XVar vv; XConst (IntConst c)]) when equalities#find(vv#getName#getSeqNumber) = equalities#find x ->
+          begin match op with
+          | XLe -> interval_of_bounds None (Some c)
+          | XLt -> interval_of_bounds None (Some (c#sub numerical_one))
+          | XGt -> interval_of_bounds (Some (c#add numerical_one)) None
+          | XGe -> interval_of_bounds (Some c) None
+          | _   -> topInterval
+          end
+        | _ -> topInterval
         end
+
       | _ -> topInterval
-    end
-    | _ -> topInterval
     in
 
-    let refine_interval x (deps, int) (i : invariant_int) =
-      let int' = int#meet (interval_of_inv x i) in
+    let refine_interval (x: int) ((deps : int list), (int: interval_t)) (inv : invariant_int): (int list * interval_t) =
+      let int' = int#meet (interval_of_inv x inv) in
       if int'#equal int then
         (deps, int')
       else
-        (i#index :: deps, int')
+        (inv#index :: deps, int')
     in
 
     List.fold_left (refine_interval (equalities#find vid)) ([], interval_of_bounds None None) locinv#get_invariants
@@ -202,7 +203,8 @@ object (self)
       poq#record_safe_result (DLocal (List.concat deps)) msg; true
     | _ -> false
 end
-let check_errno_written poq locinv = 
+
+let check_errno_written (poq: po_query_int) (locinv: location_invariant_int): bool = 
   let invs = poq#get_errno_write_invariants in
   let checker = new errno_written_checker_t poq locinv invs in
   checker#check_safe

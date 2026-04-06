@@ -1,3 +1,30 @@
+(* =============================================================================
+   CodeHawk C Analyzer
+   Author: Alexander Bakst
+   ------------------------------------------------------------------------------
+   The MIT License (MIT)
+
+   Copyright (c) 2026      Aarno Labs LLC
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+   ============================================================================= *)
+
 (* chlib *)
 open CHPretty
 open CHUtils
@@ -23,25 +50,28 @@ open CCHProofScaffolding
 module H = Hashtbl
 let (let* ) x f = CHTraceResult.tbind f x
 
+let result_of_option (msg: string) (o: 'a option): ('a, string list) result = 
+  match o with
+  | None -> Error [msg]
+  | Some r -> Ok r
+
 (* let p2s = CHPrettyUtil.pretty_to_string *)
 
 let fenv = CCHFileEnvironment.file_environment
 
-let errnos = ref None
-let _set_errnos es = errnos := Some es
-
-let is_errno_location_call (e:exp) =
+let is_errno_location_call (e:exp): bool =
   match e with
   | Lval (Var ("__errno_location", _), NoOffset) -> true
   | _ -> false
 
-let is_int_ptr env v =
+let is_int_ptr (env: cfundeclarations_int) (v: int): bool =
   let ty = (env#get_varinfo_by_vid v).vtype in
   let ty_unroll = CCHFileEnvironment.file_environment#get_type_unrolled ty in
   match ty_unroll with
   | TPtr (TInt _, _) -> true
   | _ -> false
 
+(* Collect all pointers `x` from a target expression that have non-deref uses *)
 class pointer_use_expr_walker_t (env:cfundeclarations_int) =
 object
   inherit CCHTypesTransformer.exp_walker_t as super
@@ -57,11 +87,16 @@ object
     | _ -> super#walk_lval l
 end
 
-let blacklistable_pointers_of_exp env e =
+
+(* All pointers `x` in `e` that have non-deref uses *)
+let blacklistable_pointers_of_exp (env: cfundeclarations_int) (e: exp): int list =
   let walker = new pointer_use_expr_walker_t env in
   let _ = walker#walk_exp e in
   walker#get_vars
   
+(* Collect all variables that must alias __errno_location(). This fails if 
+   we see anything that makes this analysis non-trivial, 
+   like x = __errno_location(); y = x; ... *)
 class errno_location_block_walker_t (env:cfundeclarations_int) =
 object (self)
   inherit CCHTypesTransformer.block_walker_t as super
@@ -80,10 +115,10 @@ object (self)
   *)
   val blacklist_pointers = new IntCollections.set_t
 
-  method invalid_errno_uses =
+  method invalid_errno_uses: IntCollections.set_t =
      errno_pointers#inter blacklist_pointers
   
-  method errno_pointers = errno_pointers
+  method errno_pointers: IntCollections.set_t = errno_pointers
 
   method! walk_instr (i:instr) =
     match i with
@@ -110,7 +145,8 @@ object (self)
 
 end
 
-let errno_transform_ok_block env b = 
+(* Check that we can easily track aliases of __errno_location() *)
+let check_errno_pointer_uses_in_block (env: cfundeclarations_int) (b: block) = 
   let block_walker = new errno_location_block_walker_t env in
   let _ = block_walker#walk_block b in
   if (block_walker#invalid_errno_uses)#isEmpty then
@@ -118,6 +154,11 @@ let errno_transform_ok_block env b =
   else
     None
 
+(* At every *read* of errno, check that we *must* observe a known local write, where 
+   such a write is either:
+   1) a direct assignment (e.g. errno = 0)
+   2) a write due to a library call (e.g. fopen in the branch where fopen returned NULL)
+*)
 class po_creator_t
         (f:fundec) (errno_aliases: IntCollections.set_t) =
 object (self)
@@ -223,14 +264,12 @@ object (self)
     (proof_scaffolding#get_ppo_manager self#fname)#add_ppo loc ctxt pred
 end
 
-
 let process_function (fname:string): unit traceresult =
   let _ = log_info "Process function %s [%s:%d]" fname __FILE__ __LINE__ in
   let fundec = read_function_semantics fname in
   let _ = read_proof_files fname fundec.sdecls in
-  let* errnos = match errno_transform_ok_block fundec.sdecls fundec.sbody with
-  | None -> Error ["Can not run errno analysis, found code we can not analyze"]
-  | Some errnos -> Ok errnos
+  let* errnos = check_errno_pointer_uses_in_block fundec.sdecls fundec.sbody 
+             |> result_of_option "Can not run errno analysis, found code we can not analyze"
   in
   let _ = (new po_creator_t fundec errnos)#create_proof_obligations in
   let _ = CCHCheckValid.process_function fname in
