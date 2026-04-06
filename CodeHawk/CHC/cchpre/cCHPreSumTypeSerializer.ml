@@ -247,7 +247,7 @@ object
 
   method! tags = [
       "ab"; "b"; "c"; "cb"; "cbt"; "cf"; "cob"; "cr"; "cssl"; "cssu"; "csul";
-      "csuu"; "ctt"; "cus"; "cuu"; "dr"; "ds"; "fc"; "ft"; "ga"; "ha"; "ilb";
+      "csuu"; "ctt"; "cus"; "cuu"; "dr"; "ds"; "ew"; "fc"; "ft"; "ga"; "ha"; "ilb";
       "i"; "io"; "ir"; "is"; "iu"; "iub"; "li"; "lb"; "nm"; "nn"; "nneg"; "no";
       "nt"; "null"; "opa"; "opi"; "opne"; "ops"; "opu";
       "pc"; "plb"; "pm"; "prm";  "prmx"; "pub"; "pubd"; "pv";

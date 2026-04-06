@@ -205,7 +205,7 @@ let main () =
 
     else if !cmd = "errno-primary" then
       begin
-        system_settings#set_output_parameter_analysis;
+        system_settings#set_errno_written_analysis;
 	let _ =
           CCHCreateErrnoPOs.errno_po_process_file () in
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;

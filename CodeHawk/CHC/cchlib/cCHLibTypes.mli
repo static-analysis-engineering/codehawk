@@ -795,6 +795,7 @@ class type global_contract_int =
 type analysis_kind_t =
   | UndefinedBehaviorAnalysis
   | OutputParameterAnalysis
+  | ErrnoWrittenAnalysis
 
 
 type analysis_level_t =
@@ -878,8 +879,10 @@ class type system_settings_int =
 
     method set_output_parameter_analysis: unit
     method set_undefined_behavior_analysis: unit
+    method set_errno_written_analysis: unit
     method is_undefined_behavior_analysis: bool
     method is_output_parameter_analysis: bool
+    method is_errno_written_analysis: bool
 
     (** {1 Other settings} *)
 

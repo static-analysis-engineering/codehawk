@@ -244,6 +244,7 @@ object (self)
     | "c" -> XConstTerm (term 0)
     | "cf" -> XConfined (term 0)
     | "cr" -> XControlledResource (t 1, term 0)
+    | "ew" -> XWritesErrno
     | "esv" -> XExternalStateValue (term 0, term 1)
     | "f" -> XFalse
     | "fi" -> XFormattedInput (term 0)

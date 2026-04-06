@@ -357,7 +357,7 @@ let extract_ranges
      If we have some proof obligation that depends X in a branch where we have an assert on
      its value, we may end up refining the abstract value for V (and not X) but then filtering it out.
    *)
-	let programVars = List.filter (fun v -> _env#is_fixed_value v || not v#isTmp) vars in
+	let programVars = List.filter (fun v -> not v#isTmp) vars in
 	let varObserver = domain#observer#getNonRelationalVariableObserver in
 	List.iter(fun v ->
 	    let index = v#getName#getSeqNumber in

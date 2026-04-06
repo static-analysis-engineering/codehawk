@@ -178,7 +178,6 @@ object (self)
 
   method check_safe : bool = 
     let disjuncts = List.filter_map self#get_conditions invs in
-    CHPretty.(pr_debug [ INT (List.length disjuncts); STR " alternative." ; NL ]);
     let check_all = 
         List.fold_left begin fun acc c -> 
           match acc with

@@ -910,7 +910,7 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
     | PUniquePointer e ->
        LBLOCK [STR "unique-pointer("; exp_to_pretty e; STR ")"]
     | PPreservedAllMemory -> STR "preserved-all-memory"
-    | PErrnoWritten -> STR "errno-must_written"
+    | PErrnoWritten -> STR "errno-must-written"
     | PPreservedAllMemoryX l ->
        LBLOCK [
            STR "preserved-all-memory-x";
