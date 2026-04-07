@@ -16,7 +16,7 @@
    </documentation>
    <api adj="0" cc="cdecl" name="fgetc">
     <par loc="stack" name="stream" io="r" rep="hex" nr="1">
-     <type><ptr>ch_FILE</ptr></type>
+     <type><ptr>ch__FILE</ptr></type>
      <pre><deref-read/></pre>
      <roles>
        <role rt="ioc:filesystem" rn="file"/>
@@ -30,8 +30,16 @@
 		desc="reads a character from a stream"/>
     </io-actions>
     <preconditions/>
-    <postconditions/>
-    <sideeffects/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+        <math>
+          <sets-errno/>
+        </math>
+      </sideeffect>
+    </sideeffects>
    </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

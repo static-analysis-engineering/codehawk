@@ -24,7 +24,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <positive-zero/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

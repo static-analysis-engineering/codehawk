@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-05 23:20:48"/>
+  <libfun lib="so_functions" name="pow">
+    <documentation>
+      <desc>power function</desc>
+      <apidoc>
+        <pt>
+          <ll>double pow(</ll>
+          <ld>double x</ld>
+          <ld>double y</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="x">base value</par>
+        <par name="y">exponent</par>
+        <return>
+          <rc cond="success">x raised to the power y</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pow">
+      <par loc="stack" name="x" nr="1">
+        <type>double</type>
+      </par>
+      <par loc="stack" name="y" nr="2">
+        <type>double</type>
+      </par>
+      <returntype>double</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

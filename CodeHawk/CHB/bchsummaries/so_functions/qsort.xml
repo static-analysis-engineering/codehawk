@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-05 22:22:24"/>
+  <libfun lib="so_functions" name="qsort">
+    <documentation>
+      <desc>sort a table of data</desc>
+      <apidoc>
+        <pt>
+          <ll>void qsort(</ll>
+          <ld>void *base</ld>
+          <ld>size_t nel</ld>
+          <ld>size_t width</ld>
+          <ld>int (*compar)*const void *, const void *)</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="base">base of array to be sorted </par>
+        <par name="nel">number of elements </par>
+        <par name="width">width of each element in bytes</par>
+        <par name="compar">comparison function</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="qsort">
+      <par loc="stack" name="base" nr="1">
+        <type><ptr>void</ptr></type>
+      </par>
+      <par loc="stack" name="nel" nr="2">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="width" nr="3">
+        <type>size_t</type>
+      </par>
+      <par loc="stack" name="compar" nr="4">
+        <type>comparison_fptr</type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+        <pre>
+          <math>
+            <apply>
+              <deref-read/>
+              <type>byte</type>
+              <ci>base</ci>
+              <apply><times/><ci>nel</ci><ci>width</ci></apply>
+            </apply>
+          </math>
+        </pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -38,7 +38,7 @@
 	      <deref-write/>
 	      <type>char</type>
 	      <ci>ifname</ci>
-	      <runtime-value/>
+	      <cn>16</cn>
 	    </apply>
 	  </math>
 	</pre>
@@ -46,7 +46,23 @@
       <postconditions>
 	<notnull-null/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <apply>
+              <block-write/>
+              <type>char</type>
+              <ci>ifname</ci>
+              <cn>16</cn>
+            </apply>
+          </math>
+        </sideeffect>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

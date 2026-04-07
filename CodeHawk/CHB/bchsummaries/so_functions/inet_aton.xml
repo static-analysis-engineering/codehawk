@@ -32,7 +32,7 @@
 	<pre><deref-read-nt/></pre>
       </par>
       <par loc="stack" name="inp" nr="2">
-        <type><ptr>in_addr</ptr></type>
+        <type><ptr>ch__in_addr</ptr></type>
 	<pre><deref-write/></pre>
       </par>
       <returntype>int</returntype>
@@ -40,7 +40,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <nonzero-zero/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

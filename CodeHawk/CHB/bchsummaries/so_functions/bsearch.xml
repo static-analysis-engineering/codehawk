@@ -41,7 +41,7 @@
         <type>size_t</type>
       </par>
       <par loc="stack" name="compar" nr="5">
-        <type><ptr>function-pointer</ptr></type>
+        <type><ptr>comparison_fptr</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <returntype><ptr>void</ptr></returntype>

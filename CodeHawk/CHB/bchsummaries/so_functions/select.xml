@@ -41,22 +41,22 @@
         <type>int</type>
       </par>
       <par loc="stack" name="readfds" nr="2">
-        <type><ptr>ch_fd_set</ptr></type>
+        <type><ptr>ch__fd_set</ptr></type>
 	<pre><deref-read/></pre>
 	<sideeffects><block-write/></sideeffects>
       </par>
       <par loc="stack" name="writefds" nr="3">
-        <type><ptr>ch_fd_set</ptr></type>
+        <type><ptr>ch__fd_set</ptr></type>
 	<pre><deref-read/></pre>
 	<sideeffects><block-write/></sideeffects>
       </par>
       <par loc="stack" name="errorfds" nr="4">
-        <type><ptr>ch_fd_set</ptr></type>
+        <type><ptr>ch__fd_set</ptr></type>
 	<pre><deref-read/></pre>
 	<sideeffects><block-write/></sideeffects>
       </par>
       <par loc="stack" name="timeout" nr="5">
-        <type><ptr>ch_timeval</ptr></type>
+        <type><ptr>ch__timeval</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <returntype>int</returntype>
@@ -67,7 +67,13 @@
       <postconditions>
 	<nonnegative-negative/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

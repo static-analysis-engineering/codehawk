@@ -29,8 +29,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="__uClibc_main">
       <par loc="stack" name="main" nr="1">
-        <type><ptr>function-pointer</ptr></type>
-	<pre><function-pointer/></pre>
+        <type><ptr>__uClibc_main_fptr</ptr></type>
       </par>
       <par loc="stack" name="argc" nr="2">
         <type>int</type>
@@ -39,16 +38,13 @@
         <type><ptr><ptr>char</ptr></ptr></type>
       </par>
       <par loc="stack" name="app_init" nr="4">
-        <type><ptr>function-pointer</ptr></type>
-	<pre><function-pointer/></pre>
+        <type><ptr>__uClibc_main_fptr</ptr></type>
       </par>
       <par loc="stack" name="app_fini" nr="5">
-        <type><ptr>function-pointer</ptr></type>
-	<pre><function-pointer/></pre>
+        <type><ptr>__uClibc_main_fptr</ptr></type>
       </par>
       <par loc="stack" name="rtld_fini" nr="6">
-        <type><ptr>function-pointer</ptr></type>
-	<pre><function-pointer/></pre>
+        <type><ptr>__uClibc_main_fptr</ptr></type>
       </par>
       <par loc="stack" name="stack_end" nr="7">
         <type><ptr>void</ptr></type>

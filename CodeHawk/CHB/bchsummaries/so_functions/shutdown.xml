@@ -32,8 +32,16 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <postconditions>
+        <zero-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

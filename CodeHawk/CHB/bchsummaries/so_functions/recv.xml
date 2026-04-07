@@ -89,6 +89,11 @@
 	    </apply>
 	  </math>
 	</sideeffect>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
       </sideeffects>
     </semantics>
   </libfun>

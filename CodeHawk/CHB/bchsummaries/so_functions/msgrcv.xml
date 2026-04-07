@@ -48,9 +48,28 @@
     </api>
     <semantics>
       <io-actions/>
-      <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <preconditions>
+        <pre>
+          <math>
+            <apply>
+              <deref-read/>
+              <type>byte</type>
+              <ci>msgp</ci>
+              <ci>msgsz</ci>
+            </apply>
+          </math>
+        </pre>
+      </preconditions>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>

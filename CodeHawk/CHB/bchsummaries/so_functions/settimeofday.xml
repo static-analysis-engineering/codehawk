@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="https://linux.die.net/man/2/settimeofday"/>
+  <header date="2026-04-05 23:33:51"/>
+  <libfun lib="so_functions" name="settimeofday">
+    <documentation>
+      <desc>set time</desc>
+      <apidoc>
+        <pt>
+          <ll>int settimeofday(</ll>
+          <ld>const struct timeval *tv</ld>
+          <ld>const struct timezone *tz</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="tv">time to be set</par>
+        <par name="tz">timezone</par>
+        <return>
+          <rc cond="success">0</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="settimeofday">
+      <par loc="stack" name="tv" nr="1">
+        <type><ptr>ch__timeval</ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="tz" nr="2">
+        <type><ptr>ch__timezone</ptr></type>
+        <pre><deref-read-null/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <zero-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

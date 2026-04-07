@@ -22,15 +22,15 @@
    </documentation>
    <api adj="0" cc="cdecl" name="fgetpos">
     <par loc="stack" io="r" name="stream" nr="1">
-     <type><ptr>ch_FILE</ptr></type>
+     <type><ptr>ch__FILE</ptr></type>
      <pre><deref-read/></pre>
      <roles>
         <role rt="ioc:filesystem" rn="file"/>
      </roles>
     </par>
     <par loc="stack" io="w" name="pos" roles="none" nr="2">
-     <type><ptr>fpos_t</ptr></type>
-     <pre><deref-read/></pre>
+     <type><ptr>ch__fpos_t</ptr></type>
+     <pre><deref-write/></pre>
     </par>
     <returntype>int</returntype>
    </api>

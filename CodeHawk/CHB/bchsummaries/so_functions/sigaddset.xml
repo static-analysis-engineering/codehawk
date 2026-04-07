@@ -22,7 +22,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="sigaddset">
       <par loc="stack" name="set" nr="1">
-        <type><ptr>sigset_t</ptr></type>
+        <type><ptr>ch__sigset_t</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <par loc="stack" name="signo" nr="2">
@@ -36,7 +36,13 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

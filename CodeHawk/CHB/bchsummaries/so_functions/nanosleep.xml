@@ -22,11 +22,11 @@
     </documentation>
     <api adj="0" cc="cdecl" name="nanosleep">
       <par loc="stack" name="rqtp" nr="1">
-        <type><ptr>timespec</ptr></type>
+        <type><ptr>ch__timespec</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <par loc="stack" name="rmtp" nr="2">
-        <type><ptr>timespec</ptr></type>
+        <type><ptr>ch__timespec</ptr></type>
 	<pre><deref-write-null/></pre>
       </par>
       <returntype>int</returntype>
@@ -34,8 +34,16 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <postconditions>
+        <zero-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>
