@@ -51,7 +51,9 @@ module VarUF = CHUnionFind.Make
 
 module ErrnoP = CCHErrnoWritePredicateSymbol
 
-let (let*) = Option.bind
+let (let*) ao f = match ao with
+  | Some x -> f x
+  | None -> None
 
 let interval_of_bounds (lb: numerical_t option) (ub: numerical_t option): interval_t = 
   let l = Option.fold ~none:minus_inf_bound ~some:bound_of_num lb in
