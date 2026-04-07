@@ -16,10 +16,10 @@
     </documentation>
     <api adj="0" cc="cdecl" name="getnetbyname">
       <par loc="stack" name="name" nr="1">
-        <type><ptr>name</ptr></type>
+        <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>
       </par>
-      <returntype><ptr>netent</ptr></returntype>
+      <returntype><ptr>ch__netent</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>

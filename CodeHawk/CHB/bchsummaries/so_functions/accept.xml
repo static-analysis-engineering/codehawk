@@ -41,10 +41,11 @@
         <type>int</type>
       </par>
       <par loc="stack" name="address" nr="2">
-        <type><ptr>ch_sockaddr</ptr></type>
+        <type><ptr>ch__sockaddr</ptr></type>
       </par>
       <par loc="stack" name="address_len" nr="3">
         <type><ptr>socklen_t</ptr></type>
+        <pre><deref-read-write-null/></pre>
       </par>
       <returntype>int</returntype>
     </api>
@@ -55,7 +56,7 @@
 	  <math>
 	    <apply>
 	      <deref-write-null/>
-	      <type>ch_sockaddr</type>
+	      <type>ch__sockaddr</type>
 	      <ci>address</ci>
 	      <ci>address_len</ci>
 	    </apply>
@@ -70,12 +71,17 @@
 	  <math>
 	    <apply>
 	      <block-write/>
-	      <type>ch_sockaddr</type>
+	      <type>ch__sockaddr</type>
 	      <ci>address</ci>
 	      <ci>address_len</ci>
 	    </apply>
 	  </math>
 	</sideeffect>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
       </sideeffects>
     </semantics>
   </libfun>

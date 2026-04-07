@@ -18,13 +18,21 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>
       </par>
-      <returntype><ptr>hostent</ptr></returntype>
+      <returntype><ptr>ch__hostent</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

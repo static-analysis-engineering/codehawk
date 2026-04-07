@@ -13,7 +13,7 @@
    </documentation>
    <api adj="0" cc="cdecl" name="rewind">
     <par loc="stack" name="stream" nr="1">
-     <type><ptr>ch_FILE</ptr></type>
+     <type><ptr>ch__FILE</ptr></type>
      <pre><deref-read/></pre>
      <roles>
        <role rt="ioc:filesystem" rn="stream"/>
@@ -27,7 +27,13 @@
     </io-actions>
     <preconditions/>
     <postconditions/>
-    <sideeffects/>
+    <sideeffects>
+      <sideeffect>
+        <math>
+          <sets-errno/>
+        </math>
+      </sideeffect>
+    </sideeffects>
    </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2015, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

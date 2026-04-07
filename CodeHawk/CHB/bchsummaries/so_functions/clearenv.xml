@@ -23,7 +23,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <zero-nonzero/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

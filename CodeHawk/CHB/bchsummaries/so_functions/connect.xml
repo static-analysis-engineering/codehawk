@@ -36,7 +36,7 @@
         <type>int</type>
       </par>
       <par loc="stack" name="address" nr="2">
-        <type><ptr>ch_sockaddr</ptr></type>
+        <type><ptr>ch__sockaddr</ptr></type>
       </par>
       <par loc="stack" name="address_len" nr="3">
         <type>int</type>
@@ -49,24 +49,21 @@
 	<pre>
 	  <math>
 	    <apply>
-	      <deref-write/>
-	      <type>ch_sockaddr</type>
+	      <deref-read/>
+	      <type>ch__sockaddr</type>
 	      <ci>address</ci>
 	      <ci>address_len</ci>
 	    </apply>
 	  </math>
 	</pre>
       </preconditions>
-      <postconditions/>
+      <postconditions>
+        <zero-negone/>
+      </postconditions>
       <sideeffects>
 	<sideeffect>
 	  <math>
-	    <apply>
-	      <block-write/>
-	      <type>ch_sockaddr</type>
-	      <ci>address</ci>
-	      <ci>address_len</ci>
-	    </apply>
+            <sets-errno/>
 	  </math>
 	</sideeffect>
       </sideeffects>

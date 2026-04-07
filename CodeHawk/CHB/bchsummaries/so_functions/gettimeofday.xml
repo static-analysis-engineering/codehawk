@@ -22,7 +22,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="gettimeofday">
       <par loc="stack" name="tp" nr="1">
-        <type><ptr>ch_timeval</ptr></type>
+        <type><ptr>ch__timeval</ptr></type>
 	<pre><deref-write/></pre>
       </par>
       <par loc="stack" name="tzp" nr="2">
@@ -33,7 +33,17 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <post>
+          <math>
+            <apply>
+              <eq/>
+              <return/>
+              <cn>0</cn>
+            </apply>
+          </math>
+        </post>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

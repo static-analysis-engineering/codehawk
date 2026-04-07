@@ -9,7 +9,7 @@
      <pt>
       <ll>int fsetpos(</ll>
       <ld>FILE *stream</ld>
-      <ld>cont fpos_t pos</ld>
+      <ld>const fpos_t pos</ld>
       <ll>)</ll>
      </pt>
      <par name="stream">pointer to FILE structure</par>
@@ -22,14 +22,14 @@
    </documentation>
    <api adj="0" cc="cdecl" name="fsetpos">
     <par loc="stack" io="r" name="stream" rep="hex" nr="1">
-     <type><ptr>ch_FILE</ptr></type>
+     <type><ptr>ch__FILE</ptr></type>
      <roles>
       <role rt="ioc:filesystem" rn="file" />
      </roles>
      <pre><deref-read/></pre>
     </par>
     <par loc="stack" io="r" name="pos" roles="none" nr="2">
-     <type><ptr>fpos_t</ptr></type>
+     <type><ptr>ch__fpos_t</ptr></type>
      <pre><deref-read/></pre>
     </par>
     <returntype>int</returntype>

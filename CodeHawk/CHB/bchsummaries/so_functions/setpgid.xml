@@ -22,10 +22,10 @@
     </documentation>
     <api adj="0" cc="cdecl" name="setpgid">
       <par loc="stack" name="pid" nr="1">
-        <type>int</type>
+        <type>pid_t</type>
       </par>
       <par loc="stack" name="pgid" nr="2">
-        <type>int</type>
+        <type>pid_t</type>
       </par>
       <returntype>int</returntype>
     </api>
@@ -35,7 +35,13 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

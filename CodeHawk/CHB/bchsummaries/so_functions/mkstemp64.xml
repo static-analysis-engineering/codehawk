@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
@@ -26,8 +27,16 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

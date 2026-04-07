@@ -33,7 +33,7 @@
         <type>int</type>
       </par>
       <par loc="stack" name="msghdr" nr="2">
-        <type><ptr>msghdr</ptr></type>
+        <type><ptr>ch__msghdr</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <par loc="stack" name="flags" nr="3">
@@ -44,8 +44,16 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
-      <sideeffects/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>
