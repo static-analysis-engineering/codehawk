@@ -60,13 +60,16 @@ let unpack_tar_gz (predicate: string) (filename: string) =
 
 
 let analysis_setup
-      ?(domains=default_domains) (predicate: string) (filename: string) =
+      ?(domains=default_domains) ?(summaries_jar=None) (predicate: string) (filename: string) =
   begin
     unpack_tar_gz predicate filename;
     system_settings#set_projectname filename;
     system_settings#set_cfilename filename;
-    CCHFunctionSummary.function_summary_library#add_summary_jar "testinputs/PErrnoWritten/cchsummaries.jar";
-    CCHProofScaffolding.proof_scaffolding#reset;
+    begin match summaries_jar with
+      | Some s -> CCHFunctionSummary.function_summary_library#add_summary_jar s
+      | _ -> ()
+    end;
+    CCHFileContract.file_contract#reset;
 
     (if system_settings#is_output_parameter_analysis then
        CHTraceResult.tget_ok

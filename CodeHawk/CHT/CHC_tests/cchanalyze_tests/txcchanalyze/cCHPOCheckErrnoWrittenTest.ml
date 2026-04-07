@@ -44,6 +44,7 @@ let po_filter (po: proof_obligation_int): proof_obligation_int option =
   | PErrnoWritten -> Some po
   | _ -> None
 
+let summaries_jar = Some "testinputs/PErrnoWritten/cchsummaries.jar"
 
 (* See CHT/CHC_tests/cchanalyze_tests/tcchanalyze/tCHCchanalyzeUtils.mli
    for a description and example of how to specify the tests.
@@ -51,27 +52,29 @@ let po_filter (po: proof_obligation_int): proof_obligation_int option =
 let check_safe () =
   let tests = [
       ("strtoul_errno",
-       "errno_written_strtoul", "main",
+       "errno_written_strtoul", "main_strtoul",
        [], -1, -1,
        None, "");
 
       ("fopen_errno",
-       "errno_written_fopen", "main",
+       "errno_written_fopen", "main_fopen",
        [], -1, -1,
        None, "");
 
-      (* ("fclose_errno",
-       "errno_written_fclose", "foo",
+      ("fclose_errno",
+       "errno_written_fclose", "main_fclose",
        [], -1, -1,
-       None, ""); *)
-      (* ("fseek_errno",
-       "errno_written_fseek", "main",
+       None, "");
+
+      ("fseek_errno",
+       "errno_written_fseek", "main_fseek",
        [], -1, -1,
-       None, ""); *)
+       None, "");
     ] in
   begin
     TS.new_testsuite (testname ^ "_check_safe") lastupdated;
     CHTiming.disable_timing ();
+    CHLogger.activate_diagnostics();
 
     List.iter
       (fun (title, filename, funname, reqargs, line, byte, xdetail, expl) ->
@@ -79,7 +82,7 @@ let check_safe () =
           ~title
           (fun () ->
             let _ = CCHSettings.system_settings#set_errno_written_analysis in
-            let _ = CU.analysis_setup "PErrnoWritten" filename in
+            let _ = CU.analysis_setup ~summaries_jar "PErrnoWritten" filename in
             let po_s = proof_scaffolding#get_proof_obligations funname in
             let po_s = List.filter_map po_filter po_s in
             let tgtpo_o = CU.select_target_po ~reqargs ~line ~byte po_s in
@@ -102,34 +105,33 @@ let check_safe () =
   end
 
 
-(* See CHT/CHC_tests/cchanalyze_tests/tcchanalyze/tCHCchanalyzeUtils.mli
-   for a description and example of how to specify the tests.
- *)
-let _check_open () =
+let check_not_safe () =
   let tests = [
       ("not_proveable",
-       "errno_written_foo", "main",
-       [], -1, -1,
-       None, "");
+       "errno_written_unsafe", "main_unsafe",
+       [], -1, -1)
     ] in
   begin
     TS.new_testsuite (testname ^ "_check_open") lastupdated;
     CHTiming.disable_timing ();
 
     List.iter
-      (fun (title, filename, funname, reqargs, line, byte, xdetail, expl) ->
+      (fun (title, filename, funname, reqargs, line, byte) ->
         TS.add_simple_test
           ~title
           (fun () ->
             let _ = CCHSettings.system_settings#set_errno_written_analysis in
-            let _ = CU.analysis_setup "PErrnoWritten" filename in
+            let _ = CU.analysis_setup ~summaries_jar "PErrnoWritten" filename in
             let po_s = proof_scaffolding#get_proof_obligations funname in
             let po_s = List.filter_map po_filter po_s in
             let tgtpo_o = CU.select_target_po ~reqargs ~line ~byte po_s in
             begin
               CU.analysis_take_down filename;
               match tgtpo_o with
-              | Some po -> CA.expect_violation_detail ~po ~xdetail ~expl ()
+              | Some po when po#get_status <> Green -> ()
+              | Some po -> 
+                A.fail_msg ("Expected proof obligation should not valid, but got "
+                         ^ (CCHPreSumTypeSerializer.po_status_mfts#ts po#get_status))
               | _ ->
                  let s_po_s = List.map CU.located_po_to_string po_s in
                  A.fail_msg
@@ -146,8 +148,11 @@ let _check_open () =
 
 let () =
   begin
-    TS.new_testfile testname lastupdated;
+    CHLogger.activate_diagnostics();
+    TS.new_testfile (testname ^ "0") lastupdated;
     check_safe ();
+    check_not_safe ();
+    TS.exit_file ();
+    ()
     (* check_open (); *)
-    TS.exit_file ()
   end
