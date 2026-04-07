@@ -225,6 +225,7 @@ object (self)
       mmap#write_xml_references faddr vard grNode;
       (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
+      finfo#discharge_proofobligations;
       finfo#proofobligations#write_xml poNode;
       finfo#xpod#write_xml xpodNode;
       append [cNode; dNode; iiNode; jjNode; sfNode; grNode; xpodNode; poNode]

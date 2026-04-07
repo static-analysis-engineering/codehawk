@@ -4861,6 +4861,8 @@ class type stackframe_int =
 
     method xpr_containing_stackslot: xpr_t -> stackslot_int option
 
+    method get_max_slot_size: int -> int option
+
     method add_load:
              baseoffset:int
              -> offset: memory_offset_t
@@ -5635,6 +5637,8 @@ class type proofobligation_int =
 
     method status: po_status_t
 
+    method update_status: po_status_t -> unit
+
   end
 
 
@@ -5700,6 +5704,10 @@ object
 
   (** Returns the object containing all active proof obligations.*)
   method proofobligations: proofobligations_int
+
+  (** Attempts to discharge some open proof obligations and if successful
+      updates their status.*)
+  method discharge_proofobligations: unit
 
 
   (** {1 Function invariants} *)

@@ -130,10 +130,19 @@ let read_xml_par_preconditions
         XXNullTerminated t]
     | "deref-write" ->
        let typ = ty () in
-       [XXBuffer (typ, t, getsize node typ); XXNotNull t]
+       [XXBlockWrite (typ, t, getsize node typ); XXNotNull t]
     | "deref-write-null" ->
        let typ = ty () in
-       [XXBuffer (typ, t, getsize node typ)]
+       [XXBlockWrite (typ, t, getsize node typ)]
+    | "deref-read-write" ->
+       let typ = ty () in
+       [XXBlockWrite (typ, t, getsize node typ);
+        XXNotNull t;
+        XXInitializedRange (typ, t, getsize node typ)]
+    | "deref-read-write-null" ->
+       let typ = ty () in
+       [XXBlockWrite (typ, t, getsize node typ);
+        XXInitializedRange (typ, t, getsize node typ)]
     | "allocation-base" -> [XXAllocationBase t]
     | "function-pointer" ->
        let typ = ty () in [XXFunctionPointer (typ, t)]
