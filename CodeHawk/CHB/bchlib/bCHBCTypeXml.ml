@@ -60,7 +60,40 @@ let raise_error (node: xml_element_int) (msg: pretty_t) =
 
 
 let ch_named_struct_types = [
-    "ch_FILE"
+    "ch__addrinfo";
+    "ch__DIR";
+    "ch__dirent";
+    "ch__fd_set";    (* used in select *)
+    "ch__FILE";
+    "ch__fpos_t";    (* this may or may not be a struct, depending on arch *)
+    "ch__group";     (* used in getgrgid *)
+    "ch__hostent";
+    "ch__in_addr";
+    "ch__iovec";     (* used in writev *)
+    "ch__msghdr";    (* used in recvmsg, sendmsg *)
+    "ch__netent";
+    "ch__passwd";    (* used in getpwnam *)
+    "ch__pollfd";
+    "ch__pthread_attr_t";
+    "ch__pthread_cond_t";
+    "ch__pthread_mutex_t";
+    "ch__pthread_mutexattr_t";
+    "ch__pthread_start_routine";
+    "ch__pthread_t";
+    "ch__rlimit";    (* used in getrlimit *)
+    "ch__rusage";    (* used in getrusage *)
+    "ch__sigaction"; (* used in sigaction *)
+    "ch__sigset_t";  (* used in sigaddset *)
+    "ch__sockaddr";
+    "ch__spwd";      (* used in getspname *)
+    "ch__stat";
+    "ch__statfs";
+    "ch__sysinfo";
+    "ch__termios";   (* used in tcgetattr *)
+    "ch__timespec";  (* used in nanosleep *)
+    "ch__timeval";
+    "ch__timezone";
+    "ch__tm"
   ]
 
 let register_ch_named_struct_types () =
@@ -71,28 +104,59 @@ let register_ch_named_struct_types () =
    btype enumerations*)
 let get_standard_txt_type (t: string): btype_t option =
   match t with
+  | "__uClibc_main_fptr" ->
+     Some (TPtr (TFun (TInt (IInt, []),
+                       Some [("argc", TInt (IInt, []), []);
+                             ("argv", TPtr (TPtr (TInt (IUChar, []), []),  []), [])],
+                             false, []), []))
+  | "atexit_fptr" -> Some (TPtr (TFun (TVoid [], Some [], false, []), []))
   | "BOOL" -> Some (TInt (IBool, []))
   | "Boolean" -> Some (TInt (IBool, []))
   | "BSTR" -> Some (TPtr (TInt (IWChar, []), []))
   | "byte" -> Some (TInt (IUChar, []))
   | "BYTE" -> Some (TInt (IUChar, []))
   | "char" -> Some (TInt (IChar, []))
+  | "clock_t" -> Some (TInt (IInt, []))
+  | "comparison_fptr" ->                       (* used in bsearch *)
+     Some (TFun (TInt (IInt, []),
+                 Some [("x1", TPtr (TVoid [], []), []);
+                       ("x2", TPtr (TVoid [], []), [])],
+                 false, []))
+  | "dir_select_fptr" ->
+     Some (TFun (TInt (IInt, []),
+                       Some [("direntry", TPtr (TNamed ("ch__dirent", []), []), [])],
+                              false, []))
   | "float" -> Some (TFloat (FFloat, FScalar, []))
   | "double" -> Some (TFloat (FDouble, FScalar, []))
   | "DWORD" -> Some (TInt (IUInt, []))
+  | "gid_t" -> Some (TInt (IUInt, []))
+  | "id_t" -> Some (TInt (IUInt, []))     (* used in getpriority *)
   | "int" -> Some (TInt (IInt, []))
   | "Integer" -> Some (TInt (IInt, []))
   | "long" -> Some (TInt (ILong, []))
   | "LONG" -> Some (TInt (ILong, []))
+  | "long_long" -> Some (TInt (ILongLong, []))
+  | "long long" -> Some (TInt (ILongLong, []))
+  | "mode_t" -> Some (TInt (IInt, []))    (* used in chmod *)
+  | "nfds_t" -> Some (TInt (IUInt, []))   (* used in poll *)
   | "off_t" -> Some (TInt (IULong, []))
   | "OLECHAR" -> Some (TInt (IWChar, []))
+  | "pid_t" -> Some (TInt (IUInt, []))
+  | "pthread_start_routine" ->
+     Some (TPtr (TFun (TVoid [], Some [], false, []), []))
+  | "sem_t" -> Some (TInt (IInt, []))     (* used in semaphore functions *)
   | "size_t" -> Some (TInt (IUInt, []))
   | "SIZE_T" -> Some (TInt (IUInt, []))
+  | "socklen_t" -> Some (TInt (IInt, []))  (* may also be unsigned *)
+  | "speed_t" -> Some (TInt (IUInt, []))   (* used in cfgetispeed *)
   | "ssize_t" -> Some (TInt (ILong, []))
   | "time_t" -> Some (TInt (ILong, []))
+  | "uid_t" -> Some (TInt (IUInt, []))
   | "UINT" -> Some (TInt (IUInt, []))
   | "uint16_t" -> Some (TInt (IUShort, []))
   | "uint32_t" -> Some (TInt (IUInt, []))
+  | "u_long" -> Some (TInt (IULong, []))
+  | "u_long_long" -> Some (TInt (IULongLong, []))
   | "unknown" -> Some (TUnknown [])
   | "UNKNOWN" -> Some (TUnknown [])
   | "void" -> Some (TVoid ([]))
