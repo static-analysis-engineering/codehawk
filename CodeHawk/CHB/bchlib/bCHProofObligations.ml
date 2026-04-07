@@ -105,11 +105,15 @@ class proofobligation_t
         (status: po_status_t): proofobligation_int =
 object
 
+  val mutable status = status
+
   method xpo = xpo
 
   method loc = loc
 
   method status = status
+
+  method update_status (s: po_status_t) = status <- s
 
 end
 

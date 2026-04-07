@@ -31,5 +31,7 @@
 open BCHLibTypes
 
 
+val po_status_to_pretty: po_status_t -> CHPretty.pretty_t
+
 val mk_proofobligations:
   doubleword_int -> xpodictionary_int -> proofobligations_int
