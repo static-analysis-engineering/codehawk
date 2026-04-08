@@ -83,6 +83,7 @@ let t_ptrto t = TPtr (t,[])
 
 let ptr_deref (t: btype_t): btype_t =
   match t with
+  | TPtr (TVoid _, _) -> t_uchar
   | TPtr (dty, _) -> dty
   | _ ->
      raise
