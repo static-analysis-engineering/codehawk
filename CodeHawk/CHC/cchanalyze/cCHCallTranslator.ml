@@ -79,7 +79,9 @@ let is_assert_fail_function fname =  fname = "__assert_fail"
 let is_library_function (fname:string): bool =
   if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
     let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
-    String.starts_with ~prefix:"/" varinfo.vdecl.file
+    (* starts with '/' ? *)
+    String.length varinfo.vdecl.file != 0
+    && String.index_from varinfo.vdecl.file 0 '/' = 0
   else
     false
 
