@@ -55,9 +55,16 @@ let (let*) ao f = match ao with
   | Some x -> f x
   | None -> None
 
+let elim (none: 'b) (some: 'a -> 'b): 'a option -> 'b = function
+  | Some a -> some a
+  | None -> none
+
+let mapo (f: 'a -> 'b) : 'a option -> 'b option = 
+  elim None (fun x -> Some (f x))
+
 let interval_of_bounds (lb: numerical_t option) (ub: numerical_t option): interval_t = 
-  let l = Option.fold ~none:minus_inf_bound ~some:bound_of_num lb in
-  let u = Option.fold ~none:plus_inf_bound ~some:bound_of_num ub in
+  let l = elim minus_inf_bound bound_of_num lb in
+  let u = elim plus_inf_bound bound_of_num ub in
   new interval_t l u
 
 class errno_written_checker_t
@@ -95,7 +102,7 @@ object (self)
 
     | VarInt (x, lb, ub) -> 
       let name = str_of_vid x in
-      let int = interval_of_bounds (Option.map mkNumerical lb) (Option.map mkNumerical ub) in
+      let int = interval_of_bounds (mapo mkNumerical lb) (mapo mkNumerical ub) in
       let int_str = pretty_to_string int#toPretty in
       name ^ " in range " ^ int_str
 
@@ -166,9 +173,8 @@ object (self)
       Some []
 
     | VarInt (v, l, u) -> 
-      let spec = interval_of_bounds (Option.map mkNumerical l) (Option.map mkNumerical u) in
+      let spec = interval_of_bounds (mapo mkNumerical l) (mapo mkNumerical u) in
       let deps, v_int = self#meet_intervals v in
-      CHPretty.(pr_debug [STR "VarInt: "; v_int#toPretty; STR " <= "; spec#toPretty; STR (string_of_bool (v_int#leq spec)) ; NL ]);
       if v_int#leq spec then 
         (* Computed interval is contained in spec*)
         Some deps
