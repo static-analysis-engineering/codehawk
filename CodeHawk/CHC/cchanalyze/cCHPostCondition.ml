@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,8 @@ open CCHProofScaffolding
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+module TR = CHTraceResult
+
 
 let record_postconditions
       (fname:string)
@@ -78,11 +80,22 @@ let record_postconditions
                        begin
                          match e with
                          | Lval (Var (_vname, vid),NoOffset) ->
-                            let vinfo = env#get_varinfo vid in
-                            let param =
-                              ArgValue (ParFormal vinfo.vparam,ArgNoOffset) in
-                            (false,
-                             (XRelationalExpr (Eq, ReturnValue, param)) :: acc)
+                            TR.tfold
+                              ~ok:(fun vinfo ->
+                                let param =
+                                  ArgValue (ParFormal vinfo.vparam,ArgNoOffset) in
+                                (false,
+                                 (XRelationalExpr (Eq, ReturnValue, param)) :: acc))
+                              ~error:(fun err ->
+                                begin
+                                  log_diagnostics_result
+                                    ~tag:"record_postcondition"
+                                    ~msg:env#get_functionname
+                                    __FILE__ __LINE__
+                                    [String.concat ", " err];
+                                  (false, acc)
+                                end)
+                              (env#get_varinfo vid)
                          | _ -> (false, acc)
                        end
                     | NonRelationalFact (_, FSymbolicExpr (XVar v))

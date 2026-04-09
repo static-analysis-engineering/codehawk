@@ -59,6 +59,7 @@ open CCHExpTranslator
 
 module EU = CCHEngineUtil
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let p2s = CHPrettyUtil.pretty_to_string
@@ -158,7 +159,8 @@ object (self)
     let _ = env#register_function_return f.svar.vtype NUM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals NUM_VAR_TYPE in
     let globalvars =
-      List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
+      TR.tfilter_ok
+        (List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody)) in
     let globalvars = List.filter (fun vinfo -> vinfo.vglob) globalvars in
     let contractglobals = file_contract#get_globalvar_contracts in
     let contractglobals =
@@ -239,7 +241,8 @@ object
     let _ = env#register_function_return f.svar.vtype NUM_VAR_TYPE in
     let formals = env#register_formals f.sdecls#get_formals NUM_VAR_TYPE in
     let globalvars =
-      List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody) in
+      TR.tfilter_ok
+        (List.map f.sdecls#get_varinfo_by_vid (get_block_variables f.sbody)) in
     let globalvars = List.filter (fun vinfo -> vinfo.vglob) globalvars in
     let globals = env#register_globals globalvars NUM_VAR_TYPE in
     let preamble =

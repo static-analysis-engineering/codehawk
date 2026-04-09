@@ -386,13 +386,26 @@ object(self)
           let fnxargs = List.map (fun _ -> None) args in
           let (_, septrvars) =
             List.fold_left (fun (counter,acc) arg ->
-                match fenv#get_type_unrolled (type_of_exp self#get_fdecls arg) with
-                | TPtr (((TPtr _) as ty),_) ->
-                   let sevar =
-                     self#mk_function_sideeffect_value
-                       location context vinfo fnxargs counter ty in
-                   (counter + 1, sevar :: acc)
-                | _ -> (counter + 1, acc)) (1,[]) args in
+                TR.tfold
+                  ~ok:(fun t ->
+                    match t with
+                    | TPtr (((TPtr _) as ty),_) ->
+                       let sevar =
+                         self#mk_function_sideeffect_value
+                           location context vinfo fnxargs counter ty in
+                       (counter + 1, sevar :: acc)
+                    | _ -> (counter + 1, acc))
+                  ~error:(fun err ->
+                    begin
+                      log_error_result
+                        ~tag:"mk_call_vars"
+                        ~msg:self#get_functionname
+                        __FILE__ __LINE__
+                        [String.concat ", " err];
+                      (counter + 1, acc)
+                    end)
+                  (TR.tmap fenv#get_type_unrolled (type_of_exp self#get_fdecls arg)))
+              (1,[]) args in
           let ptrvars =
             match returntype with
             | TPtr _ ->

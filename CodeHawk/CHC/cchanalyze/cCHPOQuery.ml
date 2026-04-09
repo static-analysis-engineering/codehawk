@@ -72,6 +72,9 @@ open CCHExpTranslator
 open CCHNumericalConstraints
 open CCHOrakel
 
+module TR = CHTraceResult
+
+
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
@@ -373,7 +376,9 @@ object (self)
                    (expl:string) =
     let line = match site with Some (_, l, _) -> l | _ -> -1 in
     let is_argv (vid: int): bool =
-      fenv#is_formal vid && (self#env#get_varinfo vid).vparam = 2 in
+      fenv#is_formal vid
+      && TR.tfold_default
+           (fun vinfo -> vinfo.vparam = 2) false (self#env#get_varinfo vid) in
     let _argc_invs = self#get_main_argc_invariants in
     let is_argv_array_member_location (lval: lval): bool =
       match lval with
@@ -988,11 +993,22 @@ object (self)
   method get_exp_invariants (e: exp): invariant_int list =
     match e with
     | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
-       let vinfo = self#env#get_varinfo vid in
-       List.fold_left (fun acc (inv, offset) ->
-           match offset with
-           | NoOffset -> inv :: acc
-           | _ -> acc) [] (self#get_vinfo_offset_values vinfo)
+       TR.tfold
+         ~ok:(fun vinfo ->
+           List.fold_left (fun acc (inv, offset) ->
+               match offset with
+               | NoOffset -> inv :: acc
+               | _ -> acc) [] (self#get_vinfo_offset_values vinfo))
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"get_exp_invariants"
+               ~msg:self#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             []
+           end)
+       (self#env#get_varinfo vid)
     | _ -> []
 
   method get_exp_value (e:exp):(int list * xpr_t option) =
@@ -1001,19 +1017,30 @@ object (self)
     | Const (CInt (i64,_,_)) ->
        ([], Some (XConst (IntConst (mkNumericalFromInt64 i64))))
     | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
-       let vinfo = self#env#get_varinfo vid in
-       let invariants =
-         List.fold_left (fun acc (inv,offset) ->
-             match offset with
-             | NoOffset -> inv :: acc
-             | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
-       List.fold_left (fun (invs, acc) inv ->
-           match acc with
-           | Some _ -> (invs, acc)
-           | _ ->
-              match inv#expr with
-              | Some x -> (inv#index :: invs, Some x)
-              | _ -> (invs, acc)) ([], None)  invariants
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let invariants =
+             List.fold_left (fun acc (inv,offset) ->
+                 match offset with
+                 | NoOffset -> inv :: acc
+                 | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
+           List.fold_left (fun (invs, acc) inv ->
+               match acc with
+               | Some _ -> (invs, acc)
+               | _ ->
+                  match inv#expr with
+                  | Some x -> (inv#index :: invs, Some x)
+                  | _ -> (invs, acc)) ([], None)  invariants)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"get_exp_value"
+               ~msg:self#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             ([], None)
+           end)
+         (self#env#get_varinfo vid)
     | BinOp (op, e1, e2, _ty) ->
        begin
          match (self#get_exp_value e1, self#get_exp_value e2) with
@@ -1051,19 +1078,30 @@ object (self)
        match e with
        | CastE (_, e1) -> self#get_exp_upper_bound_value e1
        | Lval (Var (_vname, vid), NoOffset) when vid > 0 ->
-          let vinfo = self#env#get_varinfo vid in
-          let invariants =
-            List.fold_left (fun acc (inv, offset) ->
-                match offset with
-                | NoOffset -> inv :: acc
-                | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
-          List.fold_left (fun (invs, acc) inv ->
-              match acc with
-              | Some _ -> (invs, acc)
-              | _ ->
-                 match inv#upper_bound_xpr with
-                 | Some x -> (inv#index :: invs, Some x)
-                 | _ -> (invs,acc)) ([], None) invariants
+          TR.tfold
+          ~ok:(fun vinfo ->
+            let invariants =
+              List.fold_left (fun acc (inv, offset) ->
+                  match offset with
+                  | NoOffset -> inv :: acc
+                  | _ -> acc) [] (self#get_vinfo_offset_values vinfo) in
+            List.fold_left (fun (invs, acc) inv ->
+                match acc with
+                | Some _ -> (invs, acc)
+                | _ ->
+                   match inv#upper_bound_xpr with
+                   | Some x -> (inv#index :: invs, Some x)
+                   | _ -> (invs,acc)) ([], None) invariants)
+          ~error:(fun err ->
+            begin
+              log_diagnostics_result
+                ~tag:"get_exp_upper_bound_value"
+                ~msg:self#env#get_functionname
+                __FILE__ __LINE__
+                [String.concat ", " err];
+              ([], None)
+            end)
+          (self#env#get_varinfo vid)
        | BinOp (MinusA, e1, (Const (CInt (i64,_,_))),_) ->
           begin
             match self#get_exp_upper_bound_value e1 with
@@ -1074,8 +1112,8 @@ object (self)
                (invs,Some xminsimplified)
             | _ -> ([], None)
           end
-       | BinOp (BAnd, e1, e2, _ty)
-            when is_unsigned_integral_type (type_of_exp fenv e1) ->
+       | BinOp (BAnd, _e1, e2, _ty)
+         (* when is_unsigned_integral_type (type_of_exp fenv e1) *) ->
           self#get_exp_value e2
        | BinOp (Shiftlt, e1, e2, _ty) ->
           begin
@@ -1115,38 +1153,60 @@ object (self)
     let values = self#get_invariants argindex in
     match e with
     | Lval (Var (_vname, vid), NoOffset) when vid > 0  ->
-       let vinfo = self#env#get_varinfo vid in
-       values @
-         (List.fold_left (fun acc (inv, offset) ->
-              match offset with
-              | NoOffset -> inv :: acc
-              | _ -> acc) [] (self#get_vinfo_offset_values vinfo))
+       TR.tfold
+         ~ok:(fun vinfo ->
+           values @
+             (List.fold_left (fun acc (inv, offset) ->
+                  match offset with
+                  | NoOffset -> inv :: acc
+                  | _ -> acc) [] (self#get_vinfo_offset_values vinfo)))
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"get_extended_values"
+               ~msg:self#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             values
+           end)
+       (self#env#get_varinfo vid)
     | _ -> values
 
   method get_ntp_value (e:exp):(invariant_int * numerical_t) option =
     match e with
     | StartOf (Var (_vname, vid), NoOffset)
       | CastE (_, StartOf (Var (_vname,vid), NoOffset)) when vid > 0  ->
-       let vinfo = self#env#get_varinfo vid in
-       begin
-         match vinfo.vtype with
-         | TArray (_, Some (Const (CInt (_, _, _))), _) ->
-            List.fold_left (fun acc (inv, offset) ->
-                match acc with
-                | Some _ -> acc
-                | _ ->
-                   match offset with
-                   | Index (Const (CInt (i64, _, _)), NoOffset) ->
-                      let index = mkNumericalFromInt64 i64 in
-                      begin
-                        match inv#expr with
-                        | Some (XConst (IntConst n)) when n#equal numerical_zero ->
-                           Some (inv, index)
-                        | _ -> None
-                      end
-                   | _ -> None) None (self#get_vinfo_offset_values vinfo)
-         | _ -> None
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             match vinfo.vtype with
+             | TArray (_, Some (Const (CInt (_, _, _))), _) ->
+                List.fold_left (fun acc (inv, offset) ->
+                    match acc with
+                    | Some _ -> acc
+                    | _ ->
+                       match offset with
+                       | Index (Const (CInt (i64, _, _)), NoOffset) ->
+                          let index = mkNumericalFromInt64 i64 in
+                          begin
+                            match inv#expr with
+                            | Some (XConst (IntConst n)) when n#equal numerical_zero ->
+                               Some (inv, index)
+                            | _ -> None
+                          end
+                       | _ -> None) None (self#get_vinfo_offset_values vinfo)
+             | _ -> None
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"get_ntp_value"
+               ~msg:self#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             None
+           end)
+         (self#env#get_varinfo vid)
     | _ -> None
 
   method get_function_return_value_buffer_size
@@ -1251,18 +1311,30 @@ object (self)
         | StartOf (Var (vname, vid), offset)
         | AddrOf (Var (vname, vid), offset) when vid > 0 ->
          begin
-           match (env#get_varinfo vid).vtype with
-           | TArray (_,Some len, _) ->
-              begin
-                match offset with
-                | NoOffset ->
-                   Some (vname,self#e2x len,zero_constant_expr)
-                | Index (Const (CInt (i64, _, _)), NoOffset) ->
-                   let xoffset = num_constant_expr (mkNumericalFromInt64 i64) in
-                   Some (vname, self#e2x len, xoffset)
-                | _ -> None
-              end
-           | _ -> None
+           TR.tfold
+             ~ok:(fun vinfo ->
+               match vinfo.vtype with
+               | TArray (_,Some len, _) ->
+                  begin
+                    match offset with
+                    | NoOffset ->
+                       Some (vname,self#e2x len,zero_constant_expr)
+                    | Index (Const (CInt (i64, _, _)), NoOffset) ->
+                       let xoffset = num_constant_expr (mkNumericalFromInt64 i64) in
+                       Some (vname, self#e2x len, xoffset)
+                    | _ -> None
+                  end
+               | _ -> None)
+             ~error:(fun err ->
+               begin
+                 log_diagnostics_result
+                   ~tag:"get_exp_buffer_index_size"
+                   ~msg:self#env#get_functionname
+                   __FILE__ __LINE__
+                   [String.concat ", " err];
+                 None
+               end)
+             (self#env#get_varinfo vid)
          end
       | _ -> None
     with
@@ -1529,15 +1601,28 @@ object (self)
     | XOp (op, [x1; x2]) ->
        begin
          match (self#x2global x1, self#x2global x2) with
-         | (Some a1,Some a2) ->
-            let ty = type_of_exp fenv a1 in
-            begin
-              match op with
-              | XPlus -> Some (BinOp (PlusA, a1, a2, ty))
-              | XMinus -> Some (BinOp (MinusA, a1, a2, ty))
-              | XMult -> Some (BinOp (Mult, a1, a2, ty))
-              | _ -> None
-            end
+         | (Some a1, Some a2) ->
+            TR.tfold
+              ~ok:(fun ty ->
+                begin
+                  match op with
+                  | XPlus -> Some (BinOp (PlusA, a1, a2, ty))
+                  | XMinus -> Some (BinOp (MinusA, a1, a2, ty))
+                  | XMult -> Some (BinOp (Mult, a1, a2, ty))
+                  | _ -> None
+                end)
+              ~error:(fun e ->
+                begin
+                  log_diagnostics_result
+                    ~tag:"x2global"
+                    ~msg:self#fname
+                    __FILE__ __LINE__
+                    ["Unable to determine type of exp: "
+                     ^ (p2s (exp_to_pretty a1));
+                     String.concat "; " e];
+                  None
+                end)
+            (type_of_exp fenv a1)
          | _ -> None
        end
     | _ ->
@@ -1578,44 +1663,49 @@ object (self)
        begin
          match (self#x2api x1, self#x2api x2) with
          | (Some a1, Some a2) ->
-            let ty1 = type_of_exp fenv a1 in
-            let ty2 = type_of_exp fenv a2 in
             begin
-              try
-                begin
-                  match op with
-                  | XPlus ->
-                     Some (BinOp (PlusA, a1, a2, get_integer_promotion ty1 ty2))
-                  | XMinus ->
-                     Some (BinOp (MinusA, a1, a2, get_integer_promotion ty1 ty2))
-                  | XMult ->
-                     Some (BinOp (Mult, a1, a2, get_integer_promotion ty1 ty2))
-                  | XDiv ->
-                     Some (BinOp (Div, a1, a2, get_integer_promotion ty1 ty2))
-                  | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
-                  | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
-                  | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool,[])))
-                  | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool,[])))
-                  | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool,[])))
-                  | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool,[])))
-                  | _ -> None
-                end
-              with
-              | CCHFailure p ->
-                 begin
-                   ch_error_log#add
-                     "integer promotion"
-                     (LBLOCK [
-                          STR self#env#get_functionname;
-                          STR ": ";
-                          typ_to_pretty ty1;
-                          STR ", ";
-                          typ_to_pretty ty2;
-                          STR ": ";
-                          p]);
-                   None
-                 end
-              | _ -> None
+              TR.tfold
+                ~ok:(fun ty1 ->
+                  TR.tfold
+                    ~ok:(fun ty2 ->
+                      begin
+                        match op with
+                        | XPlus ->
+                           Some (BinOp (PlusA, a1, a2, get_integer_promotion ty1 ty2))
+                        | XMinus ->
+                           Some (BinOp (MinusA, a1, a2, get_integer_promotion ty1 ty2))
+                        | XMult ->
+                           Some (BinOp (Mult, a1, a2, get_integer_promotion ty1 ty2))
+                        | XDiv ->
+                           Some (BinOp (Div, a1, a2, get_integer_promotion ty1 ty2))
+                        | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
+                        | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
+                        | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool,[])))
+                        | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool,[])))
+                        | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool,[])))
+                        | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool,[])))
+                        | _ -> None
+                      end)
+                    ~error:(fun err ->
+                      begin
+                        log_diagnostics_result
+                          ~tag:"x2api:integer-promotion"
+                          ~msg:self#env#get_functionname
+                          __FILE__ __LINE__
+                          [String.concat ", " err];
+                        None
+                      end)
+                    (type_of_exp fenv a2))
+                ~error:(fun err ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"x2api:integer-promotion"
+                      ~msg:self#env#get_functionname
+                      __FILE__ __LINE__
+                      [String.concat ", " err];
+                    None
+                  end)
+                (type_of_exp fenv a1)
             end
          | _ -> None
        end

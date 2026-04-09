@@ -59,6 +59,7 @@ open CCHCommand
 module TR = CHTraceResult
 
 let p2s = CHPrettyUtil.pretty_to_string
+let e2s e = p2s (exp_to_pretty e)
 
 
 class num_assignment_translator_t
@@ -234,12 +235,24 @@ object (self)
 	    else
 	      begin
 		match rhs with
-		| Lval (Var (vname,vid),NoOffset) ->
-		  let vinfo = env#get_varinfo vid in
-		  if vinfo.vglob then
-		    ["global"; vname; string_of_int vid]
-		  else
-		    []
+		| Lval (Var (vname, vid), NoOffset) ->
+                   TR.tfold
+                     ~ok:(fun vinfo ->
+		       if vinfo.vglob then
+		         ["global"; vname; string_of_int vid]
+		       else
+		         [])
+                     ~error:(fun err ->
+                       begin
+                         log_error_result
+                           ~tag:"translate"
+                           ~msg:env#get_functionname
+                           __FILE__ __LINE__
+                           ["rhs: " ^ (e2s rhs);
+                            String.concat ", " err];
+                         []
+                       end)
+                   (env#get_varinfo vid)
                 | BinOp ((IndexPI | PlusPI | MinusPI), _, _, _) ->
                    ["c"]
 		| _ -> []
@@ -262,6 +275,7 @@ object (self)
     [make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))]
 
 end
+
 
 class sym_pointersets_assignment_translator_t
         (env:c_environment_int)

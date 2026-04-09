@@ -1404,11 +1404,33 @@ object (self)
                      match arg with
                      |CastE (_, StartOf (Var (_vname, vid), offset))
                       | CastE (_, AddrOf (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                       TR.tfold
+                         ~ok:(fun vinfo ->
+                           Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                         ~error:(fun err ->
+                           begin
+                             log_diagnostics_result
+                               ~tag:"get_postconditions"
+                               ~msg:env#get_functionname
+                               __FILE__ __LINE__
+                               [String.concat ", " err];
+                             None
+                           end)
+                         (env#get_varinfo vid)
                      | CastE (_, Lval (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_postconditions"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                          (env#get_varinfo vid)
                      | _ -> None
                    end
                 | _ -> None in
@@ -1652,11 +1674,33 @@ object (self)
                    begin
                      match arg with
                      | CastE (_, StartOf (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_sideeffect"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                        (env#get_varinfo vid)
                      | CastE (_, Lval (Var (_vname,vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_sideeffect"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                          (env#get_varinfo vid)
                      | _ ->
                         begin
                           log_diagnostics_result

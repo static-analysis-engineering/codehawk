@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -57,6 +57,7 @@ open CCHAnalysisTypes
 open CCHCommand
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = CHPrettyUtil.pretty_to_string
@@ -230,25 +231,33 @@ object (self)
     let _ =
       exps#iter
         (fun e checkset ->
-          let checkVar =
-            env#mk_check_variable checkset#get (type_of_exp fdecls e) vtype in
-          try
-            let assign = make_c_cmd_block (assign_check_value checkVar e) in
-            begin
-              vars := checkVar :: !vars;
-              code := assign :: !code
-            end
-          with
-          | CCHFailure p ->
-             ch_error_log#add
-               "proof obligation expression translation"
-               (LBLOCK [
-                    STR "Variable: ";
-                    checkVar#toPretty;
-                    STR "; Expr: ";
-                    exp_to_pretty e;
-                    STR ": ";
-                    p]))  in
+          TR.tfold
+            ~ok:(fun ty ->
+              let checkVar = env#mk_check_variable checkset#get ty vtype in
+              try
+                let assign = make_c_cmd_block (assign_check_value checkVar e) in
+                begin
+                  vars := checkVar :: !vars;
+                  code := assign :: !code
+                end
+              with
+              | CCHFailure p ->
+                 ch_error_log#add
+                   "proof obligation expression translation"
+                   (LBLOCK [
+                        STR "Variable: ";
+                        checkVar#toPretty;
+                        STR "; Expr: ";
+                        exp_to_pretty e;
+                        STR ": ";
+                        p]))
+            ~error:(fun err ->
+              log_error_result
+                ~tag:"make_context_operation"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                [String.concat ", " err])
+            (type_of_exp fdecls e)) in
     let args = List.map (fun v -> (v#getName#getBaseName,v,READ)) !vars in
     let op =
       make_c_cmd (OPERATION {op_name = new symbol_t name; op_args = args}) in
