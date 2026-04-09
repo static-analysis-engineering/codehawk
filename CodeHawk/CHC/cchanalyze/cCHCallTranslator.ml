@@ -80,11 +80,9 @@ let is_library_function (fname:string): bool =
   if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
     let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
     (* starts with '/' ? *)
-    try 
-      String.index_from varinfo.vdecl.file 0 '/' = 0
-    with 
-    | Invalid_argument _ 
-    | Not_found -> false
+    match String.index_opt varinfo.vdecl.file '/' with
+    | Some i -> i = 0
+    | _ -> false
   else
     false
 
