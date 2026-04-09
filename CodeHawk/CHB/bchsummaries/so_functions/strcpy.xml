@@ -21,7 +21,6 @@
       <roles>
         <role rt="ioc:memops" rn="dst-string:copy"/>
       </roles>
-      <pre><not-null/></pre>
     </par>
     <par loc="stack" io="r" name="src" nr="2" rep="hex">
       <type><ptr>char</ptr></type>
