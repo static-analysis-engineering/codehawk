@@ -40,6 +40,7 @@ MLIS := \
 	cCHControlFlowGraph \
 	cCHExpTranslator \
 	cCHAssignmentTranslator \
+	cCHErrnoWritePredicateSymbol \
 	cCHCallTranslator \
 	cCHOperationsProvider \
 	cCHCfgTranslator \
@@ -55,6 +56,7 @@ MLIS := \
 	cCHPOCheckCast \
 	cCHPOCheckCommonBase \
 	cCHPOCheckCommonBaseType \
+	cCHPOCheckErrnoWritten \
 	cCHPOCheckControlledResource \
 	cCHPOCheckFormatCast \
 	cCHPOCheckInScope \
@@ -106,6 +108,7 @@ SOURCES := \
 	cCHEnvironment \
 	cCHControlFlowGraph \
 	cCHOrakel \
+	cCHErrnoWritePredicateSymbol \
 	cCHExpTranslator \
 	cCHAssignmentTranslator \
 	cCHCallTranslator \
@@ -124,6 +127,7 @@ SOURCES := \
 	cCHPOCheckCommonBase \
 	cCHPOCheckCommonBaseType \
 	cCHPOCheckControlledResource \
+	cCHPOCheckErrnoWritten \
 	cCHPOCheckFormatCast \
 	cCHPOCheckInScope \
 	cCHPOCheckIndexLowerBound \

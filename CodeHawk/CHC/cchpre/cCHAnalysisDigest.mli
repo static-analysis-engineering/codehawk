@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025 Aarno Labs LLC
+   Copyright (c) 2025-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,8 @@ val mk_undefined_behavior_analysis_digest:
 val mk_output_parameter_analysis_digest:
   string -> podictionary_int -> analysis_digest_int
 
+val mk_errno_analysis_digest:
+  string -> podictionary_int -> analysis_digest_int
 
 val read_xml_analysis_digest:
   xml_element_int

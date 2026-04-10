@@ -11,7 +11,15 @@
     </parameters>
     <preconditions/>
     <postconditions>
-      <zero-negone/>
+      <post>
+       <math><apply><eq/><return/><cn>0</cn></apply></math>
+      </post>
+      <error-post>
+        <math><apply><lt/><return/><cn>0</cn></apply></math>
+      </error-post>
+      <error-post>
+        <math><apply><writes-errno/></apply></math>
+      </error-post>
     </postconditions>
     <sideeffects>
       <sideeffect>

@@ -76,6 +76,16 @@ let fenv = CCHFileEnvironment.file_environment
 let is_assert_fail_function fname =  fname = "__assert_fail"
 
 
+let is_library_function (fname:string): bool =
+  if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
+    let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
+    (* starts with '/' ? *)
+    match String.index_opt varinfo.vdecl.file '/' with
+    | Some i -> i = 0
+    | _ -> false
+  else
+    false
+
 let get_function_summary (fname:string) =
     if fenv#has_external_header fname then
       let header = fenv#get_external_header fname in
@@ -192,6 +202,31 @@ let call_does_not_return
   let (post, _) = get_postconditions caller callee context in
   List.exists (fun (p, _) -> match p with XFalse -> true | _ -> false) post
 
+
+let is_writes_errno = function XWritesErrno, _ -> true | _ -> false
+let is_not_writes_errno x = not (is_writes_errno x)
+let has_writes_errno = List.exists is_writes_errno
+
+let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
+  let int_of_ret op c = 
+    match op with 
+    | Eq -> CHIntervals.mkInterval c c
+    | Lt -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num (c#sub numerical_one))
+    | Le -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num c)
+    | Gt -> new CHIntervals.interval_t (CHBounds.bound_of_num (c#add numerical_one)) CHBounds.plus_inf_bound
+    | Ge -> new CHIntervals.interval_t (CHBounds.bound_of_num c) CHBounds.plus_inf_bound
+    | _ -> CHIntervals.topInterval
+  in
+
+  match fst p, fst q with
+  | XNull ReturnValue, XNotNull ReturnValue -> true
+
+  | XRelationalExpr (op, ReturnValue, NumConstant v), 
+    XRelationalExpr (op', ReturnValue, NumConstant v') ->
+    let pi = int_of_ret op v in
+    let qi = int_of_ret op' v' in
+    pi#getMax#lt qi#getMin || qi#getMax#lt pi#getMin
+  | _ -> false
 
 class num_call_translator_t
         (env:c_environment_int)
@@ -1200,16 +1235,15 @@ object (self)
     match f with
     | Lval (Var (fname,fvid), NoOffset) ->                (* direct call *)
        let fnargs = List.map (exp_translator#translate_exp ctxt) args in
-       let sideeffect = self#get_sideeffect fname fvid args fnargs in
        let postconditions = self#get_postconditions fname args fnargs in
        let callop =
          make_c_cmd
            (OPERATION
               { op_name = new symbol_t ~atts:[fname] "call";
                 op_args = [] }) in
-       let rcode =
+       let rvar, rcode =
          match lhs with
-         | None -> []
+         | None -> None, []
          | Some lval ->
             let rvar = exp_translator#translate_lhs context lval in
             if rvar#isTmp then
@@ -1220,7 +1254,7 @@ object (self)
                   ~msg:env#get_functionname
                   __FILE__ __LINE__
                   (List.map (fun v -> p2s v#toPretty) memoryvars) in
-              [make_c_cmd (ABSTRACT_VARS memoryvars)]
+              Some rvar, [make_c_cmd (ABSTRACT_VARS memoryvars)]
             else
               let ty = fenv#get_type_unrolled (env#get_variable_type rvar)  in
               match ty with
@@ -1232,12 +1266,13 @@ object (self)
                      ~msg:env#get_functionname
                      __FILE__ __LINE__
                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                 [make_c_cmd (ABSTRACT_VARS memoryvars)]
+                 Some rvar, [make_c_cmd (ABSTRACT_VARS memoryvars)]
               | _ ->
                   let atts = ["rv:"; fname] in
                   let sym =
                     new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
-                  [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
+                  Some rvar, [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
+       let sideeffect = self#get_sideeffect fname fvid args fnargs rvar in
        callop :: (sideeffect @ postconditions @ rcode)
     | _ ->                                             (* indirect call *)
        let callop =
@@ -1255,7 +1290,7 @@ object (self)
             let sym =
               new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
             [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
-       callop :: rcode
+       callop :: (self#havoc_errno_write @ rcode)
 
   method private get_postconditions
                    (fname:string) (args:exp list) (_fnargs:xpr_t list) =
@@ -1334,12 +1369,69 @@ object (self)
                 None
            | _ -> acc) (Some []) sideeffects
 
+  method private havoc_errno_write =
+      let unknownSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.Unknown in
+      List.map (fun v -> make_c_cmd (ASSIGN_SYM (v, SYM unknownSym))) env#get_errno_write_vars
+
+  method private get_errno_sideeffect 
+                  (fname: string)
+                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list) 
+                  (optrvar: variable_t option) =
+    let (pcs, epcs) = postconditions in 
+
+    if not (is_library_function fname) then 
+      self#havoc_errno_write
+    else 
+
+    let non_errno_pcs, non_errno_epcs = 
+          List.filter is_not_writes_errno pcs, List.filter is_not_writes_errno epcs in
+
+    let rv_interval op c =
+      match op with
+      | Eq -> (Some c#toInt, Some c#toInt)
+      | Lt -> (None, Some (c#toInt - 1))
+      | Le -> (None, Some c#toInt)
+      | Gt -> (Some (c#toInt + 1), None)
+      | Ge -> (Some c#toInt, None)
+      | _ -> (None, None)
+    in
+
+    (* We want to make sure that the success and failure cases are disjoint, otherwise
+       we may be able to prove that errno was written in the success case even though it wasn't specified. 
+       This is almost certainly an error in the specification, but we don't want that error to propagate here. *)
+    let success_no_write p = List.exists (disjoint p) non_errno_pcs in
+
+    let errno_sideeffect = 
+      if has_writes_errno epcs then 
+        match optrvar, non_errno_epcs with
+        | Some rvar, [XNull ReturnValue, _ as p] when success_no_write p ->
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarNull idx) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+
+        | Some rvar, [XRelationalExpr (op, ReturnValue, NumConstant c), _ as p] when success_no_write p ->
+            let (lb, ub) = rv_interval op c in
+            let idx = rvar#getName#getSeqNumber in
+            let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, lb, ub)) in
+            [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
+
+        |  _ -> 
+            []
+      else
+        []
+      
+      in errno_sideeffect
+
   method private get_sideeffect
                    (fname:string)
                    (fvid:int)
                    (args:exp list)
-                   (fnargs:xpr_t list) =
+                   (fnargs:xpr_t list) 
+                   optrvar
+                   =
     let vinfo = fdecls#get_varinfo_by_vid fvid in
+    let (pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
+    let errno_sideeffect = self#get_errno_sideeffect fname (pcs, epcs) optrvar in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
     let _ =
       log_diagnostics_result
@@ -1565,7 +1657,7 @@ object (self)
                 | _ -> []
               end
            | _ -> []) sideeffects) in
-    sitevarassigns :: xsitevarassigns :: seeffects
+    sitevarassigns :: xsitevarassigns :: errno_sideeffect @ seeffects
 
 end
 

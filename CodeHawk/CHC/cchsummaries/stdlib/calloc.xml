@@ -96,6 +96,7 @@
 	  </apply>
 	</math>
       </error-post>
+			<error-post><math><apply><writes-errno/></apply></math></error-post>
     </postconditions>
     <sideeffects>
       <sideeffect>

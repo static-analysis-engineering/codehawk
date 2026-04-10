@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -246,6 +246,7 @@ object (self)
     | PConfined e -> we 1 e
     | PUniquePointer e -> we 1 e
     | PContract (_, _, e) -> we 1 e
+    | PErrnoWritten -> ()
     | PPreservedAllMemory -> ()
     | PPreservedAllMemoryX l -> List.iteri (fun i e -> we (i+1) e) l
     | PContractObligation _ -> ()
@@ -652,6 +653,7 @@ let po_predicate_to_full_pretty p =
   | PUniquePointer e ->
      LBLOCK [STR "unique-pointer("; exp_to_pretty e; STR ")"]
   | PPreservedAllMemory -> STR "preserved-all-memory"
+  | PErrnoWritten -> STR "errno-must-written"
   | PPreservedAllMemoryX l ->
      LBLOCK [
          STR "preserved-all-memory-x";
@@ -908,6 +910,7 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
     | PUniquePointer e ->
        LBLOCK [STR "unique-pointer("; exp_to_pretty e; STR ")"]
     | PPreservedAllMemory -> STR "preserved-all-memory"
+    | PErrnoWritten -> STR "errno-must-written"
     | PPreservedAllMemoryX l ->
        LBLOCK [
            STR "preserved-all-memory-x";
@@ -1094,6 +1097,7 @@ let po_predicate_to_xpredicate (fdecls:cfundeclarations_int) (p:po_predicate_t) 
   | PMemoryPreserved e -> XPreservesMemory (es e)
   | PUniquePointer e -> XUniquePointer (es e)
   | PValidMem  e -> XValidMem (es e)
+  | PErrnoWritten -> XWritesErrno
   | PPreservedAllMemory -> XPreservesAllMemory
   | PPreservedAllMemoryX l -> XPreservesAllMemoryX (List.map es l)
   | PBuffer (e1, e2) -> XBuffer (es e1, es e2)

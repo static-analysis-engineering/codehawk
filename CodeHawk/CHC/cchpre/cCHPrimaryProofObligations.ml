@@ -70,7 +70,6 @@ let current_function = ref None
 
 let set_current_function f = current_function := Some f
 
-
 let get_current_function () =
   match !current_function with
   | Some f -> f
@@ -100,7 +99,6 @@ let get_missing_summaries () =
   let result = ref [] in
   let _ = H.iter (fun k v -> result := (k,v) :: !result) missing_summaries in
   !result
-
 
 let add_proof_obligation pred loc (ctxt:program_context_int) =
   if !createppos then

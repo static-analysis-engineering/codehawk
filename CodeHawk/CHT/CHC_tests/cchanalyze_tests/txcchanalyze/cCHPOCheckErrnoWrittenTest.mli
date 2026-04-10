@@ -1,11 +1,11 @@
 (* =============================================================================
    CodeHawk Unit Testing Framework
-   Author: Henny Sipma
+   Author: Alexander Bakst
    Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025  Aarno Labs LLC
+   Copyright (c) 2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -25,21 +25,3 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
    SOFTWARE.
    ============================================================================= *)
-
-
-val expect_safe_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string option
-  -> expl:string
-  -> unit
-  -> unit
-
-
-val expect_violation_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string option
-  -> expl:string
-  -> unit
-  -> unit

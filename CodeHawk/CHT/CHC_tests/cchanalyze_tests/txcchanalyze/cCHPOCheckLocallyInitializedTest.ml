@@ -53,11 +53,11 @@ let check_safe () =
       ("gl-inv-001",
        "locally_initialized_gl_inv_001", "gl_inv_001",
        [], -1, -1,
-       "inv_implies_safe", "local assignment(s): assignedAt#4");
+       Some "inv_implies_safe", "local assignment(s): assignedAt#4");
       ("gl-memlval-memref-001",
        "locally_initialized_gl_memlval_memref_001", "gl_memlval_memref_001",
        [], -1, -1,
-       "memlval_memref_implies_safe", "")
+       Some "memlval_memref_implies_safe", "")
     ] in
   begin
     TS.new_testsuite (testname ^ "_check_safe") lastupdated;
@@ -112,12 +112,12 @@ let check_violation () =
       ("rl-memlval-001",
        "locally_initialized_rl_memlval_001", "rl_memlval_001",
        [], -1, -1,
-       "memlval_implies_violation",
+       Some "memlval_implies_violation",
        "initialized from parameter p->fld1 with offset .fld1");
       ("rl-memlval-002",
        "locally_initialized_rl_memlval_002", "rl_memlval_002",
        [], -1, -1,
-       "memlval_implies_violation",
+       Some "memlval_implies_violation",
        "initialized from parameter p->fld1 with offset .fld1")
     ] in
   begin

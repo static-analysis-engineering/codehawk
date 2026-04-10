@@ -77,7 +77,7 @@
       obligation present.
  *)
 val analysis_setup:
-  ?domains:string list -> string -> string -> unit CHTraceResult.traceresult
+  ?domains:string list -> ?summaries_jar:string option -> string -> string -> unit CHTraceResult.traceresult
 
 
 (** [analysis_take_down filename] removes the directory [filename.cch] from

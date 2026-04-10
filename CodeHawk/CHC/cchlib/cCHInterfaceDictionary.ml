@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -188,6 +188,7 @@ object (self)
       | XControlledResource (r,t) -> (tags @ [r], [term t])
       | XExternalStateValue (t1, t2) -> (tags, [term t1; term t2])
       | XFalse -> (tags,[])
+      | XWritesErrno -> (tags,[])
       | XFormattedInput t -> (tags, [term t])
       | XFreed t -> (tags, [term t])
       | XFunctional -> (tags, [])
@@ -243,6 +244,7 @@ object (self)
     | "c" -> XConstTerm (term 0)
     | "cf" -> XConfined (term 0)
     | "cr" -> XControlledResource (t 1, term 0)
+    | "ew" -> XWritesErrno
     | "esv" -> XExternalStateValue (term 0, term 1)
     | "f" -> XFalse
     | "fi" -> XFormattedInput (term 0)

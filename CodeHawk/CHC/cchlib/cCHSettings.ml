@@ -101,6 +101,9 @@ object
   method set_output_parameter_analysis =
     analysis_kind <- OutputParameterAnalysis
 
+  method set_errno_written_analysis =
+    analysis_kind <- ErrnoWrittenAnalysis
+
   method set_undefined_behavior_analysis =
     analysis_kind <- UndefinedBehaviorAnalysis
 
@@ -109,6 +112,9 @@ object
 
   method is_output_parameter_analysis =
     analysis_kind = OutputParameterAnalysis
+
+  method is_errno_written_analysis =
+    analysis_kind = ErrnoWrittenAnalysis
 
   method use_unreachability = use_unreachability
   method verbose = verbose

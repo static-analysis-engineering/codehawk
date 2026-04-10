@@ -1,11 +1,10 @@
 (* =============================================================================
-   CodeHawk Unit Testing Framework
-   Author: Henny Sipma
-   Adapted from: Kaputt (https://kaputt.x9c.fr/index.html)
+   CodeHawk C Analyzer
+   Author: Alexander Bakst
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025  Aarno Labs LLC
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,20 +25,10 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* cchanalyze *)
+open CCHAnalysisTypes
 
-val expect_safe_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string option
-  -> expl:string
-  -> unit
-  -> unit
+(* cchpre *)
+open CCHPreTypes
 
-
-val expect_violation_detail:
-  ?msg:string
-  -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string option
-  -> expl:string
-  -> unit
-  -> unit
+val check_errno_written : po_query_int -> location_invariant_int -> bool

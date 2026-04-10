@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -337,12 +337,11 @@ let extract_external_value_facts
 
 
 let extract_ranges
-      (env:c_environment_int)
+      (_env:c_environment_int)
       (invio:invariant_io_int)
       (invariants:(string, (string,atlas_t) H.t) H.t) =
   let get_bound b =
     match b with MINUS_INF | PLUS_INF -> None | NUMBER n -> Some n in
-  let is_cvv v = env#is_fixed_value v in
   H.iter (fun k v ->
     if H.mem v intervals_domain then
       let inv = H.find v intervals_domain in
@@ -352,7 +351,13 @@ let extract_ranges
         invio#add_fact context (Unreachable "intervals")
       else
 	let vars = domain#observer#getObservedVariables in
-	let programVars = List.filter (fun v -> not (is_cvv v || v#isTmp)) vars in
+  (* If we additionally filter out constant value variables,
+     it is possible that we will lose information if the LI 
+     populates the orakel with an equality X = V where V is a constant value variable.
+     If we have some proof obligation that depends X in a branch where we have an assert on
+     its value, we may end up refining the abstract value for V (and not X) but then filtering it out.
+   *)
+	let programVars = List.filter (fun v -> not v#isTmp) vars in
 	let varObserver = domain#observer#getNonRelationalVariableObserver in
 	List.iter(fun v ->
 	    let index = v#getName#getSeqNumber in
