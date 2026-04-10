@@ -4,7 +4,7 @@
   <header date="2024-05-31 23:38:41"/>
   <libfun lib="so_functions" name="memmem">
     <documentation>
-      <desc>lates a substring</desc>
+      <desc>locates a substring</desc>
       <apidoc>
         <pt>
           <ll>void *memmem(</ll>

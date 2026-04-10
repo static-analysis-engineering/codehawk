@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-06 15:15:47"/>
+  <libfun lib="so_functions" name="wait4">
+    <documentation>
+      <desc>wait for process to change state</desc>
+      <apidoc>
+        <pt>
+          <ll>pid_t wait4(</ll>
+          <ld>pid_t pid</ld>
+          <ld>int *_Nullable wstatus</ld>
+          <ld>int options</ld>
+          <ld>struct rusage *_Nullable rusage</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="pid">specification of process IDs</par>
+        <par name="wstatus">status of the process requested</par>
+        <par name="options">options</par>
+        <par name="rusage">resource usage of the process requested</par>
+        <return>
+          <rc cond="success">process ID of process requested</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="wait4">
+      <par loc="stack" name="pid" nr="1">
+        <type>pid_t</type>
+      </par>
+      <par loc="stack" name="wstatus" nr="2">
+        <type><ptr>int</ptr></type>
+        <pre><deref-write-null/></pre>
+        <sideeffects><block-write/></sideeffects>
+      </par>
+      <par loc="stack" name="options" nr="3">
+        <type>int</type>
+      </par>
+      <par loc="stack" name="rusage" nr="4">
+        <type><ptr>ch__rusage</ptr></type>
+        <pre><deref-write-null/></pre>
+        <sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>pid_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

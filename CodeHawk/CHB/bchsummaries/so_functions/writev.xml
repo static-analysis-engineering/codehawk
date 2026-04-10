@@ -30,7 +30,7 @@
         <type>int</type>
       </par>
       <par loc="stack" name="iov" nr="2">
-        <type><ptr>iovec</ptr></type>
+        <type><ptr>ch__iovec</ptr></type>
       </par>
       <par loc="stack" name="iovcnt" nr="3">
         <type>int</type>
@@ -55,7 +55,13 @@
 	</pre>
       </preconditions>
       <postconditions/>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

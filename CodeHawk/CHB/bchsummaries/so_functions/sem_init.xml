@@ -25,7 +25,7 @@
     <api adj="0" cc="cdecl" name="sem_init">
       <par loc="stack" name="sem" rep="hex" nr="1">
 	<pre><not-null/></pre>
-        <type><ptr>int</ptr></type>
+        <type><ptr>sem_t</ptr></type>
 	<roles>
 	  <role rt="ioc:process" rn="semaphore"/>
 	</roles>
@@ -46,7 +46,13 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>

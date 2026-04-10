@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-binary-analyzer>
-  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <reference href="https://linux.die.net/man/3/strlcpy"/>
   <header date="2021-12-31 14:11:58"/>
   <libfun lib="so_functions" name="strlcpy">
     <documentation>
@@ -27,6 +27,7 @@
       </par>
       <par loc="stack" name="src" nr="2">
         <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
       </par>
       <par loc="stack" name="size" nr="3">
         <type>size_t</type>
@@ -35,9 +36,41 @@
     </api>
     <semantics>
       <io-actions/>
-      <preconditions/>
+      <preconditions>
+        <pre>
+          <math>
+            <apply>
+              <deref-read/>
+              <type>char</type>
+              <ci>src</ci>
+              <ci>size</ci>
+            </apply>
+          </math>
+        </pre>
+        <pre>
+          <math>
+            <apply>
+              <deref-write/>
+              <type>char</type>
+              <ci>dst</ci>
+              <ci>size</ci>
+            </apply>
+          </math>
+        </pre>
+      </preconditions>
       <postconditions/>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <apply>
+              <block-write/>
+              <type>char</type>
+              <ci>dst</ci>
+              <ci>size</ci>
+            </apply>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

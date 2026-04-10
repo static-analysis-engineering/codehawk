@@ -27,7 +27,7 @@
      <roles>
       <role rt="ioc:filesystem" rn="file" />
      </roles>
-     <type><ptr>FILE</ptr></type>
+     <type><ptr>ch__FILE</ptr></type>
      <pre><deref-read/></pre>
     </par>
    </api>

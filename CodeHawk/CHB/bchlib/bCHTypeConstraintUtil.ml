@@ -64,6 +64,9 @@ let _type_arg_mode_compare (m1: type_arg_mode_t) (m2: type_arg_mode_t): int =
      optvalue_compare i1 i2 Stdlib.compare
   | (ArgDerefWrite _, _) -> -1
   | (_, ArgDerefWrite _) -> 1
+  | (ArgDeallocate, ArgDeallocate) -> 0
+  | (ArgDeallocate, _) -> -1
+  | (_, ArgDeallocate) -> 1
   | (ArgFunctionPointer, ArgFunctionPointer) -> 0
   | (ArgFunctionPointer, _) -> -1
   | (_, ArgFunctionPointer) -> 1
@@ -139,6 +142,7 @@ let type_arg_mode_to_string (m: type_arg_mode_t) =
   | ArgDerefReadWrite i -> "rw" ^ (optsize_to_string i)
   | ArgDerefRead i -> "r" ^ (optsize_to_string i)
   | ArgDerefWrite i -> "w" ^ (optsize_to_string i)
+  | ArgDeallocate -> "d"
   | ArgFunctionPointer -> "fp"
   | ArgScalarValue -> "sv"
 
@@ -223,6 +227,7 @@ let type_constant_to_string (c: type_constant_t) =
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
   | TyVoid -> "t_void"
+  | TyNamed name -> "t_named " ^ name
   | TyTUnknown -> "t_top"
   | TyBottom -> "t_bottom"
 
@@ -339,6 +344,9 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
       | _ -> TyTUnknown)
   | TyTInt _, _ -> t1
   | _, TyTInt _ -> t2
+  | TyNamed s1, TyNamed s2 when s1 = s2 -> t1
+  | TyNamed _, _ -> TyTUnknown
+  | _, TyNamed _ -> TyTUnknown
   | _, _ -> TyTInt (SignedNeutral, 8)
 
 
@@ -459,13 +467,18 @@ let add_stack_address_capability (offset: int) (tv: type_variable_t)
 
 let convert_function_capabilities_to_attributes
       (paramindex: int) (caps: type_cap_label_t list): b_attributes_t =
-  let type_arg_mode_to_attr_string (m: type_arg_mode_t) =
+  let type_arg_mode_to_cons_attrparam (m: type_arg_mode_t) =
+    let mkcons (s: string) (i: int option) =
+      match i with
+      | Some i -> ACons (s, [AInt i])
+      | _ -> ACons (s, []) in
     match m with
-    | ArgDerefReadWrite _ -> "read_write"
-    | ArgDerefRead _ -> "read_only"
-    | ArgDerefWrite _ -> "write_only"
-    | ArgFunctionPointer -> "fp"
-    | ArgScalarValue -> "sv" in
+    | ArgDerefReadWrite size -> mkcons "read_write" size
+    | ArgDerefRead size -> mkcons "read_only" size
+    | ArgDerefWrite size -> mkcons "write_only" size
+    | ArgDeallocate -> ACons ("deallocate", [])
+    | ArgFunctionPointer -> ACons ("fp", [])
+    | ArgScalarValue -> ACons ("sv", []) in
   let result = new CHUtils.IntCollections.set_t in
   let _ =
     List.iter (fun cap ->
@@ -477,7 +490,7 @@ let convert_function_capabilities_to_attributes
                     AStr callsite;
                     AStr callee;
                     AInt argindex;
-                    ACons (type_arg_mode_to_attr_string mode, [])]) in
+                    type_arg_mode_to_cons_attrparam mode]) in
            result#add (bcd#index_attribute attr)
         | _ -> ()) caps in
   List.map bcd#get_attribute result#toList
@@ -575,6 +588,8 @@ let rec mk_btype_constraint
      end
   | Ok ty ->
      match ty with
+     | TNamed (s, _) ->
+        Some (TyGround (TyVariable tv, TyConstant (TyNamed s)))
      | TInt (ikind, _) ->
         let (signedness, size) = ikind_to_signedsize ikind in
         Some (TyGround
@@ -587,6 +602,9 @@ let rec mk_btype_constraint
      | TPtr (TVoid _, _) when use_voidptr ->
         let ptv = add_deref_capability tv in
         Some (TyGround (TyVariable ptv, TyConstant TyVoid))
+     | TPtr (TNamed (s, _), _) when use_voidptr ->
+        let ptv = add_deref_capability tv in
+        Some (TyGround (TyVariable ptv, TyConstant (TyNamed s)))
      | TPtr (TVoid _, _) -> None
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
@@ -665,6 +683,7 @@ let type_constant_to_btype (tc: type_constant_t) =
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
   | TyVoid -> t_void
+  | TyNamed s -> t_named s
   | TyBottom -> t_unknown
   | TyTUnknown -> t_unknown
 

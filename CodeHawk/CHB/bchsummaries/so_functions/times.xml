@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-05 22:16:45"/>
+  <libfun lib="so_functions" name="times">
+    <documentation>
+      <desc>get process and waited-for child process times</desc>
+      <apidoc>
+        <pt>clock_t times (struct tm *buffer)</pt>
+        <par name="buffer">tm structure to be filled in</par>
+        <return>
+          <rc cond="success">elapsed time since a point in the past</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="times">
+      <par loc="stack" name="buffer" nr="1">
+        <type><ptr>ch__tm</ptr></type>
+        <pre><deref-write/></pre>
+        <sideeffects><block-write/></sideeffects>
+      </par>
+      <returntype>clock_t</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

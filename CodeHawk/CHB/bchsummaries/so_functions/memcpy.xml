@@ -63,15 +63,6 @@
 	  </apply>
 	</math>
       </pre>
-      <pre>
-	<math>
-	  <apply>
-	    <geq/>
-	    <ci>count</ci>
-	    <cn>0</cn>
-	  </apply>
-	</math>
-      </pre>
     </preconditions>
     <postconditions>
      <post>

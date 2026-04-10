@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -88,7 +88,8 @@ let convert_b_attributes_to_function_conditions
             | [ACons (("write_only" | "read_write"), []); AInt refindex] ->
                let par = get_par refindex in
                let ty = get_derefty par in
-               ([XXBuffer (ty, ArgValue par, RunTimeValue)],
+               ([XXBuffer (ty, ArgValue par, RunTimeValue);
+                 XXBlockWrite (ty, ArgValue par, RunTimeValue)],
                 [XXBlockWrite (ty, ArgValue par, RunTimeValue)])
 
             | [ACons (("write_only" | "read_write"), []);
@@ -96,8 +97,17 @@ let convert_b_attributes_to_function_conditions
                let rpar = get_par refindex in
                let spar = get_par sizeindex in
                let ty = get_derefty rpar in
-               ([XXBuffer (ty, ArgValue rpar, ArgValue spar)],
+               ([XXBuffer (ty, ArgValue rpar, ArgValue spar);
+                 XXBlockWrite (ty, ArgValue rpar, RunTimeValue)],
                 [XXBlockWrite (ty, ArgValue rpar, ArgValue spar)])
+
+            | [ACons ("write_only", [AInt buffersize]); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               let bytesize = CHNumerical.mkNumerical buffersize in
+               ([XXBuffer (ty, ArgValue par, NumConstant bytesize);
+                 XXBlockWrite (ty, ArgValue par, NumConstant bytesize)],
+                [XXBlockWrite (ty, ArgValue par, NumConstant bytesize)])
 
             | _ ->
                begin
@@ -111,5 +121,72 @@ let convert_b_attributes_to_function_conditions
                  ([], [])
                end) in
          (pre @ xpre, side @ xside, xpost)
+      | Attr ("chk_pre", params) ->
+         let pre =
+           (match params with
+            | [ACons ("deref_read", []); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               [XXBuffer (ty, ArgValue par, RunTimeValue)]
+
+            | [ACons ("deref_read", []); AInt refindex; AInt sizeindex] ->
+               let par1 = get_par refindex in
+               let par2 = get_par sizeindex in
+               let ty = get_derefty par1 in
+               [XXBuffer (ty, ArgValue par1, ArgValue par2)]
+
+            | [ACons ("deref_read", [AInt size]); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               let c = CHNumerical.mkNumerical size in
+               [XXBuffer (ty, ArgValue par, NumConstant c)]
+
+            | [ACons ("deref_read", [ACons ("ntp", [])]); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               [XXBuffer (ty, ArgValue par, ArgNullTerminatorPos (ArgValue par))]
+
+            | [ACons ("deref_write", []); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               [XXBlockWrite (ty, ArgValue par, RunTimeValue)]
+
+            | [ACons ("deref_write", []); AInt refindex; AInt sizeindex] ->
+               let par1 = get_par refindex in
+               let par2 = get_par sizeindex in
+               let ty = get_derefty par1 in
+               [XXBlockWrite (ty, ArgValue par1, ArgValue par2)]
+
+            | [ACons ("deref_write", [AInt size]); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               let c = CHNumerical.mkNumerical size in
+               [XXBlockWrite (ty, ArgValue par, NumConstant c)]
+
+            | [ACons ("not_null", []); AInt refindex] ->
+               let par = get_par refindex in
+               [XXNotNull (ArgValue par)]
+
+            | [ACons ("null_terminated", []); AInt refindex] ->
+               let par = get_par refindex in
+               [XXNullTerminated (ArgValue par)]
+
+            | [ACons ("initialized_range", [ACons ("ntp", [])]); AInt refindex] ->
+               let par = get_par refindex in
+               let ty = get_derefty par in
+               [XXInitializedRange (
+                    ty, ArgValue par, ArgNullTerminatorPos (ArgValue par))]
+
+            | _ ->
+               begin
+                 log_error_result
+                   ~tag:"convert_b_attributes_to_function_conditions"
+                   ~msg:(name ^ ":chk_pre")
+                   __FILE__ __LINE__
+                   [String.concat ", " (List.map b_attrparam_to_string params)];
+                 []
+               end) in
+         (pre @ xpre, xside, xpost)
+
       | _ ->
          acc) ([], [], []) attrs

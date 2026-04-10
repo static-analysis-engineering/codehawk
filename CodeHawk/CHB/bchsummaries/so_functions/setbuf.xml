@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-06 14:53:51"/>
+  <libfun lib="so_functions" name="setbuf">
+    <documentation>
+      <desc>assign buffering to a stream</desc>
+      <apidoc>
+        <pt>
+          <ll>void setbuf(</ll>
+          <ld>FILE *resrict stream</ld>
+          <ld>char *resetrict buf</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="stream">file to be buffered</par>
+        <par name="buf">buffer</par>
+        <return/>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="setbuf">
+      <par loc="stack" name="stream" nr="1">
+        <type><ptr>ch__FILE</ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="buf" nr="2">
+        <type><ptr>char</ptr></type>
+      </par>
+      <returntype>void</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions>
+        <pre>
+          <math>
+            <apply>
+              <deref-read/>
+              <type>char</type>
+              <ci>buf</ci>
+              <cn>1024</cn>
+            </apply>
+          </math>
+        </pre>
+      </preconditions>
+      <postconditions/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <apply>
+              <block-write/>
+              <type>char</type>
+              <ci>buf</ci>
+              <cn>1024</cn>
+            </apply>
+          </math>
+        </sideeffect>
+      </sideeffects>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

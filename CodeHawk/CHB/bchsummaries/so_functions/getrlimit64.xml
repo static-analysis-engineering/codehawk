@@ -25,8 +25,9 @@
         <type>int</type>
       </par>
       <par loc="stack" name="rlp" nr="2">
-        <type><ptr>rlimit</ptr></type>
-	<pre><deref-read/></pre>
+        <type><ptr>ch__rlimit</ptr></type>
+	<pre><deref-write/></pre>
+        <sideeffects><block-write/></sideeffects>
       </par>
       <returntype>int</returntype>
     </api>
@@ -36,7 +37,13 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

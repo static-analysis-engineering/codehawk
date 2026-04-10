@@ -538,6 +538,27 @@ object (self)
     else
       None
 
+  method get_max_slot_size (offset: int): int option =
+    if H.mem stackslots offset then
+      let keys = H.fold (fun k _ a -> k :: a) stackslots [] in
+      let keys = List.sort Stdlib.compare keys in
+      List.fold_left (fun acc i ->
+          match acc with
+          | Some _ -> acc
+          | _ ->
+             if i > offset then
+               Some (i - offset)
+             else
+               None) None keys
+    else
+      begin
+        log_diagnostics_result
+          ~tag:"get_max_slot_size:stackslot not found"
+          __FILE__ __LINE__
+          ["offset: " ^ (string_of_int offset)];
+        None
+      end
+
   method add_stackslot
            ?(name = None)
            ?(btype = t_unknown)

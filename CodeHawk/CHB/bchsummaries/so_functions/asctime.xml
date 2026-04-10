@@ -6,7 +6,7 @@
     <documentation>
       <desc>convert date and time to a string</desc>
       <apidoc>
-        <pt>char *asctime (const struct tim *timeptr)</pt>
+        <pt>char *asctime (const struct tm *timeptr)</pt>
         <par name="timeptr">pointer to structure with broken down time</par>
         <return>
           <rc cond="success">pointer to the string</rc>
@@ -16,7 +16,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="asctime">
       <par loc="stack" name="timeptr" nr="1">
-        <type><ptr>tm</ptr></type>
+        <type><ptr>ch__tm</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <returntype><ptr>char</ptr></returntype>

@@ -13,8 +13,8 @@
     </documentation>
     <api adj="0" cc="cdecl" name="clearerr">
       <par loc="stack" name="stream" nr="1">
-        <type><ptr>FILE</ptr></type>
-	<pre><deref-read/></pre>
+        <type><ptr>ch__FILE</ptr></type>
+	<pre><deref-read-write/></pre>
       </par>
       <returntype>void</returntype>
     </api>

@@ -91,7 +91,8 @@ object (self)
       | ArgDerefReadWrite optsize
         | ArgDerefRead optsize
         | ArgDerefWrite optsize -> (tags, [index_opt optsize])
-      | ArgFunctionPointer
+      | ArgDeallocate
+        | ArgFunctionPointer
         | ArgScalarValue -> (tags, []) in
     type_arg_mode_table#add key
 
@@ -102,6 +103,7 @@ object (self)
     let a = a name args in
     let getsize () = if (a 0) = (-1) then None else Some (a 0) in
     match (t 0) with
+    | "d" -> ArgDeallocate
     | "fp" -> ArgFunctionPointer
     | "r" -> ArgDerefRead (getsize ())
     | "rw" -> ArgDerefReadWrite (getsize ())
@@ -215,6 +217,7 @@ object (self)
       | TyTStruct (key, name) -> (tags @ [name], [key])
       | TyTFloat k -> (tags @ [fkind_mfts#ts k], [])
       | TyVoid -> (tags, [])
+      | TyNamed s -> (tags @ [s], [])
       | TyBottom -> (tags, [])
       | TyTUnknown -> (tags, []) in
     type_constant_table#add key
@@ -236,6 +239,7 @@ object (self)
     | "ti" -> TyTInt (signedness_mfts#fs (t 1), a 0)
     | "tf" -> TyTFloat (fkind_mfts#fs (t 1))
     | "ts" -> TyTStruct (a 0, t 1)
+    | "n" -> TyNamed (t 1)
     | "vp" -> TyVoid
     | "b" -> TyBottom
     | "u" -> TyTUnknown

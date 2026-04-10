@@ -32,7 +32,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

@@ -15,7 +15,7 @@
     </apidoc>
    </documentation>
    <api adj="0" cc="cdecl" name="localtime">
-     <returntype><ptr>tm</ptr></returntype>
+     <returntype><ptr>ch__tm</ptr></returntype>
     <par loc="stack" io="r" name="timer" rep="hex" nr="1">
       <type><ptr>time_t</ptr></type>
       <pre><deref-read/></pre>

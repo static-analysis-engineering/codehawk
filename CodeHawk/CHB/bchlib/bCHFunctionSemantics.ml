@@ -375,4 +375,18 @@ let get_type_arg_mode
                | _ -> None) None predicates
       else
         mode in
+    let mode =
+      if Option.is_none mode then
+        List.fold_left (fun acc p ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               match p with
+               | XXFreed (ArgValue param)
+                    when Option.is_some param.apar_index
+                         && (Option.get param.apar_index) = argindex ->
+                  Some ArgDeallocate
+               | _ -> None) None predicates
+      else
+        mode in
     mode

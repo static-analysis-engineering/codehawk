@@ -36,7 +36,7 @@
       <role rt="ioc:memops" rn="dst-struct:file status information" />
       <role rt="ioc:filesystem" rn="infox:file status"/>
      </roles>
-     <type><ptr>stat</ptr></type>
+     <type><ptr>ch__stat</ptr></type>
      <pre><deref-write/></pre>
      <sideeffects><block-write/></sideeffects>
     </par>
@@ -49,7 +49,13 @@
     <postconditions>
       <zero-negone/>
     </postconditions>
-    <sideeffects/>
+    <sideeffects>
+      <sideeffect>
+        <math>
+          <sets-errno/>
+        </math>
+      </sideeffect>
+    </sideeffects>
    </semantics>
   </libfun>
  </codehawk-binary-analyzer>

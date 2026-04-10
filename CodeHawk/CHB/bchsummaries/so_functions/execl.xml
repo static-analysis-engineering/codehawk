@@ -26,9 +26,11 @@
     <api adj="0" cc="cdecl" name="execl">
       <par loc="stack" name="path" nr="1">
         <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
       </par>
       <par loc="stack" name="arg0" nr="2">
         <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
       </par>
       <returntype>int</returntype>
     </api>

@@ -16,10 +16,10 @@
     </documentation>
     <api adj="0" cc="cdecl" name="readdir64">
       <par loc="stack" name="dirp" nr="1">
-        <type><ptr>DIR</ptr></type>
+        <type><ptr>ch__DIR</ptr></type>
 	<pre><deref-read/></pre>
       </par>
-      <returntype><ptr>dirent</ptr></returntype>
+      <returntype><ptr>ch__dirent</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
@@ -27,7 +27,13 @@
       <postconditions>
 	<notnull-null/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

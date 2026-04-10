@@ -19,7 +19,7 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>
       </par>
-      <returntype><ptr>DIR</ptr></returntype>
+      <returntype><ptr>ch__DIR</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
@@ -27,7 +27,13 @@
       <postconditions>
 	<notnull-null/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

@@ -37,11 +37,11 @@
         <type><ptr>char</ptr></type>
       </par>
       <par loc="stack" name="format" nr="2">
-	<pre><deref-read/></pre>
+	<pre><deref-read/><format-string/></pre>
         <type><ptr>char</ptr></type>
       </par>
-      <par loc="stack" name="tm" nr="3">
-        <type><ptr>tm</ptr></type>
+      <par loc="stack" name="ch__tm" nr="3">
+        <type><ptr>ch__tm</ptr></type>
 	<pre><deref-write/></pre>
 	<sideeffect><block-write/></sideeffect>
       </par>
@@ -50,7 +50,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

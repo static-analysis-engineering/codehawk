@@ -313,7 +313,13 @@ object (self)
                           end
                         else
                           log_type_constraint_rule_disabled __LINE__ rule tc
-                     | _ -> ())
+                     | _ ->
+                        log_diagnostics_result
+                          ~tag:"propagate_arg_to_param:no constraint"
+                          ~msg:(p2s floc#l#toPretty)
+                          __FILE__ __LINE__
+                          ["x: " ^ (x2s x);
+                           "btype: " ^ (btype_to_string argtype)])
                    ~error:(fun e ->
                      log_diagnostics_result
                        ~tag:mnem
@@ -329,6 +335,70 @@ object (self)
                ["x: " ^ (x2s x);
                 "call: " ^ (p2s floc#get_call_target#toPretty)];
            end in
+
+    let propagate_returnvar_to_function_return () =
+      let reg = register_of_arm_register AR0 in
+      let rvar = mk_function_typevar faddr in
+      let rvar = add_return_capability rvar in
+      let r0var = floc#env#mk_arm_register_variable AR0 in
+      let r0defs = get_variable_rdefs r0var in
+      let r0defs =
+        List.filter (fun d -> not (d#getBaseName = "init")) r0defs in
+      let rule = "POP-rdef-return" in
+      List.iter (fun r0def ->
+          let rettypeterm = mk_vty_term rvar in
+          let r0addr = r0def#getBaseName in
+          let ifloc =
+            get_i_floc floc (TR.tget_ok (string_to_doubleword r0addr)) in
+          let r0typevar = mk_reglhs_typevar reg faddr r0addr in
+          let r0var = floc#f#env#mk_register_variable reg in
+          let r0xvar = rewrite_floc_expr ifloc (XVar r0var) in
+          match r0xvar with
+          | XVar returnvar when floc#f#env#is_return_value returnvar ->
+             let callsite_r = floc#f#env#get_call_site returnvar in
+             TR.tfold_default
+               (fun callsite ->
+                 if floc#f#has_call_target callsite then
+                   let calltarget = floc#f#get_call_target callsite in
+                   let returntype = calltarget#get_returntype in
+                   let opttc = mk_btype_constraint rvar returntype in
+                   let rule = "POP-rdef-inv" in
+                   match opttc with
+                   | Some tc ->
+                      if fndata#is_typing_rule_enabled iaddr rule then
+                        begin
+                          log_type_constraint __LINE__ rule tc;
+                          store#add_constraint faddr iaddr rule tc
+                        end
+                      else
+                        log_type_constraint_rule_disabled __LINE__ rule tc
+                   | _ ->
+                      begin
+                        log_no_type_constraint __LINE__ rule returntype;
+                        ()
+                      end)
+               ()
+               callsite_r
+          | _ ->
+             let r0typeterm = mk_vty_term r0typevar in
+             begin
+               (if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
+                  begin
+                    log_subtype_constraint __LINE__ rule r0typeterm rettypeterm;
+                    store#add_subtype_constraint
+                      faddr iaddr rule r0typeterm rettypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule r0typeterm rettypeterm);
+               (log_diagnostics_result
+                  ~tag:"Pop"
+                  ~msg:faddr
+                  __FILE__ __LINE__
+                  ["r0addr: " ^ r0addr;
+                   "r0xvar: " ^ (x2s r0xvar)])
+             end
+
+        ) r0defs in
 
     let getopt_stackaddress_r (x_r: xpr_t traceresult): int option =
       TR.tfold_default getopt_stackaddress None x_r in
@@ -1471,7 +1541,8 @@ object (self)
                   let r0typeterm = mk_vty_term r0typevar in
                   let rvartypeterm = mk_vty_term rvar in
                   let lhstypeterm = mk_vty_term typevar in
-                  if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
+                  if fndata#is_typing_rule_enabled
+                       ~rdef:(Some r0addr) iaddr rule then
                     begin
                       log_subtype_constraint __LINE__ rule r0typeterm lhstypeterm;
                       log_subtype_constraint __LINE__ rule rvartypeterm lhstypeterm;
@@ -1484,89 +1555,8 @@ object (self)
                     log_subtype_rule_disabled __LINE__ rule r0typeterm lhstypeterm
                 ) r0defs);
 
-             (let rvar = mk_function_typevar faddr in
-              let rvar = add_return_capability rvar in
-              let r0var = floc#env#mk_arm_register_variable AR0 in
-              let r0defs = get_variable_rdefs r0var in
-              let r0defs =
-                List.filter (fun d -> not (d#getBaseName = "init")) r0defs in
-              let rule = "POP-rdef-return" in
-              List.iter (fun r0def ->
-                  let rettypeterm = mk_vty_term rvar in
-                  let r0addr = r0def#getBaseName in
-                  let ifloc =
-                    get_i_floc floc (TR.tget_ok (string_to_doubleword r0addr)) in
-                  let r0typevar = mk_reglhs_typevar reg faddr r0addr in
-                  let r0var = floc#f#env#mk_register_variable reg in
-                  let r0xvar = rewrite_floc_expr ifloc (XVar r0var) in
-                  match r0xvar with
-                  | XVar returnvar when floc#f#env#is_return_value returnvar ->
-                     let callsite_r = floc#f#env#get_call_site returnvar in
-                     TR.tfold_default
-                       (fun callsite ->
-                         if floc#f#has_call_target callsite then
-                           let calltarget = floc#f#get_call_target callsite in
-                           let returntype = calltarget#get_returntype in
-                           let opttc = mk_btype_constraint rvar returntype in
-                           let rule = "POP-rdef-inv" in
-                           match opttc with
-                           | Some tc ->
-                              if fndata#is_typing_rule_enabled iaddr rule then
-                                begin
-                                  log_type_constraint __LINE__ rule tc;
-                                  store#add_constraint faddr iaddr rule tc
-                                end
-                              else
-                                log_type_constraint_rule_disabled __LINE__ rule tc
-                           | _ ->
-                              begin
-                                log_no_type_constraint __LINE__ rule returntype;
-                                ()
-                              end)
-                       ()
-                       callsite_r
-                     (*
-                  | XVar param when floc#f#env#is_initial_register_value param ->
-                     let paramreg_r = floc#f#env#get_initial_register_value_register param in
-                     let pvar = mk_function_typevar faddr in
-                     TR.tfold
-                       ~ok:(fun paramreg ->
-                         let pvar =  add_freg_param_capability paramreg pvar in
-                         let ptypeterm = mk_vty_term pvar in
-                         let rtypeterm = mk_vty_term rvar in
-                         begin
-                           log_subtype_constraint __LINE__ rule ptypeterm rtypeterm;
-                           store#add_subtype_constraint
-                             faddr iaddr rule ptypeterm rtypeterm
-                         end)
-                       ~error:(fun e ->
-                         log_diagnostics_result
-                           ~tag:"Pop"
-                           ~msg:faddr
-                           __FILE__ __LINE__
-                           [String.concat "; " e])
-                       paramreg_r
-                      *)
-                  | _ ->
-                     let r0typeterm = mk_vty_term r0typevar in
-                       begin
-                         (if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
-                            begin
-                              log_subtype_constraint __LINE__ rule r0typeterm rettypeterm;
-                              store#add_subtype_constraint
-                                faddr iaddr rule r0typeterm rettypeterm
-                            end
-                          else
-                            log_subtype_rule_disabled __LINE__ rule r0typeterm rettypeterm);
-                         (log_diagnostics_result
-                            ~tag:"Pop"
-                            ~msg:faddr
-                            __FILE__ __LINE__
-                            ["r0addr: " ^ r0addr;
-                             "r0xvar: " ^ (x2s r0xvar)])
-                       end
-
-                ) r0defs)
+             (if self#construct_signature then
+                propagate_returnvar_to_function_return ());
 
            end);
 

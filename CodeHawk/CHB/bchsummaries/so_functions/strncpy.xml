@@ -36,6 +36,7 @@
       <roles>
 	<role rt="ioc:memops" rn="src-string:copy"/>
       </roles>
+      <pre><deref-read-nt/></pre>
     </par>
     <par loc="stack" desc="count" io="r" name="count" roles="none" nr="3">
       <type>size_t</type>
@@ -46,16 +47,6 @@
        <io-action cat="memops" desc="copies a string"/>
      </io-actions>       
     <preconditions>
-     <pre>
-      <math>
-       <apply>
-        <deref-read/>
-	<type>char</type>
-        <ci>src</ci>
-	<ci>count</ci>
-       </apply>
-      </math>
-     </pre>
      <pre>
        <math>
 	 <apply>
