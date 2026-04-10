@@ -56,6 +56,7 @@ MLIS := \
 	cCHPOCheckCast \
 	cCHPOCheckCommonBase \
 	cCHPOCheckCommonBaseType \
+	cCHPOCheckErrnoWritten \
 	cCHPOCheckControlledResource \
 	cCHPOCheckFormatCast \
 	cCHPOCheckInScope \

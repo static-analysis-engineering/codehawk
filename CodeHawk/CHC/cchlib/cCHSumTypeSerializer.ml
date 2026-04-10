@@ -428,7 +428,7 @@ object
     | XExternalStateValue _ -> "esv"
     | XFormattedInput _ -> "fi"
     | XFalse -> "f"
-    | XWritesErrno -> "we" (* ?? *)
+    | XWritesErrno -> "ew"
     | XFreed _ -> "fr"
     | XFunctional -> "fn"
     | XGlobalAddress _ -> "ga"
