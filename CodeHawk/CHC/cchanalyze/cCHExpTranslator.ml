@@ -366,8 +366,8 @@ object (self)
             end
        end
 
-  method private translate_binop_expr op x1 x2 ty =
-    let ty = fenv#get_type_unrolled ty in
+  method private translate_binop_expr op x1 x2 _ty =
+    (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
       (* | PlusA when CCHBasicUtil.exp_is_zero x2 -> (self#translate_expr x1) *)
       | PlusA -> XOp (XPlus, [self#translate_expr x1; self#translate_expr x2])
@@ -418,8 +418,9 @@ object (self)
 		       typ_to_pretty t]))
 	end
       | MinusPI ->
-	 let elementSize = size_of_type fdecls ty in
-         let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in
+	 (* let elementSize = size_of_type fdecls ty in *)
+         (* let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in *)
+         let offsetx = self#translate_expr x2 in
 	 XOp (XMinus, [self#translate_expr x1; offsetx])
       | Mod -> XOp (XMod, [self#translate_expr x1; self#translate_expr x2])
       | Shiftlt -> XOp (XShiftlt, [self#translate_expr x1; self#translate_expr x2])
@@ -693,8 +694,8 @@ object (self)
             end
        end
 
-  method private translate_lhs_binop_expr op x1 x2 ty =
-    let ty = fenv#get_type_unrolled ty in
+  method private translate_lhs_binop_expr op x1 x2 _ty =
+    (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
       | PlusA ->
          XOp (XPlus,[self#translate_lhs_expr x1; self#translate_lhs_expr x2])
@@ -746,8 +747,9 @@ object (self)
 			typ_to_pretty t]))
 	 end
       | MinusPI ->
-	 let elementSize = size_of_type fdecls ty in
-         let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in
+	 (* let elementSize = size_of_type fdecls ty in *)
+         (* let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in *)
+         let xoffset = self#translate_lhs_expr x2 in
 	 XOp (XMinus, [self#translate_lhs_expr x1; xoffset])
       | Mod ->
          XOp (XMod, [self#translate_lhs_expr x1; self#translate_lhs_expr x2])
