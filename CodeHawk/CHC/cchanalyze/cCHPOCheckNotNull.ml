@@ -206,19 +206,16 @@ object (self)
        | Some r ->
           List.fold_left (fun acc x ->
               match acc with
-              | Some _ -> acc
-              | _ ->
-                 match self#xpr_implies_safe invindex x with
-                 | None -> None
-                 | Some (deps, msg) ->
-                    begin
-                      match self#xpr_implies_safe invindex x with
-                      | Some (d,m) ->
-                         let deps = join_dependencies deps d in
-                         let msg = msg ^ "; " ^ m in
-                         Some (deps,msg)
-                      | _ -> None
-                    end) (Some r) tl
+              | None -> None
+              | Some (deps, msg) ->
+                 begin
+                   match self#xpr_implies_safe invindex x with
+                   | Some (d,m) ->
+                      let deps = join_dependencies deps d in
+                      let msg = msg ^ "; " ^ m in
+                      Some (deps,msg)
+                   | _ -> None
+                 end) (Some r) tl
 
   method private regions_implies_safe (invindex: int) (symlist: symbol_t list) =
     match symlist with

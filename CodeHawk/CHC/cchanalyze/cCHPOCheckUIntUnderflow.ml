@@ -167,7 +167,7 @@ object (self)
        let _ =
          poq#set_diagnostic_arg 2 ("LB: " ^ (x2s x1) ^ (self#global_str x1)) in
        let _ =
-         poq#set_diagnostic_arg 3 ("UB: " ^ (x2s x1) ^ (self#global_str x2)) in
+         poq#set_diagnostic_arg 3 ("UB: " ^ (x2s x2) ^ (self#global_str x2)) in
        if is_true simconstraint then
          let deps = DLocal [inv1#index; inv2#index] in
          let msg =
