@@ -107,15 +107,15 @@ let check_safe () =
       ("gl-inv-001",
        "gl_inv_001", "gl_inv_001",
        [], -1, -1,
-       "inv_implies_safe", "assignedAt#5");
+       Some "inv_implies_safe", "assignedAt#5");
       ("gl-inv-002",
        "gl_inv_002", "gl_inv_002",
        [], -1, -1,
-       "inv_implies_safe", "assignedAt#11");
+       Some "inv_implies_safe", "assignedAt#11");
       ("gl-inv-003",
        "gl_inv_003", "gl_inv_003",
        [], 14, -1,
-       "inv_implies_safe", "")
+       Some "inv_implies_safe", "")
         (* disabling the tests based on the presence of an
            initial value
       ("gl-inv-xpr-001",

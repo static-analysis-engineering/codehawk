@@ -31,7 +31,7 @@
 	<pre><deref-read/></pre>
       </par>
       <par loc="stack" name="salt" nr="2">
-        <type><ptr>char></ptr></type>
+        <type><ptr>char</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <returntype><ptr>char</ptr></returntype>

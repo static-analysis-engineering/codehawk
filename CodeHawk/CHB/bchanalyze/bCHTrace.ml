@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -159,7 +159,7 @@ let rec _trace_fwd faddr op =
         let call_args = callee#get_call_args in
         List.iter (fun (p,e) ->
 	    match p.apar_location with
-	    | [StackParameter (par, _)] ->
+	    | [StackParameter (par, _, _)] ->
 	       let argIndices = get_xarg_indices finfo e in
 	       if List.mem op argIndices then
 	         begin

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-04-06 15:26:58"/>
+  <libfun lib="so_functions" name="scandir">
+    <documentation>
+      <desc>scan a directory</desc>
+      <apidoc>
+        <pt>
+          <ll>int scandir(</ll>
+          <ld>const char *dir</ld>
+          <ld>const struct dirent ***namelist</ld>
+          <ld>int (*sel)(const struct direct *)</ld>
+          <ld>int (*compar)(const struct dirent **, const struct dirent **)</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="dir">directory to be scanned</par>
+        <par name="namelist">list in which selected entries are stored</par>
+        <par name="sel">function to select directory entries</par>
+        <par name="compar">function to sort directory entries</par>
+        <return>
+          <rc cond="success">number of entries stored</rc>
+          <rc cond="failure">-1</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="scandir">
+      <par loc="stack" name="dir" nr="1">
+        <type><ptr>char</ptr></type>
+        <pre><deref-read-nt/></pre>
+      </par>
+      <par loc="stack" name="namelist" nr="2">
+        <type><ptr><ptr><ptr>ch__dirent</ptr></ptr></ptr></type>
+        <pre><deref-write/></pre>
+      </par>
+      <par loc="stack" name="sel" nr="3">
+        <type><ptr>dir_select_fptr</ptr></type>
+        <pre><deref-read-null/></pre>
+      </par>
+      <par loc="stack" name="compar" nr="4">
+        <type><ptr>comparison_fptr</ptr></type>
+        <pre><deref-read-null/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

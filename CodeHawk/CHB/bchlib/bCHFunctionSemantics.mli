@@ -104,3 +104,7 @@ val read_xml_function_interface_and_semantics:
 
 
 val write_xml_function_semantics: xml_element_int -> function_semantics_t -> unit
+
+
+val get_type_arg_mode:
+  function_semantics_t -> int -> btype_t -> type_arg_mode_t option

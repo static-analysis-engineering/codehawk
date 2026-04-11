@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,8 @@ let elocm (line: int): string = (eloc line) ^ ": "
 
 class arm_fn_type_constraints_t
         (store: type_constraint_store_int)
-        (fn: arm_assembly_function_int): arm_fn_type_constraints_int =
+        (fn: arm_assembly_function_int)
+        (mksignature: bool): arm_fn_type_constraints_int =
 object (self)
 
   val faddrdw = fn#get_address
@@ -83,6 +84,15 @@ object (self)
   val finfo = get_function_info fn#get_address
   val env = (get_function_info fn#get_address)#env
   val fndata = BCHFunctionData.functions_data#get_function fn#get_address
+
+  (* Function signatures are constructed only if explicitly requested
+     from the command-line, and if no external signature exists.*)
+  method private construct_signature: bool =
+    if mksignature then
+      let fintf = finfo#get_summary#get_function_interface in
+      Option.is_none fintf.fintf_bctype
+    else
+      false
 
   method record_type_constraints =
     let fintf = finfo#get_summary#get_function_interface in
@@ -100,6 +110,10 @@ object (self)
     let loc = ctxt_string_to_location faddrdw iaddr in
     let floc = get_floc loc in
     let rewrite_expr (x: xpr_t): xpr_t =
+      let x = floc#inv#rewrite_expr x in
+      simplify_xpr x in
+
+    let rewrite_floc_expr (floc: floc_int) (x: xpr_t): xpr_t =
       let x = floc#inv#rewrite_expr x in
       simplify_xpr x in
 
@@ -154,68 +168,6 @@ object (self)
            else (SignedNeutral, 64) in
          TyTInt (sg, si) in
 
-    let get_variable_rdefs (v: variable_t): symbol_t list =
-      let symvar = floc#f#env#mk_symbolic_variable v in
-      let varinvs = floc#varinv#get_var_reaching_defs symvar in
-      (match varinvs with
-       | [vinv] -> vinv#get_reaching_defs
-       | _ ->
-          List.concat (List.map (fun vinv -> vinv#get_reaching_defs) varinvs)) in
-
-    let get_variable_rdefs_r (v_r: variable_t traceresult): symbol_t list =
-      TR.tfold_default get_variable_rdefs [] v_r in
-
-    let getopt_stackaddress (x: xpr_t): int option =
-      match (rewrite_expr x) with
-      | XOp (xop, [XVar v; XConst (IntConst n)])
-           when floc#f#env#is_initial_register_value v ->
-         let optoffset =
-           match xop with
-           | XMinus when n#toInt > 0 -> Some n#neg#toInt
-           | XPlus when n#toInt < 0 -> Some n#toInt
-           | _ -> None in
-         TR.tfold
-           ~ok:(fun reg ->
-             match (optoffset, reg) with
-              | (Some n, ARMRegister ARSP) -> Some n
-              | _ -> None)
-           ~error:(fun e ->
-             begin
-               log_error_result
-                 ~tag:"getopt_stackaddress"
-                 ~msg:("x: " ^ (x2s x))
-                 __FILE__ __LINE__ e;
-               None
-             end)
-           (floc#f#env#get_initial_register_value_register v)
-      | _ -> None in
-
-    let getopt_stackaddress_r (x_r: xpr_t traceresult): int option =
-      TR.tfold_default getopt_stackaddress None x_r in
-
-    let getopt_stacklocation_type (x: xpr_t): btype_t option =
-      match getopt_stackaddress x with
-      | Some offset when fndata#has_stackvar_type_annotation offset ->
-         TR.to_option (fndata#get_stackvar_type_annotation offset)
-      | _ -> None in
-
-    let getopt_stacklocation_type_r (x_r: xpr_t traceresult): btype_t option =
-      TR.tfold_default getopt_stacklocation_type None x_r in
-
-    let getopt_global_address (x: xpr_t): doubleword_int option =
-      match (rewrite_expr x) with
-      | XConst (IntConst num) ->
-         TR.tfold_default
-           (fun dw ->
-             if elf_header#is_code_address dw then None else Some dw)
-           None
-           (numerical_to_doubleword num)
-      | _ ->
-         None in
-
-    let getopt_global_address_r (x_r: xpr_t traceresult): doubleword_int option =
-      TR.tfold_default getopt_global_address None x_r in
-
     let log_subtype_constraint
           (linenumber: int)
           (kind: string)
@@ -264,6 +216,215 @@ object (self)
         __FILE__
         linenumber
         [(p2s floc#l#toPretty) ^ ": " ^ (type_constraint_to_string tc)] in
+
+    let get_variable_rdefs (v: variable_t): symbol_t list =
+      let symvar = floc#f#env#mk_symbolic_variable v in
+      let varinvs = floc#varinv#get_var_reaching_defs symvar in
+      (match varinvs with
+       | [vinv] -> vinv#get_reaching_defs
+       | _ ->
+          List.concat (List.map (fun vinv -> vinv#get_reaching_defs) varinvs)) in
+
+    let get_variable_rdefs_r (v_r: variable_t traceresult): symbol_t list =
+      TR.tfold_default get_variable_rdefs [] v_r in
+
+    let getopt_stackaddress (x: xpr_t): int option =
+      match (rewrite_expr x) with
+      | XOp (xop, [XVar v; XConst (IntConst n)])
+           when floc#f#env#is_initial_register_value v ->
+         let optoffset =
+           match xop with
+           | XMinus when n#toInt > 0 -> Some n#neg#toInt
+           | XPlus when n#toInt < 0 -> Some n#toInt
+           | _ -> None in
+         TR.tfold
+           ~ok:(fun reg ->
+             match (optoffset, reg) with
+              | (Some n, ARMRegister ARSP) -> Some n
+              | _ -> None)
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:"getopt_stackaddress"
+                 ~msg:("x: " ^ (x2s x))
+                 __FILE__ __LINE__ e;
+               None
+             end)
+           (floc#f#env#get_initial_register_value_register v)
+      | _ -> None in
+
+    let getopt_parameter (x: xpr_t): xpr_t option =
+      match x with
+      | XVar var when floc#f#env#is_initial_register_value var ->
+         let _ =
+           log_diagnostics_result
+             ~tag:"getopt_parameter"
+             ~msg:(p2s floc#l#toPretty)
+             __FILE__ __LINE__
+             [p2s var#toPretty] in
+         Some x
+      | _ ->
+         None in
+
+    (* [propagate_arg_to_param relates an argument to a callee that is an
+       initial value of a parameter back to that parameter, specifically it
+       creates a type constraint for the type of the parameter and adds to
+       the parameter the capability for that parameter to flow to this
+       particular argument.
+
+       The propagation is not performed if the type of the function is already
+       known from other sources (e.g., from an imported header file).
+     *)
+    let propagate_arg_to_param
+          (mnem: string) (arg: xpr_t) (argindex: int) (argtype: btype_t) =
+      if self#construct_signature then
+        match getopt_parameter arg with
+        | None -> ()
+        | Some x ->
+           begin
+             (match x with
+              | XVar v ->
+                 let reg_r =
+                   floc#f#env#get_initial_register_value_register v in
+                 let call = floc#get_call_target#get_name in
+                 let argmode =
+                   BCHFunctionSemantics.get_type_arg_mode
+                     floc#get_call_target#get_semantics argindex argtype in
+                 let argmode =
+                   match argmode with
+                   | Some a -> a
+                   | _ -> ArgDerefReadWrite None in
+                 let typevar = mk_function_typevar faddr in
+                 TR.tfold
+                   ~ok:(fun reg ->
+                     let typevar = add_freg_param_capability reg typevar in
+                     let typevar =
+                       add_flows_to_arg_capability
+                         iaddr call argindex argmode typevar in
+                     let rule = "BL-arg-param" in
+                     let opttc =
+                       mk_btype_constraint ~use_voidptr:true typevar argtype in
+                     match opttc with
+                     | Some tc ->
+                        if fndata#is_typing_rule_enabled iaddr rule then
+                          begin
+                            log_type_constraint __LINE__ rule tc;
+                            store#add_constraint faddr iaddr rule tc
+                          end
+                        else
+                          log_type_constraint_rule_disabled __LINE__ rule tc
+                     | _ ->
+                        log_diagnostics_result
+                          ~tag:"propagate_arg_to_param:no constraint"
+                          ~msg:(p2s floc#l#toPretty)
+                          __FILE__ __LINE__
+                          ["x: " ^ (x2s x);
+                           "btype: " ^ (btype_to_string argtype)])
+                   ~error:(fun e ->
+                     log_diagnostics_result
+                       ~tag:mnem
+                       ~msg:(p2s floc#l#toPretty)
+                       __FILE__ __LINE__
+                       ["Error: " ^ (String.concat "; " e)])
+                   reg_r
+              | _ -> ());
+             log_diagnostics_result
+               ~tag:mnem
+               ~msg:(p2s floc#l#toPretty)
+               __FILE__ __LINE__
+               ["x: " ^ (x2s x);
+                "call: " ^ (p2s floc#get_call_target#toPretty)];
+           end in
+
+    let propagate_returnvar_to_function_return () =
+      let reg = register_of_arm_register AR0 in
+      let rvar = mk_function_typevar faddr in
+      let rvar = add_return_capability rvar in
+      let r0var = floc#env#mk_arm_register_variable AR0 in
+      let r0defs = get_variable_rdefs r0var in
+      let r0defs =
+        List.filter (fun d -> not (d#getBaseName = "init")) r0defs in
+      let rule = "POP-rdef-return" in
+      List.iter (fun r0def ->
+          let rettypeterm = mk_vty_term rvar in
+          let r0addr = r0def#getBaseName in
+          let ifloc =
+            get_i_floc floc (TR.tget_ok (string_to_doubleword r0addr)) in
+          let r0typevar = mk_reglhs_typevar reg faddr r0addr in
+          let r0var = floc#f#env#mk_register_variable reg in
+          let r0xvar = rewrite_floc_expr ifloc (XVar r0var) in
+          match r0xvar with
+          | XVar returnvar when floc#f#env#is_return_value returnvar ->
+             let callsite_r = floc#f#env#get_call_site returnvar in
+             TR.tfold_default
+               (fun callsite ->
+                 if floc#f#has_call_target callsite then
+                   let calltarget = floc#f#get_call_target callsite in
+                   let returntype = calltarget#get_returntype in
+                   let opttc = mk_btype_constraint rvar returntype in
+                   let rule = "POP-rdef-inv" in
+                   match opttc with
+                   | Some tc ->
+                      if fndata#is_typing_rule_enabled iaddr rule then
+                        begin
+                          log_type_constraint __LINE__ rule tc;
+                          store#add_constraint faddr iaddr rule tc
+                        end
+                      else
+                        log_type_constraint_rule_disabled __LINE__ rule tc
+                   | _ ->
+                      begin
+                        log_no_type_constraint __LINE__ rule returntype;
+                        ()
+                      end)
+               ()
+               callsite_r
+          | _ ->
+             let r0typeterm = mk_vty_term r0typevar in
+             begin
+               (if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
+                  begin
+                    log_subtype_constraint __LINE__ rule r0typeterm rettypeterm;
+                    store#add_subtype_constraint
+                      faddr iaddr rule r0typeterm rettypeterm
+                  end
+                else
+                  log_subtype_rule_disabled __LINE__ rule r0typeterm rettypeterm);
+               (log_diagnostics_result
+                  ~tag:"Pop"
+                  ~msg:faddr
+                  __FILE__ __LINE__
+                  ["r0addr: " ^ r0addr;
+                   "r0xvar: " ^ (x2s r0xvar)])
+             end
+
+        ) r0defs in
+
+    let getopt_stackaddress_r (x_r: xpr_t traceresult): int option =
+      TR.tfold_default getopt_stackaddress None x_r in
+
+    let getopt_stacklocation_type (x: xpr_t): btype_t option =
+      match getopt_stackaddress x with
+      | Some offset when fndata#has_stackvar_type_annotation offset ->
+         TR.to_option (fndata#get_stackvar_type_annotation offset)
+      | _ -> None in
+
+    let getopt_stacklocation_type_r (x_r: xpr_t traceresult): btype_t option =
+      TR.tfold_default getopt_stacklocation_type None x_r in
+
+    let getopt_global_address (x: xpr_t): doubleword_int option =
+      match (rewrite_expr x) with
+      | XConst (IntConst num) ->
+         TR.tfold_default
+           (fun dw ->
+             if elf_header#is_code_address dw then None else Some dw)
+           None
+           (numerical_to_doubleword num)
+      | _ ->
+         None in
+
+    let getopt_global_address_r (x_r: xpr_t traceresult): doubleword_int option =
+      TR.tfold_default getopt_global_address None x_r in
 
     let operand_is_stackpointer (op: arm_operand_int): bool =
       TR.tfold_default
@@ -661,7 +822,8 @@ object (self)
                   end);
 
          (* add constraints for argument values *)
-         List.iter (fun (p, x) ->
+         List.iteri (fun i (p, x) ->
+             let x = rewrite_expr x in
              let ptype = get_parameter_type p in
              begin
                (if is_register_parameter p then
@@ -727,6 +889,8 @@ object (self)
                 else
                   ());
 
+               propagate_arg_to_param "BranchLink" x (i + 1) ptype;
+
                (match getopt_stackaddress x with
                 | None -> ()
                 | Some offset ->
@@ -772,20 +936,55 @@ object (self)
          ()
        else
          List.iter (fun rnsym ->
-             let rnaddr = rnsym#getBaseName in
-             let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
-             let immtypeconst = get_intvalue_type_constant immval in
-             let rntypeterm = mk_vty_term rntypevar in
-             let immtypeterm = mk_cty_term immtypeconst in
-             let rule = "CMP-rdef" in
-             if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
-               begin
-                 log_subtype_constraint __LINE__ rule rntypeterm immtypeterm;
-                 store#add_subtype_constraint faddr iaddr rule rntypeterm immtypeterm
-               end
-             else
-               log_subtype_rule_disabled __LINE__ rule rntypeterm immtypeterm
-           ) rndefs
+             begin
+               let rnaddr = rnsym#getBaseName in
+               let rntypevar = mk_reglhs_typevar rnreg faddr rnaddr in
+               let immtypeconst = get_intvalue_type_constant immval in
+               let rntypeterm = mk_vty_term rntypevar in
+               let immtypeterm = mk_cty_term immtypeconst in
+               let rule = "CMP-rdef" in
+               if fndata#is_typing_rule_enabled ~rdef:(Some rnaddr) iaddr rule then
+                 begin
+                   log_subtype_constraint __LINE__ rule rntypeterm immtypeterm;
+                   store#add_subtype_constraint faddr iaddr rule rntypeterm immtypeterm
+                 end
+               else
+                 log_subtype_rule_disabled __LINE__ rule rntypeterm immtypeterm;
+
+               (let rvar = floc#f#env#mk_register_variable rnreg in
+                let x = rewrite_expr (XVar rvar) in
+                match getopt_parameter x with
+                | None -> ()
+                | Some x ->
+                   begin
+                     (match x with
+                      | XVar v ->
+                         let reg_r = floc#f#env#get_initial_register_value_register v in
+                         let typevar = mk_function_typevar faddr in
+                         TR.tfold
+                           ~ok:(fun reg ->
+                             let typevar = add_freg_param_capability reg typevar in
+                             let rule = "CMP-param" in
+                             let immtypeconst = get_intvalue_type_constant immval in
+                             let ptypeterm = mk_vty_term typevar in
+                             let immtypeterm = mk_cty_term immtypeconst in
+                             if fndata#is_typing_rule_enabled iaddr rule then
+                               begin
+                                 log_subtype_constraint __LINE__ rule ptypeterm immtypeterm;
+                                 store#add_subtype_constraint faddr iaddr rule ptypeterm immtypeterm
+                               end
+                             else
+                               log_subtype_rule_disabled __LINE__ rule ptypeterm immtypeterm)
+                           ~error:(fun e ->
+                             log_diagnostics_result
+                               ~tag:"Compare"
+                               ~msg:faddr
+                               __FILE__ __LINE__
+                               [String.concat "; " e])
+                           reg_r
+                      | _ -> ())
+                   end)
+             end) rndefs
 
     | Compare (_, rn, rm, _) when rm#is_register ->
        let rndefs = get_variable_rdefs_r (rn#to_variable floc) in
@@ -1309,7 +1508,6 @@ object (self)
         | _ ->
            let reg = register_of_arm_register AR0 in
            let typevar = mk_reglhs_typevar reg faddr iaddr in
-
            begin
              (* use function return type *)
              (let opttc = mk_btype_constraint typevar rtype in
@@ -1332,22 +1530,35 @@ object (self)
              (* propagate via reaching defs *)
              (let r0var = floc#env#mk_arm_register_variable AR0 in
               let r0defs = get_variable_rdefs r0var in
+              let r0defs =
+                List.filter (fun d -> not (d#getBaseName = "init")) r0defs in
+              let rvar = mk_function_typevar faddr in
+              let rvar = add_return_capability rvar in
               let rule = "POP-rdef" in
               List.iter (fun r0def ->
                   let r0addr = r0def#getBaseName in
                   let r0typevar = mk_reglhs_typevar reg faddr r0addr in
                   let r0typeterm = mk_vty_term r0typevar in
+                  let rvartypeterm = mk_vty_term rvar in
                   let lhstypeterm = mk_vty_term typevar in
-                  if fndata#is_typing_rule_enabled ~rdef:(Some r0addr) iaddr rule then
+                  if fndata#is_typing_rule_enabled
+                       ~rdef:(Some r0addr) iaddr rule then
                     begin
                       log_subtype_constraint __LINE__ rule r0typeterm lhstypeterm;
+                      log_subtype_constraint __LINE__ rule rvartypeterm lhstypeterm;
                       store#add_subtype_constraint
-                        faddr iaddr rule r0typeterm lhstypeterm
+                        faddr iaddr rule r0typeterm lhstypeterm;
+                      store#add_subtype_constraint
+                        faddr iaddr rule rvartypeterm lhstypeterm
                     end
                   else
                     log_subtype_rule_disabled __LINE__ rule r0typeterm lhstypeterm
-                ) r0defs)
-             end)
+                ) r0defs);
+
+             (if self#construct_signature then
+                propagate_returnvar_to_function_return ());
+
+           end);
 
     | Push _
       | Pop _ ->
@@ -1712,8 +1923,9 @@ end
 
 let  mk_arm_fn_type_constraints
        (store: type_constraint_store_int)
-       (fn: arm_assembly_function_int): arm_fn_type_constraints_int =
+       (fn: arm_assembly_function_int)
+       (mksignature: bool): arm_fn_type_constraints_int =
   begin
     store#reset;
-    new arm_fn_type_constraints_t store fn
+    new arm_fn_type_constraints_t store fn mksignature
   end

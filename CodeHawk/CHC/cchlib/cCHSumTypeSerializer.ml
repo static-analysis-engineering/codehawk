@@ -428,6 +428,7 @@ object
     | XExternalStateValue _ -> "esv"
     | XFormattedInput _ -> "fi"
     | XFalse -> "f"
+    | XWritesErrno -> "ew"
     | XFreed _ -> "fr"
     | XFunctional -> "fn"
     | XGlobalAddress _ -> "ga"
@@ -463,7 +464,7 @@ object
     | XPolicyTransition _ -> "pox"
 
   method! tags = [
-      "ab"; "b"; "bw"; "c"; "cf"; "cr"; "esv"; "f"; "fi"; "fn"; "fr"; "ga";
+      "ab"; "b"; "bw"; "c"; "cf"; "cr"; "esv"; "ew"; "f"; "fi"; "fn"; "fr"; "ga";
       "ha"; "i"; "ies"; "ifs"; "ir"; "iv"; "nm"; "nn"; "no"; "nz"; "nng";
       "nt"; "null"; "ofs"; "pop"; "pov"; "pox";  "pr"; "prm";
       "prmx"; "prn"; "prv"; "pv"; "rb"; "rep"; "sa"; "tt"; "up";

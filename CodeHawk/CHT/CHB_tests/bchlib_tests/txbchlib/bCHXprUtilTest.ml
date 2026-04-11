@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ module TS = TCHTestSuite
 module X = BCHXprUtil
 
 let testname = "bCHXprUtilTest"
-let lastupdated = "2024-12-25"
+let lastupdated = "2026-03-10"
 
 
 let largest_constant_term_test () =
@@ -103,6 +103,32 @@ let smallest_constant_term_test() =
         XBA.equal_numerical
           ~expected:(mkNumerical 4)
           ~received:(X.smallest_constant_term x)
+          ());
+
+    TS.launch_tests ()
+  end
+
+
+let smallest_wrapped_constant_term_test () =
+  begin
+    TS.new_testsuite (testname ^ "_smallest_wrapped_constant_term") lastupdated;
+
+    TS.add_simple_test
+      ~title: "constant"
+      (fun () ->
+        XBA.equal_numerical_pair
+          ~expected:((mkNumerical 0x500000, mkNumerical 0x500000))
+          ~received:(X.smallest_wrapped_constant_term
+                       (Xprt.int_constant_expr 0x500000))
+          ());
+
+    TS.add_simple_test
+      ~title: "wrap-around"
+      (fun () ->
+        XBA.equal_numerical_pair
+          ~expected:((mkNumerical 0xffffed64, mkNumerical (-(4764))))
+          ~received:(X.smallest_wrapped_constant_term
+                       (Xprt.int_constant_expr 0xffffed64))
           ());
 
     TS.launch_tests ()
@@ -259,6 +285,7 @@ let () =
     TS.new_testfile testname lastupdated;
     largest_constant_term_test ();
     smallest_constant_term_test ();
+    smallest_wrapped_constant_term_test ();
     array_index_offset_test ();
     TS.exit_file ()
   end

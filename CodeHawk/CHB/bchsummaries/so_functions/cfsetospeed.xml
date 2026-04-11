@@ -22,7 +22,8 @@
     </documentation>
     <api adj="0" cc="cdecl" name="cfsetospeed">
       <par loc="stack" name="termios_p" nr="1">
-        <type><ptr>ch_termios</ptr></type>
+        <type><ptr>ch__termios</ptr></type>
+        <pre><deref-write/></pre>
       </par>
       <par loc="stack" name="speed" nr="2">
         <type>speed_t</type>
@@ -32,7 +33,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <zero-negone/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

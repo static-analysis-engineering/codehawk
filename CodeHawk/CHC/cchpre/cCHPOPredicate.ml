@@ -259,6 +259,7 @@ object (self)
     | PConfined e -> we 1 e
     | PUniquePointer e -> we 1 e
     | PContract (_, _, e) -> we 1 e
+    | PErrnoWritten -> ()
     | PPreservedAllMemory -> ()
     | PPreservedAllMemoryX l -> List.iteri (fun i e -> we (i+1) e) l
     | PContractObligation _ -> ()
@@ -665,6 +666,7 @@ let po_predicate_to_full_pretty p =
   | PUniquePointer e ->
      LBLOCK [STR "unique-pointer("; exp_to_pretty e; STR ")"]
   | PPreservedAllMemory -> STR "preserved-all-memory"
+  | PErrnoWritten -> STR "errno-must-written"
   | PPreservedAllMemoryX l ->
      LBLOCK [
          STR "preserved-all-memory-x";
@@ -921,6 +923,7 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
     | PUniquePointer e ->
        LBLOCK [STR "unique-pointer("; exp_to_pretty e; STR ")"]
     | PPreservedAllMemory -> STR "preserved-all-memory"
+    | PErrnoWritten -> STR "errno-must-written"
     | PPreservedAllMemoryX l ->
        LBLOCK [
            STR "preserved-all-memory-x";
@@ -1200,6 +1203,7 @@ let po_predicate_to_xpredicate
      TR.tmap ~msg:(eloc __LINE__) (fun s -> XUniquePointer s) (es e)
   | PValidMem e ->
      TR.tmap ~msg:(eloc __LINE__) (fun s -> XValidMem s) (es e)
+  | PErrnoWritten -> Ok XWritesErrno    
   | PPreservedAllMemory -> Ok XPreservesAllMemory
   | PPreservedAllMemoryX l ->
      List.fold_left

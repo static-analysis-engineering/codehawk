@@ -89,6 +89,24 @@ module ProgramContextCollections =
 
 let fenv = CCHFileEnvironment.file_environment
 
+let is_errno_location_call (e:exp): bool =
+  match e with
+  | Lval (Var ("__errno_location", _), NoOffset) -> true
+  | _ -> false
+
+(* This collects all temps that are assigned by calls to __errno_location()*)
+class errno_collector_t =
+object
+  inherit CCHTypesTransformer.block_walker_t
+  val errno_pointers = new CHUtils.IntCollections.set_t
+  method errno_pointers = errno_pointers#toList
+
+  method! walk_instr (i:instr) =
+    match i with
+    | Call (Some (Var x, _), f, [], _) when is_errno_location_call f ->
+      errno_pointers#add (snd x);
+    | _ -> ()
+end
 
 class c_environment_t (f:fundec) (varmgr:variable_manager_int):c_environment_int =
 object(self)
@@ -102,6 +120,11 @@ object(self)
       s
     end
 
+  val errno_temps =
+    let coll = new errno_collector_t in
+    coll#walk_block (f.sbody);
+    coll#errno_pointers
+
   val mutable current_stmt_id: int = 0
   val mutable return_var: varinfo option = None
   val return_contexts = new ProgramContextCollections.set_t
@@ -111,6 +134,9 @@ object(self)
 
   (* context -> list of augmentation call variables *)
   val callvariables = H.create 3
+
+  (* context -> list of errno call variables *)
+  val errno_write_variables = H.create 3
 
   val p_entry_sym = new symbol_t "$p-entry"
 
@@ -363,6 +389,12 @@ object(self)
 
   method get_fn_entry_call_var = self#mk_fn_entry_call_var
 
+  method get_errno_write_var (context:program_context_int) = 
+    let ictxt = ccontexts#index_context context in
+    let v = self#mk_augmentation_variable "$errno_written$" "errno_write" (ictxt) SYM_VAR_TYPE in
+    H.add errno_write_variables v#getIndex v;
+    v
+
   method mk_call_vars =
     let directcallsites =
       proof_scaffolding#get_direct_callsites self#get_functionname in
@@ -442,6 +474,9 @@ object(self)
   method get_call_vars =
     let callvars = H.fold (fun _ v acc -> v @ acc) callvariables [] in
     self#mk_fn_entry_call_var :: callvars
+
+  method get_errno_write_vars =
+    H.to_seq_values errno_write_variables |> List.of_seq
 
   method mk_initial_value (v:variable_t) (t:typ) (vt:variable_type_t) =
     let aVal = vmgr#mk_initial_value v t in
@@ -805,6 +840,10 @@ object(self)
     self#is_augmentation_variable v
     && (vmgr#get_purpose  (self#get_seqnr v)) = "call"
 
+  method is_errno_write_var v =
+    self#is_augmentation_variable v
+    && (vmgr#get_purpose (self#get_seqnr v)) = "errno_write"
+
   method get_indicator v = vmgr#get_indicator (self#get_seqnr v)
 
   method get_parameter_exp v = vmgr#get_parameter_exp (self#get_seqnr v)
@@ -909,6 +948,9 @@ object(self)
   method check_variable_applies_to_po
            (v:variable_t) ?(argindex=(-1)) (isppo:bool) (po_id:int) =
     vmgr#applies_to_po (self#get_seqnr v) ~argindex isppo po_id
+
+  method is_errno_temp (v:int) =
+    List.mem v errno_temps
 
   method is_fixed_xpr (x:xpr_t) =
     match x with

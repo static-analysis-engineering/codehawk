@@ -7,7 +7,7 @@
       <desc>get group database entry for a group ID</desc>
       <apidoc>
         <pt>struct group *getgrgid (gid_t gid)</pt>
-        <par name="gid">group id </par>
+        <par name="gid">gid_t</par>
         <return>
           <rc cond="success">pointer to a struct group</rc>
           <rc cond="failure">NULL</rc>
@@ -18,7 +18,7 @@
       <par loc="stack" name="gid" nr="1">
         <type>gid_t</type>
       </par>
-      <returntype><ptr>ch_group</ptr></returntype>
+      <returntype><ptr>ch__group</ptr></returntype>
     </api>
     <semantics>
       <io-actions/>
@@ -26,7 +26,13 @@
       <postconditions>
 	<notnull-null/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

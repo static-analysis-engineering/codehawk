@@ -12,7 +12,7 @@
    </documentation>
    <api adj="0" cc="cdecl" name="mktime">
     <par loc="stack" io="r" name="timeptr" nr="1">
-     <type><ptr>ch_tm</ptr></type>
+     <type><ptr>ch__tm</ptr></type>
      <roles>
       <role rt="ioc:memops" rn="src-struct:tm" />
      </roles>
@@ -25,8 +25,16 @@
       <io-action cat="memops" desc="converts local time to calendar time"/>
     </io-actions>
     <preconditions/>
-    <postconditions/>
-    <sideeffects/>
+    <postconditions>
+      <nonnegative-negone/>
+    </postconditions>
+    <sideeffects>
+      <sideeffect>
+        <math>
+          <sets-errno/>
+        </math>
+      </sideeffect>
+    </sideeffects>
    </semantics>
   </libfun>
  </codehawk-binary-analyzer>

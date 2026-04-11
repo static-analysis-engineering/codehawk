@@ -87,6 +87,9 @@ open BCHTrace
 module TR = CHTraceResult
 
 
+let p2s = CHPrettyUtil.pretty_to_string
+
+
 let analyze_all = ref false
 let maxrelationalvarcomplexity = ref 150000.0
 let maxrelationalloopcomplexity = ref 2000
@@ -568,14 +571,12 @@ let analyze_arm starttime =
   let failedfunctions = ref [] in
   let functionfailure (failuretype: string) (faddr: doubleword_int) (p: pretty_t) =
     begin
-      ch_error_log#add
-        "function failure"
-        (LBLOCK [
-             STR failuretype;
-             STR ". ";
-             faddr#toPretty;
-             STR ": ";
-             p]);
+      log_error_result
+        ~tag:"analyze_arm:functionfailure"
+        ~msg:faddr#to_hex_string
+        __FILE__ __LINE__
+        ["failure-type: " ^ failuretype;
+         "error: " ^ (p2s p)];
       if system_settings#fail_on_function_failure then
         raise
           (BCH_failure

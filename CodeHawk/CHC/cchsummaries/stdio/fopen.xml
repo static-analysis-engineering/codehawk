@@ -43,6 +43,9 @@
 	  </apply>
 	</math>
       </error-post>
+      <error-post>
+        <math><apply><writes-errno/></apply></math>
+      </error-post>
       <post>
 	<math>
 	  <apply>

@@ -30,7 +30,7 @@
 val expect_safe_detail:
   ?msg:string
   -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string
+  -> xdetail:string option
   -> expl:string
   -> unit
   -> unit
@@ -39,7 +39,7 @@ val expect_safe_detail:
 val expect_violation_detail:
   ?msg:string
   -> po:CCHPreTypes.proof_obligation_int
-  -> xdetail:string
+  -> xdetail:string option
   -> expl:string
   -> unit
   -> unit

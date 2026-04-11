@@ -754,7 +754,8 @@ class type assignment_dictionary_int =
 (** Predicates on expressions and other types that are evaluated on a program
     state.*)
 type po_predicate_t =
-
+  | PErrnoWritten
+  (** errno must have been set by some known local statement or library call *)
 
   | PNotNull of exp
   (** Pointer expression [exp] is not null.*)
@@ -1623,6 +1624,13 @@ class type candidate_output_parameter_int =
     method read_xml: xml_element_int -> unit traceresult
   end
 
+class type errno_analysis_digest_int =
+object
+  method is_active: proof_obligation_int list -> bool
+  method write_xml: xml_element_int -> unit
+  method read_xml: xml_element_int -> unit traceresult
+end
+
 class type output_parameter_analysis_digest_int =
   object
 
@@ -1664,6 +1672,7 @@ class type output_parameter_analysis_digest_int =
 
 type analysis_digest_kind_t =
   | UndefinedBehaviorAnalysis
+  | ErrnoAnalysis
   | OutputParameterAnalysis of output_parameter_analysis_digest_int
 
 
@@ -1712,6 +1721,7 @@ class type proof_scaffolding_int =
      *)
     method get_output_parameter_analysis:
              string -> output_parameter_analysis_digest_int traceresult
+
 
     method has_output_parameter_analysis: string -> bool
 

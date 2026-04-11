@@ -80,14 +80,14 @@ let speclist = [
 
 let ccNode =
   xml_string
-    "copyright-notice" "Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304"
+    "copyright-notice" "Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304"
 
 let usage_msg = "mktemplate name"
 let read_args () = Arg.parse speclist (fun s -> name := s) usage_msg
 
 let post_shortcuts = [
   "notzero-zero"; "nonzero-zero"; "one-zero"; "zero-negone";
-  "notnull"; "notnull-null";
+  "notnull"; "notnull-null"; "nonnegative-negone";
   "nonnegative-negative"; "positive-nonpositive"; "positive-zero"]
 
 

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,7 @@ let cmds = [
     "gc";
     "undefined-behavior-primary";
     "outputparameters-primary";
+    "errno-primary";
     "localinvs";
     "globalinvs";
     "check";
@@ -196,6 +197,17 @@ let main () =
         system_settings#set_output_parameter_analysis;
 	let _ =
           CCHCreateOutputParameterPOs.output_parameter_po_process_file () in
+        log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
+	save_log_files "primary";
+        log_info
+          "primary proof obligations log files saved [%s:%d]" __FILE__ __LINE__
+      end
+
+    else if !cmd = "errno-primary" then
+      begin
+        system_settings#set_errno_written_analysis;
+	let _ =
+          CCHCreateErrnoPOs.errno_po_process_file () in
         log_info "primary proof obligations generated [%s:%d]" __FILE__ __LINE__;
 	save_log_files "primary";
         log_info

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -126,9 +126,9 @@ let parameter_location_detail_to_string (d: parameter_location_detail_t) =
 let parameter_location_to_string (loc: parameter_location_t) =
   let ds = parameter_location_detail_to_string in
   match loc with
-  | StackParameter (offset, d) ->
+  | StackParameter (offset, d, _) ->
      "s_arg " ^ (string_of_int offset) ^ " " ^ (ds d)
-  | RegisterParameter (r, d) ->
+  | RegisterParameter (r, d, _) ->
      "r_arg " ^ (register_to_string r) ^ " " ^ (ds d)
   | GlobalParameter (g, d) ->
      "g_arg " ^ g#to_hex_string ^ " " ^ (ds d)
@@ -172,7 +172,7 @@ let get_parameter_name (p: fts_parameter_t): string = p.apar_name
 
 let get_stack_parameter_offset (p: fts_parameter_t): int traceresult =
   match p.apar_location with
-  | [StackParameter (offset, _)] -> Ok offset
+  | [StackParameter (offset, _, _)] -> Ok offset
   | [loc] ->
      Error [
          "get_stack_parameter_offset with location: "
@@ -184,7 +184,7 @@ let get_stack_parameter_offset (p: fts_parameter_t): int traceresult =
 let get_register_parameter_register
       (p: fts_parameter_t): register_t traceresult =
   match p.apar_location with
-  | [RegisterParameter (reg, _)] -> Ok reg
+  | [RegisterParameter (reg, _, _)] -> Ok reg
   | [loc] ->
      Error [
          "get_register_parameter_register with location: "
@@ -229,7 +229,7 @@ let pld_equal
 
 let parameter_location_compare l1 l2 =
   match (l1,l2) with
-  | (RegisterParameter (r1, pld1), RegisterParameter (r2, pld2)) ->
+  | (RegisterParameter (r1, pld1, _), RegisterParameter (r2, pld2, _)) ->
      let l1 = register_compare r1 r2 in
      if l1 = 0 then
        pld_compare pld1 pld2
@@ -237,7 +237,7 @@ let parameter_location_compare l1 l2 =
        l1
   | (RegisterParameter _, _) -> -1
   | (_, RegisterParameter _) -> 1
-  | (StackParameter (off1, _), StackParameter (off2, _)) ->
+  | (StackParameter (off1, _, _), StackParameter (off2, _, _)) ->
      Stdlib.compare off1 off2
   | (StackParameter _, _) -> -1
   | (_, StackParameter _) -> 1
@@ -305,8 +305,8 @@ let read_xml_parameter_location
   match get "loc" with
   | "stack" ->
      let stackparamindex = geti "nr" in
-     StackParameter (4 * stackparamindex, pdef)
-  | "register" -> RegisterParameter (register_from_string (get "reg"), pdef)
+     StackParameter (4 * stackparamindex, pdef, [])
+  | "register" -> RegisterParameter (register_from_string (get "reg"), pdef, [])
   | "global" -> GlobalParameter (getx (get "dw"), pdef)
   | "unknown" -> UnknownParameterLocation pdef
   | s ->
@@ -352,6 +352,7 @@ let read_xml_fts_parameter (node:xml_element_int): fts_parameter_t =
     apar_size = (if has "size" then geti "size" else 4);
     apar_type = btype;
     apar_location = [read_xml_parameter_location node btype];
+    apar_destinations = [];
     apar_fmt = (if has "fmt" then get_fmt (get "fmt") else NoFormat)
   }
 
@@ -367,7 +368,7 @@ let is_stack_parameter (p: fts_parameter_t) =
 
 let is_stack_parameter_at_offset (p: fts_parameter_t) (n: int): bool =
   match p.apar_location with
-  | [StackParameter (offset, _)] -> offset = n
+  | [StackParameter (offset, _, _)] -> offset = n
   | _ -> false
 
 
@@ -377,7 +378,7 @@ let is_register_parameter (p: fts_parameter_t) =
 
 let is_register_parameter_for_register (p: fts_parameter_t) (reg: register_t) =
   match p.apar_location with
-  | [RegisterParameter (r, _)] -> register_equal reg r
+  | [RegisterParameter (r, _, _)] -> register_equal reg r
   | _ -> false
 
 
@@ -408,6 +409,7 @@ let default_fts_parameter = {
     apar_size = 4;
     apar_location =
       [UnknownParameterLocation (default_parameter_location_detail 4)];
+    apar_destinations = [];
     apar_fmt = NoFormat
 }
 
@@ -444,6 +446,7 @@ let mk_global_parameter
     apar_io = io;
     apar_size = size;
     apar_location = [GlobalParameter (gaddr, locdetail)];
+    apar_destinations = [];
     apar_fmt = fmt
   }
 
@@ -454,7 +457,7 @@ let mk_stack_parameter_location
       ?(extract=None)
       (offset: int): parameter_location_t =
   let locdetail = default_parameter_location_detail ~ty:btype ~extract size in
-  StackParameter (offset, locdetail)
+  StackParameter (offset, locdetail, [])
 
 
 (* index starts at 1 (re: counting) *)
@@ -467,6 +470,7 @@ let mk_indexed_stack_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       ?(locations=[])
+      ?(destinations=[])
       (offset: int)
       (index: int) =
   let locations =
@@ -490,7 +494,8 @@ let mk_indexed_stack_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
-    apar_location = locations
+    apar_location = locations;
+    apar_destinations = destinations
   }
 
 
@@ -502,6 +507,7 @@ let mk_register_parameter
       ?(io=ArgReadWrite)
       ?(size=4)
       ?(fmt=NoFormat)
+      ?(destinations=[])
       (reg:register_t) =
   let locdetail = default_parameter_location_detail ~ty:btype size in
   { apar_index = None;
@@ -513,7 +519,8 @@ let mk_register_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
-    apar_location = [RegisterParameter (reg, locdetail)]
+    apar_location = [RegisterParameter (reg, locdetail, [])];
+    apar_destinations = destinations
   }
 
 
@@ -528,7 +535,7 @@ let mk_register_parameter_location
      pld_size = size;
      pld_extract = extract;
      pld_position = position} in
-  RegisterParameter (reg, locdetail)
+  RegisterParameter (reg, locdetail, [])
 
 
 let mk_indexed_register_parameter
@@ -540,6 +547,7 @@ let mk_indexed_register_parameter
       ?(size=4)
       ?(fmt=NoFormat)
       ?(locations=[])
+      ?(destinations=[])
       (reg:register_t)
       (index: int) =
   let locations =
@@ -556,7 +564,8 @@ let mk_indexed_register_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = fmt;
-    apar_location = locations
+    apar_location = locations;
+    apar_destinations = destinations
   }
 
 
@@ -567,6 +576,7 @@ let mk_indexed_multiple_locations_parameter
       ?(roles=[])
       ?(io=ArgRead)
       ?(size=4)
+      ?(destinations=[])
       (locations: parameter_location_t list)
       (index: int) =
   { apar_index = Some index;
@@ -577,7 +587,8 @@ let mk_indexed_multiple_locations_parameter
     apar_io = io;
     apar_size = size;
     apar_fmt = NoFormat;
-    apar_location = locations
+    apar_location = locations;
+    apar_destinations = destinations
   }
 
 
@@ -650,5 +661,6 @@ let convert_fmt_spec_arg
       | _ -> ArgRead);
     apar_fmt = NoFormat;
     apar_size = 4;
-    apar_location = [StackParameter (index + 1, locdetail) ]
+    apar_location = [StackParameter (index + 1, locdetail, [])];
+    apar_destinations = []
   }

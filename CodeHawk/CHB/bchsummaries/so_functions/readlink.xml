@@ -61,7 +61,9 @@
 	  </math>
 	</pre>
       </preconditions>
-      <postconditions/>
+      <postconditions>
+        <nonnegative-negone/>
+      </postconditions>
       <sideeffects>
 	<sideeffect>
 	  <math>
@@ -73,6 +75,11 @@
 	    </apply>
 	  </math>
 	</sideeffect>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
       </sideeffects>
     </semantics>
   </libfun>

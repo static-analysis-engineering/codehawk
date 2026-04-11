@@ -47,7 +47,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

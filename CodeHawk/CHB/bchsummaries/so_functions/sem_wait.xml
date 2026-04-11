@@ -16,7 +16,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="sem_wait">
       <par loc="stack" name="sem" nr="1">
-        <type><ptr>int</ptr></type>
+        <type><ptr>sem_t</ptr></type>
 	<pre><not-null/></pre>
 	<roles>
 	  <role rt="ioc:process" rn="semaphore"/>
@@ -32,7 +32,13 @@
       <postconditions>
 	<zero-negone/>
       </postconditions>
-      <sideeffects/>
+      <sideeffects>
+        <sideeffect>
+          <math>
+            <sets-errno/>
+          </math>
+        </sideeffect>
+      </sideeffects>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2024, Henny Sipma, Palo Alto, CA 94304</copyright-notice>

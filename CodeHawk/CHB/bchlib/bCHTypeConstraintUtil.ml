@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,35 @@ open BCHCPURegisters
 open BCHLibTypes
 
 
+let bcd = BCHBCDictionary.bcdictionary
 let bd = BCHDictionary.bdictionary
+
+let pair_compare = CHUtil.pair_compare
+let triple_compare = CHUtil.triple_compare
+let optvalue_compare = CHUtil.optvalue_compare
+
+
+let _type_arg_mode_compare (m1: type_arg_mode_t) (m2: type_arg_mode_t): int =
+  match (m1, m2) with
+  | (ArgDerefReadWrite i1, ArgDerefReadWrite i2) ->
+     optvalue_compare i1 i2 Stdlib.compare
+  | (ArgDerefReadWrite _, _) -> -1
+  | (_, ArgDerefReadWrite _) -> 1
+  | (ArgDerefRead i1, ArgDerefRead i2) ->
+     optvalue_compare i1 i2 Stdlib.compare
+  | (ArgDerefRead _, _) -> -1
+  | (_, ArgDerefRead _) -> 1
+  | (ArgDerefWrite i1, ArgDerefWrite i2) ->
+     optvalue_compare i1 i2 Stdlib.compare
+  | (ArgDerefWrite _, _) -> -1
+  | (_, ArgDerefWrite _) -> 1
+  | (ArgDeallocate, ArgDeallocate) -> 0
+  | (ArgDeallocate, _) -> -1
+  | (_, ArgDeallocate) -> 1
+  | (ArgFunctionPointer, ArgFunctionPointer) -> 0
+  | (ArgFunctionPointer, _) -> -1
+  | (_, ArgFunctionPointer) -> 1
+  | (ArgScalarValue, ArgScalarValue) -> 0
 
 
 let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
@@ -60,6 +88,28 @@ let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
   | (FReturn, FReturn) -> 0
   | (FReturn, _) -> -1
   | (_, FReturn) -> 1
+  | (FlowsToArg (callsite1, name1, argindex1, _),
+     FlowsToArg (callsite2, name2, argindex2, _)) ->
+     triple_compare
+       (callsite1, name1, argindex1)
+       (callsite2, name2, argindex2)
+       Stdlib.compare
+       Stdlib.compare
+       Stdlib.compare
+  | (FlowsToArg _, _) -> -1
+  | (_, FlowsToArg _) -> 1
+  | (FlowsToOperation (op1, t1), FlowsToOperation (op2, t2)) ->
+     pair_compare
+       (op1, t1)
+       (op2, t2)
+       Stdlib.compare
+       (fun t1 t2 -> optvalue_compare t1 t2 BCHBTerm.bterm_compare)
+  | (FlowsFrom t1, FlowsFrom t2) ->
+     optvalue_compare t1 t2 BCHBTerm.bterm_compare
+  | (FlowsFrom _, _) -> -1
+  | (_, FlowsFrom _) -> 1
+  | (FlowsToOperation _, _) -> -1
+  | (_, FlowsToOperation _) -> 1
   | (Load, Load) -> 0
   | (Load, _) -> -1
   | (_, Load) -> 1
@@ -83,13 +133,49 @@ let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
      Stdlib.compare (n1, m1) (n2, m2)
 
 
+let type_arg_mode_to_string (m: type_arg_mode_t) =
+  let optsize_to_string i =
+    match i with
+    | None -> ""
+    | Some i -> "_" ^ (string_of_int i) in
+  match m with
+  | ArgDerefReadWrite i -> "rw" ^ (optsize_to_string i)
+  | ArgDerefRead i -> "r" ^ (optsize_to_string i)
+  | ArgDerefWrite i -> "w" ^ (optsize_to_string i)
+  | ArgDeallocate -> "d"
+  | ArgFunctionPointer -> "fp"
+  | ArgScalarValue -> "sv"
+
+
+let type_operation_kind_to_string (op: type_operation_kind_t) =
+  match op with
+  | OpComparison -> "comparison"
+  | OpArithmetic -> "arithmetic"
+  | OpDefault -> "other"
+
+
 let type_cap_label_to_string (c: type_cap_label_t) =
+  let optbterm_to_string t =
+    match t with
+    | None -> ""
+    | Some t -> "_" ^ (BCHBTerm.bterm_to_string t) in
   match c with
   | FRegParameter r -> "param_" ^ (register_to_string r)
   | FStackParameter (size, offset) ->
      "param_" ^ (string_of_int size) ^ "_off_" ^ (string_of_int offset)
   | FLocStackAddress offset -> "stackaddr_" ^ (string_of_int offset)
   | FReturn -> "rtn"
+  | FlowsToArg (callsite, name, argindex, mode) ->
+     "flowsto_arg_"
+     ^ callsite ^ "_"
+     ^ name ^ "_"
+     ^ (string_of_int argindex) ^ "_"
+     ^ (type_arg_mode_to_string mode)
+  | FlowsToOperation (op, t) ->
+     "flowsto_op_"
+     ^ (type_operation_kind_to_string op)
+     ^ (optbterm_to_string t)
+  | FlowsFrom t -> "flowsfrom" ^ (optbterm_to_string t)
   | Load -> "load"
   | Store -> "store"
   | Deref -> "deref"
@@ -140,7 +226,8 @@ let type_constant_to_string (c: type_constant_t) =
        ^ "(" ^ (string_of_int si) ^ ")"
   | TyTStruct (_, name) -> "t_struct_" ^ name
   | TyTFloat k -> float_type_to_string k
-  | TyVoidPtr -> "t_voidptr"
+  | TyVoid -> "t_void"
+  | TyNamed name -> "t_named " ^ name
   | TyTUnknown -> "t_top"
   | TyBottom -> "t_bottom"
 
@@ -239,6 +326,8 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
   match t1, t2 with
   | TyBottom, _ -> t2
   | _, TyBottom -> t1
+  | TyVoid, _ -> t2
+  | _, TyVoid -> t1
   | TyTUnknown, _ -> TyTUnknown
   | _, TyTUnknown -> TyTUnknown
   | TyTStruct (i, _), TyTStruct (j, _) when i=j -> t1
@@ -255,6 +344,9 @@ let join_tc (t1: type_constant_t) (t2: type_constant_t): type_constant_t =
       | _ -> TyTUnknown)
   | TyTInt _, _ -> t1
   | _, TyTInt _ -> t2
+  | TyNamed s1, TyNamed s2 when s1 = s2 -> t1
+  | TyNamed _, _ -> TyTUnknown
+  | _, TyNamed _ -> TyTUnknown
   | _, _ -> TyTInt (SignedNeutral, 8)
 
 
@@ -342,6 +434,27 @@ let add_freg_param_capability (register: register_t) (tv: type_variable_t)
   add_capability [FRegParameter register] tv
 
 
+let add_flows_to_arg_capability
+      (callsite: string)
+      (name: string)
+      (argindex: int)
+      (mode: type_arg_mode_t)
+      (tv: type_variable_t): type_variable_t =
+  add_capability [FlowsToArg (callsite, name, argindex, mode)] tv
+
+
+let add_flows_to_operation_capability
+      (op: type_operation_kind_t)
+      (t: bterm_t option)
+      (tv:type_variable_t): type_variable_t =
+  add_capability [FlowsToOperation (op, t)] tv
+
+
+let add_flows_from_capability
+      (t: bterm_t option) (tv: type_variable_t): type_variable_t =
+  add_capability [FlowsFrom t] tv
+
+
 let add_fstack_param_capability ?(size = 4) (offset: int) (tv: type_variable_t)
     :type_variable_t =
   add_capability [FStackParameter (size, offset)] tv
@@ -350,6 +463,37 @@ let add_fstack_param_capability ?(size = 4) (offset: int) (tv: type_variable_t)
 let add_stack_address_capability (offset: int) (tv: type_variable_t)
     : type_variable_t =
   add_capability [FLocStackAddress offset] tv
+
+
+let convert_function_capabilities_to_attributes
+      (paramindex: int) (caps: type_cap_label_t list): b_attributes_t =
+  let type_arg_mode_to_cons_attrparam (m: type_arg_mode_t) =
+    let mkcons (s: string) (i: int option) =
+      match i with
+      | Some i -> ACons (s, [AInt i])
+      | _ -> ACons (s, []) in
+    match m with
+    | ArgDerefReadWrite size -> mkcons "read_write" size
+    | ArgDerefRead size -> mkcons "read_only" size
+    | ArgDerefWrite size -> mkcons "write_only" size
+    | ArgDeallocate -> ACons ("deallocate", [])
+    | ArgFunctionPointer -> ACons ("fp", [])
+    | ArgScalarValue -> ACons ("sv", []) in
+  let result = new CHUtils.IntCollections.set_t in
+  let _ =
+    List.iter (fun cap ->
+        match cap with
+        | FlowsToArg (callsite, callee, argindex, mode) ->
+           let attr =
+             Attr ("chk_flows_to_argument",
+                   [AInt paramindex;
+                    AStr callsite;
+                    AStr callee;
+                    AInt argindex;
+                    type_arg_mode_to_cons_attrparam mode]) in
+           result#add (bcd#index_attribute attr)
+        | _ -> ()) caps in
+  List.map bcd#get_attribute result#toList
 
 
 let mk_reglhs_typevar (reg: register_t) (faddr: string) (iaddr: string)
@@ -365,6 +509,15 @@ let mk_cty_term (c: type_constant_t): type_term_t = TyConstant c
 
 
 let mk_vty_term (v: type_variable_t): type_term_t = TyVariable v
+
+
+let has_function_parameter_basevar (faddr: string) (t: type_term_t) =
+  match t with
+  | TyVariable tv ->
+     (match tv.tv_basevar with
+      | FunctionType s -> faddr = s
+      | _ -> false)
+  | _ -> false
 
 
 let has_reg_lhs_basevar
@@ -424,7 +577,8 @@ let ikind_to_signedsize (k: ikind_t): (signedness_t * int) =
   | INonStandard (false, size) -> (Unsigned, size)
 
 
-let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
+let rec mk_btype_constraint
+          ?(use_voidptr=false) (tv: type_variable_t) (ty: btype_t)
         : type_constraint_t option =
   match (resolve_type ty) with
   | Error e ->
@@ -434,6 +588,8 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      end
   | Ok ty ->
      match ty with
+     | TNamed (s, _) ->
+        Some (TyGround (TyVariable tv, TyConstant (TyNamed s)))
      | TInt (ikind, _) ->
         let (signedness, size) = ikind_to_signedsize ikind in
         Some (TyGround
@@ -443,6 +599,12 @@ let rec mk_btype_constraint (tv: type_variable_t) (ty: btype_t)
      | TComp (key, _) ->
         let cinfo = bcfiles#get_compinfo key in
         Some (TyGround (TyVariable tv, TyConstant (TyTStruct (key, cinfo.bcname))))
+     | TPtr (TVoid _, _) when use_voidptr ->
+        let ptv = add_deref_capability tv in
+        Some (TyGround (TyVariable ptv, TyConstant TyVoid))
+     | TPtr (TNamed (s, _), _) when use_voidptr ->
+        let ptv = add_deref_capability tv in
+        Some (TyGround (TyVariable ptv, TyConstant (TyNamed s)))
      | TPtr (TVoid _, _) -> None
      | TPtr (pty, _) ->
         let ptv = add_deref_capability tv in
@@ -520,7 +682,8 @@ let type_constant_to_btype (tc: type_constant_t) =
      TInt (ikind, [])
   | TyTStruct (key, _) -> get_compinfo_struct_type (bcfiles#get_compinfo key)
   | TyTFloat fkind -> TFloat (fkind, FScalar, [])
-  | TyVoidPtr -> t_voidptr
+  | TyVoid -> t_void
+  | TyNamed s -> t_named s
   | TyBottom -> t_unknown
   | TyTUnknown -> t_unknown
 

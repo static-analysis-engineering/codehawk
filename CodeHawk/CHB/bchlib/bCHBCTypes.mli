@@ -518,9 +518,11 @@ class type bcfiles_int =
     (** [add_bcfile f] adds a parsed file [f] to the storage.*)
     method add_bcfile: bcfile_t -> unit
 
+    method add_ch_named_struct_type: string -> unit
+
     (** [add_fundef name type] adds an otherwise constructed function
         definition to the storage (i.e., not parsed).*)
-    method add_fundef: string -> btype_t -> unit
+    method add_fundef: ?attrs:b_attributes_t -> string -> btype_t -> unit
 
     (** [update_global c] allows for updates in global entries after
         initial parsing. Currently this is used only to update compinfo

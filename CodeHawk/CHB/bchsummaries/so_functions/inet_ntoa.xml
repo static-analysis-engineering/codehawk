@@ -15,7 +15,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="inet_ntoa">
       <par loc="stack" name="in" nr="1">
-        <type>in_addr</type>
+        <type>ch__in_addr</type>
       </par>
       <returntype><ptr>char</ptr></returntype>
     </api>

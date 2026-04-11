@@ -142,6 +142,9 @@ let speclist =
     ("-collectdata", Arg.Unit (fun () -> system_settings#set_collect_data),
      "analyze all functions, create ssa variables (if enabled), and "
      ^ " create stacklayouts and proof obligations");
+    ("-construct_signatures",
+     Arg.Unit (fun () -> system_settings#set_construct_signatures),
+     "create function signatures based on parameter inference");
     ("-no_varinvs", Arg.Unit (fun () -> system_settings#set_no_varinvs),
      "do not generate variable invariants");
     ("-stream", Arg.Unit (fun () -> cmd := "stream"),
@@ -888,6 +891,7 @@ let main () =
       let _ =
         if (List.length system_info#ifiles > 0) then
           pr_timing [STR "c header files parsed"] in
+      let _ = BCHBCTypeXml.register_ch_named_struct_types () in
       (* function annotations in userdata should be loaded after the header
          files are parsed, so types in the function annotations can be resolved.*)
       let _ = system_info#initialize_function_annotations in

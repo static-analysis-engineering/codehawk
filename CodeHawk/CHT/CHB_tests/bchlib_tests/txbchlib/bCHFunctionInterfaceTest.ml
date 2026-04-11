@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ module FI = BCHFunctionInterface
 
 
 let testname = "bCHFunctionInterfaceTest"
-let lastupdated = "2024-05-25"
+let lastupdated = "2026-03-22"
 
 let t_struct_type (cname: string) =
   let cinfo = bcfiles#get_compinfo_by_name cname in
@@ -398,6 +398,45 @@ let get_mips_inferred_fts_parameters () =
   end
 
 
+let function_interface_to_bfuntype () =
+  let mkreg = BCHCPURegisters.register_of_arm_register in
+  let r0 = mkreg AR0 in
+  let r1 = mkreg AR1 in
+  let r2 = mkreg AR2 in
+  let r3 = mkreg AR3 in
+  begin
+    TS.new_testsuite
+      (testname ^ "_function_interface_to_prototype_string") lastupdated;
+
+    system_settings#set_architecture "arm";
+
+    TS.add_simple_test
+      ~title:"fsig1"
+      (fun () ->
+        let fintf = default_function_interface "fn" in
+        let fintf =
+          add_function_register_parameter_location
+            fintf r0 BCHBCTypeUtil.t_int 4 in
+        let fintf =
+          add_function_register_parameter_location
+            fintf r1 BCHBCTypeUtil.t_charptr 4 in
+        let fintf =
+          add_function_register_parameter_location
+            fintf r2 BCHBCTypeUtil.t_voidptr 4 in
+        let fintf =
+          add_function_register_parameter_location
+            fintf r3 BCHBCTypeUtil.t_long 4 in
+        let fintf = set_function_interface_returntype fintf BCHBCTypeUtil.t_int in
+        let bfuntype = function_interface_to_bfuntype fintf in
+        let result = BCHBCTypePretty.btype_to_string bfuntype in
+        let expectedvalue =
+          "(int (arg_1:int,arg_2:(char*),arg_3:(void*),arg_4:long) )" in
+        TCHAssertion.equal_string expectedvalue result);
+
+      TS.launch_tests ()
+  end
+
+
 let () =
   begin
     TS.new_testfile testname lastupdated;
@@ -407,5 +446,6 @@ let () =
     read_xml_function_interface_mips ();
     read_xml_function_interface_arm ();
     get_mips_inferred_fts_parameters ();
+    function_interface_to_bfuntype ();
     TS.exit_file ()
   end

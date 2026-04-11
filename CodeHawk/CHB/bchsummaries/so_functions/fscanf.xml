@@ -25,7 +25,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="fscanf" varargs="yes">
       <par loc="stack" name="stream" nr="1">
-        <type><ptr>FILE</ptr></type>
+        <type><ptr>ch__FILE</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <par loc="stack" name="format" fmt="scan" nr="2">

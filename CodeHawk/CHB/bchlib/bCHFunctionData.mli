@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs
+   Copyright (c) 2021-2026 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,20 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
 (* bchlib *)
 open BCHLibTypes
 
+
 val functions_data: functions_data_int
 
+
 val read_xml_function_annotations: xml_element_int -> unit
+
+
+val get_default_functionsummary_name: string -> string traceresult
+
+
+val get_default_functionsummary_name_dw: doubleword_int -> string

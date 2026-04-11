@@ -45,3 +45,6 @@ val read_xml_returntype: xml_element_int -> btype_t
 val read_xml_summary_struct: xml_element_int -> bcompinfo_t
 
 val read_xml_type_transformer: xml_element_int -> type_transformer_t
+
+
+val register_ch_named_struct_types: unit -> unit

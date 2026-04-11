@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,7 @@ open BCHUtilities
 open BCHVariable
 open BCHVariableNames
 open BCHXPODictionary
+open BCHXPOPredicate
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -262,7 +263,7 @@ object (self)
 
   method set_argument_structconstant par sc =
     match par.apar_location with
-    | [StackParameter (i, _)] ->
+    | [StackParameter (i, _, _)] ->
       let memref = self#mk_local_stack_reference  in
       let argvar =
         self#mk_memory_variable ~save_name:false memref (mkNumerical (4*i)) in
@@ -1678,9 +1679,8 @@ object (self)
   val mutable nonreturning = false
   val mutable user_summary = None     (* to be deprecated *)
   val mutable appsummary =
-    let hexfaddr = faddr#to_hex_string in
-    let lenfaddr = String.length hexfaddr in
-    default_summary ("sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)))
+    let name = BCHFunctionData.get_default_functionsummary_name_dw faddr in
+    default_summary name
 
   val cc_setter_to_user = H.create 3                      (* to be saved ? *)
   val mutable complete = true
@@ -1710,6 +1710,88 @@ object (self)
   method xpod = self#proofobligations#xpod
 
   method proofobligations = proofobligations
+
+  method discharge_proofobligations =
+    let openpos = self#proofobligations#open_proofobligations in
+    List.iter (fun po ->
+        let newstatus =
+          match po#xpo with
+          | XPOBuffer (
+              _ty,
+              XOp (XMinus, [XVar v; XConst (IntConst off)]),
+              XConst (IntConst size))
+            | XPOBlockWrite (
+              _ty,
+              XOp (XMinus, [XVar v; XConst (IntConst off)]),
+              XConst (IntConst size))
+               when self#env#is_initial_stackpointer_value v ->
+             let buffer = self#stackframe#get_max_slot_size off#neg#toInt in
+             (match buffer with
+              | Some slotsize ->
+                 if size#toInt <= slotsize then
+                   Discharged (
+                       "buffer size " ^ size#toString
+                       ^ " fits in available space of "
+                       ^ (string_of_int slotsize)
+                       ^ " bytes")
+                 else
+                   Violated (
+                       "buffer size "
+                       ^ size#toString ^ " is too large; available space is "
+                       ^ (string_of_int slotsize) ^ " bytes")
+              | _ ->
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"discharge_proofobligations:open"
+                     ~msg:(p2s po#loc#toPretty)
+                     __FILE__ __LINE__
+                     ["xpo: " ^ (p2s (xpo_predicate_to_pretty po#xpo));
+                      "Unable to determine buffer size at offset "
+                        ^ off#toString] in
+                 Open)
+          | XPOBlockWrite (ty, XVar v, bwlen) when
+                 self#env#is_initial_register_value v ->
+               TR.tfold
+                 ~ok:(fun reg ->
+                   let paramty = TPtr (ty, []) in
+                   let _ =
+                     self#update_summary
+                       (self#get_summary#add_register_parameter_location
+                          reg paramty 4) in
+                   let ftspar = self#get_summary#get_parameter_for_register reg in
+                   let dst = ArgValue ftspar in
+                   let lenterm =
+                     match bwlen with
+                     | XConst (IntConst size) -> NumConstant size
+                     | _ -> RunTimeValue in
+                   let xpred = XXBlockWrite (ty, dst, lenterm) in
+                   let updatedsummary = self#get_summary#add_precondition xpred in
+                   let updatedsummary = updatedsummary#add_sideeffect xpred in
+                   let _ = self#update_summary updatedsummary in
+                   Delegated xpred)
+                 ~error:(fun e ->
+                   begin
+                     log_error_result
+                       ~tag:"delegate_proofobligation"
+                       __FILE__ __LINE__
+                       ["v: " ^ (p2s v#toPretty);
+                        String.concat ", " e];
+                     Open
+                   end)
+                 (self#env#get_initial_register_value_register v)
+          | _ -> Open in
+        match newstatus with
+        | Open -> ()
+        | _ ->
+           begin
+             log_diagnostics_result
+               ~tag:"discharge_proofobligations"
+               ~msg:(p2s po#loc#toPretty)
+               __FILE__ __LINE__
+               ["xpo: " ^ (p2s (xpo_predicate_to_pretty po#xpo));
+                "status: " ^ (p2s (po_status_to_pretty newstatus))];
+             po#update_status newstatus
+           end) openpos
 
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
@@ -2613,10 +2695,7 @@ let load_finfo_userdata (finfo: function_info_int) (faddr: doubleword_int) =
        else
          ()
      else
-       let fname =
-         let hexfaddr = faddr#to_hex_string in
-         let lenfaddr = String.length hexfaddr in
-         "sub_" ^ (String.sub (faddr#to_hex_string) 2 (lenfaddr - 2)) in
+       let fname = BCHFunctionData.get_default_functionsummary_name_dw faddr in
        if bcfiles#has_varinfo ~prefix:true fname then
          let vinfo = bcfiles#get_varinfo ~prefix:true fname in
          let bcsum = function_summary_of_bvarinfo vinfo in

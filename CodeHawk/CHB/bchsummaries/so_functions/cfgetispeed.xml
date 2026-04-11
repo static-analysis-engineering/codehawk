@@ -16,7 +16,7 @@
     </documentation>
     <api adj="0" cc="cdecl" name="cfgetispeed">
       <par loc="stack" name="termios_p" nr="1">
-        <type><ptr>ch_termios</ptr></type>
+        <type><ptr>ch__termios</ptr></type>
 	<pre><deref-read/></pre>
       </par>
       <returntype>speed_t</returntype>

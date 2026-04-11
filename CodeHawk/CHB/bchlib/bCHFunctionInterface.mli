@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -115,6 +115,12 @@ val bfuntype_to_function_interface: string -> btype_t -> function_interface_t
 val bvarinfo_to_function_interface: bvarinfo_t -> function_interface_t
 
 
+val function_type_resolvents_to_bfuntype:
+  string
+  -> ((register_t * btype_t option * b_attributes_t) list * btype_t option)
+  -> btype_t
+
+
 (** {1 Modification}*)
 
 (** [set_function_interface_returntype fintf ty] returns a new function interface
@@ -198,6 +204,14 @@ val get_fmt_parameter_index: function_interface_t -> int
 
 val function_interface_to_prototype_string:
   ?fullname:string option -> function_interface_t -> string
+
+
+val function_interface_inferred_to_signature_string:
+  function_interface_t -> string
+
+
+val function_interface_to_bfuntype: function_interface_t -> btype_t
+
 
 val function_interface_to_pretty: function_interface_t -> pretty_t
 

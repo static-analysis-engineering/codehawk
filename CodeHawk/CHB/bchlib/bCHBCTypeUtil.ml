@@ -83,6 +83,7 @@ let t_ptrto t = TPtr (t,[])
 
 let ptr_deref (t: btype_t): btype_t =
   match t with
+  | TPtr (TVoid _, _) -> t_uchar
   | TPtr (dty, _) -> dty
   | _ ->
      raise
@@ -936,41 +937,49 @@ let btype_concretize (abtype: symbol_t): btype_t =
 
 
 let btype_join (btypes: btype_t list): btype_t =
-  let abtypes = List.map btype_abstract btypes in
-  match abtypes with
+  match btypes with
   | [] -> TUnknown []
-  | [ty] -> btype_concretize ty
-  | hdty::tl ->
-     let joinabty =
-       List.fold_left (fun acc ty ->
-           match acc with
-           | None -> None
-           | Some accty -> ordered_sym_join accty ty) (Some hdty) tl in
-     (match joinabty with
-      | None -> TUnknown []
-      | Some abty -> btype_concretize abty)
+  | [ty] -> ty
+  | _ ->
+     let abtypes = List.map btype_abstract btypes in
+     match abtypes with
+     | [] -> TUnknown []
+     | [ty] -> btype_concretize ty
+     | hdty::tl ->
+        let joinabty =
+          List.fold_left (fun acc ty ->
+              match acc with
+              | None -> None
+              | Some accty -> ordered_sym_join accty ty) (Some hdty) tl in
+        (match joinabty with
+         | None -> TUnknown []
+         | Some abty -> btype_concretize abty)
 
 
 let btype_meet (btypes: btype_t list): btype_t option =
-  let abtypes = List.map btype_abstract btypes in
-  match abtypes with
+  match btypes with
   | [] -> None
-  | [ty] -> Some (btype_concretize ty)
-  | hdty :: tl ->
-     let meetabty =
-       List.fold_left (fun acc ty ->
-           match acc with
-           | None -> None
-           | Some accty ->
-              if ordered_sym_leq accty ty then
-                acc
-              else if ordered_sym_leq ty accty then
-                Some ty
-              else
-                None) (Some hdty) tl in
-     (match meetabty with
-      | Some abty -> Some (btype_concretize abty)
-      | _ -> None)
+  | [ty] -> Some ty
+  | _ ->
+     let abtypes = List.map btype_abstract btypes in
+     match abtypes with
+     | [] -> None
+     | [ty] -> Some (btype_concretize ty)
+     | hdty :: tl ->
+        let meetabty =
+          List.fold_left (fun acc ty ->
+              match acc with
+              | None -> None
+              | Some accty ->
+                 if ordered_sym_leq accty ty then
+                   acc
+                 else if ordered_sym_leq ty accty then
+                   Some ty
+                 else
+                   None) (Some hdty) tl in
+        (match meetabty with
+         | Some abty -> Some (btype_concretize abty)
+         | _ -> None)
 
 
 (* ================================================================ promotion *)

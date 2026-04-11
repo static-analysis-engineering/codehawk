@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -43,38 +43,11 @@ let list_compare (l1:'a list) (l2:'b list) (f:'a -> 'b -> int):int =
     List.fold_right2 (fun e1 e2 a -> if a = 0 then (f e1 e2) else a) l1 l2 0
 
 
-let option_compare  (x1:'a option) (x2:'a option) (f:'a -> 'a -> int): int =
-  match (x1,x2) with
-  | (Some s1, Some s2) -> f s1 s2
-  | (Some _, _) -> -1
-  | (_, Some _) -> 1
-  | _ -> 0
+let option_compare =  CHUtil.optvalue_compare
 
+let pair_compare = CHUtil.pair_compare
 
-let pair_compare
-      (p1:('a * 'b))
-      (p2:('a * 'b))
-      (f1:'a -> 'a -> int)
-      (f2:'b -> 'b -> int):int =
-  let l0 = f1 (fst p1) (fst p2) in
-  if l0 = 0 then f2 (snd p1) (snd p2) else l0
-
-
-let triple_compare
-      (p1:('a * 'b * 'c))
-      (p2:('a * 'b * 'c))
-      (f1:'a -> 'a -> int)
-      (f2:'b -> 'b -> int)
-      (f3:'c -> 'c -> int) =
-  let (x1,y1,z1) = p1 in
-  let (x2,y2,z2) = p2 in
-  let l0 = f1 x1 x2 in
-  if l0 = 0 then
-    let l1 = f2 y1 y2 in
-    if l1 = 0 then
-      f3 z1 z2
-    else l1
-  else l0
+let triple_compare = CHUtil.triple_compare
 
 
 let varuse_compare (v1: varuse) (v2: varuse) = Stdlib.compare v1 v2

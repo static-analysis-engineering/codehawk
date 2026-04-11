@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -87,6 +87,7 @@ open CCHPOCheckUnsignedToUnsignedCast
 open CCHPOCheckValidMem
 open CCHPOCheckValueConstraint
 open CCHPOCheckValuePreserved
+open CCHPOCheckErrnoWritten
 open CCHPOQuery
 
 
@@ -194,8 +195,10 @@ object
        check_outputparameter_initialized poq v offset
     | POutputParameterUnaltered (v, offset) ->
        check_outputparameter_unaltered poq v offset
+    | PErrnoWritten -> 
+      check_errno_written poq (invIO#get_location_invariant context#project_on_cfg)
     | _ -> false
-
+                
 end
 
 

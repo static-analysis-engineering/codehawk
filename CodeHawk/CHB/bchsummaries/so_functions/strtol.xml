@@ -7,7 +7,7 @@
       <desc>convert a string to a long integer</desc>
       <apidoc>
         <pt>
-          <ll>double strtol(</ll>
+          <ll>long strtol(</ll>
           <ld>const char *restrict nptr</ld>
           <ld>char **restrict endptr</ld>
 	  <ld>int base</ld>

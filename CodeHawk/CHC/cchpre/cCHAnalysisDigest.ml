@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2025 Aarno Labs LLC
+   Copyright (c) 2025-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ let elocm (line: int): string = (eloc line) ^ ": "
 let analysis_digest_name (kind: analysis_digest_kind_t): string =
   match kind with
   | UndefinedBehaviorAnalysis -> "undefined-behavior"
+  | ErrnoAnalysis -> "errno"
   | OutputParameterAnalysis _ -> "output parameters"
                              
    
@@ -52,6 +53,7 @@ object (self)
   method is_active (po_s: proof_obligation_int list) =
     match kind with
     | UndefinedBehaviorAnalysis -> true
+    | ErrnoAnalysis -> true
     | OutputParameterAnalysis digest -> digest#is_active po_s
 
   method kind = kind
@@ -66,6 +68,7 @@ object (self)
     match self#kind with
     | UndefinedBehaviorAnalysis -> Ok ()
     | OutputParameterAnalysis digest -> digest#read_xml node 
+    | ErrnoAnalysis -> Ok ()
 
 end
 
@@ -80,6 +83,9 @@ let mk_output_parameter_analysis_digest
   let opdigest = CCHOutputParameterAnalysis.mk_analysis_digest fname pod in
   new analysis_digest_t fname pod (OutputParameterAnalysis opdigest)
 
+let mk_errno_analysis_digest
+      (fname: string) (pod: podictionary_int): analysis_digest_int =
+  new analysis_digest_t fname pod ErrnoAnalysis
 
 let read_xml_analysis_digest
       (node: xml_element_int)
@@ -89,6 +95,9 @@ let read_xml_analysis_digest
   match name with
   | "undefined-behavior" ->
      Ok (mk_undefined_behavior_analysis_digest fname pod)
+  | "errno" ->
+     let digest = mk_errno_analysis_digest fname pod in
+     Ok digest
   | "output parameters" ->
      let digest = mk_output_parameter_analysis_digest fname pod in
      let _ = digest#read_xml node in

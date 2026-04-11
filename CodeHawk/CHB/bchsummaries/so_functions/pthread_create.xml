@@ -26,10 +26,10 @@
     </documentation>
     <api adj="0" cc="cdecl" name="pthread_create">
       <par loc="stack" name="thread" nr="1">
-        <type><ptr>pthread_t</ptr></type>
+        <type><ptr>ch__pthread_t</ptr></type>
       </par>
       <par loc="stack" name="attr" nr="2">
-        <type><ptr>pthread_attr_t</ptr></type>
+        <type><ptr>ch__pthread_attr_t</ptr></type>
       </par>
       <par loc="stack" name="start_routine" nr="3">
         <type><ptr>pthread_start_routine</ptr></type>
@@ -42,7 +42,9 @@
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <zero-nonzero/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

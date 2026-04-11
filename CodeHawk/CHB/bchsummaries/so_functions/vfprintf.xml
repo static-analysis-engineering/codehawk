@@ -25,7 +25,7 @@
    <api adj="0" cc="cdecl" name="vfprintf">
      <returntype>int</returntype>
      <par loc="stack" desc="output stream" io="r" name="stream" nr="1">
-       <type><ptr>FILE</ptr></type>
+       <type><ptr>ch__FILE</ptr></type>
        <roles>
 	 <role rt="ioc:filesystem" rn="file"/>
        </roles>

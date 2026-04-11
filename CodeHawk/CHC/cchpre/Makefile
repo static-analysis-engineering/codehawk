@@ -69,6 +69,7 @@ MLIS := \
 	cCHCheckValid \
 	cCHCreatePrimaryProofObligations \
 	cCHCreateOutputParameterPOs \
+	cCHCreateErrnoPOs \
 
 CMIS := $(addprefix cmi/,$(MLIS:%=%.cmi))
 
@@ -108,6 +109,7 @@ SOURCES := \
 	cCHCheckValid \
 	cCHCreatePrimaryProofObligations \
 	cCHCreateOutputParameterPOs \
+	cCHCreateErrnoPOs \
 
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))

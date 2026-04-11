@@ -87,6 +87,11 @@ let parse_cil_file ?(computeCFG=true) ?(removeUnused=true) (filename: string) =
            NL];
        exit 1
      end
+  | CHCommon.CHFailure p ->
+     begin
+       pr_debug [STR "Error when parsing "; STR filename; STR ": "; p; NL];
+       exit 1
+     end
   | e ->
      begin
        pr_debug [STR "Error when parsing (other exception): "; STR filename; NL];

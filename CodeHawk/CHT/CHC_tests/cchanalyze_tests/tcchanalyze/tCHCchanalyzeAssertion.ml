@@ -31,7 +31,7 @@ module A = TCHAssertion
 let expect_safe_detail
       ?(msg="")
       ~(po: CCHPreTypes.proof_obligation_int)
-      ~(xdetail: string)
+      ~(xdetail: string option)
       ~(expl: string)
       () =
   match po#get_status with
@@ -42,8 +42,9 @@ let expect_safe_detail
          if not dmatch then
            A.equal_string ~msg:"Explanation is different" expl x.smsg_msg
          else
-           (match x.smsg_loc with
-            | Some ocode ->
+           (match x.smsg_loc, xdetail with
+            | _, None -> ()
+            | Some ocode, Some xdetail ->
                A.equal_string ~msg xdetail ocode.ocode_detail
             | _ ->
                A.fail_msg "Received explanation without location detail")
@@ -58,7 +59,7 @@ let expect_safe_detail
 let expect_violation_detail
       ?(msg="")
       ~(po: CCHPreTypes.proof_obligation_int)
-      ~(xdetail: string)
+      ~(xdetail: string option)
       ~(expl: string)
       () =
   match po#get_status with
@@ -69,8 +70,9 @@ let expect_violation_detail
          if not dmatch then
            A.equal_string ~msg:"Explanation is different" expl x.smsg_msg
          else
-           (match x.smsg_loc with
-            | Some ocode ->
+           (match x.smsg_loc, xdetail with
+            | _, None -> ()
+            | Some ocode, Some xdetail ->
                A.equal_string ~msg xdetail ocode.ocode_detail
             | _ ->
                A.fail_msg "Received explanation without location detail")

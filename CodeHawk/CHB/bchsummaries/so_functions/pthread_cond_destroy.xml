@@ -16,14 +16,16 @@
     </documentation>
     <api adj="0" cc="cdecl" name="pthread_cond_destroy">
       <par loc="stack" name="cond" nr="1">
-        <type><ptr>pthread_cond_t</ptr></type>
+        <type><ptr>ch__pthread_cond_t</ptr></type>
       </par>
       <returntype>int</returntype>
     </api>
     <semantics>
       <io-actions/>
       <preconditions/>
-      <postconditions/>
+      <postconditions>
+        <zero-nonzero/>
+      </postconditions>
       <sideeffects/>
     </semantics>
   </libfun>

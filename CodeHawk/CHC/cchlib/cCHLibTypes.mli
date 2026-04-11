@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2025 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -596,6 +596,8 @@ type xpredicate_t =
   | XPolicyTransition of s_term_t * string * string
 (** the term transitions according to a named transition
                                                        in the policy *)
+  | XWritesErrno
+  (** function must write to errno **)
 
 type postrequest_t = int * xpredicate_t  (* fvid of callee *)
 
@@ -794,6 +796,7 @@ class type global_contract_int =
 type analysis_kind_t =
   | UndefinedBehaviorAnalysis
   | OutputParameterAnalysis
+  | ErrnoWrittenAnalysis
 
 
 type analysis_level_t =
@@ -877,8 +880,10 @@ class type system_settings_int =
 
     method set_output_parameter_analysis: unit
     method set_undefined_behavior_analysis: unit
+    method set_errno_written_analysis: unit
     method is_undefined_behavior_analysis: bool
     method is_output_parameter_analysis: bool
+    method is_errno_written_analysis: bool
 
     (** {1 Other settings} *)
 
