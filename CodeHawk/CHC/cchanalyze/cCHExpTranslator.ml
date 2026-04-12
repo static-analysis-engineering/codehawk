@@ -305,7 +305,7 @@ object (self)
     match op with
     | Neg -> XOp (XNeg, [self#translate_expr x])
     | BNot -> XOp (XBNot, [self#translate_expr x])
-    | LNot when is_pointer_type (type_of_exp fdecls x) ->
+    | LNot when TR.tfold_default is_pointer_type false (type_of_exp fdecls x) ->
       XOp (XEq, [self#translate_expr x; XConst (IntConst numerical_zero)])
     | LNot -> XOp (XLNot, [self#translate_expr x])
 
@@ -904,7 +904,8 @@ object (self)
       | CastE (_, e) -> is_zero e
       | _ -> false in
     match cond with
-    | UnOp (LNot, (Lval lval as e), _) when is_pointer_type (type_of_exp fdecls e) ->
+    | UnOp (LNot, (Lval lval as e), _)
+         when (TR.tfold_default is_pointer_type false (type_of_exp fdecls e)) ->
        let symvar = self#translate_lhs_lval lval in
        if symvar#isTmp then
          (SKIP, SKIP)

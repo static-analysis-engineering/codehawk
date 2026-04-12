@@ -87,11 +87,21 @@ let is_assert_fail_function fname =  fname = "__assert_fail"
 
 let is_library_function (fname:string): bool =
   if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
-    let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
-    (* starts with '/' ? *)
-    match String.index_opt varinfo.vdecl.file '/' with
-    | Some i -> i = 0
-    | _ -> false
+    TR.tfold
+      ~ok:(fun varinfo ->
+        (* starts with '/' ? *)
+        match String.index_opt varinfo.vdecl.file '/' with
+        | Some i -> i = 0
+        | _ -> false)
+      ~error:(fun err ->
+        begin
+          log_error_result
+            ~tag:"is_library_function"
+            __FILE__ __LINE__
+            [String.concat ", " err];
+          false
+        end)
+      (CCHDeclarations.cdeclarations#get_varinfo_by_name fname)
   else
     false
 
@@ -217,8 +227,8 @@ let is_not_writes_errno x = not (is_writes_errno x)
 let has_writes_errno = List.exists is_writes_errno
 
 let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
-  let int_of_ret op c = 
-    match op with 
+  let int_of_ret op c =
+    match op with
     | Eq -> CHIntervals.mkInterval c c
     | Lt -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num (c#sub numerical_one))
     | Le -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num c)
@@ -230,7 +240,7 @@ let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
   match fst p, fst q with
   | XNull ReturnValue, XNotNull ReturnValue -> true
 
-  | XRelationalExpr (op, ReturnValue, NumConstant v), 
+  | XRelationalExpr (op, ReturnValue, NumConstant v),
     XRelationalExpr (op', ReturnValue, NumConstant v') ->
     let pi = int_of_ret op v in
     let qi = int_of_ret op' v' in
@@ -1520,17 +1530,17 @@ object (self)
       let unknownSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.Unknown in
       List.map (fun v -> make_c_cmd (ASSIGN_SYM (v, SYM unknownSym))) env#get_errno_write_vars
 
-  method private get_errno_sideeffect 
+  method private get_errno_sideeffect
                   (fname: string)
-                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list) 
+                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list)
                   (optrvar: variable_t option) =
-    let (pcs, epcs) = postconditions in 
+    let (pcs, epcs) = postconditions in
 
-    if not (is_library_function fname) then 
+    if not (is_library_function fname) then
       self#havoc_errno_write
-    else 
+    else
 
-    let non_errno_pcs, non_errno_epcs = 
+    let non_errno_pcs, non_errno_epcs =
           List.filter is_not_writes_errno pcs, List.filter is_not_writes_errno epcs in
 
     let rv_interval op c =
@@ -1544,12 +1554,12 @@ object (self)
     in
 
     (* We want to make sure that the success and failure cases are disjoint, otherwise
-       we may be able to prove that errno was written in the success case even though it wasn't specified. 
+       we may be able to prove that errno was written in the success case even though it wasn't specified.
        This is almost certainly an error in the specification, but we don't want that error to propagate here. *)
     let success_no_write p = List.exists (disjoint p) non_errno_pcs in
 
-    let errno_sideeffect = 
-      if has_writes_errno epcs then 
+    let errno_sideeffect =
+      if has_writes_errno epcs then
         match optrvar, non_errno_epcs with
         | Some rvar, [XNull ReturnValue, _ as p] when success_no_write p ->
             let idx = rvar#getName#getSeqNumber in
@@ -1562,18 +1572,18 @@ object (self)
             let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, lb, ub)) in
             [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
 
-        |  _ -> 
+        |  _ ->
             []
       else
         []
-      
+
       in errno_sideeffect
 
   method private get_sideeffect
                    (fname:string)
                    (fvid:int)
                    (args:exp list)
-                   (fnargs:xpr_t list) 
+                   (fnargs:xpr_t list)
                    optrvar
                    =
     let vinfo = TR.tget_ok (fdecls#get_varinfo_by_vid fvid) in
