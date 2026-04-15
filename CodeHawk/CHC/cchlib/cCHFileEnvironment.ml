@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHTimingLog
+open CHTraceResult
 
 (* cchlib *)
 open CCHBasicTypes
@@ -42,6 +43,10 @@ open CCHSettings
 open CCHUtilities
 
 module H = Hashtbl
+
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let rec get_type_unrolled (typedefs: (string, typ) Hashtbl.t) (t:typ) =
@@ -144,11 +149,13 @@ object (self)
 
   method get_globalvars = H.fold (fun _ v a -> v::a) globalvars []
 
-  method get_globalvar (vid:int) =
+  method get_globalvar (vid: int): varinfo traceresult =
     try
-      H.find globalvars vid
+      Ok (H.find globalvars vid)
     with
     | Not_found ->
+       Error [(elocm __LINE__); "get_globalvar for vid: " ^ (string_of_int vid)]
+      (*
        let gvars = H.fold (fun k v r -> (k,v) :: r) globalvars [] in
        raise
          (CCHFailure
@@ -160,6 +167,7 @@ object (self)
                    gvars
                    (fun (vid,v) -> LBLOCK [INT vid; STR ":"; STR v.vname])
                    " [" ", " "]"]))
+       *)
 
   method has_globalvar (vid:int) = Hashtbl.mem globalvars vid
 

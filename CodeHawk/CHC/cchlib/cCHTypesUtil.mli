@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,9 @@
 
 (* chlib *)
 open CHNumerical
+
+(* chutil *)
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -92,15 +95,15 @@ val get_safe_bit_width: ikind -> int
 
 val get_required_minimum_bit_width: int -> int
 
-val type_of_tgt_exp: cfundeclarations_int -> exp -> typ
+val type_of_tgt_exp: cfundeclarations_int -> exp -> typ traceresult
 
-val type_of_exp: cfundeclarations_int -> exp -> typ
+val type_of_exp: cfundeclarations_int -> exp -> typ traceresult
 
-val type_of_lval: cfundeclarations_int -> lval -> typ
+val type_of_lval: cfundeclarations_int -> lval -> typ traceresult
 
 val type_of_offset: cfundeclarations_int -> typ -> offset -> typ
 
-val returntype_of_exp: cfundeclarations_int -> exp -> typ
+val returntype_of_exp: cfundeclarations_int -> exp -> typ traceresult
 
 val is_system_struct: typ -> bool
 
@@ -158,14 +161,12 @@ val size_of_type: cfundeclarations_int -> typ -> xpr_t
 
 val size_of_exp_type: cfundeclarations_int -> exp -> xpr_t
 
-val max_size_of_type: cfundeclarations_int -> typ -> xpr_t
+val max_size_of_type: cfundeclarations_int -> typ -> xpr_t option
 
-val max_size_of_exp_type: cfundeclarations_int -> exp -> xpr_t
+val max_size_of_exp_type: cfundeclarations_int -> exp -> xpr_t option
 
 val range_of_type: cfundeclarations_int -> typ -> type_range_int
 
 val byte_offset_of_field: cfundeclarations_int -> fieldinfo -> xpr_t
 
-val get_pointer_expr_target_type: cfundeclarations_int -> exp -> typ
-
-val update_type: (string,string) Hashtbl.t -> (int,int) Hashtbl.t -> typ -> typ
+val get_pointer_expr_target_type: cfundeclarations_int -> exp -> typ traceresult

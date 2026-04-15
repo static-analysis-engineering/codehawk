@@ -28,6 +28,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -47,6 +48,9 @@ open CCHPreTypes
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -92,9 +96,19 @@ object (self)
               ^ (p2s (po_predicate_to_pretty pred)) in
             Some (deps,msg)
          | _ ->
-            let xpred = po_predicate_to_xpredicate poq#fenv pred in
+            let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
             begin
-              poq#mk_global_request xpred;
+              TR.tfold
+                ~ok:poq#mk_global_request
+                ~error:(fun e ->
+                  log_diagnostics_result
+                    ~tag:"xpr_implies_safe_ub"
+                    ~msg:poq#fname
+                    __FILE__ __LINE__
+                    ["Unable to convert predicate to xpredicate: "
+                     ^ (p2s (po_predicate_to_pretty pred));
+                     String.concat "; " e])
+                xpred_r;
               None
             end
        end

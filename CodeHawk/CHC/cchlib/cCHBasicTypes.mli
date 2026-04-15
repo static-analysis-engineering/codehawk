@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,30 @@
  * ============================================================================== *)
 
 (* chutil *)
+open CHTraceResult
 open CHXmlDocument
 
+(** Data types mirroring CIL data types *)
+
+(** {1 CIL Types}
+
+    The data types listed in these file are derived from the CIL data types.
+    Some fields or selectors that seem to be be primarily used for transformation
+    in CIL have been removed.
+
+    C Programs are parsed by CIL, which is included as a library in the wrapper
+    code contained in the CHC/cchcil directory. The code CHC/cchcil serializes
+    the CIL data structures into xml, which is then saved per file (for file-level
+    declarations) and per function (for function AST and local declarations).
+
+    The code in this directory is a consumer of that data; it does not change
+    any of the data produced by CIL.
+ *)
+
+
+(** {2 Basic types} *)
+
+(** Integer kinds *)
 type ikind =
 | IChar       (** [char] *)
 | ISChar      (** [signed char] *)
@@ -53,7 +75,7 @@ type ikind =
 | IUInt128    (** added by Goblint-Cil *)
 
 
-(** Various kinds of floating-point numbers*)
+(** Various kinds of floating-point numbers *)
 type fkind =
 | FFloat      (** [float] *)
 | FDouble     (** [double] *)
@@ -63,6 +85,7 @@ type fkind =
 | FComplexLongDouble
 
 
+(** Storage of variables *)
 type storage =
 | NoStorage
 | Static
@@ -70,11 +93,15 @@ type storage =
 | Extern
 | Opaque of int
 
+
+(** Unary operators *)
 type unop =
 | Neg
 | BNot
 | LNot
 
+
+(** Binary operators *)
 type binop =
 | PlusA
 | PlusPI
@@ -99,10 +126,18 @@ type binop =
 | LAnd
 | LOr
 
+
+(** Name and vid of CIL variables (varinfo's): a unique and more concise
+    representation of variables.*)
 type varuse = string * int      (* vname, vid *)
 
+
+(** Name and compinfo key of CIL struct fields: a unique and more concise
+    representation of struct fields.*)
 type fielduse = string * int    (* fname, fckey *)
 
+
+(** CIL type.*)
 type typ =
 | TVoid of attributes
 | TInt of ikind * attributes
@@ -115,6 +150,7 @@ type typ =
 | TEnum of string * attributes
 | TBuiltin_va_list of attributes
 
+(** Function argument: name, type, and attributes.*)
 and funarg = string * typ * attributes
 
 and attribute = Attr of string  * attrparam list
@@ -140,51 +176,71 @@ and attrparam =
 | AQuestion of attrparam * attrparam * attrparam
 | AAssign of attrparam * attrparam
 
+
+(** CIL data structure for a struct definition.*)
 and compinfo = {
-  cstruct: bool ;
-  cname  : string ;
-  ckey   : int ;
-  cfields: fieldinfo list ;
-  cattr  : attributes ;
+    cstruct: bool;  (** struct: true, union: false *)
+    cname: string;  (** name of the struct *)
+    ckey: int;  (** unique identification of the struct *)
+    cfields: fieldinfo list;  (** fields of the struct, in order *)
+    cattr: attributes; (** Gcc attributes associated with the struct definition *)
 }
 
+
+(** CIL data structure for a struct/union field.*)
 and fieldinfo = {
-  fckey    : int ;   (* key of the containing compinfo *)
-  fname    : string ;
-  ftype    : typ ;
-  fbitfield: int option ;
-  fattr    : attributes ;
-  floc     : location
+  fckey: int;   (** key of the containing compinfo *)
+  fname: string;  (** name of the field *)
+  ftype: typ;  (** type of the field *)
+  fbitfield: int option;
+  fattr: attributes; (** Gcc attributes asssociated with the field definition *)
+  floc: location  (** location in the file where this field is defined *)
 }
 
+
+(** CIL data structure for an enum item:
+    - name of the item
+    - Gcc attributes associated with the item definition
+    - expression denoting the (integer) value of the enum item
+    - location in the file where the enum item is defined
+ *)
 and eitem = string * attributes * exp * location
 
+
+(** CIL data structure for an enum definition.*)
 and enuminfo = {
-  ename    : string ;
-  eitems   : eitem list ;
-  eattr    : attributes ;
-  ekind    : ikind ;
+    ename: string ;  (** name of the enum type *)
+    eitems: eitem list;  (** list of the enum items defined as part of the enum *)
+    eattr: attributes;  (** Gcc attributes associated with the enum definition *)
+    ekind: ikind;  (** integer kind of the enum items *)
 }
 
+
+(** CIL data structure for a typedef *)
 and typeinfo = {
-  tname    : string ;
-  ttype    : typ ;
+    tname: string;  (** name given to the type *)
+    ttype: typ;  (** type denoted by the typedef *)
 }
 
+
+(** CIL data structure for a local or global variable (including function
+    parameters).*)
 and varinfo = {
-  vname    : string ;
-  vtype    : typ ;
-  vstorage : storage ;
-  vglob    : bool ;
-  vinline  : bool ;
-  vdecl    : location ;
-  vinit    : initinfo ;
-  vid      : int ;
-  vattr    : attributes ;
-  vaddrof  : bool ;
-  vparam   : int    (* 0 for local/global variables, seqnr for parameters *)
+    vname: string;  (** variable name *)
+    vtype: typ;  (** variable type *)
+    vstorage: storage;  (** type of variable storage *)
+    vglob: bool;  (** true if variable is global or static *)
+    vinline: bool;
+    vdecl: location;  (** location in the file where the variable is defined *)
+    vinit: initinfo;  (** variable initializer *)
+    vid: int;  (** unique identifier of the variable *)
+    vattr: attributes;  (** Gcc attributes associated with the variable definition *)
+    vaddrof: bool;  (**  true if address is taken of this variable *)
+    vparam: int  (** 0 for local/global variables, seqnr for parameters *)
 }
 
+
+(** Program expression *)
 and exp =
 | Const of constant
 | Lval of lval
@@ -199,9 +255,13 @@ and exp =
 | CastE of typ * exp
 | AddrOf of lval
 | AddrOfLabel of int
-| StartOf of lval
-| FnApp of location * exp * (exp option) list     (* program function application *)
-| CnApp of string * exp option list * typ         (* constant, predefined function application *)
+| StartOf of lval  (** Used for arrays, to align with AddrOf for pointers *)
+| FnApp of location * exp * (exp option) list
+(** program function application, not part of CIL *)
+
+| CnApp of string * exp option list * typ
+(** constant, predefined function application, not part of CIL *)
+
 
 and constant =
 | CInt of int64 * ikind * string option
@@ -211,42 +271,64 @@ and constant =
 | CReal of float * fkind * string option
 | CEnum of exp * string * string
 
+
+(** Left-hand-side value: a combination of a variable or dereference and an offset *)
 and lval = lhost * offset
 
+
+(** Base location of a left-hand-side value: variable or dereference *)
 and lhost =
 | Var of varuse
 | Mem of exp
 
+
+(** Offset from a base location *)
 and offset =
 | NoOffset
 | Field of fielduse * offset
 | Index of exp * offset
 
+
+(** Variable initializer *)
 and init =
 | SingleInit of exp
 | CompoundInit of typ * (offset * init) list
 
+
 and initinfo = init option
 
+
+(** {2 Program AST constructs} *)
+
+
+(** Basic block *)
 and block = {
-  battrs  : attributes ;
-  bstmts  : stmt list
+    battrs: attributes;  (** Gcc attributes associated with the block definition *)
+    bstmts: stmt list  (** Statements contained in the block *)
 }
 
+(** Program statement *)
 and stmt = {
-  labels  : label list ;
-  skind   : stmtkind ;
-  sid     : int ;
-  succs   : int list ;
-  preds   : int list
+    labels: label list; (** labels associated with the statement *)
+    skind: stmtkind;  (** statement details *)
+    sid: int;  (** statement id: unique identifier of the statement *)
+    succs: int list; (** stmt id's of the successors of this statement *)
+    preds: int list  (** stmt id's of the predecessors of this statement *)
 }
 
-and label =
-| Label of string * location * bool
-| Case of exp * location
-| CaseRange of exp * exp * location
-| Default of location
 
+(** Statement label *)
+and label =
+  | Label of string * location * bool
+  (** name of the label, the location in the file, indicator whether the label
+      appears in the program or was introduced by CIL *)
+
+  | Case of exp * location  (** case statement label *)
+  | CaseRange of exp * exp * location  (** case statement range of cases *)
+  | Default of location  (** case statement default case *)
+
+
+(** Statement details *)
 and stmtkind =
 | Instr of instr list
 | Return of exp option * location
@@ -256,14 +338,22 @@ and stmtkind =
 | Continue of location
 | If of exp * block * block * location
 | Switch of exp * block * (int list) * location
-| Loop of block * location * (int option) * (int option)   (* continue stmt, break stmt *)
+| Loop of block * location * (int option) * (int option)
+(* a while (1) statement with the enclosing block denoting the body of the
+   loop. The first optional stmt id points at the stmt containing the continue
+   label of the loop; the second optional stmt id points at the stmt containing
+   the break label of the loop. *)
+
 | Block of block
 | TryFinally of block * block * location
 | TryExcept of block * (instr list * exp) * block * location
 
-and asm_output_t = string option * string * lval (* name, constraint, lval *)
 
-and asm_input_t = string option * string * exp (* name, constraint, exp *)
+and asm_output_t = string option * string * lval (** name, constraint, lval *)
+
+
+and asm_input_t = string option * string * exp (** name, constraint, exp *)
+
 
 and instr =
 | Set of lval * exp * location
@@ -277,11 +367,15 @@ and instr =
     * int list
     * location
 
+(** {2 Location} *)
 and location = {
   line : int ;
   file : string ;
   byte : int
-}
+  }
+
+
+(** {2 Type signatures} *)
 
 and typsig =
 | TSArray of typsig * int64 option * attribute list
@@ -290,6 +384,9 @@ and typsig =
 | TSFun of typsig * typsig list option * bool * attribute list
 | TSEnum of string * attribute list
 | TSBase of typ
+
+
+(** {2 Global declarations} *)
 
 type global =
 | GType of typeinfo * location
@@ -304,36 +401,89 @@ type global =
 | GPragma of attribute * location
 | GText of string
 
+
+(** {2 Function declarations} *)
+
+(** The function declaration object provides access to the local variable
+    declarations of a function, including its formal parameters. Variables
+    can be retrieved both by vid (varinfo identification, unique in a file),
+    by name (varinfo vname, unique in a function, not necessarily in a file),
+    and by index (index of a varinfo in the, file-based, cdictionary).
+*)
 class type cfundeclarations_int =
   object
 
-    method index_formal: varinfo -> int
-    method index_local : varinfo -> int
-    method index_varinfo: varinfo -> int
+    (** returns the name of the function *)
+    method functionname: string
 
-    method get_formal  : int -> varinfo   (* seq number, starting at 1 *)
-    method get_formals : varinfo list
-    method get_locals  : varinfo list
+    (** [get_formal n] returns the nth formal parameter of the function
+        (starting from 1)
 
-    method get_varinfo_by_name: string -> varinfo
-    method get_varinfo : int -> varinfo       (* index *)
-    method get_varinfo_by_vid: int -> varinfo (* vid *)
+        @raise CCHFailure if no such parameter exists
+     *)
+    method get_formal: int -> varinfo
 
-    method is_formal : int -> bool            (* vid *)
-    method is_local  : int -> bool            (* vid *)
-    method has_varinfo: int -> bool           (* vid *)
+    (** returns a list of all formal parameters of the function (not necessarily
+        in order) *)
+    method get_formals: varinfo list
 
-    method read_xml : xml_element_int -> unit
+    (** returns a list of all local variables of the function *)
+    method get_locals: varinfo list
+
+    (** [get_varinfo_by_name name] returns the local variable or formal parameter
+        with name [name]. If no variable with [name] is found it attempts to
+        find a variable with that name in the cdeclarations (file-level
+        declarations).
+
+        returns [Error] if the name cannot be found in either the function's or the
+        file's declarations
+     *)
+    method get_varinfo_by_name: string -> varinfo traceresult
+
+    (** [get_varinfo index] returns the variable that is indexed with [index] in
+        the function declarations variable table. Note that this index is different
+        from the [vid].
+     *)
+    method get_varinfo: int -> varinfo       (* index *)
+
+    (** [get_varinfo_by_vid vid] returns the variable with id [vid]. If such a
+        variable cannot be found in the function variable table, an attempt is
+        made to retrieve it from the file environment.
+     *)
+    method get_varinfo_by_vid: int -> varinfo traceresult (* vid *)
+
+    (** [is_formal vid] returns true if the variable with vid [vid] is a formal
+        parameter of the function. It returns false if the variable is a local
+        variable or if it cannot be found. *)
+    method is_formal: int -> bool
+
+    (** [is_local vid] returns true if the variable with vid [vid] is a local
+        variable (not a parameter) of the function. It returns false if the variable
+        is a parameter or if it cannot be found *)
+    method is_local: int -> bool
+
+    (** [has_varinfo vid] returns true if the function declarations have a variable
+        with vid [vid] *)
+    method has_varinfo: int -> bool
+
+    (** reads in the indexed variable table from the xml representation embedded
+        in the _cfun.xml file. From this variable table it creates a vid table.*)
+    method read_xml: xml_element_int -> unit
 
   end
 
+
+(** Function declaration *)
 type fundec = {
-    svar    : varinfo ;
-    sdecls  : cfundeclarations_int ;
-    sbody   : block
+    svar: varinfo;  (** varinfo for the signature of the function *)
+    sdecls: cfundeclarations_int;  (** declarations of local variables *)
+    sbody: block   (** function body *)
 }
 
 
+(** {2 File declarations} *)
+
+(** Aggregate of all global definitions and declarations in a compilation unit *)
 type file = {
   fileName: string ;
   globals: global list

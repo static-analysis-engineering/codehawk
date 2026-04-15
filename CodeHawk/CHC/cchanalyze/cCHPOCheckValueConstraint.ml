@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 open CHNumerical
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -50,6 +51,8 @@ open CCHPreTypes
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -171,51 +174,95 @@ object (self)
     match e with
     | BinOp (op, Lval (Var (_vname, vid), NoOffset), Const (CInt (i64, _, _)), _)
          when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo in
-       begin
-         match self#inv_vc_safe op vinfo (mkNumericalFromInt64 i64) with
-         | Some (deps, msg) ->
-            begin
-              poq#record_safe_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let _ = poq#set_vinfo_diagnostic_invariants vinfo in
+           begin
+             match self#inv_vc_safe op vinfo (mkNumericalFromInt64 i64) with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_safe_result deps msg;
+                  true
+                end
+             | _ -> false
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"inv_vcc_safe"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
     | BinOp (op1,
              BinOp (op2,Lval (Var (_vname, vid), NoOffset),
                     Const (CInt (i64_1, _, _)), _),
              Const (CInt (i64_2,_,_)),_) when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo in
-       begin
-         match self#inv_vcc_safe
-                 op1 (binop_to_xop op2) vinfo
-                 (mkNumericalFromInt64 i64_1) (mkNumericalFromInt64 i64_2) with
-         | Some (deps, msg) ->
-            begin
-              poq#record_safe_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+       ~ok:(fun vinfo ->
+         let _ = poq#set_vinfo_diagnostic_invariants vinfo in
+         begin
+           match self#inv_vcc_safe
+                   op1 (binop_to_xop op2) vinfo
+                   (mkNumericalFromInt64 i64_1) (mkNumericalFromInt64 i64_2) with
+           | Some (deps, msg) ->
+              begin
+                poq#record_safe_result deps msg;
+                true
+              end
+           | _ -> false
+         end)
+       ~error:(fun err ->
+         begin
+           log_diagnostics_result
+             ~tag:poq#env#get_functionname
+             ~msg:"check_safe"
+             __FILE__ __LINE__
+             [String.concat ", " err];
+           false
+         end)
+       (poq#env#get_varinfo vid)
     | BinOp (op,
              Lval (Var (_vname1, vid1), NoOffset),
              Lval (Var (_vname2, vid2), NoOffset), _typ)
          when vid1 > 0 && vid2 > 0->
-       let vinfo1 = poq#env#get_varinfo vid1 in
-       let vinfo2 = poq#env#get_varinfo vid2 in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo1 in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo2 in
-       begin
-         match self#inv_vv_safe op vinfo1 vinfo2 with
-         | Some (deps,msg) ->
-            begin
-              poq#record_safe_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo1 ->
+           TR.tfold
+              ~ok:(fun vinfo2 ->
+                let _ = poq#set_vinfo_diagnostic_invariants vinfo1 in
+                let _ = poq#set_vinfo_diagnostic_invariants vinfo2 in
+                begin
+                  match self#inv_vv_safe op vinfo1 vinfo2 with
+                  | Some (deps,msg) ->
+                     begin
+                       poq#record_safe_result deps msg;
+                       true
+                     end
+                  | _ -> false
+                end)
+              ~error:(fun err ->
+                begin
+                  log_diagnostics_result
+                    ~tag:"check_safe"
+                    ~msg:poq#env#get_functionname
+                    __FILE__ __LINE__
+                    [String.concat ", " err];
+                  false
+                end)
+              (poq#env#get_varinfo vid2))
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_safe"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid1)
     | _ -> false
 
   (* ----------------------- violation -------------------------------------- *)
@@ -436,71 +483,128 @@ object (self)
     match e with
     | BinOp (op, Lval (Var (_vname, vid), NoOffset), Const (CInt (i64, _, _)), _)
          when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       begin
-         match self#inv_vc_violation op vinfo (mkNumericalFromInt64 i64) with
-         | Some (deps, msg) ->
-            begin
-              poq#record_violation_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             match self#inv_vc_violation op vinfo (mkNumericalFromInt64 i64) with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_violation_result deps msg;
+                  true
+                end
+             | _ -> false
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_violation"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
     | BinOp (op1,
              BinOp (op2,
                     Lval (Var (_vname, vid), NoOffset),
                     Const (CInt (i64_1, _, _)), _),
              Const (CInt (i64_2, _, _)), _) when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       begin
-         match self#inv_vcc_violation
-                 op1
-                 (binop_to_xop op2)
-                 vinfo
-                 (mkNumericalFromInt64 i64_1)
-                 (mkNumericalFromInt64 i64_2) with
-         | Some (deps, msg) ->
-            begin
-              poq#record_violation_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             match self#inv_vcc_violation
+                     op1
+                     (binop_to_xop op2)
+                     vinfo
+                     (mkNumericalFromInt64 i64_1)
+                     (mkNumericalFromInt64 i64_2) with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_violation_result deps msg;
+                  true
+                end
+             | _ -> false
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_violation"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
+
     | BinOp (op1,
              BinOp (op2,
                     Const (CInt (i64_1,_,_)),
                     Lval (Var (_vname, vid), NoOffset), _),
              Const (CInt (i64_2, _, _)), _) when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       begin
-         match self#inv_cvc_violation
-                 op1
-                 (binop_to_xop op2)
-                 vinfo
-                 (mkNumericalFromInt64 i64_1)
-                 (mkNumericalFromInt64 i64_2) with
-         | Some (deps, msg) ->
-            begin
-              poq#record_violation_result deps msg;
-              true
-            end
-         | _ -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             match self#inv_cvc_violation
+                     op1
+                     (binop_to_xop op2)
+                     vinfo
+                     (mkNumericalFromInt64 i64_1)
+                     (mkNumericalFromInt64 i64_2) with
+             | Some (deps, msg) ->
+                begin
+                  poq#record_violation_result deps msg;
+                  true
+                end
+             | _ -> false
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_violation"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
+
     | BinOp (op,
              Lval (Var (_vname1, vid1),NoOffset),
              Lval (Var (_vname2, vid2),NoOffset), _typ)
          when vid1 > 0 && vid2 > 0 ->
-       let vinfo1 = poq#env#get_varinfo vid1 in
-       let vinfo2 = poq#env#get_varinfo vid2 in
-       begin
-         match self#inv_vv_violation op vinfo1 vinfo2 with
-         | Some (deps,msg) ->
-             begin
-               poq#record_violation_result deps msg;
-               true
-             end
-         | _  -> false
-       end
+       TR.tfold
+         ~ok:(fun vinfo1 ->
+           TR.tfold
+             ~ok:(fun vinfo2 ->
+               begin
+                 match self#inv_vv_violation op vinfo1 vinfo2 with
+                 | Some (deps,msg) ->
+                    begin
+                      poq#record_violation_result deps msg;
+                      true
+                    end
+                 | _  -> false
+               end)
+             ~error:(fun err ->
+               begin
+                 log_diagnostics_result
+                   ~tag:"check_violation"
+                   ~msg:poq#env#get_functionname
+                   __FILE__ __LINE__
+                   [String.concat ", " err];
+                 false
+               end)
+             (poq#env#get_varinfo vid2))
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_violation"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+       (poq#env#get_varinfo vid1)
     | _ -> false
 
   (* ----------------------- delegation ------------------------------------- *)

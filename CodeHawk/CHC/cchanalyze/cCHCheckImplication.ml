@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,10 @@
 (* chlib *)
 open CHLanguage
 open CHNumerical
-open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open Xprt
@@ -51,7 +51,6 @@ open CCHExternalPredicate
 open CCHPOPredicate
 open CCHTypesCompare
 open CCHTypesUtil
-open CCHUtilities
 
 (* cchpre *)
 open CCHPreTypes
@@ -59,7 +58,16 @@ open CCHPreTypes
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+
+let (let*) x f = CHTraceResult.tbind f x
+
+
 let x2p = xpr_formatter#pr_expr
+let p2s = CHPrettyUtil.pretty_to_string
+let x2s x = p2s (x2p x)
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let get_formal_parameter (env:c_environment_int) (i:int) =
@@ -78,10 +86,11 @@ let get_global_variable (env:c_environment_int) (name:string) =
     None
 
 
-let rec s_term_to_xpr (env:c_environment_int) (t:s_term_t) =
+let rec s_term_to_xpr
+          (env: c_environment_int) (t: s_term_t): xpr_t option =
   match t with
-  | ArgValue (ParFormal i,ArgNoOffset) -> get_formal_parameter env i
-  | ArgValue (ParGlobal s,ArgNoOffset) -> get_global_variable env s
+  | ArgValue (ParFormal i, ArgNoOffset) -> get_formal_parameter env i
+  | ArgValue (ParGlobal s, ArgNoOffset) -> get_global_variable env s
   | NumConstant i -> Some (num_constant_expr i)
   | ArithmeticExpr (op, t1, t2) ->
      begin
@@ -95,7 +104,10 @@ let rec s_term_to_xpr (env:c_environment_int) (t:s_term_t) =
 (* Use Farkas Lemma to discharge:
    consequence is implied if there exists non-negative c such that
    consequence - c * antecedent <= 0 is valid *)
-let ximplies (env:c_environment_int) (a:xpredicate_t)  (p:xpredicate_t) =
+let ximplies
+      (env: c_environment_int)
+      (a: xpredicate_t)
+      (p: xpredicate_t): bool traceresult =
   let one = NumConstant numerical_one in
   let antecedent =
     match a with
@@ -108,7 +120,7 @@ let ximplies (env:c_environment_int) (a:xpredicate_t)  (p:xpredicate_t) =
     | XRelationalExpr (Gt, a1, a2) ->
        ArithmeticExpr (PlusA, ArithmeticExpr (MinusA, a2, a1),one)
     | _ -> RuntimeValue in
-  let consequence =
+  let consequent =
     match p with
     | XRelationalExpr (Lt, a1, a2) ->
        ArithmeticExpr (PlusA, ArithmeticExpr (MinusA, a1, a2),one)
@@ -119,32 +131,29 @@ let ximplies (env:c_environment_int) (a:xpredicate_t)  (p:xpredicate_t) =
     | XRelationalExpr (Gt, a1, a2) ->
        ArithmeticExpr (PlusA, ArithmeticExpr (MinusA, a2, a1),one)
     | _ -> RuntimeValue in
-  match (s_term_to_xpr env antecedent, s_term_to_xpr env consequence) with
+  match (s_term_to_xpr env antecedent, s_term_to_xpr env consequent) with
   | (Some xa, Some xc) ->
      let result = xfimplies xa xc in
      let _ =
        if result then
          ()
        else
-         chlog#add
-           "farkas lemma implication failed"
-           (LBLOCK [x2p xa; STR " ==> "; x2p xc]) in
-     result
+         log_diagnostics_result
+           ~tag:"ximplies"
+           ~msg:env#get_functionname
+           __FILE__ __LINE__
+           ["Farkas Lemma implication failed: "
+            ^ (x2s xa) ^ " ==> " ^ (x2s xc)] in
+     Ok result
   | _ ->
-     begin
-       chlog#add
-         "translation to xpr failed"
-         (LBLOCK [
-              STR "a: ";
-              xpredicate_to_pretty a;
-              STR "; antecedent: ";
-              s_term_to_pretty antecedent;
-              STR "; p: ";
-              xpredicate_to_pretty p;
-              STR "; consequence: ";
-              s_term_to_pretty consequence]);
-       false
-     end
+     Error [
+         (elocm __LINE__) ^ "ximplies";
+         env#get_functionname;
+         "Unable to convert antecedent and/or consequent";
+         "a: " ^ (p2s (xpredicate_to_pretty a));
+         "antecedent: " ^ (p2s (s_term_to_pretty antecedent));
+         "p: " ^ (p2s (xpredicate_to_pretty p));
+         "consequent: " ^ (p2s (s_term_to_pretty consequent))]
 
 
 let _implies_upper_bound (a:po_predicate_t) (e:exp) (ub:int) =
@@ -154,33 +163,37 @@ let _implies_upper_bound (a:po_predicate_t) (e:exp) (ub:int) =
      (Int64.to_int j64) <= ub
   | _ -> false
 
-let implies (env:c_environment_int) (a:po_predicate_t) (p:po_predicate_t) =
+
+let implies
+      (env: c_environment_int)
+      (a: po_predicate_t)
+      (p: po_predicate_t): bool traceresult =
   match p with
   | PAllocationBase (Lval (Var (_vname, vid), NoOffset)) ->
      begin
        match a with
        | PAllocationBase (Lval (Var (_vname2, vid2), NoOffset)) when vid = vid2 ->
-          true
-       | _ -> false
+          Ok true
+       | _ -> Ok false
      end
   | PNotNull (Lval (Var (_vname, vid), NoOffset)) ->
      begin
        match a with
-       | PNotNull (Lval (Var (_vname2, vid2), NoOffset)) when vid = vid2 -> true
-       | _ -> false
+       | PNotNull (Lval (Var (_vname2, vid2), NoOffset)) when vid = vid2 -> Ok true
+       | _ -> Ok false
      end
   | PValidMem (Lval (Var (_vname, vid), NoOffset)) ->
      begin
        match a with
-       | PValidMem (Lval (Var (_vname2, vid2), NoOffset)) when vid = vid2 -> true
-       | _ -> false
+       | PValidMem (Lval (Var (_vname2, vid2), NoOffset)) when vid = vid2 -> Ok true
+       | _ -> Ok false
      end
   | PInitialized (Mem (Lval (Var (_vname, vid), NoOffset)), NoOffset) ->
      begin
        match a with
        | PInitialized (Mem (Lval (Var (_vname2,vid2), NoOffset)), NoOffset)
-            when vid2 = vid -> true
-       | _ -> false
+            when vid2 = vid ->  Ok true
+       | _ ->Ok false
      end
   | PInitialized (Mem (Lval (Var (_, vid), NoOffset)),
                   Field ((fname,_), NoOffset)) ->
@@ -188,33 +201,34 @@ let implies (env:c_environment_int) (a:po_predicate_t) (p:po_predicate_t) =
        match a with
        | PInitialized (Mem (Lval (Var (_, vid2), NoOffset)),
                        Field ((fname2,_), NoOffset))
-            when vid2 = vid && fname2 = fname -> true
-       | _ -> false
+            when vid2 = vid && fname2 = fname -> Ok true
+       | _ -> Ok false
      end
   | _ ->
-     try
-       let xassumption = po_predicate_to_xpredicate env#get_fdecls a in
-       let xpredicate = po_predicate_to_xpredicate env#get_fdecls p in
-       ximplies env xassumption xpredicate
-     with
-     | CCHFailure e ->
-        begin
-          ch_error_log#add
-            "check-implication"
-            (LBLOCK [
-                 STR "Error in converting assumption: ";
-                 po_predicate_to_pretty a;
-                 STR " or candidate consequence: ";
-                 po_predicate_to_pretty p;
-                 STR ": ";
-                 e]);
-          false
-        end
+     let* xassumption = po_predicate_to_xpredicate env#get_fdecls a in
+     let* xpredicate = po_predicate_to_xpredicate env#get_fdecls p in
+     ximplies env xassumption xpredicate
 
 
 let check_implied_by_assumptions
-      (env:c_environment_int) (assumptions:po_predicate_t list) (p:po_predicate_t) =
+      (env: c_environment_int)
+      (assumptions: po_predicate_t list)
+      (p: po_predicate_t): po_predicate_t option =
   List.fold_left (fun result a ->
       match result with
       | Some _ -> result
-      | _ -> if implies env a p then Some a else None) None assumptions
+      | _ ->
+         match implies env a p with
+         | Ok true -> Some a
+         | Ok false -> None
+         | Error e ->
+            begin
+              log_diagnostics_result
+                ~tag:"check_implied_by_assumptions"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                ["Error in checking assumption: "
+                 ^ (p2s (po_predicate_to_pretty a));
+                 (String.concat "; " e)];
+              None
+            end) None assumptions

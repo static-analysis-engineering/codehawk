@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,4 +31,10 @@
 open CCHBasicTypes
 
 
-val mk_cfundeclarations: unit -> cfundeclarations_int
+(** Object that holds the declarations of local variables in a function*)
+
+
+(** [mk_cfundeclarations name] returns a new object for a function with the 
+    name [name] that can subsequently be initialized with the declarations 
+    of local variables (via read_xml). *)
+val mk_cfundeclarations: string -> cfundeclarations_int

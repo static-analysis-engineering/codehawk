@@ -31,6 +31,7 @@
 open CHLanguage
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -50,6 +51,8 @@ open CCHProofObligation
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -87,9 +90,19 @@ object (self)
          ^ (p2s (po_predicate_to_pretty apipred)) in
        Some (deps, msg)
     | _ ->
-       let xpred = po_predicate_to_xpredicate poq#fenv pred in
+       let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
        begin
-         poq#mk_global_request xpred;
+         TR.tfold
+           ~ok:poq#mk_global_request
+           ~error:(fun e ->
+             log_diagnostics_result
+               ~tag:"global_expression_safe"
+               ~msg:poq#fname
+               __FILE__ __LINE__
+               ["Unable to convert predicate to xpredicate: "
+                ^ (p2s (po_predicate_to_pretty pred));
+                String.concat "; " e])
+           xpred_r;
          None
        end
 
@@ -193,19 +206,16 @@ object (self)
        | Some r ->
           List.fold_left (fun acc x ->
               match acc with
-              | Some _ -> acc
-              | _ ->
-                 match self#xpr_implies_safe invindex x with
-                 | None -> None
-                 | Some (deps, msg) ->
-                    begin
-                      match self#xpr_implies_safe invindex x with
-                      | Some (d,m) ->
-                         let deps = join_dependencies deps d in
-                         let msg = msg ^ "; " ^ m in
-                         Some (deps,msg)
-                      | _ -> None
-                    end) (Some r) tl
+              | None -> None
+              | Some (deps, msg) ->
+                 begin
+                   match self#xpr_implies_safe invindex x with
+                   | Some (d,m) ->
+                      let deps = join_dependencies deps d in
+                      let msg = msg ^ "; " ^ m in
+                      Some (deps,msg)
+                   | _ -> None
+                 end) (Some r) tl
 
   method private regions_implies_safe (invindex: int) (symlist: symbol_t list) =
     match symlist with

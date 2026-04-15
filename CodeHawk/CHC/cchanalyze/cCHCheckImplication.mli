@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@
 
 (** Check if a proof obligation is implied by assumptions  *)
 
+(* chutil *)
+open CHTraceResult
+
 (* cchlib *)
 open CCHLibTypes
 
@@ -39,7 +42,14 @@ open CCHPreTypes
 open CCHAnalysisTypes
 
 
-val ximplies: c_environment_int -> xpredicate_t -> xpredicate_t -> bool
+(** [ximplies env antecedent consequent] returns [true] if [antecedent] and
+    [consequent] are both linear (in)equalities and [antecedent] implies
+    [consequent].
+
+    If [antecedent] or [consequent] are not both linear (in)equalities (or if
+    they are not recognized as such) an Error is returned
+ *)
+val ximplies: c_environment_int -> xpredicate_t -> xpredicate_t -> bool traceresult
 
 val check_implied_by_assumptions:
   c_environment_int -> po_predicate_t list -> po_predicate_t -> po_predicate_t option

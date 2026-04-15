@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 open CHLanguage
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -53,6 +54,8 @@ open CCHPreTypes
 (* cchanalyze *)
 open CCHAnalysisTypes
 open CCHCheckImplication
+
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -99,23 +102,41 @@ object (self)
                | _ ->
                   match pc with
                   | XRelationalExpr _ ->
-                     if ximplies poq#env pc xpred then
-                       let deps =
-                         DEnvC ([invindex],[PostAssumption (callee.vid, pc)]) in
-                       let msg =
-                         "return value guarantee: "
-                         ^ (p2s (xpredicate_to_pretty pc))
-                         ^ " implies safety constraint: "
-                         ^ (p2s (xpredicate_to_pretty xpred)) in
-                       Some (deps, msg)
-                     else
-                       let _ =
-                         poq#set_diagnostic
-                           ("return value guarantee: "
-                            ^ (p2s (xpredicate_to_pretty pc))
-                            ^ " does not imply safety constraint: "
-                            ^ (p2s (xpredicate_to_pretty xpred))) in
-                       None
+                     TR.tfold
+                       ~ok:(fun implies ->
+                         if implies then
+                           let deps =
+                             DEnvC ([invindex],[PostAssumption (callee.vid, pc)]) in
+                           let msg =
+                             "return value guarantee: "
+                             ^ (p2s (xpredicate_to_pretty pc))
+                             ^ " implies safety constraint: "
+                             ^ (p2s (xpredicate_to_pretty xpred)) in
+                           Some (deps, msg)
+                         else
+                           let _ =
+                             poq#set_diagnostic
+                               ("return value guarantee: "
+                                ^ (p2s (xpredicate_to_pretty pc))
+                                ^ " does not imply safety constraint: "
+                                ^ (p2s (xpredicate_to_pretty xpred))) in
+                           None)
+                       ~error:(fun e ->
+                         begin
+                           log_diagnostics_result
+                             ~tag:"var_implies_safe_lb"
+                             ~msg:poq#fname
+                             __FILE__ __LINE__
+                             [String.concat "; " e;
+                              "Unable to create implication for this condition"];
+                           poq#set_diagnostic
+                             ("unable to create an implication for: "
+                                ^ (p2s (xpredicate_to_pretty pc))
+                                ^ " does not imply safety constraint: "
+                                ^ (p2s (xpredicate_to_pretty xpred)));
+                           None
+                         end)
+                     (ximplies poq#env pc xpred)
                   | _ -> None) None pcs
         | _ -> None in
       match r with
@@ -147,9 +168,18 @@ object (self)
               ^ (p2s (po_predicate_to_pretty pred)) in
             Some (deps,msg)
          | _ ->
-            let xpred = po_predicate_to_xpredicate poq#fenv pred in
             begin
-              poq#mk_global_request xpred;
+              TR.tfold
+                ~ok:poq#mk_global_request
+                ~error:(fun e ->
+                  log_diagnostics_result
+                    ~tag:"xpr_implies_safe_lb"
+                    ~msg:poq#fname
+                    __FILE__ __LINE__
+                    ["Unable to convert predicate to xpredicate: "
+                     ^ (p2s (po_predicate_to_pretty pred));
+                     String.concat "; " e])
+                (po_predicate_to_xpredicate poq#fenv pred);
               None
             end
        end

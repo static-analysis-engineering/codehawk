@@ -31,11 +31,12 @@
 open CHNumerical
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+open CHXmlDocument
+
 (* xprlib *)
 open XprTypes
-
-(* chutil *)
-open CHXmlDocument
 
 (* cchlib *)
 open CCHBasicTypes
@@ -218,7 +219,7 @@ class type cdeclarations_int =
     method get_filename: int -> string
 
     method get_opaque_varinfos: varinfo list
-    method get_varinfo_by_name: string -> varinfo
+    method get_varinfo_by_name: string -> varinfo traceresult
     method has_varinfo_by_name: string -> bool
 
     method write_xml_init: ?tag:string -> xml_element_int -> init -> unit
@@ -392,7 +393,7 @@ class type file_environment_int =
     method initialize: file -> unit
 
     (* accessors *)
-    method get_globalvar: int -> varinfo
+    method get_globalvar: int -> varinfo traceresult
     method get_globalvars: varinfo list
     method get_globalvar_by_name: string -> varinfo
     method get_comp: int -> compinfo

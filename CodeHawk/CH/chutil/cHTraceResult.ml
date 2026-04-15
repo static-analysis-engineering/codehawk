@@ -137,6 +137,10 @@ let tfold_list ~(ok: 'c -> 'a -> 'c) (initacc: 'c) (rl: ('a traceresult) list) =
       | Error _ -> acc) initacc rl
 
 
+let tfilter_ok (rl: ('a traceresult) list) =
+  List.rev (tfold_list ~ok:(fun acc v -> v :: acc) [] rl)
+
+
 let tfold_list_default
       ~(ok: 'c -> 'a -> 'c)
       ~(err: 'c -> 'c)

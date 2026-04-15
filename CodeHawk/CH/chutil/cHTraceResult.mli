@@ -123,6 +123,10 @@ val titer_default: ('a -> unit) -> 'a traceresult -> unit
 val tfold_list: ok:('c -> 'a -> 'c) -> 'c -> ('a traceresult) list -> 'c
 
 
+(** [tfilter_ok rl] returns the list of all [v] such that [Ok v] is in [rl].*)
+val tfilter_ok: ('a traceresult) list -> 'a list
+
+
 (** [tfold_list_default ~ok ~err init rl] folds [Ok] values left to right,
     starting from [init], using a default accumulator [err] for [Error]
     values.

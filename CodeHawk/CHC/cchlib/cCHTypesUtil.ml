@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open Xsimplify
@@ -58,9 +59,15 @@ open CCHUtilities
 
 module B = Big_int_Z
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let fenv = CCHFileEnvironment.file_environment
+
+let p2s = CHPrettyUtil.pretty_to_string
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let binop_to_xop (op:binop):xop_t =
@@ -224,115 +231,97 @@ let is_zero_memory_offset (offset: offset): bool =
   | _ -> false
 
 
-let rec type_of_exp (fdecls:cfundeclarations_int) (x:exp) : typ =
-  try
-    let ty =
-      match x with
-      | Const (CInt (_, ik, _)) -> TInt (ik,[])
-      | Const (CChr _) -> int_type
-      | Const (CStr _) -> string_literal_type
-      | Const (CWStr _) -> TPtr (wchar_type,[])
-      | Const (CReal (_,fk,_)) -> TFloat (fk, [])
-      | Const (CEnum (tag,_,_)) -> type_of_exp fdecls tag
-      | Lval lv -> type_of_lval fdecls lv
-      | SizeOf _ | SizeOfE _ | SizeOfStr _ -> sizeof_type
-      | AlignOf _ | AlignOfE _ -> sizeof_type
-      | UnOp (_,_,t)
-        | BinOp (_,_,_,t)
-        | Question (_,_,_,t)
-        | CastE (t,_) -> t
-      | AddrOf lv -> TPtr (type_of_lval fdecls lv, [])
-      | AddrOfLabel _ -> void_ptr_type
-      | StartOf lv ->
-         begin
-	   match fenv#get_type_unrolled (type_of_lval fdecls lv) with
-	   | TArray (t, _, a) -> TPtr (t, a)
-	   | otherTyp ->
-	      raise
-                (CCHFailure
-                   (LBLOCK [
-                        STR "type_of_exp: StartOf on a non-array: ";
-			typ_to_pretty otherTyp]))
-         end
-      | FnApp (_, exp, _) ->
-         begin
-           match type_of_exp fdecls exp with
-           | TFun (t, _, _, _) -> t
-           | _ -> TVoid [] end
-      | CnApp (_, _, t) -> t in
-    fenv#get_type_unrolled ty
-  with
-  | CHFailure p ->
-     begin
-       ch_error_log#add
-         "type of exp"
-         (LBLOCK [
-              STR "Error in type_of_exp with: "; exp_to_pretty x; STR ": "; p]);
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Error in type_of_exp with: ";
-                 exp_to_pretty x;
-                 STR ": ";
-                 p]))
-     end
-
-and returntype_of_exp (fdecls:cfundeclarations_int) (x:exp): typ =
-  match type_of_exp fdecls x with
-  | TFun (t,_,_,_) -> t
-  | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [
-               STR "returntype-of-exp encountered non-function type: ";
-               exp_to_pretty x]))
+let rec type_of_exp (fdecls: cfundeclarations_int) (x: exp): typ traceresult =
+  let ty_r =
+    match x with
+    | Const (CInt (_, ik, _)) -> Ok (TInt (ik,[]))
+    | Const (CChr _) -> Ok int_type
+    | Const (CStr _) -> Ok string_literal_type
+    | Const (CWStr _) -> Ok (TPtr (wchar_type,[]))
+    | Const (CReal (_, fk,_)) -> Ok (TFloat (fk, []))
+    | Const (CEnum (tag, _, _)) -> type_of_exp fdecls tag
+    | Lval lv -> type_of_lval fdecls lv
+    | SizeOf _ | SizeOfE _ | SizeOfStr _ -> Ok sizeof_type
+    | AlignOf _ | AlignOfE _ -> Ok sizeof_type
+    | UnOp (_, _, t)
+      | BinOp (_, _, _, t)
+      | Question (_, _, _, t)
+      | CastE (t, _) -> Ok t
+    | AddrOf lv ->
+       TR.tbind
+         ~msg:((elocm __LINE__) ^ "AddrOf " ^ (p2s (lval_to_pretty lv)))
+         (fun t -> Ok (TPtr (t, [])))
+         (type_of_lval fdecls lv)
+    | AddrOfLabel _ -> Ok void_ptr_type
+    | StartOf lv ->
+       TR.tbind (fun tx ->
+	 match tx with
+	 | TArray (t, _, a) -> Ok (TPtr (t, a))
+	 | otherTyp ->
+            Error [(elocm __LINE__);
+                   "type_of_exp: StartOf on a non-array: "
+                   ^ (p2s (typ_to_pretty otherTyp))])
+         (TR.tmap fenv#get_type_unrolled (type_of_lval fdecls lv))
+    | FnApp (_, exp, _) ->
+       TR.tbind (fun tx ->
+           match tx with
+           | TFun (t, _, _, _) -> Ok t
+           | _ -> Ok (TVoid []))
+         (type_of_exp fdecls exp)
+    | CnApp (_, _, t) -> Ok t in
+  TR.tmap fenv#get_type_unrolled ty_r
 
 
-and type_of_tgt_exp (fdecls:cfundeclarations_int) e =
-  let t = type_of_exp fdecls e in
-  match t with
-  | TPtr (tt,_) -> tt
-  | _ ->
-     raise
-       (CCHFailure
-	  (LBLOCK [
-               STR "type-of-tgt-exp: type of expression ";
-	       exp_to_pretty e;
-               STR " is not a pointer type: ";
-	       typ_to_pretty t]))
+and returntype_of_exp (fdecls:cfundeclarations_int) (x:exp): typ traceresult =
+  TR.tbind
+    ~msg:((elocm __LINE__) ^ "x: " ^ (p2s (exp_to_pretty x)))
+    (fun ty ->
+      match ty with
+      | TFun (t, _, _, _) -> Ok t
+      | _ ->
+         Error [(elocm __LINE__);
+                "x: " ^ (p2s (exp_to_pretty x));
+                "expected a function type, but found " ^ (p2s (typ_to_pretty ty))])
+    (type_of_exp fdecls x)
 
 
-and type_of_lval (fdecls:cfundeclarations_int) (lv:lval) =
-  try
-    (match lv with
-     | (Var (vname,vid), offset) ->
-        let vinfo =
-          if vid > 0 then
-            fdecls#get_varinfo_by_vid vid
-          else
-            fdecls#get_varinfo_by_name vname in
-        type_of_offset fdecls vinfo.vtype offset
-     | (Mem x, offset) ->
-        match fenv#get_type_unrolled (type_of_exp fdecls x) with
-        | TPtr (t, _) -> type_of_offset fdecls t offset
-        | TFun _ as t -> t
-        | TBuiltin_va_list _ as t -> t
-        | otherTyp ->
-           raise
-             (CCHFailure
-                (LBLOCK [
-                     STR "type_of_lval: Mem on a non-pointer: ";
-		     lval_to_pretty lv;
-                     STR ": ";
-                     typ_to_pretty otherTyp])))
-  with
-  | CCHFailure p ->
-     begin
-       ch_error_log#add
-         "type-of-lval"
-         (LBLOCK [lval_to_pretty lv; STR ": "; p]);
-       raise (CCHFailure p)
-     end
+and type_of_tgt_exp (fdecls:cfundeclarations_int) (e: exp): typ traceresult =
+  TR.tbind
+  ~msg:((elocm __LINE__) ^ "e: " ^ (p2s (exp_to_pretty e)))
+  (fun ty ->
+    match ty with
+    | TPtr (t, _) -> Ok t
+    | _ ->
+       Error [(elocm __LINE__);
+              "e: " ^ (p2s (exp_to_pretty e));
+              "expected a pointer type, but found " ^ (p2s (typ_to_pretty ty))])
+  (type_of_exp fdecls e)
+
+
+and type_of_lval (fdecls:cfundeclarations_int) (lv:lval): typ traceresult =
+  match lv with
+  | (Var (vname, vid), offset) ->
+     let vinfo_r =
+       if vid > 0 then
+         fdecls#get_varinfo_by_vid vid
+       else
+         fdecls#get_varinfo_by_name vname in
+     TR.tbind
+       ~msg:(eloc __LINE__)
+       (fun vinfo -> Ok (type_of_offset fdecls vinfo.vtype offset))
+       vinfo_r
+  | (Mem x, offset) ->
+     TR.tbind
+       ~msg:(eloc __LINE__)
+       (fun ty ->
+         match ty with
+         | TPtr (t, _) -> Ok (type_of_offset fdecls t offset)
+         | TFun _ as t -> Ok t
+         | TBuiltin_va_list _ as t -> Ok t
+         | otherTyp ->
+            Error [elocm __LINE__; "type_of_lval: " ^ (p2s (lval_to_pretty lv));
+                   "encountered non-pointer type: " ^ (p2s (typ_to_pretty otherTyp))])
+       (TR.tmap fenv#get_type_unrolled (type_of_exp fdecls x))
 
 
 and is_field_lval_exp (e:exp) =
@@ -340,7 +329,8 @@ and is_field_lval_exp (e:exp) =
 
 
 (* ignoring attributes for now *)
-and type_of_offset (fdecls:cfundeclarations_int) (t:typ) (offset:offset) : typ =
+and type_of_offset
+(fdecls:cfundeclarations_int) (t:typ) (offset:offset): typ =
   try
     (match offset with
      | NoOffset -> t
@@ -348,12 +338,9 @@ and type_of_offset (fdecls:cfundeclarations_int) (t:typ) (offset:offset) : typ =
         begin
           match fenv#get_type_unrolled t with
 	  | TArray (t, _, _) -> type_of_offset fdecls t o
-          | otherTyp ->
-	     raise
-               (CCHFailure
-                  (LBLOCK [
-                       STR "type_of_offset: Index on a non-array: ";
-		       typ_to_pretty otherTyp]))
+          (* Memory variables may have an index offset, which is essentially
+             the same as the pointer addition on the base type *)
+          | t -> type_of_offset fdecls t o
         end
      | Field ((fname, ckey), o) ->
         let ftype = fenv#get_type_unrolled (fenv#get_field_type ckey fname) in
@@ -958,33 +945,61 @@ let rec size_of_align (fdecls:cfundeclarations_int) (t:typ) =
   | TBuiltin_va_list _ -> random_constant_expr
 
 
-let rec exp_value (fdecls:cfundeclarations_int) (x:exp) =
+let rec exp_value (fdecls: cfundeclarations_int) (x: exp): xpr_t option =
   match x with
-  | Const c -> constant_value c
-  | Lval _ -> random_constant_expr
-  | SizeOf t -> size_of_type fdecls t
-  | SizeOfE exp -> size_of_type fdecls (type_of_exp fdecls exp)
+  | Const c -> Some (constant_value c)
+  | Lval _ -> None
+  | SizeOf t -> Some (size_of_type fdecls t)
+  | SizeOfE exp ->
+     TR.tfold
+       ~ok:(fun ty -> Some (size_of_type fdecls ty))
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"exp_value"
+             ~msg:fdecls#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " e); "e: " ^ (p2s (exp_to_pretty x))];
+           None
+         end)
+       (type_of_exp fdecls exp)
   | SizeOfStr s ->
-     let (_,_,len) = mk_constantstring s in int_constant_expr len
-  | AlignOf t -> size_of_align fdecls t
-  | AlignOfE exp -> size_of_align fdecls (type_of_exp fdecls exp)
-  | UnOp _ -> random_constant_expr
-  | BinOp (op, x1, x2,_) -> binop_value fdecls op x1 x2
-  | Question _ -> random_constant_expr
+     let (_,_,len) = mk_constantstring s in Some (int_constant_expr len)
+  | AlignOf t -> Some (size_of_align fdecls t)
+  | AlignOfE exp ->
+     TR.tfold
+       ~ok:(fun ty -> Some (size_of_align fdecls ty))
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"exp_value"
+             ~msg:fdecls#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " e); "e: " ^ (p2s (exp_to_pretty x))];
+           None
+         end)
+       (type_of_exp fdecls exp)
+  | UnOp _ -> None
+  | BinOp (op, x1, x2, _) -> binop_value fdecls op x1 x2
+  | Question _ -> None
   | CastE (_, x1) -> exp_value fdecls x1
-  | AddrOf _ -> random_constant_expr
-  | AddrOfLabel _ -> random_constant_expr
-  | StartOf _ -> random_constant_expr
-  | FnApp _ -> random_constant_expr
-  | CnApp _ -> random_constant_expr
+  | AddrOf _ -> None
+  | AddrOfLabel _ -> None
+  | StartOf _ -> None
+  | FnApp _ -> None
+  | CnApp _ -> None
 
 
-and binop_value (fdecls:cfundeclarations_int) op x1 x2 =
-  match op with
-  | PlusA -> XOp (XPlus, [exp_value fdecls x1; exp_value fdecls x2])
-  | Mult -> XOp (XMult, [exp_value fdecls x1; exp_value fdecls x2])
-  | Div -> XOp (XDiv, [exp_value fdecls x1; exp_value fdecls x2])
-  | _ -> random_constant_expr
+and binop_value
+(fdecls: cfundeclarations_int) (op: binop) (e1: exp) (e2: exp): xpr_t option =
+  match (exp_value fdecls e1), (exp_value fdecls e2) with
+  | Some x1, Some x2 ->
+     (match op with
+      | PlusA ->  Some (XOp (XPlus, [x1; x2]))
+      | Mult -> Some (XOp (XMult, [x1; x2]))
+      | Div -> Some (XOp (XDiv, [x1; x2]))
+      | _ -> None)
+  | _ -> None
 
 
 and size_of_type (fdecls:cfundeclarations_int) (t:typ) =
@@ -1013,8 +1028,10 @@ and size_of_type (fdecls:cfundeclarations_int) (t:typ) =
   | TFloat (FComplexLongDouble, _) -> machine_sizes.sizeof_complex_longdouble
   | TVoid _ -> machine_sizes.sizeof_void
   | TPtr _ -> machine_sizes.sizeof_ptr
-  | TArray (et,Some len,_) ->
-     XOp (XMult, [exp_value fdecls len; size_of_type fdecls et])
+  | TArray (et,Some len, _) ->
+     (match exp_value fdecls len with
+      | Some x -> XOp (XMult, [x; size_of_type fdecls et])
+      | _ -> random_constant_expr)
   | TArray _ -> random_constant_expr
   | TFun _ -> machine_sizes.sizeof_fun
   | TNamed _ -> byte_size_of_typ fenv t
@@ -1055,110 +1072,129 @@ and range_of_type (fdecls:cfundeclarations_int) (t:typ) =
     end
 
 
-let size_of_exp_type (fdecls:cfundeclarations_int) (x:exp) =
-  size_of_type fdecls (type_of_exp fdecls x)
+let size_of_exp_type (fdecls: cfundeclarations_int) (e: exp): xpr_t =
+  TR.tfold
+    ~ok:(size_of_type fdecls)
+    ~error:(fun err ->
+      begin
+        log_error_result
+          ~tag:"size_of_exp_type"
+          ~msg:fdecls#functionname
+          __FILE__ __LINE__
+          [(String.concat "; " err); "x: " ^ (p2s (exp_to_pretty e))];
+        random_constant_expr
+      end)
+    (type_of_exp fdecls e)
 
 
 let max_size_of_align (_t:typ) = 64
 
 
-let rec max_exp_value (fdecls:cfundeclarations_int) (x:exp) =
-  match x with
-  | Const c -> constant_value c
-  | Lval _ -> random_constant_expr
+let rec max_exp_value (fdecls: cfundeclarations_int) (e: exp): xpr_t option =
+  match e with
+  | Const c -> Some (constant_value c)
+  | Lval _ -> None
   | SizeOf t -> max_size_of_type fdecls t
-  | SizeOfE exp -> max_size_of_type fdecls (type_of_exp fdecls exp)
+  | SizeOfE exp ->
+     TR.tfold
+       ~ok:(max_size_of_type fdecls)
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"max_exp_value"
+             ~msg:fdecls#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err); "exp: " ^ (p2s (exp_to_pretty exp))];
+           None
+         end)
+       (type_of_exp fdecls exp)
   | SizeOfStr s ->
-     let (_, _, len) = mk_constantstring s in int_constant_expr len
-  | AlignOf t -> int_constant_expr (max_size_of_align  t)
+     let (_, _, len) = mk_constantstring s in Some (int_constant_expr len)
+  | AlignOf t -> Some (int_constant_expr (max_size_of_align  t))
   | AlignOfE exp ->
-     int_constant_expr (max_size_of_align (type_of_exp fdecls exp))
-  | UnOp _ -> random_constant_expr
+     TR.tfold
+       ~ok:(fun ty -> Some (int_constant_expr (max_size_of_align ty)))
+       ~error:(fun err ->
+         begin
+           log_error_result
+             ~tag:"max_exp_value"
+             ~msg:fdecls#functionname
+             __FILE__ __LINE__
+             [(String.concat "; " err); "exp: " ^ (p2s (exp_to_pretty exp))];
+           None
+         end)
+       (type_of_exp fdecls exp)
+  | UnOp _ -> None
   | BinOp (op, x1, x2,_ ) -> max_binop_value fdecls op x1 x2
-  | Question _ -> random_constant_expr
+  | Question _ -> None
   | CastE (_, x1) -> max_exp_value fdecls x1
-  | AddrOf _ -> random_constant_expr
-  | AddrOfLabel _ -> random_constant_expr
-  | StartOf _ -> random_constant_expr
-  | FnApp _ -> random_constant_expr
-  | CnApp _ -> random_constant_expr
+  | AddrOf _ -> None
+  | AddrOfLabel _ -> None
+  | StartOf _ -> None
+  | FnApp _ -> None
+  | CnApp _ -> None
 
 
-and max_binop_value (fdecls:cfundeclarations_int) op x1 x2 =
-  match op with
-  | PlusA -> XOp (XPlus, [max_exp_value fdecls x1; max_exp_value fdecls x2])
-  | Mult -> XOp (XMult, [max_exp_value fdecls x1; max_exp_value fdecls x2])
-  | Div -> XOp (XDiv, [max_exp_value fdecls x1; max_exp_value fdecls x2])
-  | _ -> random_constant_expr
+and max_binop_value
+(fdecls: cfundeclarations_int) (op: binop) (e1: exp) (e2: exp): xpr_t option =
+  match (max_exp_value fdecls e1), (max_exp_value fdecls e2) with
+  | Some x1, Some x2 ->
+     (match op with
+      | PlusA -> Some (XOp (XPlus, [x1; x2]))
+      | Mult -> Some (XOp (XMult, [x1; x2]))
+      | Div -> Some (XOp (XDiv, [x1; x2]))
+      | _ -> None)
+  | _ -> None
 
 
-and max_size_of_type (fdecls:cfundeclarations_int) (t:typ) =
+and max_size_of_type (fdecls: cfundeclarations_int) (t:typ): xpr_t option =
   match fenv#get_type_unrolled t with
   | TInt (IChar, _)
   | TInt (ISChar, _)
-  | TInt (IUChar, _) -> int_constant_expr 1
-  | TInt _ -> int_constant_expr max_sizes.sizeof_int
-  | TFloat _ -> int_constant_expr max_sizes.sizeof_float
-  | TVoid _ -> int_constant_expr max_sizes.sizeof_void
-  | TPtr _ -> int_constant_expr max_sizes.sizeof_ptr
-  | TArray (et,Some len,_) ->
-     XOp (XMult, [max_exp_value fdecls len; max_size_of_type fdecls et])
-  | TArray _ -> random_constant_expr
-  | TFun _ -> int_constant_expr max_sizes.sizeof_fun
-  | TNamed _ -> random_constant_expr
-  | TComp _ -> random_constant_expr
-  | TEnum _ -> int_constant_expr max_sizes.sizeof_enum
-  | TBuiltin_va_list _ -> random_constant_expr
+  | TInt (IUChar, _) -> Some (int_constant_expr 1)
+  | TInt _ -> Some (int_constant_expr max_sizes.sizeof_int)
+  | TFloat _ -> Some (int_constant_expr max_sizes.sizeof_float)
+  | TVoid _ -> Some (int_constant_expr max_sizes.sizeof_void)
+  | TPtr _ -> Some (int_constant_expr max_sizes.sizeof_ptr)
+  | TArray (et,Some len, _) ->
+     (match (max_exp_value fdecls len), (max_size_of_type fdecls et) with
+      | Some x1, Some x2 -> Some (XOp (XMult, [x1; x2]))
+      | _ -> None)
+  | TArray _ -> None
+  | TFun _ -> Some (int_constant_expr max_sizes.sizeof_fun)
+  | TNamed _ -> None
+  | TComp _ -> None
+  | TEnum _ -> Some (int_constant_expr max_sizes.sizeof_enum)
+  | TBuiltin_va_list _ -> None
 
 
-let max_size_of_exp_type (fdecls:cfundeclarations_int) (x:exp) =
-  max_size_of_type fdecls (type_of_exp fdecls x)
+let max_size_of_exp_type (fdecls: cfundeclarations_int) (e: exp): xpr_t option =
+  TR.tfold
+    ~ok:(max_size_of_type fdecls)
+    ~error:(fun err ->
+      begin
+        log_error_result
+          ~tag:"max_size_of_exp_type"
+          __FILE__ __LINE__
+          [(String.concat "; " err); "e: " ^ (p2s (exp_to_pretty e))];
+        None
+      end)
+    (type_of_exp fdecls e)
 
 
 let byte_offset_of_field (_fdecls:cfundeclarations_int) (_f:fieldinfo) =
   random_constant_expr
 
 
-let update_type
-      (enum_lgmap:(string,string) H.t) (comp_lgmap:(int,int) H.t) (t:typ) =
-  let rec update_typ t =
-    let update_arg (name,ty,attr) = (name,update_typ ty,attr) in
-    let update_opt_args optArgs =
-      match optArgs with
-      | Some args -> Some (List.map update_arg args)
-      | None -> None in
-    match t with
-    | TEnum (ename,attr) ->
-      begin
-	try TEnum (H.find enum_lgmap ename,attr) with
-	  Not_found ->
-	  ch_error_log#add
-            "enum not found" (LBLOCK [STR "update_type "; STR ename]);
-	  t
-      end
-    | TComp (ckey, attr) ->
-      begin
-	try
-	  TComp (H.find comp_lgmap ckey, attr)
-	with
-	  Not_found ->
-	  ch_error_log#add
-            "comp not found" (LBLOCK [STR "update_type: "; INT ckey]);
-	  t
-      end
-    | TPtr (tt, attr) -> TPtr (update_typ tt, attr)
-    | TArray (tt, x, attr) -> TArray (update_typ tt, x, attr)
-    | TFun (tt, args, vararg, attr) ->
-       TFun (update_typ tt,update_opt_args args, vararg, attr)
-    | _ -> t in
-  update_typ t
-
-
-let get_pointer_expr_target_type (fdecls:cfundeclarations_int) (e:exp) =
-  let ty = type_of_exp fdecls e in
-  match ty with
-  | TPtr (t,_) -> t
-  | _ ->
-     raise
-       (CCHFailure
-          (LBLOCK [STR "not a pointer type: "; typ_to_pretty ty]))
+let get_pointer_expr_target_type
+      (fdecls: cfundeclarations_int) (e: exp): typ traceresult =
+  TR.tbind
+    ~msg:((elocm __LINE__) ^ ": get_pointer_expr_target_type")
+    (fun ty ->
+      match fenv#get_type_unrolled ty with
+      | TPtr (t, _) -> Ok t
+      | _ ->
+         Error [(elocm __LINE__);
+                "Expected pointer type; found: " ^ (p2s (typ_to_pretty ty));
+                "e: " ^ (p2s (exp_to_pretty e))])
+    (type_of_exp fdecls e)

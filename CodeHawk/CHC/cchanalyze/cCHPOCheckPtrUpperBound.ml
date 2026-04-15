@@ -32,6 +32,7 @@ open CHLanguage
 open CHNumerical
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -54,6 +55,9 @@ open CCHProofObligation
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -178,49 +182,72 @@ object (self)
       | (CastE (_, AddrOf (Var (_vname1, vid1), NoOffset)),
          CnApp ("ntp",
                 [Some (CastE (_, AddrOf (Var (vname2, vid2), NoOffset)))],_)) ->
-       let vinfo1 = poq#env#get_varinfo vid1 in
-       let vinfo2 = poq#env#get_varinfo vid2 in
-       begin
-         match (vinfo1.vtype,
-                poq#get_ntp_value (StartOf (Var (vname2, vid2), NoOffset))) with
-         | (TArray (_, Some (Const (CInt (len64, _, _))), _),
-            Some (inv, ntplen)) ->
-            let arraylen = num_constant_expr (mkNumericalFromInt64 len64) in
-            let xconstraint = XOp (XLt, [num_constant_expr ntplen; arraylen]) in
-            let sconstraint = simplify_xpr xconstraint in
-            if is_true sconstraint then
-              let deps = DLocal [inv#index]  in
-              let msg =
-                "null terminator was set in array "
-                ^ vinfo2.vname
-                ^ " at offset "
-                ^ ntplen#toString
-                ^ " in array: "
-                ^ vinfo1.vname
-                ^ " with length: "
-                ^ (x2s arraylen) in
-              Some (deps, msg)
-            else
-              begin
-                poq#set_diagnostic
-                  ("null terminator found in a rray "
-                   ^ vinfo2.vname
-                   ^ " at offset "
-                   ^ ntplen#toString
-                   ^ " which may violate bound: "
-                   ^ (x2s arraylen)
-                   ^ " of array: "
-                   ^ vinfo1.vname);
-                None
-              end
-         | _ ->
-            begin
-              poq#set_key_diagnostic
-                "DomainRef:string:null-termination"
-                "ability to track null-terminator";
-              None
-            end
-       end
+       TR.tfold
+         ~ok:(fun vinfo1 ->
+           TR.tfold
+             ~ok:(fun vinfo2 ->
+               begin
+                 match (vinfo1.vtype,
+                        poq#get_ntp_value (StartOf (Var (vname2, vid2), NoOffset))) with
+                 | (TArray (_, Some (Const (CInt (len64, _, _))), _),
+                    Some (inv, ntplen)) ->
+                    let arraylen = num_constant_expr (mkNumericalFromInt64 len64) in
+                    let xconstraint = XOp (XLt, [num_constant_expr ntplen; arraylen]) in
+                    let sconstraint = simplify_xpr xconstraint in
+                    if is_true sconstraint then
+                      let deps = DLocal [inv#index]  in
+                      let msg =
+                        "null terminator was set in array "
+                        ^ vinfo2.vname
+                        ^ " at offset "
+                        ^ ntplen#toString
+                        ^ " in array: "
+                        ^ vinfo1.vname
+                        ^ " with length: "
+                        ^ (x2s arraylen) in
+                      Some (deps, msg)
+                    else
+                      begin
+                        poq#set_diagnostic
+                          ("null terminator found in a rray "
+                           ^ vinfo2.vname
+                           ^ " at offset "
+                           ^ ntplen#toString
+                           ^ " which may violate bound: "
+                           ^ (x2s arraylen)
+                           ^ " of array: "
+                           ^ vinfo1.vname);
+                        None
+                      end
+                 | _ ->
+                    begin
+                      poq#set_key_diagnostic
+                        "DomainRef:string:null-termination"
+                        "ability to track null-terminator";
+                      None
+                    end
+               end)
+             ~error:(fun err ->
+               begin
+                 log_diagnostics_result
+                   ~tag:"null_terminated_string_implies_pluspi_safe"
+                   ~msg:poq#env#get_functionname
+                   __FILE__ __LINE__
+                   [String.concat ", " err];
+                 None
+               end)
+             (poq#env#get_varinfo vid2))
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"null_terminated_string_implies_pluspi_safe"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             None
+           end)
+         (poq#env#get_varinfo vid1)
+
     | _ ->
        match e2 with
        | CnApp ("ntp", [Some (StartOf (Var (_vname2, _vid2), NoOffset))], _)
@@ -299,9 +326,19 @@ object (self)
                 ^ (p2s (po_predicate_to_pretty pred)) in
               Some (gdeps,msg)
            | _ ->
-              let xpred = po_predicate_to_xpredicate poq#fenv gpred in
+              let xpred_r = po_predicate_to_xpredicate poq#fenv gpred in
               begin
-                poq#mk_global_request xpred;
+                TR.tfold
+                  ~ok:poq#mk_global_request
+                  ~error:(fun e ->
+                    log_diagnostics_result
+                      ~tag:"buffer_implies_pluspi_safe"
+                      ~msg:poq#fname
+                      __FILE__ __LINE__
+                      ["Unable to convert predicate to xpredicate: "
+                       ^ (p2s (po_predicate_to_pretty gpred));
+                       String.concat "; " e])
+                  xpred_r;
                 None
               end
          end

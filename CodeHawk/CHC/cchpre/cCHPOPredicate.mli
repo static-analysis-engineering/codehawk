@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024-2025 Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@
 (* chlib *)
 open CHPretty
 
+(* chutil *)
+open CHTraceResult
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
@@ -50,20 +53,20 @@ val is_opaque: po_predicate_t -> bool
 val check_assumption_predicates:
   po_predicate_t list -> po_predicate_t -> po_predicate_t option
 
-val offset_to_s_offset: offset -> s_offset_t
+val offset_to_s_offset: offset -> s_offset_t traceresult
 
-val exp_to_sterm: cfundeclarations_int -> exp -> s_term_t
+val exp_to_sterm: cfundeclarations_int -> exp -> s_term_t traceresult
 
 val po_predicate_to_xpredicate:
-  cfundeclarations_int -> po_predicate_t -> xpredicate_t
+  cfundeclarations_int -> po_predicate_t -> xpredicate_t traceresult
 
-val s_offset_to_offset: typ -> s_offset_t -> offset
+val s_offset_to_offset: typ -> s_offset_t -> offset traceresult
 
 val sterm_to_exp:
-  ?returnexp:exp option -> cfundeclarations_int -> s_term_t -> exp
+  ?returnexp:exp option -> cfundeclarations_int -> s_term_t -> exp traceresult
 
 val xpredicate_to_po_predicate:
   ?returnexp:exp option
   -> cfundeclarations_int
   -> xpredicate_t
-  -> po_predicate_t
+  -> po_predicate_t traceresult

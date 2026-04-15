@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,5 +32,9 @@ open CCHAnalysisTypes
 
 
 val get_cfg_translator:
-  c_environment_int -> assignment_translator_int -> call_translator_int ->
-  exp_translator_int -> operations_provider_int -> cfg_translator_int
+  c_environment_int
+  -> assignment_translator_int
+  -> call_translator_int
+  -> exp_translator_int
+  -> operations_provider_int
+  -> cfg_translator_int

@@ -1,12 +1,12 @@
 (* =============================================================================
-   CodeHawk C Analyzer 
+   CodeHawk C Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,16 +29,17 @@
 
 (* chlib *)
 open CHNumerical
-   
+
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
-   
+
 (* xprlib *)
 open Xprt
 open XprTypes
 open XprToPretty
 open Xsimplify
-   
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
@@ -48,9 +49,11 @@ open CCHTypesToPretty
 open CCHPOPredicate
 open CCHPreTypes
 open CCHProofObligation
-   
+
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
 
 
 let x2p = xpr_formatter#pr_expr
@@ -70,9 +73,9 @@ object (self)
   method mk_safe_constraint x = XOp (XGe, [x; zero_constant_expr])
 
   method mk_violation_constraint x = XOp (XLt, [x; zero_constant_expr])
-                                 
+
   (* ----------------------------- safe ------------------------------------- *)
-  method  private global_implies_safe invindex g =
+  method  private global_implies_safe (invindex: int) (g: exp) =
     let pred = self#mk_predicate g in
     match poq#check_implied_by_assumptions pred with
     | Some pred ->
@@ -82,9 +85,19 @@ object (self)
          ^ (p2s (po_predicate_to_pretty pred)) in
        Some (deps, msg)
     | _ ->
-       let xpred = po_predicate_to_xpredicate poq#fenv pred in
+       let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
        begin
-         poq#mk_global_request xpred;
+         TR.tfold
+           ~ok:poq#mk_global_request
+           ~error:(fun e ->
+             log_diagnostics_result
+               ~tag:"global_implies_safe"
+               ~msg:poq#fname
+               __FILE__ __LINE__
+               ["Unable to convert predicate "
+                ^ (p2s (po_predicate_to_pretty pred));
+                String.concat "; " e])
+           xpred_r;
          None
        end
 
@@ -143,12 +156,12 @@ object (self)
       | XVar v -> self#var_implies_safe invindex v
       | _ ->
          None
-    
+
   method private inv_implies_safe inv =
     match inv#lower_bound_xpr with
     | Some x -> self#xpr_implies_safe inv#index x
     | _ -> None
-         
+
   method check_safe =
     match invs with
     | [] ->
@@ -166,7 +179,7 @@ object (self)
                   true
                 end
              | _ -> false) false invs
-      
+
   (* ----------------------- violation -------------------------------------- *)
 
   method private var_implies_violation invindex v xincr =
@@ -174,7 +187,7 @@ object (self)
       let xpr = XOp (XPlus, [XVar v; xincr]) in
       let vconstraint = self#mk_violation_constraint xpr in
       match poq#get_witness vconstraint v with
-      | Some violationvalue -> 
+      | Some violationvalue ->
          let (s, callee, pc) = poq#get_tainted_value_origin v in
          let deps = DEnvC ([invindex],[PostAssumption (callee.vid,pc)]) in
          let msg =
@@ -252,13 +265,13 @@ object (self)
                | _ -> None
              end
           | _ -> None
-                  
+
 
   method private inv_implies_violation inv =
     match self#inv_implies_universal_violation inv with
     | Some r -> Some r
     | _ ->  None
-          
+
   method check_violation =
     match invs with
     | [] -> false

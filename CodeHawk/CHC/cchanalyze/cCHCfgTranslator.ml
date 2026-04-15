@@ -33,6 +33,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -52,6 +53,8 @@ open CCHControlFlowGraph
 
 module EU = CCHEngineUtil
 module H = Hashtbl
+module TR = CHTraceResult
+
 
 let cd = CCHDictionary.cdictionary
 
@@ -455,8 +458,20 @@ object (self)
     | Call (ret, f, args, loc) ->
       begin
 	env#set_current_location loc;
-	make_c_cmd_block
-          (ops @ (call_translator#translate context loc ret f args))
+        TR.tfold
+          ~ok:(fun callcmds -> make_c_cmd_block (ops @ callcmds))
+          ~error:(fun e ->
+            begin
+              log_error_result
+                ~tag:"translate_basic_block_cmd"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                [String.concat "; " e;
+                 "Error in translation of call at line "
+                 ^ (string_of_int loc.line)];
+              make_c_cmd_block ops
+            end)
+          (call_translator#translate context loc ret f args)
       end
     | Asm (_, templates, asmoutputs, asminputs, _, loc) ->
        let asmcode = String.concat ";" (List.map cd#get_string templates) in
@@ -466,19 +481,41 @@ object (self)
        let asmoutputs =
          List.concat
            (List.map (fun (_, _konstraint, lhs) ->
-                let rhs =
-                  CnApp ("asm:" ^ asmcode,[],type_of_lval env#get_fdecls lhs) in
+                let lhsty =
+                  TR.tfold
+                    ~ok:(fun t -> t)
+                    ~error:(fun e ->
+                      begin
+                        log_error_result
+                          ~tag:"translate_basic_block_cmd"
+                          ~msg:env#get_functionname
+                          __FILE__ __LINE__
+                          [String.concat "; " e;
+                           "Error in type assembly outputs"];
+                        TVoid []
+                      end)
+                    (type_of_lval env#get_fdecls lhs) in
+                let rhs = CnApp ("asm:" ^ asmcode,[],lhsty) in
                 assignment_translator#translate context loc lhs rhs) asmoutputs) in
        let asminputs =
          List.concat
-           (List.map (fun (_, _konstraint,rhs) ->
+           (List.map (fun (_, _konstraint, rhs) ->
+                let rhsty =
+                  TR.tfold
+                    ~ok:(fun t -> TPtr (t, []))
+                    ~error:(fun e ->
+                      begin
+                        log_error_result
+                          ~tag:"translate_basic_block_cmd"
+                          ~msg:env#get_functionname
+                          __FILE__ __LINE__
+                          [String.concat "; " e;
+                           "Error in type assembly inputs"];
+                        TPtr (TVoid [], [])
+                      end)
+                  (type_of_exp env#get_fdecls rhs) in
                 let lhs =
-                  (Mem
-                     (CnApp
-                        ("asm-lhs" ^ asmcode,
-                         [],
-                         TPtr (type_of_exp env#get_fdecls rhs, []))),
-                           NoOffset) in
+                  (Mem (CnApp ("asm-lhs" ^ asmcode, [], rhsty)), NoOffset) in
                 assignment_translator#translate context loc lhs rhs) asminputs) in
        begin
          env#set_current_location loc;

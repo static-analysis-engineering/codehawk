@@ -368,9 +368,10 @@ and read_xml_stmtkind (node:xml_element_int) : stmtkind =
 
 let read_xml_function_definition (node:xml_element_int) : fundec =
   let getc = node#getTaggedChild in
-  let fundecls = mk_cfundeclarations () in
+  let svar = cdecls#read_xml_varinfo (getc "svar") in
+  let fundecls = mk_cfundeclarations svar.vname in
   let _ = fundecls#read_xml (getc "declarations") in
-  { svar = cdecls#read_xml_varinfo (getc "svar");
+  { svar = svar;
     sdecls = fundecls;
     sbody = read_xml_function_block (getc "sbody")
   }
@@ -383,7 +384,7 @@ let read_xml_global_type_definition (node:xml_element_int) : global =
 let read_xml_global_type_definitions (node:xml_element_int) : global list =
   List.map read_xml_global_type_definition node#getChildren
 
-
+ 
 let read_xml_global_comptag_definition (node:xml_element_int) : global =
   GCompTag (cdecls#read_xml_compinfo node, cdecls#read_xml_location node)
 

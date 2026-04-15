@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open CHPretty
 open CHIndexTable
 open CHLogger
 open CHStringIndexTable
+open CHTraceResult
 open CHXmlDocument
 
 (* cchcil *)
@@ -47,6 +48,8 @@ open CCHUtilities
 
 let cd = CCHDictionary.cdictionary
 
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let ibool b = if b then 1 else 0
 
@@ -91,15 +94,19 @@ object (self)
         let vname = List.hd tags in
         H.add varinfos vname index) items
 
-  method get_varinfo_by_name (name:string) =
+  method get_varinfo_by_name (name: string): varinfo traceresult =
     if H.mem varinfos name then
-      self#get_varinfo (H.find varinfos name)
+      Ok (self#get_varinfo (H.find varinfos name))
     else
+      Error [elocm __LINE__; "get_varinfo_by_name";
+             "no global variable found in cdeclarations with name " ^ name]
+        (*
       raise
         (CCHFailure
            (LBLOCK [
                 STR "No global variable found in cdeclarations with name ";
                 STR  name]))
+         *)
 
   method get_opaque_varinfos =
     let indices = List.map snd varinfo_table#items in

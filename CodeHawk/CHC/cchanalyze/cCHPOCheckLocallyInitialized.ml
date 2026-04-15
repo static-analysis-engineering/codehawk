@@ -29,6 +29,7 @@
 open CHLanguage
 
 (* chutil *)
+open CHLogger
 
 (* xprlib *)
 open XprTypes
@@ -43,6 +44,8 @@ open CCHPreTypes
 
 (* cchanalyze *)
 open CCHAnalysisTypes
+
+module TR = CHTraceResult
 
 
 let x2p = XprToPretty.xpr_formatter#pr_expr
@@ -152,36 +155,48 @@ object (self)
     let mname = "check_safe_memlval" in
     match (memlval, memoffset) with
     | ((Var (_vname, vid), NoOffset), _) ->
-       let vinfo = poq#env#get_varinfo vid in
-       let vinfovalues = poq#get_vinfo_offset_values vinfo in
-       List.fold_left (fun acc (inv, offset) ->
-           acc
-           || (match offset with
-               | NoOffset ->
-                  (match self#memlval_implies_safe memlval inv with
-                   | Some (deps, msg, site) ->
-                      begin
-                        poq#record_safe_result ~site deps msg;
-                        true
-                      end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let vinfovalues = poq#get_vinfo_offset_values vinfo in
+           List.fold_left (fun acc (inv, offset) ->
+               acc
+               || (match offset with
+                   | NoOffset ->
+                      (match self#memlval_implies_safe memlval inv with
+                       | Some (deps, msg, site) ->
+                          begin
+                            poq#record_safe_result ~site deps msg;
+                            true
+                          end
+                       | _ ->
+                          false)
                    | _ ->
-                      false)
-               | _ ->
-                  begin
-                    poq#set_diagnostic
-                      ~site:(Some (__FILE__, __LINE__, mname))
-                      ("[memlval, memoffset, vinfo, inv, offset]: "
-                       ^ (p2s (lval_to_pretty memlval))
-                       ^ ", "
-                       ^ (p2s (offset_to_pretty memoffset))
-                       ^ ", "
-                       ^ vinfo.vname
-                       ^ ", "
-                       ^ (p2s inv#toPretty)
-                       ^ ", "
-                       ^ (p2s (offset_to_pretty offset)));
-                    false
-                  end)) false vinfovalues
+                      begin
+                        poq#set_diagnostic
+                          ~site:(Some (__FILE__, __LINE__, mname))
+                          ("[memlval, memoffset, vinfo, inv, offset]: "
+                           ^ (p2s (lval_to_pretty memlval))
+                           ^ ", "
+                           ^ (p2s (offset_to_pretty memoffset))
+                           ^ ", "
+                           ^ vinfo.vname
+                           ^ ", "
+                           ^ (p2s inv#toPretty)
+                           ^ ", "
+                           ^ (p2s (offset_to_pretty offset)));
+                        false
+                      end)) false vinfovalues)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"check_safe_memlval"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               ["memlval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
     | _ -> false
 
   method private check_safe_lval =
@@ -355,22 +370,34 @@ object (self)
   method private check_violation_memlval (memlval: lval) (memoffset: offset) =
     match memlval with
     | (Var (_, vid), _) ->
-       let lvinfo = poq#env#get_varinfo vid in
-       let vinfovalues = poq#get_vinfo_offset_values lvinfo in
-       List.fold_left (fun acc (inv, offset) ->
-           acc
-           || (match offset with
-               | NoOffset ->
-                  begin
-                    match self#memlval_implies_violation memoffset inv with
-                    | Some (deps, msg, site) ->
-                       begin
-                         poq#record_violation_result ~site deps msg;
-                         true
-                       end
-                    | _ -> false
-                  end
-               | _ -> false)) false vinfovalues
+       TR.tfold
+         ~ok:(fun lvinfo ->
+           let vinfovalues = poq#get_vinfo_offset_values lvinfo in
+           List.fold_left (fun acc (inv, offset) ->
+               acc
+               || (match offset with
+                   | NoOffset ->
+                      begin
+                        match self#memlval_implies_violation memoffset inv with
+                        | Some (deps, msg, site) ->
+                           begin
+                             poq#record_violation_result ~site deps msg;
+                             true
+                           end
+                        | _ -> false
+                      end
+                   | _ -> false)) false vinfovalues)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"check_violation_memlval"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               ["memlval: " ^ (p2s (lval_to_pretty memlval));
+                String.concat ", " err];
+             false
+           end)
+       (poq#env#get_varinfo vid)
     | _ -> false
 
   method private check_violation_lval =

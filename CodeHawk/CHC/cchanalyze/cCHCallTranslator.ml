@@ -35,6 +35,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHNestedCommands
+open CHTraceResult
 open CHPrettyUtil
 
 (* xprlib *)
@@ -64,13 +65,21 @@ open CCHAnalysisTypes
 open CCHCommand
 
 module H = Hashtbl
+module TR = CHTraceResult
+
+
+let (let*) x f = CHTraceResult.tbind f x
 
 
 let cd = CCHDictionary.cdictionary
-
-let pr_expr = xpr_formatter#pr_expr
-let p2s = pretty_to_string
 let fenv = CCHFileEnvironment.file_environment
+
+let x2p = xpr_formatter#pr_expr
+let p2s = pretty_to_string
+let x2s x = p2s (x2p x)
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 
 let is_assert_fail_function fname =  fname = "__assert_fail"
@@ -78,11 +87,21 @@ let is_assert_fail_function fname =  fname = "__assert_fail"
 
 let is_library_function (fname:string): bool =
   if CCHDeclarations.cdeclarations#has_varinfo_by_name fname then
-    let varinfo = CCHDeclarations.cdeclarations#get_varinfo_by_name fname in
-    (* starts with '/' ? *)
-    match String.index_opt varinfo.vdecl.file '/' with
-    | Some i -> i = 0
-    | _ -> false
+    TR.tfold
+      ~ok:(fun varinfo ->
+        (* starts with '/' ? *)
+        match String.index_opt varinfo.vdecl.file '/' with
+        | Some i -> i = 0
+        | _ -> false)
+      ~error:(fun err ->
+        begin
+          log_error_result
+            ~tag:"is_library_function"
+            __FILE__ __LINE__
+            [String.concat ", " err];
+          false
+        end)
+      (CCHDeclarations.cdeclarations#get_varinfo_by_name fname)
   else
     false
 
@@ -208,8 +227,8 @@ let is_not_writes_errno x = not (is_writes_errno x)
 let has_writes_errno = List.exists is_writes_errno
 
 let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
-  let int_of_ret op c = 
-    match op with 
+  let int_of_ret op c =
+    match op with
     | Eq -> CHIntervals.mkInterval c c
     | Lt -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num (c#sub numerical_one))
     | Le -> new CHIntervals.interval_t CHBounds.minus_inf_bound (CHBounds.bound_of_num c)
@@ -221,7 +240,7 @@ let disjoint (p : annotated_xpredicate_t) (q : annotated_xpredicate_t) =
   match fst p, fst q with
   | XNull ReturnValue, XNotNull ReturnValue -> true
 
-  | XRelationalExpr (op, ReturnValue, NumConstant v), 
+  | XRelationalExpr (op, ReturnValue, NumConstant v),
     XRelationalExpr (op', ReturnValue, NumConstant v') ->
     let pi = int_of_ret op v in
     let qi = int_of_ret op' v' in
@@ -239,56 +258,37 @@ object (self)
   val mutable location = unknown_location
 
   method translate
-           (ctxt:program_context_int)
-           (loc:location)
-           (lhs:lval option)
-           (f:exp)
-           (args:exp list) =
+           (ctxt: program_context_int)
+           (loc: location)
+           (lhs: lval option)
+           (f: exp)
+           (args: exp list): c_cmd_t list traceresult =
     let _ = context <- ctxt in
     let _ = location <- loc in
-    try
-      match f with
-      | Lval (Var (fname,fvid),NoOffset) ->
-         self#translate_known_call lhs fname fvid args
-      | Lval (Mem e,NoOffset) ->
-         self#translate_indirect_deref_call lhs e args
-      | _ ->
-         self#translate_indirect_call lhs f args
-    with
-    | CCHFailure p ->
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Error in translating call: ";
-                 exp_to_pretty f;
-                 STR " with arguments ";
-                 pretty_print_list args exp_to_pretty "(" "," ")";
-                 (match lhs with
-                  | Some lval ->
-                     LBLOCK [
-                         STR " and lhs variable ";
-                         lval_to_pretty lval]
-                  | _ -> STR "");
-                 STR ": ";
-                 p]))
-
+    match f with
+    | Lval (Var (fname, fvid), NoOffset) ->
+       self#translate_known_call lhs fname fvid args
+    | Lval (Mem e, NoOffset) ->
+       self#translate_indirect_deref_call lhs e args
+    | _ ->
+       self#translate_indirect_call lhs f args
 
   method private translate_known_call
-                   (lhs:lval option)
-                   (fname:string)
-                   (fvid:int)
-                   (args:exp list) =
+                   (lhs: lval option)
+                   (fname: string)
+                   (fvid: int)
+                   (args: exp list): c_cmd_t list traceresult =
     if call_does_not_return env#get_functionname (Some fname) context then
       let _ =
         chlog#add
           "call does not return (numerical)"
           (LBLOCK [STR env#get_functionname; STR ": "; STR fname]) in
-      [make_c_cmd (ASSERT FALSE)]
+      Ok ([make_c_cmd (ASSERT FALSE)])
     else
       let tmpProvider = fun () -> env#mk_num_temp in
       let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
 
-      let vinfo = fdecls#get_varinfo_by_vid fvid in
+      let* vinfo = fdecls#get_varinfo_by_vid fvid in
       let fnargs = List.map (exp_translator#translate_exp context) args in
       let fnxargs = List.map (orakel#get_external_value context) fnargs in
       let frVar = env#mk_function_return_value location context vinfo fnxargs in
@@ -299,17 +299,13 @@ object (self)
              chlog#add "return value range constraint" (LBLOCK [STR fname]) in
            (make_range_assert env  frVar (mkNumerical (-128)) (mkNumerical 127))
         | _ -> [] in
-      let returntype =
+      let* returntype =
         match fenv#get_type_unrolled vinfo.vtype with
-        | TFun (ty, _, _, _) -> ty
+        | TFun (ty, _, _, _) -> Ok ty
         | _ ->
-           raise
-             (CCHFailure
-                (LBLOCK [
-                     STR "Unexpected type for function variable: ";
-                     STR fname;
-                     STR ": ";
-                     typ_to_pretty vinfo.vtype])) in
+           Error [(elocm __LINE__) ^ "num_translator:translate_known_call";
+                  "Unexpected type for function variable: " ^ fname
+                  ^ ": " ^ (p2s (typ_to_pretty vinfo.vtype))] in
       let argassigns =
         List.map (fun x ->
             let tmp = env#mk_num_temp in
@@ -389,7 +385,7 @@ object (self)
         else
           make_c_nop () in
       let sideeffects = self#get_sideeffects fname fvid args fnxargs in
-      argassigns @ [callop; assertfail; sideeffects] @ rcode
+      Ok (argassigns @ [callop; assertfail; sideeffects] @ rcode)
 
   method private set_indirect_call vinfo =
     if proof_scaffolding#has_indirect_callsite env#get_functionname context then
@@ -407,14 +403,14 @@ object (self)
              STR vinfo.vname])
 
   method private translate_indirect_deref_call
-                   (lhs:lval option)
-                   (e:exp)
-                   (args:exp list) =
+                   (lhs: lval option)
+                   (e: exp)
+                   (args: exp list): nested_cmd_t list traceresult =
     let default =
-      [make_c_cmd
-         (OPERATION
-            { op_name = new symbol_t ~atts:[p2s (exp_to_pretty e)] "indirect call";
-              op_args = [] })] in
+      Ok ([make_c_cmd
+             (OPERATION
+                { op_name = new symbol_t ~atts:[p2s (exp_to_pretty e)] "indirect call";
+                  op_args = [] })]) in
     let xpr = exp_translator#translate_exp context e in
     match xpr with
     | XVar v when env#is_memory_address v ->
@@ -429,34 +425,37 @@ object (self)
             end
          | _ ->
             begin
-              chlog#add
-                "deref call expression"
-                (LBLOCK [
-                     STR env#get_functionname;
-                     STR " @ ";
-                     INT location.line;
-                     STR ": ";
-                     exp_to_pretty e]);
+              log_diagnostics_result
+                ~tag:"translate_indirect_deref_call"
+                ~msg:(env#get_functionname ^ "@" ^ (string_of_int location.line))
+                __FILE__ __LINE__
+                ["exp: " ^ (p2s (exp_to_pretty e))];
               default
             end
        end
     | _ ->
        begin
-         chlog#add
-           "deref call expression"
-           (LBLOCK [
-                STR env#get_functionname;
-                STR " @ ";
-                INT location.line;
-                STR ": ";
-                exp_to_pretty e]);
+         log_diagnostics_result
+           ~tag:"translate_indirect_deref_call"
+           ~msg:(env#get_functionname ^ "@" ^ (string_of_int location.line))
+           __FILE__ __LINE__
+           ["exp: " ^ (p2s (exp_to_pretty e))];
          default
        end
 
   method private translate_indirect_call
-                   (_lhs:lval option)
-                   (_f:exp)
-                   (_args:exp list) = []
+                   (_lhs: lval option)
+                   (f: exp)
+                   (_args: exp list): nested_cmd_t list traceresult =
+    begin
+      log_diagnostics_result
+        ~tag:"translate_indirect_call"
+        ~msg:(env#get_functionname ^ "@" ^ (string_of_int location.line))
+        __FILE__ __LINE__
+        ["Indirect call not yet supported. Call not included.";
+         "f: " ^ (p2s (exp_to_pretty f))];
+      Ok []
+    end
 
   method private get_external_post_value
                    (postconditions:
@@ -563,13 +562,6 @@ object (self)
       | XRelationalExpr (Lt, ReturnValue,
                          ByteSize(ArgValue(ParFormal n, ArgNoOffset))) ->
          let arg = List.nth args (n-1) in
-         let msg =
-           LBLOCK [
-               STR env#get_functionname;
-               STR " : ";
-               STR fname;
-               STR ": less-than-size : ";
-               pr_expr arg] in
          begin
            match arg with
            | XVar v when env#is_memory_address v ->
@@ -587,26 +579,34 @@ object (self)
                    end
                 | _ ->
                    begin
-                     chlog#add "unused scalar postconditions" msg;
+                     log_diagnostics_result
+                       ~tag:"get_post_assert"
+                       ~msg:env#get_functionname
+                       __FILE__ __LINE__
+                       ["Unused scalar postconditions";
+                        fname ^ ": less-than-size : " ^ (x2s arg)];
                      []
                    end
               end
            | _ ->
               begin
-                chlog#add "unused scalar postconditions" msg;
+                log_diagnostics_result
+                  ~tag:"get_post_assert"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["Unused scalar postconditions";
+                   fname ^ ": less-than-size : " ^ (x2s arg)];
                 []
               end
          end
       | _ ->
          begin
-           chlog#add
-             "unused scalar postconditions"
-             (LBLOCK [
-                  STR env#get_functionname;
-                  STR " : ";
-                  STR fname;
-                  STR ": ";
-                  STR (xpredicate_tag pc)]);
+           log_diagnostics_result
+             ~tag:"get_post_assert"
+             ~msg:env#get_functionname
+             __FILE__ __LINE__
+             ["Unused scalar postconditions";
+              fname ^ ": " ^ (p2s (xpredicate_to_pretty pc))];
            []
          end in
     let make l = List.concat (List.map make_post_assert l) in
@@ -676,10 +676,9 @@ object (self)
          List.fold_left (fun acc (se, _) ->
              match se with
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
-                let vinfo = fdecls#get_varinfo_by_vid fvid in
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
-                  exp_translator#translate_lhs context (Mem arg,NoOffset) in
+                  exp_translator#translate_lhs context (Mem arg, NoOffset) in
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
                   let _ =
@@ -691,19 +690,33 @@ object (self)
                   [CCMD (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
-                  let sevar =
-                    env#mk_function_sideeffect_value
-                      location context vinfo fnxargs n ty in
-                  let bwvar = env#mk_byte_sequence sevar None in
-                  let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
-                  let subassigns =
-                    match ty with
-                    | TComp (ckey,_) ->
-                       let comp = fenv#get_comp ckey in
-                       assign_se_struct arg NoOffset comp bwvar
-                    | _ ->
-                       [] in
-                  assign :: subassigns
+                  TR.tfold
+                  ~ok:(fun vinfo ->
+                    let sevar =
+                      env#mk_function_sideeffect_value
+                        location context vinfo fnxargs n ty in
+                    let bwvar = env#mk_byte_sequence sevar None in
+                    let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
+                    let subassigns =
+                      match ty with
+                      | TComp (ckey,_) ->
+                         let comp = fenv#get_comp ckey in
+                         assign_se_struct arg NoOffset comp bwvar
+                      | _ ->
+                         [] in
+                    assign :: subassigns)
+                  ~error:(fun e ->
+                    begin
+                      log_error_result
+                        ~tag:"get_sideeffects"
+                        ~msg:env#get_functionname
+                        __FILE__ __LINE__
+                        ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
+                         "Side effect assignment not included";
+                         String.concat "; " e];
+                      []
+                    end)
+                  (fdecls#get_varinfo_by_vid fvid)
 
              | XInitializesExternalState (ExternalState name,
                                           ArgValue (ParFormal n, ArgNoOffset)) ->
@@ -723,37 +736,31 @@ object (self)
              | XFormattedInput (ArgValue (ParFormal n,ArgNoOffset)) ->
                 let (assignments,_) =
                   List.fold_left (fun (acc, i) arg ->
-                      let vinfo = fdecls#get_varinfo_by_vid fvid in
-                      let argty = type_of_exp fdecls arg in
-                      let ty = match fenv#get_type_unrolled argty  with
-                        | TPtr (t, _) -> t
-                        | t ->
-                           begin
-                             ch_error_log#add
-                               "input format argument"
-                               (LBLOCK [
-                                    STR "Unexpected type for argument ";
-                                    INT i;
-                                    STR ": ";
-                                    typ_to_pretty t]);
-                             TInt (IInt, [])
-                           end in
-                      let sevar =
-                        env#mk_function_sideeffect_value
-                          location context vinfo fnxargs i ty in
-                      let (xoptlb,xoptub) =
-                        match ty with
-                        | TInt (ik, []) ->
-                           (Some (num_constant_expr (get_safe_lowerbound ik)),
-                            Some (num_constant_expr (get_safe_upperbound ik)))
-                        | _ -> (None,None) in
-                      let taintedvar =
-                        env#mk_tainted_value sevar xoptlb xoptub ty in
+                      let taintedvar_r =
+                        self#get_formatted_input_taintedvar fvid i arg fnxargs in
                       match arg with
                       | AddrOf lval | StartOf lval ->
                          let v = exp_translator#translate_lhs context lval in
-                         let assign = ASSIGN_NUM (v, NUM_VAR taintedvar) in
-                         ((make_c_cmd assign) :: acc,i+1)
+                         TR.tfold
+                           ~ok:(fun taintedvar ->
+                             let assign = ASSIGN_NUM (v, NUM_VAR taintedvar) in
+                             ((make_c_cmd assign) :: acc, i + 1))
+                           ~error:(fun e ->
+                             let abstractvar = ABSTRACT_VARS [v] in
+                             begin
+                               log_error_result
+                                 ~tag:"get_sideeffects:formatted_input"
+                                 ~msg:env#get_functionname
+                                 __FILE__ __LINE__
+                                 ["Unable to create sideeffects value for vinfo "
+                                  ^ "with fvid " ^ (string_of_int fvid);
+                                  "No value to assign to the sideeffect variable "
+                                  ^ (p2s v#toPretty);
+                                  "Abstracting " ^ (p2s v#toPretty) ^ " instead";
+                                  String.concat "; " e];
+                               ((make_c_cmd abstractvar) :: acc, i + 1)
+                             end)
+                         taintedvar_r
                       | _ ->
                          let v = exp_translator#translate_exp context arg in
                          match v with
@@ -762,22 +769,84 @@ object (self)
                               let memaddress = env#get_memory_reference v in
                               if memaddress#is_stack_reference then
                                 let stackvar = memaddress#get_stack_address_var in
-                                let assign =
-                                  ASSIGN_NUM (stackvar, NUM_VAR taintedvar) in
-                                ((make_c_cmd assign) :: acc, i+1)
+                                TR.tfold
+                                ~ok:(fun taintedvar ->
+                                  let assign =
+                                    ASSIGN_NUM (stackvar, NUM_VAR taintedvar) in
+                                  ((make_c_cmd assign) :: acc, i + 1))
+                                ~error:(fun e ->
+                                  let abstractvar = ABSTRACT_VARS [v] in
+                                  begin
+                                    log_error_result
+                                      ~tag:"get_sideeffects:formatted input"
+                                      ~msg:env#get_functionname
+                                      __FILE__ __LINE__
+                                      ["Unable to create sideeffects value for vinfo "
+                                       ^ "with fvid " ^ (string_of_int fvid);
+                                       "No value to assign to the sideeffect stack "
+                                       ^ "variable " ^ (p2s v#toPretty);
+                                       "Abstracting " ^ (p2s v#toPretty) ^ " instead";
+                                       String.concat "; " e];
+                                    ((make_c_cmd abstractvar) :: acc, i + 1)
+                                  end)
+                                taintedvar_r
                               else if memaddress#is_global_reference then
                                 let globalvar = memaddress#get_global_address_var in
-                                let assign =
-                                  ASSIGN_NUM (globalvar, NUM_VAR taintedvar) in
-                                ((make_c_cmd assign) :: acc, i+1)
+                                TR.tfold
+                                  ~ok:(fun taintedvar ->
+                                    let assign =
+                                      ASSIGN_NUM (globalvar, NUM_VAR taintedvar) in
+                                    ((make_c_cmd assign) :: acc, i + 1))
+                                  ~error:(fun e ->
+                                    let abstractvar = ABSTRACT_VARS [v] in
+                                    begin
+                                      log_error_result
+                                        ~tag:"get_sideeffects:formatted input"
+                                        ~msg:env#get_functionname
+                                        __FILE__ __LINE__
+                                        ["Unable to create sideeffects value for vinfo "
+                                         ^ "with fvid " ^ (string_of_int fvid);
+                                         "No value to assign to the sideeffect global "
+                                         ^ "variable " ^ (p2s v#toPretty);
+                                         "Abstracting " ^ ( p2s v#toPretty) ^ " instead";
+                                         String.concat "; " e];
+                                      ((make_c_cmd abstractvar) :: acc, i + 1)
+                                    end)
+                                  taintedvar_r
                               else
-                                (acc, i+1)
+                                (acc, i + 1)
                             else
                               (acc, i+1)
-                         | _ -> (acc, i+1)) ([], n) fnargs in
+                         | _ -> (acc, i + 1)) ([], n) fnargs in
                 assignments @ acc
              | _ -> acc) [] l in
        make_c_cmd_block assignments
+
+  method private get_formatted_input_taintedvar
+                   (fvid: int)
+                   (argindex: int)
+                   (arg: exp)
+                   (fnxargs: (xpr_t option) list): variable_t traceresult =
+    let* vinfo = fdecls#get_varinfo_by_vid fvid in
+    let* argty = type_of_exp fdecls arg in
+    let* ty =
+      match fenv#get_type_unrolled argty with
+      | TPtr (t, _) -> Ok t
+      | t ->
+         Error [
+             (elocm __LINE__) ^ "get_formatted_input_taintedvar";
+             "Unexpected type for argument " ^ (string_of_int argindex)
+             ^ ": " ^ (p2s (typ_to_pretty t))] in
+    let sevar =
+      env#mk_function_sideeffect_value
+        location context vinfo fnxargs argindex ty in
+    let (xoptlb, xoptub) =
+      match ty with
+      | TInt (ik, []) ->
+         (Some (num_constant_expr (get_safe_lowerbound ik)),
+          Some (num_constant_expr (get_safe_upperbound ik)))
+      | _ -> (None, None) in
+    Ok (env#mk_tainted_value sevar xoptlb xoptub ty)
 
 end
 
@@ -793,119 +862,97 @@ object (self)
   val mutable location = unknown_location
 
   method translate
-           (ctxt:program_context_int)
-           (loc:location)
-           (lhs:lval option)
-           (f:exp)
-           (args:exp list) =
+           (ctxt: program_context_int)
+           (loc: location)
+           (lhs: lval option)
+           (f: exp)
+           (args:exp list): c_cmd_t list traceresult =
     let _ = context <- ctxt in
     let _ = location <- loc in
-    try
-      match f with
-      | Lval (Var (fname, fvid), NoOffset) ->     (* direct call *)
-         if call_does_not_return env#get_functionname (Some fname) context then
-           let _ =
-             chlog#add
-               "call does not return (valuesets)"
-               (LBLOCK [STR env#get_functionname; STR ": "; STR fname]) in
-           [make_c_cmd (ASSERT FALSE)]
-         else
-           let vinfo = fdecls#get_varinfo_by_vid fvid in
-           let fnargs = List.map (exp_translator#translate_exp ctxt) args in
-           let fnxargs = List.map (orakel#get_external_value ctxt) fnargs in
-           let callop =
-             make_c_cmd
-               (OPERATION
-                  { op_name = new symbol_t ~atts:[fname] "call";
-                    op_args = [] }) in
-           let returntype =
-             match fenv#get_type_unrolled vinfo.vtype with
-             | TFun (ty, _, _, _) -> ty
-             | _ ->
-                raise
-                  (CCHFailure
-                     (LBLOCK [
-                          STR "Unexpected type for function variable: ";
-                          STR fname;
-                          STR ": ";
-                          typ_to_pretty vinfo.vtype])) in
-           let rcode =
-             match lhs with
-             | None -> []
-             | Some lval ->
-                let postconditions = self#get_postconditions fname in
-                let frVar =
-                  env#mk_function_return_value loc context vinfo fnxargs in
-                let rvar = exp_translator#translate_lhs ctxt lval in
-                if rvar#isTmp then
-                  let memoryvars = env#get_memory_variables in
-                  let _ =
-                    log_diagnostics_result
-                      ~tag:"abstract memory variables"
-                      ~msg:env#get_functionname
-                      __FILE__ __LINE__
-                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                  [make_c_cmd (ABSTRACT_VARS memoryvars)]
-                else
-                  let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
-                  match ty with
-                  | TComp _ ->
-                     let memoryvars = env#get_memory_variables_with_base rvar in
-                     let _ =
-                       log_diagnostics_result
-                         ~tag:"abstract memory variables"
-                         ~msg:env#get_functionname
-                         __FILE__ __LINE__
-                         (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                     [make_c_cmd (ABSTRACT_VARS memoryvars)]
-                  | _  ->
-                     let (rcode, rval) =
-                       self#get_arg_post_value
-                         postconditions fnargs frVar returntype in
-                     let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
-                     let postassert =
-                       self#get_post_assert
-                         postconditions fname fvid rvar fnargs in
-                     let domainop =
-                       match type_of_lval fdecls lval with
-                       | TPtr (_t,_) ->
-                          (* let frVar = env#mk_base_address_value frVar NoOffset t in *)
-                          make_c_cmd
-                            (DOMAIN_OPERATION (
-                                 [valueset_domain],
-                                 { op_name = new symbol_t "initialize_with_null";
-                                   op_args = [(frVar#getName#getBaseName,
-                                               frVar,
-                                               READ)]}))
-                       | _ -> make_c_nop () in
-                     [rcode;  domainop; assign; postassert] in
-           let sideeffects = self#get_sideeffects fname fvid args fnxargs in
-           [callop] @ [sideeffects] @ rcode
-      | _ ->
+    match f with
+    | Lval (Var (fname, fvid), NoOffset) ->     (* direct call *)
+       if call_does_not_return env#get_functionname (Some fname) context then
+         let _ =
+           chlog#add
+             "call does not return (valuesets)"
+             (LBLOCK [STR env#get_functionname; STR ": "; STR fname]) in
+         Ok [make_c_cmd (ASSERT FALSE)]
+       else
+         let* vinfo = fdecls#get_varinfo_by_vid fvid in
+         let fnargs = List.map (exp_translator#translate_exp ctxt) args in
+         let fnxargs = List.map (orakel#get_external_value ctxt) fnargs in
          let callop =
            make_c_cmd
              (OPERATION
-                { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
-                              "indirect call";
+                { op_name = new symbol_t ~atts:[fname] "call";
                   op_args = [] }) in
-         [callop]
-    with
-    | CCHFailure p ->
-       raise
-         (CCHFailure
-	    (LBLOCK [
-                 STR "Error in translating call: ";
-                 exp_to_pretty f;
-		 STR " with arguments ";
-		 pretty_print_list args exp_to_pretty "(" "," ")";
-		 (match lhs with
-                  | Some lval ->
-		     LBLOCK [
-                         STR " and return value ";
-			 lval_to_pretty lval]
-                  | _ -> STR "");
-                 STR ": ";
-                 p]))
+         let* returntype =
+           match fenv#get_type_unrolled vinfo.vtype with
+           | TFun (ty, _, _, _) -> Ok ty
+           | _ ->
+              Error [(elocm __LINE__) ^ "valueset_translator: translate";
+                     "Unexpected type for function variable: " ^ fname
+                     ^ ": " ^ (p2s (typ_to_pretty vinfo.vtype))] in
+         let rcode =
+           match lhs with
+           | None -> []
+           | Some lval ->
+              let postconditions = self#get_postconditions fname in
+              let frVar =
+                env#mk_function_return_value loc context vinfo fnxargs in
+              let rvar = exp_translator#translate_lhs ctxt lval in
+              if rvar#isTmp then
+                let memoryvars = env#get_memory_variables in
+                let _ =
+                  log_diagnostics_result
+                    ~tag:"abstract memory variables"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    (List.map (fun v -> p2s v#toPretty) memoryvars) in
+                [make_c_cmd (ABSTRACT_VARS memoryvars)]
+              else
+                let ty = fenv#get_type_unrolled (env#get_variable_type rvar) in
+                match ty with
+                | TComp _ ->
+                   let memoryvars = env#get_memory_variables_with_base rvar in
+                   let _ =
+                     log_diagnostics_result
+                       ~tag:"abstract memory variables"
+                       ~msg:env#get_functionname
+                       __FILE__ __LINE__
+                       (List.map (fun v -> p2s v#toPretty) memoryvars) in
+                   [make_c_cmd (ABSTRACT_VARS memoryvars)]
+                | _  ->
+                   let (rcode, rval) =
+                     self#get_arg_post_value
+                       postconditions fnargs frVar returntype in
+                   let assign = make_c_cmd (ASSIGN_NUM (rvar, rval)) in
+                   let postassert =
+                     self#get_post_assert
+                       postconditions fname fvid rvar fnargs in
+                   let domainop =
+                     match type_of_lval fdecls lval with
+                     | Ok (TPtr (_t,_)) ->
+                        (* let frVar = env#mk_base_address_value frVar NoOffset t in *)
+                        make_c_cmd
+                          (DOMAIN_OPERATION (
+                               [valueset_domain],
+                               { op_name = new symbol_t "initialize_with_null";
+                                 op_args = [(frVar#getName#getBaseName,
+                                             frVar,
+                                             READ)]}))
+                     | _ -> make_c_nop () in
+                   [rcode;  domainop; assign; postassert] in
+         let sideeffects = self#get_sideeffects fname fvid args fnxargs in
+         Ok ([callop] @ [sideeffects] @ rcode)
+    | _ ->
+       let callop =
+         make_c_cmd
+           (OPERATION
+              { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
+                            "indirect call";
+                op_args = [] }) in
+       Ok [callop]
 
   method private get_arg_post_value
                    (postconditions:
@@ -950,7 +997,8 @@ object (self)
        | TPtr ((TInt _ | TFloat _ | TPtr _) as t, _) ->
           (* create a placeholder memory variable for the dereferenced return value *)
           let (rmemvar, rmemvarinit) =
-            env#mk_base_address_memory_variable_init returnvalue NoOffset t NUM_VAR_TYPE in
+            env#mk_base_address_memory_variable_init
+              returnvalue NoOffset t NUM_VAR_TYPE in
           let cmd = make_c_cmd (ASSIGN_NUM (rmemvar, NUM_VAR rmemvarinit)) in
           (cmd, NUM_VAR returnvalue)
        | _ ->
@@ -997,13 +1045,6 @@ object (self)
                          ReturnValue,
                          ByteSize(ArgValue(ParFormal n,ArgNoOffset))) ->
          let arg = List.nth args (n-1) in
-         let msg =
-           LBLOCK [
-               STR env#get_functionname;
-               STR " : ";
-               STR fname;
-               STR ": less-than-size : ";
-               pr_expr arg] in
          begin
            match arg with
            | XVar v when env#is_memory_address v ->
@@ -1021,26 +1062,34 @@ object (self)
                    end
                 | _ ->
                    begin
-                     chlog#add "unused scalar postconditions" msg;
+                     log_diagnostics_result
+                       ~tag:"get_post_assert"
+                       ~msg:env#get_functionname
+                       __FILE__ __LINE__
+                       ["Unused scalar postconditions";
+                        fname ^ ": less-than-size : " ^ (x2s arg)];
                      []
                    end
               end
            | _ ->
               begin
-                chlog#add "unused scalar postconditions" msg;
+                log_diagnostics_result
+                  ~tag:"get_post_assert"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["Unused scalar postconditions";
+                   fname ^ ": less-than-size : " ^ (x2s arg)];
                 []
               end
          end
       | _ ->
          begin
-           chlog#add
-             "unused scalar postconditions"
-             (LBLOCK [
-                  STR env#get_functionname;
-                  STR " : ";
-                  STR fname;
-                  STR ": ";
-                  STR (xpredicate_tag pc)]);
+           log_diagnostics_result
+             ~tag:"get_post_assert"
+             ~msg:env#get_functionname
+             __FILE__ __LINE__
+             ["Unused scalar postconditions";
+              fname ^ ": " ^ (p2s (xpredicate_to_pretty pc))];
            []
          end in
     let make l = List.concat (List.map make_post_assert l) in
@@ -1108,7 +1157,6 @@ object (self)
          List.fold_left (fun acc (se, _) ->
              match se with
              | XBlockWrite (ArgValue (ParFormal n,ArgNoOffset), _) ->
-                let vinfo = fdecls#get_varinfo_by_vid fvid in
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
                   exp_translator#translate_lhs context (Mem arg,NoOffset) in
@@ -1123,56 +1171,115 @@ object (self)
                   [CCMD (ABSTRACT_VARS memoryvars)]
                 else
                   let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
-                  let sevar =
-                    env#mk_function_sideeffect_value
-                      location context vinfo fnxargs n ty in
-                  let bwvar = env#mk_byte_sequence sevar None in
-                  let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
-                  let subassigns =
-                    match ty with
-                    | TComp (ckey, _) ->
-                       let comp = fenv#get_comp ckey in
-                       assign_se_struct arg NoOffset comp bwvar
-                    | _ ->
-                       [] in
-                  assign :: subassigns
+                  TR.tfold
+                    ~ok:(fun vinfo ->
+                      let sevar =
+                        env#mk_function_sideeffect_value
+                          location context vinfo fnxargs n ty in
+                      let bwvar = env#mk_byte_sequence sevar None in
+                      let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
+                      let subassigns =
+                        match ty with
+                        | TComp (ckey, _) ->
+                           let comp = fenv#get_comp ckey in
+                           assign_se_struct arg NoOffset comp bwvar
+                        | _ ->
+                           [] in
+                      assign :: subassigns)
+                    ~error:(fun e ->
+                    begin
+                      log_error_result
+                        ~tag:"get_sideeffects"
+                        ~msg:env#get_functionname
+                        __FILE__ __LINE__
+                        ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
+                         "Side effect assignment not included";
+                         String.concat "; " e];
+                      []
+                    end)
+                  (fdecls#get_varinfo_by_vid fvid)
 
              | XFormattedInput (ArgValue (ParFormal n, ArgNoOffset)) ->
                 let (assignments, _) =
                   List.fold_left (fun (acc, i) arg ->
-                      let vinfo = fdecls#get_varinfo_by_vid fvid in
-                      let ty =
-                        match fenv#get_type_unrolled (type_of_exp fdecls arg) with
-                        | TPtr (t, _) -> t
-                        | t ->
-                           begin
-                             ch_error_log#add
-                               "input format argument"
-                               (LBLOCK [
-                                    STR "Unexpected type for argument ";
-                                    INT i;
-                                    STR ": ";
-                                    typ_to_pretty t]);
-                             TInt (IInt, [])
-                           end in
-                      let sevar =
-                        env#mk_function_sideeffect_value
-                          location context vinfo fnxargs i ty in
-                      let (xoptlb, xoptub) =
-                        match ty with
-                        | TInt (ik,[]) ->
-                           (Some (num_constant_expr (get_safe_lowerbound ik)),
-                            Some (num_constant_expr (get_safe_upperbound ik)))
-                        | _ -> (None,None) in
-                      let taintedvar =
-                        env#mk_tainted_value sevar xoptlb xoptub ty in
+                      let taintedvar_r =
+                        self#get_vs_formatted_input_taintedvar fvid i arg fnxargs in
                       match arg with
                       | AddrOf lval | StartOf lval ->
                          let v = exp_translator#translate_lhs context lval in
-                         let assign = ASSIGN_NUM (v, NUM_VAR taintedvar) in
-                         ((make_c_cmd assign) :: acc,i+1)
+                         TR.tfold
+                           ~ok:(fun taintedvar ->
+                             let assign = ASSIGN_NUM (v, NUM_VAR taintedvar) in
+                             ((make_c_cmd assign) :: acc,i + 1))
+                           ~error:(fun e ->
+                             let abstractvar = ABSTRACT_VARS [v] in
+                             begin
+                               log_error_result
+                                 ~tag:"get_sideeffects:formatted_input"
+                                 ~msg:env#get_functionname
+                                 __FILE__ __LINE__
+                                 ["Unable to create sideeffects value for vinfo "
+                                  ^ "with fvid " ^ (string_of_int fvid);
+                                  "No value to assign to the sideeffect variable "
+                                  ^ (p2s v#toPretty);
+                                  "Abstracting " ^ (p2s v#toPretty) ^ " instead";
+                                  String.concat "; " e];
+                               ((make_c_cmd abstractvar) :: acc, i + 1)
+                             end)
+                         taintedvar_r
                       | _ ->
                          let v = exp_translator#translate_exp context arg in
+                         match v with
+                         | XVar v ->
+                            if env#is_memory_address v then
+                              let memaddress = env#get_memory_reference v in
+                              if memaddress#is_stack_reference then
+                                let stackvar = memaddress#get_stack_address_var in
+                                TR.tfold
+                                ~ok:(fun taintedvar ->
+                                  let assign =
+                                    ASSIGN_NUM (stackvar, NUM_VAR taintedvar) in
+                                  ((make_c_cmd assign) :: acc, i + 1))
+                                ~error:(fun e ->
+                                  let abstractvar = ABSTRACT_VARS [v] in
+                                  begin
+                                    log_error_result
+                                      ~tag:"get_sideeffects:formatted input"
+                                      ~msg:env#get_functionname
+                                      __FILE__ __LINE__
+                                      ["Unable to create sideeffects value for vinfo "
+                                       ^ "with fvid " ^ (string_of_int fvid);
+                                       "No value to assign to the sideeffect stack "
+                                       ^ "variable " ^ (p2s v#toPretty);
+                                       "Abstracting " ^ (p2s v#toPretty) ^ " instead";
+                                       String.concat "; " e];
+                                    ((make_c_cmd abstractvar) :: acc, i + 1)
+                                  end)
+                                taintedvar_r
+                              else if memaddress#is_global_reference then
+                                let globalvar = memaddress#get_global_address_var in
+                                TR.tfold
+                                  ~ok:(fun taintedvar ->
+                                    let assign =
+                                      ASSIGN_NUM (globalvar, NUM_VAR taintedvar) in
+                                    ((make_c_cmd assign) :: acc, i + 1))
+                                  ~error:(fun e ->
+                                    let abstractvar = ABSTRACT_VARS [v] in
+                                    begin
+                                      log_error_result
+                                        ~tag:"get_sideeffects:formatted input"
+                                        ~msg:env#get_functionname
+                                        __FILE__ __LINE__
+                                        ["Unable to create sideeffects value for vinfo "
+                                         ^ "with fvid " ^ (string_of_int fvid);
+                                         "No value to assign to the sideeffect global "
+                                         ^ "variable " ^ (p2s v#toPretty);
+                                         "Abstracting " ^ ( p2s v#toPretty) ^ " instead";
+                                         String.concat "; " e];
+                                      ((make_c_cmd abstractvar) :: acc, i + 1)
+                                    end)
+                                  taintedvar_r
+                                  (*
                          match v with
                          | XVar v ->
                             if env#is_memory_address v then
@@ -1188,6 +1295,7 @@ object (self)
                                 let assign =
                                   ASSIGN_NUM (globalvar, NUM_VAR taintedvar) in
                                 ((make_c_cmd assign) :: acc, i+1)
+                                   *)
                               else
                                 (acc, i+1)
                             else
@@ -1196,6 +1304,32 @@ object (self)
                 assignments @ acc
              | _ -> acc) [] l in
        make_c_cmd_block assignments
+
+  method private get_vs_formatted_input_taintedvar
+                   (fvid: int)
+                   (argindex: int)
+                   (arg: exp)
+                   (fnxargs: (xpr_t option) list): variable_t traceresult =
+    let* vinfo = fdecls#get_varinfo_by_vid fvid in
+    let* argty = type_of_exp fdecls arg in
+    let* ty =
+      match fenv#get_type_unrolled argty with
+      | TPtr (t, _) -> Ok t
+      | t ->
+         Error [
+             (elocm __LINE__) ^ "get_formatted_input_taintedvar";
+             "Unexpected type for argument " ^ (string_of_int argindex)
+             ^ ": " ^ (p2s (typ_to_pretty t))] in
+    let sevar =
+      env#mk_function_sideeffect_value
+        location context vinfo fnxargs argindex ty in
+    let (xoptlb, xoptub) =
+      match ty with
+      | TInt (ik, []) ->
+         (Some (num_constant_expr (get_safe_lowerbound ik)),
+          Some (num_constant_expr (get_safe_upperbound ik)))
+      | _ -> (None, None) in
+    Ok (env#mk_tainted_value sevar xoptlb xoptub ty)
 
 end
 
@@ -1229,7 +1363,7 @@ object (self)
            (loc:location)
            (lhs:lval option)
            (f:exp)
-           (args:exp list) =
+           (args:exp list):nested_cmd_t list traceresult =
     let _ = context <- ctxt in
     let _ = location <- loc in
     match f with
@@ -1273,7 +1407,8 @@ object (self)
                     new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
                   Some rvar, [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
        let sideeffect = self#get_sideeffect fname fvid args fnargs rvar in
-       callop :: (sideeffect @ postconditions @ rcode)
+       Ok (callop :: (sideeffect @ postconditions @ rcode))
+
     | _ ->                                             (* indirect call *)
        let callop =
          make_c_cmd
@@ -1290,7 +1425,7 @@ object (self)
             let sym =
               new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
             [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
-       callop :: (self#havoc_errno_write @ rcode)
+       Ok (callop :: (self#havoc_errno_write @ rcode))
 
   method private get_postconditions
                    (fname:string) (args:exp list) (_fnargs:xpr_t list) =
@@ -1315,11 +1450,33 @@ object (self)
                      match arg with
                      |CastE (_, StartOf (Var (_vname, vid), offset))
                       | CastE (_, AddrOf (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                       TR.tfold
+                         ~ok:(fun vinfo ->
+                           Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                         ~error:(fun err ->
+                           begin
+                             log_diagnostics_result
+                               ~tag:"get_postconditions"
+                               ~msg:env#get_functionname
+                               __FILE__ __LINE__
+                               [String.concat ", " err];
+                             None
+                           end)
+                         (env#get_varinfo vid)
                      | CastE (_, Lval (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_postconditions"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                          (env#get_varinfo vid)
                      | _ -> None
                    end
                 | _ -> None in
@@ -1373,17 +1530,17 @@ object (self)
       let unknownSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.Unknown in
       List.map (fun v -> make_c_cmd (ASSIGN_SYM (v, SYM unknownSym))) env#get_errno_write_vars
 
-  method private get_errno_sideeffect 
+  method private get_errno_sideeffect
                   (fname: string)
-                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list) 
+                  (postconditions: annotated_xpredicate_t list * annotated_xpredicate_t list)
                   (optrvar: variable_t option) =
-    let (pcs, epcs) = postconditions in 
+    let (pcs, epcs) = postconditions in
 
-    if not (is_library_function fname) then 
+    if not (is_library_function fname) then
       self#havoc_errno_write
-    else 
+    else
 
-    let non_errno_pcs, non_errno_epcs = 
+    let non_errno_pcs, non_errno_epcs =
           List.filter is_not_writes_errno pcs, List.filter is_not_writes_errno epcs in
 
     let rv_interval op c =
@@ -1397,12 +1554,12 @@ object (self)
     in
 
     (* We want to make sure that the success and failure cases are disjoint, otherwise
-       we may be able to prove that errno was written in the success case even though it wasn't specified. 
+       we may be able to prove that errno was written in the success case even though it wasn't specified.
        This is almost certainly an error in the specification, but we don't want that error to propagate here. *)
     let success_no_write p = List.exists (disjoint p) non_errno_pcs in
 
-    let errno_sideeffect = 
-      if has_writes_errno epcs then 
+    let errno_sideeffect =
+      if has_writes_errno epcs then
         match optrvar, non_errno_epcs with
         | Some rvar, [XNull ReturnValue, _ as p] when success_no_write p ->
             let idx = rvar#getName#getSeqNumber in
@@ -1415,21 +1572,21 @@ object (self)
             let idxNullSym = CCHErrnoWritePredicateSymbol.to_symbol (CCHErrnoWritePredicateSymbol.VarInt(idx, lb, ub)) in
             [ make_c_cmd (ASSIGN_SYM (env#get_errno_write_var context, SYM idxNullSym)) ]
 
-        |  _ -> 
+        |  _ ->
             []
       else
         []
-      
+
       in errno_sideeffect
 
   method private get_sideeffect
                    (fname:string)
                    (fvid:int)
                    (args:exp list)
-                   (fnargs:xpr_t list) 
+                   (fnargs:xpr_t list)
                    optrvar
                    =
-    let vinfo = fdecls#get_varinfo_by_vid fvid in
+    let vinfo = TR.tget_ok (fdecls#get_varinfo_by_vid fvid) in
     let (pcs, epcs) = get_postconditions env#get_functionname (Some fname) context in
     let errno_sideeffect = self#get_errno_sideeffect fname (pcs, epcs) optrvar in
     let sideeffects = get_sideeffects env#get_functionname (Some fname) context in
@@ -1585,20 +1742,31 @@ object (self)
                 match arg with
                 | AddrOf (Var (_vname, vid), NoOffset)
                   | CastE (_, AddrOf (Var (_vname,vid),NoOffset)) ->
-                   let vinfo = fdecls#get_varinfo_by_vid vid in
-                   begin
-                     match vinfo.vtype with
-                     | TComp (ckey,_) ->
-                        let v =
-                          env#mk_program_var
-                            vinfo (Field ((s,ckey),NoOffset)) SYM_VAR_TYPE in
-                        let atts = ["se:"; fname] in
-                        let sym =
-                          new symbol_t
-                            ~atts ("assignedAt#" ^ (string_of_int location.line)) in
-                        [make_c_cmd (ASSIGN_SYM (v, SYM sym))]
-                     | _ -> []
-                   end
+                   TR.tfold
+                     ~ok:(fun vinfo ->
+                       begin
+                         match vinfo.vtype with
+                         | TComp (ckey,_) ->
+                            let v =
+                              env#mk_program_var
+                                vinfo (Field ((s,ckey),NoOffset)) SYM_VAR_TYPE in
+                            let atts = ["se:"; fname] in
+                            let sym =
+                              new symbol_t
+                                ~atts ("assignedAt#" ^ (string_of_int location.line)) in
+                            [make_c_cmd (ASSIGN_SYM (v, SYM sym))]
+                         | _ -> []
+                       end)
+                     ~error:(fun e ->
+                       begin
+                         log_error_result
+                           ~tag:"get_sideeffect"
+                           ~msg:env#get_functionname
+                           __FILE__ __LINE__
+                           [String.concat "; " e];
+                         []
+                       end)
+                     (fdecls#get_varinfo_by_vid vid)
                 | _ -> []
               end
            | XInitializedRange (base, len) ->
@@ -1609,11 +1777,33 @@ object (self)
                    begin
                      match arg with
                      | CastE (_, StartOf (Var (_vname, vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_sideeffect"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                        (env#get_varinfo vid)
                      | CastE (_, Lval (Var (_vname,vid), offset)) ->
-                        let vinfo = env#get_varinfo vid in
-                        Some (env#mk_program_var vinfo offset SYM_VAR_TYPE)
+                        TR.tfold
+                          ~ok:(fun vinfo ->
+                            Some (env#mk_program_var vinfo offset SYM_VAR_TYPE))
+                          ~error:(fun err ->
+                            begin
+                              log_diagnostics_result
+                                ~tag:"get_sideeffect"
+                                ~msg:env#get_functionname
+                                __FILE__ __LINE__
+                                [String.concat ", " err];
+                              None
+                            end)
+                          (env#get_varinfo vid)
                      | _ ->
                         begin
                           log_diagnostics_result
@@ -1678,59 +1868,49 @@ object (self)
            (loc:location)
            (lhs:lval option)
            (f:exp)
-           (args:exp list) =
+           (args:exp list): nested_cmd_t list traceresult =
     let _ = context <- ctxt in
     let _ = location <- loc in
-    try
-      match f with
-      | Lval (Var (fname,fvid), NoOffset) ->          (* direct call *)
-         let fnargs = List.map (exp_translator#translate_exp ctxt) args in
-         let sideeffects = self#get_sideeffects fname loc fvid args in
-         let callop =
-           make_c_cmd
-             (OPERATION
-                { op_name = new symbol_t ~atts:[fname] "call";
-                  op_args = [] }) in
-         if call_does_not_return env#get_functionname (Some fname) context  then
-           let _ =
-             chlog#add
-               "call does not return"
-               (LBLOCK [STR env#get_functionname; STR ": "; STR fname]) in
-           [make_c_cmd (ASSERT FALSE)]
-         else
-           let rcode = match lhs with
-             | None -> []
-             | Some lval ->
-                match type_of_lval fdecls lval with
-                | TPtr _ ->
-                   let rvar = exp_translator#translate_lhs context lval in
-                   self#get_post_assigns fname fvid rvar fnargs
-                | _ -> [] in
-           (callop :: rcode) @ sideeffects
-      | _ ->                                         (* indirect call *)
-         let callop =
-           make_c_cmd
-             (OPERATION
-                { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
-                              "indirect call";
-                  op_args = [] }) in
-         [callop]
-    with
-    | CCHFailure p ->
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Error in translating call: ";
-                 exp_to_pretty f;
-                 STR ": ";
-                 p]))
+    match f with
+    | Lval (Var (fname,fvid), NoOffset) ->          (* direct call *)
+       let fnargs = List.map (exp_translator#translate_exp ctxt) args in
+       let sideeffects = self#get_sideeffects fname loc fvid args in
+       let callop =
+         make_c_cmd
+           (OPERATION
+              { op_name = new symbol_t ~atts:[fname] "call";
+                op_args = [] }) in
+       if call_does_not_return env#get_functionname (Some fname) context  then
+         let _ =
+           chlog#add
+             "call does not return"
+             (LBLOCK [STR env#get_functionname; STR ": "; STR fname]) in
+         Ok ([make_c_cmd (ASSERT FALSE)])
+       else
+         let rcode = match lhs with
+           | None -> []
+           | Some lval ->
+              match type_of_lval fdecls lval with
+              | Ok (TPtr _) ->
+                 let rvar = exp_translator#translate_lhs context lval in
+                 self#get_post_assigns fname fvid rvar fnargs
+              | _ -> [] in
+         Ok ((callop :: rcode) @ sideeffects)
+    | _ ->                                         (* indirect call *)
+       let callop =
+         make_c_cmd
+           (OPERATION
+              { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
+                            "indirect call";
+                op_args = [] }) in
+       Ok [callop]
 
   method private get_post_assigns
                    (fname:string)
                    (fvid:int)
                    (rvar:variable_t)
                    (args:xpr_t list) =
-    let vinfo = fdecls#get_varinfo_by_vid fvid in
+    let vinfo = TR.tget_ok (fdecls#get_varinfo_by_vid fvid) in
     let fnxargs = List.map (orakel#get_external_value context) args in
     let frVar = env#mk_function_return_value location context vinfo fnxargs in
     let region = memregmgr#mk_external_region_sym frVar in
@@ -1985,14 +2165,14 @@ object (self)
            (loc:location)
            (lhs:lval option)
            (f:exp)
-           (args:exp list) =
+           (args:exp list): nested_cmd_t list traceresult =
     let _ = context <- ctxt in
     let _ = location <- loc in
     let tmpProvider = fun () -> env#mk_sym_temp in
     let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
     match f with
-    | Lval (Var (fname,fvid),NoOffset) ->
-       let vinfo = fdecls#get_varinfo_by_vid fvid in
+    | Lval (Var (fname, fvid), NoOffset) ->
+       let* vinfo = fdecls#get_varinfo_by_vid fvid in
        let fnargs = List.map (exp_translator#translate_exp ctxt) args in
        let fnxargs = List.map (fun x -> Some x) fnargs in
        let frVar = env#mk_function_return_value location context vinfo fnxargs in
@@ -2028,8 +2208,9 @@ object (self)
         else
           make_c_nop () in
       let sideeffects = self#get_sideeffects fname fvid args fnxargs in
-      argassigns @ [callop; assertfail; sideeffects] @ rcode
-    | _ -> []
+      Ok (argassigns @ [callop; assertfail; sideeffects] @ rcode)
+    | _ ->
+       Ok []
 
   method private get_post_assert
                    (postconditions:annotated_xpredicate_t list * annotated_xpredicate_t list)

@@ -38,6 +38,7 @@ open CHStack
 
 (* chutil *)
 open CHNestedCommands
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -84,7 +85,7 @@ object
   method get_current_stmt_id_label: symbol_t
   method get_current_location: location
   method get_fdecls: cfundeclarations_int
-  method get_varinfo: int -> varinfo
+  method get_varinfo: int -> varinfo traceresult
   method get_functionname: string
   method get_xpr_dictionary: xprdictionary_int
   method get_variable_manager: variable_manager_int
@@ -360,7 +361,7 @@ object
            -> lval option
            -> exp
            -> exp list
-           -> c_cmd_t list
+           -> c_cmd_t list traceresult
 
 end
 

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@ open CHPretty
 
 (* chutil *)
 open CHIndexTable
+open CHLogger
+open CHTraceResult
 open CHXmlDocument
 
 (* cchlib *)
@@ -41,10 +43,14 @@ open CCHSumTypeSerializer
 open CCHUtilities
 
 module H = Hashtbl
+module TR = CHTraceResult
 
 
 let cd = CCHDictionary.cdictionary
 let cdecls = CCHDeclarations.cdeclarations
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let ibool b = if b then 1 else 0
 
@@ -78,7 +84,7 @@ let a (name:string) (args:int list) (n:int) =
 
 
 
-class cfundeclarations_t:cfundeclarations_int =
+class cfundeclarations_t (name: string): cfundeclarations_int =
 object (self)
 
   val varinfo_table = mk_index_table "local-varinfo-table"
@@ -117,6 +123,8 @@ object (self)
       vinit = None
     }
 
+  method functionname = name
+
   method get_formals =
     List.filter
       (fun vinfo -> vinfo.vparam > 0)
@@ -141,42 +149,72 @@ object (self)
       (fun vinfo -> vinfo.vparam = 0)
       (List.map self#xrep varinfo_table#values)
 
-  method is_formal (vid:int) =
-    vid > 0 && ((self#get_varinfo_by_vid vid).vparam > 0)
+  method is_formal (vid: int): bool =
+    if vid > 0 then
+      TR.tfold
+        ~ok:(fun vinfo -> vinfo.vparam > 0)
+        ~error:(fun e ->
+          begin
+            log_diagnostics_result
+              ~tag:"is_formal" __FILE__ __LINE__
+              ["global variable for vid " ^ (string_of_int vid) ^ " not found";
+               String.concat "; " e];
+            false
+          end)
+        (self#get_varinfo_by_vid vid)
+    else
+      false
+  (*    vid > 0 && ((self#get_varinfo_by_vid vid).vparam > 0) *)
 
-  method is_local (vid:int) =
-    vid > 0  &&
-      (let vinfo = self#get_varinfo_by_vid vid in
-       vinfo.vparam  = 0  && not vinfo.vglob)
+  method is_local (vid: int): bool =
+    if vid > 0 then
+      TR.tfold
+        ~ok:(fun vinfo -> vinfo.vparam = 0 && not vinfo.vglob)
+        ~error:(fun e ->
+          begin
+            log_diagnostics_result
+              ~tag:"is_local"
+              __FILE__ __LINE__
+              ["vid: " ^ (string_of_int vid); (String.concat "; " e)];
+            false
+          end)
+        (self#get_varinfo_by_vid vid)
+    else
+      false
 
-  method get_varinfo_by_name (name:string) =
+  method get_varinfo_by_name (name:string): varinfo traceresult =
     try
-      List.find
-        (fun vinfo -> vinfo.vname = name)
-        (List.map self#xrep varinfo_table#values)
+      Ok (List.find
+            (fun vinfo -> vinfo.vname = name)
+            (List.map self#xrep varinfo_table#values))
     with
     | Not_found ->
        if cdecls#has_varinfo_by_name name then
          cdecls#get_varinfo_by_name name
        else
+         Error [elocm __LINE__; "get_varinfo_by_name: " ^ name]
+           (*
          raise
            (CCHFailure
               (LBLOCK [
                    STR "Global variable with name: ";
                    STR name;
                    STR " not found"]))
+            *)
 
-  method get_varinfo_by_vid (vid:int) =
+  method get_varinfo_by_vid (vid: int): varinfo traceresult =
     if H.mem vidtable vid then
-      self#xrep (varinfo_table#retrieve (H.find vidtable vid))
+      Ok (self#xrep (varinfo_table#retrieve (H.find vidtable vid)))
     else
       file_environment#get_globalvar vid
 
   method has_varinfo (vid:int) =
     H.mem vidtable vid || file_environment#has_globalvar vid
 
-  method get_varinfo (index:int) = self#xrep (varinfo_table#retrieve index)
+  method get_varinfo (index: int): varinfo =
+    self#xrep (varinfo_table#retrieve index)
 
+                                 (*
   method index_formal (vinfo:varinfo) =
     let index = varinfo_table#add (self#getrep vinfo) in
     begin
@@ -193,6 +231,7 @@ object (self)
       H.replace vidtable vinfo.vid index;
       index
     end
+                                  *)
 
   method read_xml (node:xml_element_int) =
     let getc = node#getTaggedChild in
@@ -207,4 +246,4 @@ object (self)
 end
 
 
-let mk_cfundeclarations () = new cfundeclarations_t
+let mk_cfundeclarations (name: string) = new cfundeclarations_t name

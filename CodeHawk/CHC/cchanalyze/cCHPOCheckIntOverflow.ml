@@ -32,6 +32,7 @@ open CHLanguage
 open CHNumerical
 
 (* chutil *)
+open CHLogger
 open CHPrettyUtil
 
 (* xprlib *)
@@ -54,6 +55,9 @@ open CCHProofObligation
 open CCHAnalysisTypes
 open CCHPOCheckIntUtil
 open CCHPOPredicate
+
+module TR = CHTraceResult
+
 
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
@@ -263,9 +267,19 @@ object (self)
                           ^ (p2s (po_predicate_to_pretty pred)) in
                         Some (deps,msg)
                      | _ ->
-                        let xpred = po_predicate_to_xpredicate poq#fenv pred in
+                        let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
                         begin
-                          poq#mk_global_request xpred;
+                          TR.tfold
+                            ~ok:poq#mk_global_request
+                            ~error:(fun e ->
+                              log_diagnostics_result
+                                ~tag:"inv_implies_safe"
+                                ~msg:poq#fname
+                                __FILE__ __LINE__
+                                ["Unable to convert predicate to xpredicate: "
+                                 ^ (p2s (po_predicate_to_pretty pred));
+                                 String.concat "; " e])
+                            xpred_r;
                           None
                         end
                    end
@@ -513,9 +527,9 @@ object (self)
        let safeconstraint = self#mk_safe_constraint x1 x2 in
        let simconstraint = simplify_xpr safeconstraint in
        let _ =
-         poq#set_diagnostic_arg 2 ("LB: " ^ (x2s x1) ^ (self#global_str x1)) in
+         poq#set_diagnostic_arg 2 ("UB: " ^ (x2s x1) ^ (self#global_str x1)) in
        let _ =
-         poq#set_diagnostic_arg 3 ("LB: " ^ (x2s x2) ^ (self#global_str x2)) in
+         poq#set_diagnostic_arg 3 ("UB: " ^ (x2s x2) ^ (self#global_str x2)) in
        if is_true simconstraint then
          let deps = DLocal [inv1#index; inv2#index] in
          let msg =
@@ -540,9 +554,19 @@ object (self)
                      ^ (p2s (po_predicate_to_pretty  pred)) in
                    Some (deps, msg)
                 | _ ->
-                   let xpred = po_predicate_to_xpredicate poq#fenv pred in
+                   let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
                    begin
-                     poq#mk_global_request xpred;
+                     TR.tfold
+                       ~ok:poq#mk_global_request
+                       ~error:(fun e ->
+                         log_diagnostics_result
+                           ~tag:"inv_implies_safe_pp"
+                           ~msg:poq#fname
+                           __FILE__ __LINE__
+                           ["Unable to convert predicate to xpredicate: "
+                            ^ (p2s (po_predicate_to_pretty pred));
+                            String.concat "; " e])
+                       xpred_r;
                      None
                    end
               end
@@ -592,9 +616,19 @@ object (self)
                      ^ (p2s (po_predicate_to_pretty  pred)) in
                    Some (deps, msg)
                 | _ ->
-                   let xpred = po_predicate_to_xpredicate poq#fenv pred in
+                   let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
                    begin
-                     poq#mk_global_request xpred;
+                     TR.tfold
+                       ~ok:poq#mk_global_request
+                       ~error:(fun e ->
+                         log_diagnostics_result
+                           ~tag:"inv_implies_safe_nn"
+                           ~msg:poq#fname
+                           __FILE__ __LINE__
+                           ["Unable to convert predicate to xpredicate: "
+                            ^ (p2s (po_predicate_to_pretty pred));
+                            String.concat "; " e])
+                       xpred_r;
                      None
                    end
               end
@@ -902,7 +936,7 @@ object (self)
     | _ -> None
 
   method private inv_implies_non_negative (e: exp) (inv: invariant_int) =
-    match inv#upper_bound_xpr with
+    match inv#lower_bound_xpr with
     | Some (XConst (IntConst n)) when n#geq numerical_zero ->
        let deps = DLocal [inv#index] in
        let msg = "value of " ^ (e2s e) ^ " is non-negative: " ^ n#toString in
@@ -967,9 +1001,19 @@ object (self)
                           ^  (p2s (po_predicate_to_pretty pred)) in
                         Some (deps, msg)
                      | _ ->
-                        let xpred = po_predicate_to_xpredicate poq#fenv pred in
+                        let xpred_r = po_predicate_to_xpredicate poq#fenv pred in
                         begin
-                          poq#mk_global_request xpred;
+                          TR.tfold
+                            ~ok:poq#mk_global_request
+                            ~error:(fun e ->
+                              log_diagnostics_result
+                                ~tag:"inv_implies_safe"
+                                ~msg:poq#fname
+                                __FILE__ __LINE__
+                                ["Unable to convert predicate to xpredicate: "
+                                 ^ (p2s (po_predicate_to_pretty pred));
+                                 String.concat "; " e])
+                            xpred_r;
                           None
                         end
                    end

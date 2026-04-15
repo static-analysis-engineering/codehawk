@@ -59,6 +59,8 @@ open CCHProofObligation
 (* cchanalyze *)
 open CCHAnalysisTypes
 
+module TR = CHTraceResult
+
 let x2p = xpr_formatter#pr_expr
 let p2s = pretty_to_string
 let x2s x = p2s (x2p x)
@@ -78,8 +80,8 @@ object (self)
        | l  -> "(" ^ (String.concat "" l) ^ ")")
 
   method private is_function_pointer (memlval: lval) =
-    match fenv#get_type_unrolled (type_of_lval poq#env#get_fdecls memlval) with
-    | TPtr (TFun _,_) -> true
+    match TR.tmap fenv#get_type_unrolled (type_of_lval poq#env#get_fdecls memlval) with
+    | Ok (TPtr (TFun _, _)) -> true
     | _ -> false
 
   method private memref_to_string (memref: memory_reference_int) =
@@ -294,15 +296,30 @@ object (self)
       let request () =
         match memoffset with
         | NoOffset | Field _ ->
-           let xpred =
-             XInitialized
-               (ArgAddressedValue (ReturnValue, offset_to_s_offset memoffset)) in
            if List.mem callee.vname ["malloc"; "calloc"; "realloc"] then
              poq#set_diagnostic
                ~site:(Some (__FILE__, __LINE__, mname))
                "[action]:identify side effects of intervening calls"
            else
-             poq#mk_postcondition_request xpred callee
+             TR.tfold
+               ~ok:(fun offset ->
+                 let xpred =
+                   XInitialized (ArgAddressedValue (ReturnValue, offset)) in
+                 poq#mk_postcondition_request xpred callee)
+               ~error:(fun e ->
+                 begin
+                   log_diagnostics_result
+                     ~tag:"memlval_vinv_memref_basevar_implies_safe"
+                     ~msg:poq#fname
+                     __FILE__ __LINE__
+                     [String.concat "; " e;
+                      "Unable to convert offset: "
+                      ^ (p2s (offset_to_pretty memoffset))];
+                   poq#set_diagnostic
+                     ~site:(Some (__FILE__, __LINE__, mname))
+                     "[failure]:unable to convert offset to create external predicate"
+                 end)
+               (offset_to_s_offset memoffset)
         | _ -> poq#set_diagnostic_arg
                  ~site:(Some (__FILE__, __LINE__, mname))
                  1
@@ -338,28 +355,43 @@ object (self)
                | Some _  -> facc
                | _ ->
                   match pc with
-                  | XInitialized (ArgAddressedValue (ReturnValue, soff))
-                       when (offset_compare
-                               (s_offset_to_offset tgttype soff) memoffset) = 0 ->
-                     let deps =
-                       DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
-                     let rec offset_s o = match o with
-                       | NoOffset -> ""
-                       | Field ((fname, _), oo) -> "." ^ fname ^ (offset_s oo)
-                       | Index (_e, oo) -> "[.]" ^ (offset_s oo) in
-                     let offsetstring o =
-                       let s = offset_s o in
-                       if (String.length s) > 0 then
-                         " (offset: " ^ s ^ ") "
-                       else
-                         "" in
-                     let msg =
-                       "value addressed by return value from "
-                       ^ callee.vname
-                       ^ (offsetstring memoffset)
-                       ^ " is initialized" in
-                     let site = Some (__FILE__, __LINE__, mname) in
-                     Some (deps, msg, site)
+                  | XInitialized (ArgAddressedValue (ReturnValue, soff)) ->
+                     TR.tfold
+                       ~ok:(fun offset ->
+                         if (offset_compare offset memoffset) = 0 then
+                           (* (s_offset_to_offset tgttype soff) memoffset) = 0 -> *)
+                           let deps =
+                             DEnvC ([invindex], [PostAssumption (callee.vid, pc)]) in
+                           let rec offset_s o = match o with
+                             | NoOffset -> ""
+                             | Field ((fname, _), oo) -> "." ^ fname ^ (offset_s oo)
+                             | Index (_e, oo) -> "[.]" ^ (offset_s oo) in
+                           let offsetstring o =
+                             let s = offset_s o in
+                             if (String.length s) > 0 then
+                               " (offset: " ^ s ^ ") "
+                             else
+                               "" in
+                           let msg =
+                             "value addressed by return value from "
+                             ^ callee.vname
+                             ^ (offsetstring memoffset)
+                             ^ " is initialized" in
+                           let site = Some (__FILE__, __LINE__, mname) in
+                           Some (deps, msg, site)
+                         else
+                           None)
+                       ~error:(fun e ->
+                         begin
+                           log_diagnostics_result
+                             ~tag:"memlval_vinv_memref_basevar_implies_safe"
+                             ~msg:poq#fname
+                             __FILE__ __LINE__
+                             [String.concat "; " e;
+                              "Unable to convert offset"];
+                           None
+                         end)
+                       (s_offset_to_offset tgttype soff)
                   | _ -> None) None pcs in
          match r with
          | Some _ -> r
@@ -400,9 +432,18 @@ object (self)
                       let site = Some (__FILE__, __LINE__, mname) in
                       Some (deps, msg, site)
                    | _ ->
-                      let xpred = po_predicate_to_xpredicate poq#fenv pred in
                       begin
-                        poq#mk_global_request xpred;
+                        TR.tfold
+                          ~ok:poq#mk_global_request
+                          ~error:(fun e ->
+                            log_diagnostics_result
+                              ~tag:"memlval_vinv_memref_implies_safe"
+                              ~msg:poq#fname
+                              __FILE__ __LINE__
+                            ["Unable to convert predicate to xpredicate: "
+                             ^ (p2s (po_predicate_to_pretty pred));
+                             String.concat "; " e])
+                        (po_predicate_to_xpredicate poq#fenv pred);
                         None
                       end
                  end
@@ -465,9 +506,18 @@ object (self)
               let site = Some (__FILE__, __LINE__, mname) in
               Some (deps, msg, site)
            | _ ->
-              let xpred = po_predicate_to_xpredicate poq#fenv pred in
               begin
-                poq#mk_global_request xpred;
+                TR.tfold
+                  ~ok:poq#mk_global_request
+                  ~error:(fun e ->
+                    log_diagnostics_result
+                      ~tag:"memlval_vinv_implies_safe"
+                      ~msg:poq#fname
+                      __FILE__ __LINE__
+                      ["Unable to convert predicate to xpredicate: "
+                       ^ (p2s (po_predicate_to_pretty pred));
+                       String.concat "; " e])
+                  (po_predicate_to_xpredicate poq#fenv pred);
                 None
               end
          end
@@ -503,37 +553,59 @@ object (self)
     match (memlval, memoffset) with
     | ((Var (_vname, vid), NoOffset), NoOffset)
          when self#is_function_pointer memlval && vid > 0 ->
-       self#check_safe_functionpointer (poq#env#get_varinfo vid)
+       TR.tfold
+         ~ok:self#check_safe_functionpointer
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_safe_memlval"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
     | ((Var (_vname, vid), NoOffset), _) when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       let vinfovalues = poq#get_vinfo_offset_values vinfo in
-       let _ =
-         poq#set_vinfo_diagnostic_invariants
-           ~site:(Some (__FILE__, __LINE__, mname)) vinfo in
-       let _ =
-         poq#set_diagnostic
-           ~site:(Some (__FILE__, __LINE__, mname))
-           ("[mem-offset]: " ^ (p2s (offset_to_pretty memoffset))) in
-       List.fold_left (fun acc (inv, offset) ->
-           acc ||
-             match offset with
-             | NoOffset ->
-                begin
-                  match self#memlval_vinv_implies_safe inv memoffset with
-                  | Some (deps, msg, site) ->
-                     begin
-                       poq#record_safe_result ~site deps msg;
-                       true
-                     end
-                  | _ -> false
-                end
-             | _ ->
-                begin
-                  poq#set_diagnostic
-                    ~site:(Some (__FILE__, __LINE__, mname))
-                    ("[deref offset]: " ^  (p2s (offset_to_pretty offset)));
-                  false
-                end) false vinfovalues
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let vinfovalues = poq#get_vinfo_offset_values vinfo in
+           let _ =
+             poq#set_vinfo_diagnostic_invariants
+               ~site:(Some (__FILE__, __LINE__, mname)) vinfo in
+           let _ =
+             poq#set_diagnostic
+               ~site:(Some (__FILE__, __LINE__, mname))
+               ("[mem-offset]: " ^ (p2s (offset_to_pretty memoffset))) in
+           List.fold_left (fun acc (inv, offset) ->
+               acc ||
+                 match offset with
+                 | NoOffset ->
+                    begin
+                      match self#memlval_vinv_implies_safe inv memoffset with
+                      | Some (deps, msg, site) ->
+                         begin
+                           poq#record_safe_result ~site deps msg;
+                           true
+                         end
+                      | _ -> false
+                    end
+                 | _ ->
+                    begin
+                      poq#set_diagnostic
+                        ~site:(Some (__FILE__, __LINE__, mname))
+                        ("[deref offset]: " ^  (p2s (offset_to_pretty offset)));
+                      false
+                    end) false vinfovalues)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_safe_memlval"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+         (poq#env#get_varinfo vid)
     | _ -> false
 
   method private check_safe_lval =
@@ -707,42 +779,53 @@ object (self)
     | Field ((fname,fid),
              Index (Lval (Var (_vname, vid), NoOffset),
                     (( NoOffset | Field (_, NoOffset)) as suboff))) when vid > 0 ->
-       let vinfo = poq#env#get_varinfo vid in
-       let vinfovalues = poq#get_vinfo_offset_values vinfo in
-       let _ = poq#set_vinfo_diagnostic_invariants vinfo in
-       let mkdeps n =
-         let noffset = Field ((fname, fid),Index (make_constant_exp n,suboff))  in
-         let memlval = (Mem (Lval lval), noffset) in
-         let pred = PInitialized memlval  in
-         let deps = DEnvC ([invindex],[ApiAssumption pred]) in
-         let site = Some (__FILE__, __LINE__, mname) in
-         let msg =
-           "delegate condition "
-           ^ (p2s (po_predicate_to_pretty pred))
-           ^ " to the api" in
-         (deps, msg, site) in
-       List.fold_left (fun acc (inv, _offset) ->
-           match acc with
-           | Some _ -> acc
-           | _ ->
-              match (inv#lower_bound_xpr, inv#upper_bound_xpr) with
-              | (Some (XConst (IntConst lb)), Some (XConst (IntConst ub)))
-                   when (ub#sub lb)#lt (mkNumerical 10) ->
-                 let numrange = mk_num_range lb (ub#add numerical_one) in
-                 begin
-                   match numrange with
-                   | [] -> None
-                   | h::tl ->
-                      let (deps, msg, _) =
-                        List.fold_left (fun (d, m, _) n ->
-                            let (dd, mm, _) = mkdeps n in
-                            let d = join_dependencies d dd in
-                            let m = m ^ "; " ^ mm in
-                            (d, m, None)) (mkdeps h) tl in
-                      let site = Some (__FILE__, __LINE__, mname) in
-                      Some (deps, msg, site)
-                 end
-              | _ -> None) None vinfovalues
+       TR.tfold
+       ~ok:(fun vinfo ->
+         let vinfovalues = poq#get_vinfo_offset_values vinfo in
+         let _ = poq#set_vinfo_diagnostic_invariants vinfo in
+         let mkdeps n =
+           let noffset = Field ((fname, fid),Index (make_constant_exp n,suboff))  in
+           let memlval = (Mem (Lval lval), noffset) in
+           let pred = PInitialized memlval  in
+           let deps = DEnvC ([invindex],[ApiAssumption pred]) in
+           let site = Some (__FILE__, __LINE__, mname) in
+           let msg =
+             "delegate condition "
+             ^ (p2s (po_predicate_to_pretty pred))
+             ^ " to the api" in
+           (deps, msg, site) in
+         List.fold_left (fun acc (inv, _offset) ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                match (inv#lower_bound_xpr, inv#upper_bound_xpr) with
+                | (Some (XConst (IntConst lb)), Some (XConst (IntConst ub)))
+                     when (ub#sub lb)#lt (mkNumerical 10) ->
+                   let numrange = mk_num_range lb (ub#add numerical_one) in
+                   begin
+                     match numrange with
+                     | [] -> None
+                     | h::tl ->
+                        let (deps, msg, _) =
+                          List.fold_left (fun (d, m, _) n ->
+                              let (dd, mm, _) = mkdeps n in
+                              let d = join_dependencies d dd in
+                              let m = m ^ "; " ^ mm in
+                              (d, m, None)) (mkdeps h) tl in
+                        let site = Some (__FILE__, __LINE__, mname) in
+                        Some (deps, msg, site)
+                   end
+                | _ -> None) None vinfovalues)
+       ~error:(fun err ->
+         begin
+           log_diagnostics_result
+             ~tag:"memlval_var_implies_delegation"
+             ~msg:poq#env#get_functionname
+             __FILE__ __LINE__
+             [String.concat ", " err];
+           None
+         end)
+       (poq#env#get_varinfo vid)
     | _ ->
        begin
          poq#set_diagnostic ("[U:memoffset] " ^ (p2s (offset_to_pretty memoffset)));
@@ -781,23 +864,34 @@ object (self)
   method private check_delegation_memlval (memlval: lval) (memoffset: offset) =
     match memlval with
     | (Var (_vname, vid), NoOffset) when vid > 0 ->
-       let vinfo  = poq#env#get_varinfo vid in
-       let vinfovalues = poq#get_vinfo_offset_values vinfo in
-       List.fold_left (fun  acc (inv, offset) ->
-           acc ||
-             match offset with
-             | NoOffset ->
-                begin
-                  match self#memlval_vinv_implies_delegation
-                          inv memoffset  with
-                  | Some (deps, msg, site) ->
-                     begin
-                       poq#record_safe_result ~site deps msg;
-                       true
-                     end
-                  | _ -> false
-                end
-             | _ -> false) false vinfovalues
+       TR.tfold
+       ~ok:(fun vinfo ->
+         let vinfovalues = poq#get_vinfo_offset_values vinfo in
+         List.fold_left (fun  acc (inv, offset) ->
+             acc ||
+               match offset with
+               | NoOffset ->
+                  begin
+                    match self#memlval_vinv_implies_delegation
+                            inv memoffset  with
+                    | Some (deps, msg, site) ->
+                       begin
+                         poq#record_safe_result ~site deps msg;
+                         true
+                       end
+                    | _ -> false
+                  end
+               | _ -> false) false vinfovalues)
+       ~error:(fun err ->
+         begin
+           log_diagnostics_result
+             ~tag:"check_delegation_memlval"
+             ~msg:poq#env#get_functionname
+             __FILE__ __LINE__
+             [String.concat ", " err];
+           false
+         end)
+       (poq#env#get_varinfo vid)
     | _ -> false
 
   method private check_delegation_lval =
@@ -809,15 +903,26 @@ object (self)
             (_,
              Lval (Var (_vname, vid), NoOffset),
              Const (CInt (i64,_,_)), _) as e), NoOffset) when vid > 0  ->
-       let vinfo = poq#env#get_varinfo vid in
-       begin
-         poq#set_vinfo_diagnostic_invariants vinfo;
-         poq#set_diagnostic_arg 1 ("offset: " ^ (Int64.to_string i64));
-         (let xpr = poq#get_external_value e in
-          if is_random xpr then () else
-            poq#set_diagnostic_arg 1 ("deref-value: " ^ (x2s xpr)));
-         false
-       end
+       TR.tfold
+         ~ok:(fun vinfo ->
+           begin
+             poq#set_vinfo_diagnostic_invariants vinfo;
+             poq#set_diagnostic_arg 1 ("offset: " ^ (Int64.to_string i64));
+             (let xpr = poq#get_external_value e in
+              if is_random xpr then () else
+                poq#set_diagnostic_arg 1 ("deref-value: " ^ (x2s xpr)));
+             false
+           end)
+         ~error:(fun err ->
+           begin
+             log_diagnostics_result
+               ~tag:"check_delegation_lval"
+               ~msg:poq#env#get_functionname
+               __FILE__ __LINE__
+               [String.concat ", " err];
+             false
+           end)
+       (poq#env#get_varinfo vid)
     | _ -> false
 
   method check_delegation =

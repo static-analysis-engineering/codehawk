@@ -56,7 +56,10 @@ open CCHUtilities
 open CCHAnalysisTypes
 open CCHCommand
 
+module TR = CHTraceResult
+
 let p2s = CHPrettyUtil.pretty_to_string
+let e2s e = p2s (exp_to_pretty e)
 
 
 class num_assignment_translator_t
@@ -199,14 +202,25 @@ object (self)
   val fdecls = env#get_fdecls
 
   method private get_function_pointer rhs =
-    match type_of_exp fdecls rhs with
-    | TPtr (TFun _, []) ->
-      begin
-	match rhs with
-	| AddrOf (Var (fname, fvid), NoOffset) -> Some (fname, fvid)
-	| _ -> None
-      end
-    | _ -> None
+    TR.tfold
+      ~ok:(function
+        | TPtr (TFun _, []) ->
+          begin
+	    match rhs with
+	    | AddrOf (Var (fname, fvid), NoOffset) -> Some (fname, fvid)
+	    | _ -> None
+          end
+        | _ -> None)
+      ~error:(fun e ->
+        begin
+          log_diagnostics_result
+            ~tag:"get_function_pointer"
+            ~msg:env#get_functionname
+            __FILE__ __LINE__
+            ["type_of_exp failed: "; String.concat "; " e];
+          None
+        end)
+      (type_of_exp fdecls rhs)
 
   method translate
            (context:program_context_int) (loc:location) (lhs:lval) (rhs:exp) =
@@ -219,25 +233,49 @@ object (self)
     | _ -> 
       []
     in
-    let atts = match type_of_lval fdecls lhs with
-      | TPtr _ ->
-	if is_field_lval_exp rhs then
-	  let (fname,ckey) = get_field_lval_exp rhs in
-	  ["field"; fname; string_of_int ckey]
-	else
-	  begin
-	    match rhs with
-	    | Lval (Var (vname,vid),NoOffset) ->
-	      let vinfo = env#get_varinfo vid in
-	      if vinfo.vglob then
-		["global"; vname; string_of_int vid]
-	      else
-		[]
-            | BinOp ((IndexPI | PlusPI | MinusPI), _, _, _) ->
-               ["c"]
-	    | _ -> []
-	  end
-      | _ -> [] in
+    let atts =
+      TR.tfold
+        ~ok:(function
+          | TPtr _ ->
+	    if is_field_lval_exp rhs then
+	      let (fname,ckey) = get_field_lval_exp rhs in
+	      ["field"; fname; string_of_int ckey]
+	    else
+	      begin
+		match rhs with
+		| Lval (Var (vname, vid), NoOffset) ->
+                   TR.tfold
+                     ~ok:(fun vinfo ->
+		       if vinfo.vglob then
+		         ["global"; vname; string_of_int vid]
+		       else
+		         [])
+                     ~error:(fun err ->
+                       begin
+                         log_error_result
+                           ~tag:"translate"
+                           ~msg:env#get_functionname
+                           __FILE__ __LINE__
+                           ["rhs: " ^ (e2s rhs);
+                            String.concat ", " err];
+                         []
+                       end)
+                   (env#get_varinfo vid)
+                | BinOp ((IndexPI | PlusPI | MinusPI), _, _, _) ->
+                   ["c"]
+		| _ -> []
+	      end
+          | _ -> [])
+        ~error:(fun e ->
+          begin
+            log_diagnostics_result
+              ~tag:"translate"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["type_of_lval failed: "; String.concat "; " e];
+            []
+          end)
+        (type_of_lval fdecls lhs) in
     let atts = match self#get_function_pointer rhs with
       | Some (fname,fvid) -> atts @ ["fptr"; fname; string_of_int fvid]
       | _ -> atts in
@@ -245,6 +283,7 @@ object (self)
     [make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))] @ errno_write
 
 end
+
 
 class sym_pointersets_assignment_translator_t
         (env:c_environment_int)
@@ -260,55 +299,73 @@ object (self)
 
   method translate
            (context:program_context_int) (loc:location) (lhs:lval) (rhs:exp) =
-    try
-      let chifVar = exp_translator#translate_lhs context lhs in
-      let rhsExpr = exp_translator#translate_exp context rhs in
-      let assign =
-        if chifVar#isTmp then
-          if is_pointer_type (type_of_lval fdecls lhs) then
+    let chifVar = exp_translator#translate_lhs context lhs in
+    let rhsExpr = exp_translator#translate_exp context rhs in
+    let assign =
+      if chifVar#isTmp then
+        TR.tfold
+          ~ok:(fun lvalty ->
+            if is_pointer_type lvalty then
+              let ptrvars = env#get_pointer_variables SYM_VAR_TYPE in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"abstract pointer variables"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  (List.map (fun v -> p2s v#toPretty) ptrvars) in
+              make_c_cmd (ABSTRACT_VARS ptrvars)
+            else
+              make_c_cmd SKIP)
+          ~error:(fun e ->
             let ptrvars = env#get_pointer_variables SYM_VAR_TYPE in
-            let _ =
+            begin
               log_diagnostics_result
-                ~tag:"abstract pointer variables"
+                ~tag:"translate"
                 ~msg:env#get_functionname
                 __FILE__ __LINE__
-                (List.map (fun v -> p2s v#toPretty) ptrvars) in
-            make_c_cmd (ABSTRACT_VARS ptrvars)
-          else
-            make_c_cmd SKIP
-        else if is_pointer_type (type_of_lval fdecls lhs) then
-          match rhsExpr with
-          | XConst (SymSet []) -> (make_c_cmd SKIP)
-          | XConst (SymSet [sym]) -> make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))
-          | XConst (SymSet lst) ->
-             make_c_branch
-               (List.map (fun s -> [make_c_cmd (ASSIGN_SYM (chifVar, SYM s))]) lst)
-          | XVar v -> make_c_cmd (ASSIGN_SYM (chifVar, SYM_VAR v))
-          | _ -> make_c_cmd (ASSIGN_SYM (chifVar, SYM (new symbol_t "unknown")))
-        else
-          make_c_cmd SKIP in
-      let _ =
-        log_diagnostics_result
-          ~msg:(self#dmsg context loc)
-          ~tag:"sym_pointersets:translate assignment"
-          __FILE__ __LINE__
-          ["lhs: " ^ (p2s (lval_to_pretty lhs));
-           "rhs: " ^ (p2s (exp_to_pretty rhs));
-           "result: " ^ (p2s (c_cmd_to_pretty assign))] in
-      [assign]
-    with
-    | CCHFailure p ->
-       begin
-         ch_error_log#add
-           "sym-pointer assignment"
-           (LBLOCK [
-                lval_to_pretty lhs;
-                STR " := " ;
-                exp_to_pretty rhs;
-                STR "; leads to: ";
-                p]);
-         raise (CCHFailure p)
-       end
+                ["Unable to determine type of lval "
+                 ^ (p2s (lval_to_pretty lhs));
+                 "Abstracting all pointer vars";
+                 String.concat "; " e];
+              make_c_cmd (ABSTRACT_VARS ptrvars)
+            end)
+          (type_of_lval fdecls lhs)
+      else
+        TR.tfold
+          ~ok:(fun lvalty ->
+            if is_pointer_type lvalty then
+              match rhsExpr with
+              | XConst (SymSet []) -> (make_c_cmd SKIP)
+              | XConst (SymSet [sym]) -> make_c_cmd (ASSIGN_SYM (chifVar, SYM sym))
+              | XConst (SymSet lst) ->
+                 make_c_branch
+                   (List.map (fun s -> [make_c_cmd (ASSIGN_SYM (chifVar, SYM s))]) lst)
+              | XVar v -> make_c_cmd (ASSIGN_SYM (chifVar, SYM_VAR v))
+              | _ -> make_c_cmd (ASSIGN_SYM (chifVar, SYM (new symbol_t "unknown")))
+            else
+              make_c_cmd SKIP)
+          ~error:(fun e ->
+            begin
+              log_diagnostics_result
+                ~tag:"translate"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                ["Unable to determine type of lval "
+                 ^ (p2s (lval_to_pretty lhs));
+                 "Assigning unknown symbol to " ^ (p2s chifVar#toPretty);
+                 String.concat "; " e];
+              make_c_cmd (ASSIGN_SYM (chifVar, SYM (new symbol_t "unknown")))
+            end)
+          (type_of_lval fdecls lhs) in
+    let _ =
+      log_diagnostics_result
+        ~msg:(self#dmsg context loc)
+        ~tag:"sym_pointersets:translate assignment"
+        __FILE__ __LINE__
+        ["lhs: " ^ (p2s (lval_to_pretty lhs));
+         "rhs: " ^ (p2s (exp_to_pretty rhs));
+         "result: " ^ (p2s (c_cmd_to_pretty assign))] in
+    [assign]
 
 end
 

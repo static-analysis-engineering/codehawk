@@ -59,11 +59,14 @@ open CCHPreTypes
 open CCHAnalysisTypes
 open CCHCommand
 
+module TR = CHTraceResult
 module B = Big_int_Z
 
 let p2s = CHPrettyUtil.pretty_to_string
 let x2p = XprToPretty.xpr_formatter#pr_expr
 let x2s x = p2s (x2p x)
+let e2s e = p2s (exp_to_pretty e)
+
 
 let fenv = CCHFileEnvironment.file_environment
 
@@ -104,40 +107,44 @@ object (self)
       XVar lvar
 
   method private translate_expr (x:exp):xpr_t =
-    let logmsg () = () in
-    try
-      let ftype = type_of_exp fdecls x in
-      match x with
-      | Const c -> self#translate_const_expr c ftype
-      | CastE (TPtr _, e) when exp_is_zero e -> zero_constant_expr
-      | CastE (TInt _, CastE (TPtr _,e)) when exp_is_zero e -> zero_constant_expr
-      | Lval lval -> self#translate_variable_expr lval ftype
-      | SizeOf t -> size_of_type fdecls t
-      | SizeOfE e -> size_of_exp_type fdecls e
-      | SizeOfStr s ->
-         let (_, _, len) = mk_constantstring s in int_constant_expr len
-      | BinOp (op, x1, x2, ty) -> self#translate_binop_expr op x1 x2 ty
-      | UnOp (op, x1, _) -> self#translate_unop_expr op x1
-      | CastE (_, e) -> self#translate_expr e
-      | AddrOf lval
-	| StartOf lval -> self#translate_address lval ftype
-      | CnApp ("ntp", [Some (Const (CStr s))],_)
-        | CnApp ("ntp", [Some (CastE (_, Const (CStr s)))], _) ->
-         XConst (IntConst (mkNumerical (String.length s)))
-      | _ ->
-         begin
-           logmsg();
-           random_constant_expr
-         end
-    with
-    | CCHFailure p | CHFailure p ->
-       raise
-         (CCHFailure
-            (LBLOCK [
-                 STR "Error in translating exp ";
-                 exp_to_pretty x;
-		 STR ": ";
-                 p]))
+    TR.tfold
+      ~ok:(fun ftype ->
+        match x with
+        | Const c -> self#translate_const_expr c ftype
+        | CastE (TPtr _, e) when exp_is_zero e -> zero_constant_expr
+        | CastE (TInt _, CastE (TPtr _,e)) when exp_is_zero e -> zero_constant_expr
+        | Lval lval -> self#translate_variable_expr lval ftype
+        | SizeOf t -> size_of_type fdecls t
+        | SizeOfE e -> size_of_exp_type fdecls e
+        | SizeOfStr s ->
+           let (_, _, len) = mk_constantstring s in int_constant_expr len
+        | BinOp (op, x1, x2, ty) -> self#translate_binop_expr op x1 x2 ty
+        | UnOp (op, x1, _) -> self#translate_unop_expr op x1
+        | CastE (_, e) -> self#translate_expr e
+        | AddrOf lval
+	  | StartOf lval -> self#translate_address lval ftype
+        | CnApp ("ntp", [Some (Const (CStr s))],_)
+          | CnApp ("ntp", [Some (CastE (_, Const (CStr s)))], _) ->
+           XConst (IntConst (mkNumerical (String.length s)))
+        | _ ->
+           begin
+             log_diagnostics_result
+               ~tag:"translate_expr"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["Not handled: " ^ (e2s x)];
+             random_constant_expr
+           end)
+      ~error:(fun e ->
+        begin
+          log_error_result
+            ~tag:"translate_expr"
+            ~msg:env#get_functionname
+            __FILE__ __LINE__
+            ["x: " ^ (e2s x); (String.concat "; " e)];
+          random_constant_expr
+        end)
+      (type_of_exp fdecls x)
 
   method private externalize_offset offset =
     let default = CnApp ("variable-index", [], TInt (IInt, [])) in
@@ -159,15 +166,27 @@ object (self)
         ["lval: " ^ (p2s (lval_to_pretty lval))] in
     match lval with
     | (Var (_, vid),offset) when vid > 0 ->
-       let vinfo = env#get_varinfo vid in
-       let eoffset = self#externalize_offset offset in
-       let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
-       if vinfo.vaddrof && vinfo.vglob then
-         env#mk_global_memory_variable vinfo eoffset otype NUM_VAR_TYPE
-       else if vinfo.vaddrof then
-         env#mk_stack_memory_variable vinfo eoffset otype NUM_VAR_TYPE
-       else
-         env#mk_program_var vinfo eoffset NUM_VAR_TYPE
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let eoffset = self#externalize_offset offset in
+           let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
+           if vinfo.vaddrof && vinfo.vglob then
+             env#mk_global_memory_variable vinfo eoffset otype NUM_VAR_TYPE
+           else if vinfo.vaddrof then
+             env#mk_stack_memory_variable vinfo eoffset otype NUM_VAR_TYPE
+           else
+             env#mk_program_var vinfo eoffset NUM_VAR_TYPE)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_lval"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             env#mk_temp NUM_VAR_TYPE
+           end)
+         (env#get_varinfo vid)
     | (Var _, _) ->
        let _ =
          log_diagnostics_result
@@ -195,8 +214,18 @@ object (self)
        | XVar v when (env#is_initial_value v || env#is_function_return_value v) ->
           let resultv =
             (match type_of_exp fdecls e with
-             | TPtr (t, _) ->
+             | Ok (TPtr (t, _)) ->
                 env#mk_base_address_memory_variable v offset t NUM_VAR_TYPE
+             | Error e ->
+                begin
+                  log_error_result
+                    ~tag:"translate_lval"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    ["lval: " ^ (p2s (lval_to_pretty lval));
+                     (String.concat ", " e)];
+                  env#mk_temp NUM_VAR_TYPE
+                end
              | _ ->
                 env#mk_temp NUM_VAR_TYPE) in
           let _ =
@@ -218,10 +247,20 @@ object (self)
        | XOp (XPlus, [XVar base; XConst (IntConst n)])
             when (env#is_initial_value base || env#is_function_return_value base) ->
           let ioffset = CCHTypesUtil.mk_constant_index_offset n in
-          let (resultv, t) =
+          let resultv =
             (match type_of_exp fdecls e with
-             | TPtr (t, _) ->
-                (env#mk_base_address_memory_variable base ioffset t NUM_VAR_TYPE, t)
+             | Ok (TPtr (t, _)) ->
+                env#mk_base_address_memory_variable base ioffset t NUM_VAR_TYPE
+             | Error e ->
+                begin
+                  log_error_result
+                    ~tag:"translate_lval"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    ["lval: " ^ (p2s (lval_to_pretty lval));
+                     (String.concat ", " e)];
+                  env#mk_temp NUM_VAR_TYPE
+                end
              | _ ->
                 raise
                   (CCHFailure
@@ -233,7 +272,6 @@ object (self)
               __FILE__ __LINE__
               ["base: " ^ (p2s base#toPretty);
                "ioff: " ^ n#toString;
-               "typ: " ^ (p2s (typ_to_pretty t));
                "resultv: " ^ (p2s resultv#toPretty)] in
           resultv
 
@@ -267,29 +305,52 @@ object (self)
     match op with
     | Neg -> XOp (XNeg, [self#translate_expr x])
     | BNot -> XOp (XBNot, [self#translate_expr x])
-    | LNot when is_pointer_type (type_of_exp fdecls x) ->
+    | LNot when TR.tfold_default is_pointer_type false (type_of_exp fdecls x) ->
       XOp (XEq, [self#translate_expr x; XConst (IntConst numerical_zero)])
     | LNot -> XOp (XLNot, [self#translate_expr x])
 
   method private translate_address lval ftype:xpr_t =
     let vmgr = env#get_variable_manager in
-    let logmsg () = () in
     match lval with
     | (Var (_, vid),offset) when vid > 0 ->
-       let vinfo = env#get_varinfo vid in
-       if vinfo.vglob then
-         XVar (env#mk_global_address_value vinfo offset ftype)
-       else
-         XVar (env#mk_stack_address_value vinfo offset ftype)
+       TR.tfold
+         ~ok:(fun vinfo ->
+           if vinfo.vglob then
+             XVar (env#mk_global_address_value vinfo offset ftype)
+           else
+             XVar (env#mk_stack_address_value vinfo offset ftype))
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_address"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             random_constant_expr
+           end)
+       (env#get_varinfo vid)
     | (Var _, _) -> random_constant_expr
     | (Mem e, offset) ->
        let memxpr = self#translate_expr e in
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = get_pointer_expr_target_type fdecls e in
-            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
-            XVar (env#mk_memory_address_value memref#index offset)
+            TR.tfold
+            ~ok:(fun memtype ->
+              let memref = vmgr#memrefmgr#mk_external_reference v memtype in
+              XVar (env#mk_memory_address_value memref#index offset))
+            ~error:(fun e ->
+              begin
+                log_error_result
+                  ~tag:"translate_address"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["lval: " ^ (p2s (lval_to_pretty lval));
+                   String.concat ", " e];
+                random_constant_expr
+              end)
+            (get_pointer_expr_target_type fdecls e)
          | XVar v when env#is_memory_address v ->
             let (memref, moffset) = env#get_memory_address v in
             let addrv =
@@ -298,13 +359,17 @@ object (self)
             XVar addrv
          | _ ->
             begin
-              logmsg ();
+              log_diagnostics_result
+                ~tag:"translate_address"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                ["lval: " ^ (p2s (lval_to_pretty lval)) ^ " not handled"];
               random_constant_expr
             end
        end
 
-  method private translate_binop_expr op x1 x2 ty =
-    let ty = fenv#get_type_unrolled ty in
+  method private translate_binop_expr op x1 x2 _ty =
+    (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
       (* | PlusA when CCHBasicUtil.exp_is_zero x2 -> (self#translate_expr x1) *)
       | PlusA -> XOp (XPlus, [self#translate_expr x1; self#translate_expr x2])
@@ -327,13 +392,27 @@ object (self)
 	 XOp (XPlus, [self#translate_expr x1; offsetx])
       | MinusPP ->
 	begin
-	  match fenv#get_type_unrolled (type_of_exp fdecls x1) with
-	  | TPtr (elTy,_) ->
+	  match TR.tmap fenv#get_type_unrolled (type_of_exp fdecls x1) with
+	  | Ok (TPtr (elTy,_)) ->
 	     let elementSize = size_of_type fdecls elTy in
              let xdiff =
                XOp (XMinus, [self#translate_expr x1; self#translate_expr x2]) in
 	     XOp (XDiv, [xdiff; elementSize])
-	  | t ->
+          | Error e ->
+             begin
+               log_error_result
+                 ~tag:"translate_binop_expr"
+                 ~msg:env#get_functionname
+                 __FILE__ __LINE__
+                 ["Unable to determine type of " ^ (e2s x1);
+                  String.concat ", " e];
+               raise
+                 (CCHFailure
+                    (LBLOCK [
+                         STR ("Unable to determine type of " ^ (e2s x1));
+                         STR " in MinusPP"]))
+             end
+	  | Ok t ->
              raise
                (CCHFailure
 		  (LBLOCK [
@@ -341,8 +420,9 @@ object (self)
 		       typ_to_pretty t]))
 	end
       | MinusPI ->
-	 let elementSize = size_of_type fdecls ty in
-         let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in
+	 (* let elementSize = size_of_type fdecls ty in *)
+         (* let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in *)
+         let offsetx = self#translate_expr x2 in
 	 XOp (XMinus, [self#translate_expr x1; offsetx])
       | Mod -> XOp (XMod, [self#translate_expr x1; self#translate_expr x2])
       | Shiftlt -> XOp (XShiftlt, [self#translate_expr x1; self#translate_expr x2])
@@ -383,7 +463,24 @@ object (self)
       | BinOp (Le, e1, e2, t) -> BinOp (Gt, e1, e2, t)
       | BinOp (Lt, e1, e2, t) -> BinOp (Ge, e1, e2, t)
       | UnOp (LNot, e,_) -> e
-      | _ -> UnOp (LNot, c, type_of_exp fdecls c) in
+      | _ ->
+         TR.tfold
+           ~ok:(fun t -> UnOp (LNot, c, t))
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:"translate_condition"
+                 ~msg:env#get_functionname
+                 __FILE__ __LINE__
+                 ["c: " ^ (e2s c);
+                  String.concat ", " e];
+               raise
+                 (CCHFailure
+                    (LBLOCK [
+                         STR ("Error in translating condition " ^ (e2s c));
+                         STR (String.concat ", " e)]))
+             end)
+           (type_of_exp fdecls c) in
     let _ = env#start_transaction in
     let then_expr = self#translate_exp context c in
     let then_assert = [make_assume then_expr] in
@@ -436,15 +533,27 @@ object (self)
   method private translate_lhs_lval (lval:lval) =
     match lval with
     | (Var (_, vid),offset) when vid > 0 ->
-       let vinfo = env#get_varinfo vid in
-       let eoffset = self#externalize_offset offset in
-       let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
-       if vinfo.vaddrof && vinfo.vglob then
-         env#mk_global_memory_variable vinfo eoffset otype SYM_VAR_TYPE
-       else if vinfo.vaddrof then
-         env#mk_stack_memory_variable vinfo eoffset otype SYM_VAR_TYPE
-       else
-         env#mk_program_var vinfo eoffset SYM_VAR_TYPE
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let eoffset = self#externalize_offset offset in
+           let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
+           if vinfo.vaddrof && vinfo.vglob then
+             env#mk_global_memory_variable vinfo eoffset otype SYM_VAR_TYPE
+           else if vinfo.vaddrof then
+             env#mk_stack_memory_variable vinfo eoffset otype SYM_VAR_TYPE
+           else
+             env#mk_program_var vinfo eoffset SYM_VAR_TYPE)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_lhs_lval"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             env#mk_temp SYM_VAR_TYPE
+           end)
+         (env#get_varinfo vid)
     | (Var _, _) -> env#mk_temp SYM_VAR_TYPE
     | (Mem e, offset) ->
        match self#translate_lhs_expr e with
@@ -478,31 +587,45 @@ object (self)
       XVar lvar
 
   method private translate_lhs_expr (x:exp):xpr_t =
-    let logmsg () = () in
     try
-      let ftype = type_of_exp fdecls x in
-      match x with
-      | Const c -> self#translate_lhs_const_expr c ftype
-      | CastE (TPtr _, e) when exp_is_zero e -> zero_constant_expr
-      | CastE (TInt _, CastE (TPtr _, e)) when exp_is_zero e -> zero_constant_expr
-      | Lval lval -> self#translate_lhs_variable_expr lval ftype
-      | SizeOf t -> size_of_type fdecls t
-      | SizeOfE e -> size_of_exp_type fdecls e
-      | SizeOfStr s ->
-         let (_, _, len) = mk_constantstring s in int_constant_expr len
-      | BinOp (op, x1, x2, ty) -> self#translate_lhs_binop_expr op x1 x2 ty
-      | UnOp (op, x1,_) -> self#translate_lhs_unop_expr op x1
-      | CastE (_, e) -> self#translate_lhs_expr e
-      | AddrOf lval
-	| StartOf lval -> self#translate_lhs_address lval ftype
-      | CnApp ("ntp", [Some (Const (CStr s))],_)
-        | CnApp ("ntp", [Some (CastE (_,Const (CStr s)))], _) ->
-         XConst (IntConst (mkNumerical (String.length s)))
-      | _ ->
-         begin
-           logmsg();
-           random_constant_expr
-         end
+      TR.tfold
+        ~ok:(fun ftype ->
+          match x with
+          | Const c -> self#translate_lhs_const_expr c ftype
+          | CastE (TPtr _, e) when exp_is_zero e -> zero_constant_expr
+          | CastE (TInt _, CastE (TPtr _, e)) when exp_is_zero e -> zero_constant_expr
+          | Lval lval -> self#translate_lhs_variable_expr lval ftype
+          | SizeOf t -> size_of_type fdecls t
+          | SizeOfE e -> size_of_exp_type fdecls e
+          | SizeOfStr s ->
+             let (_, _, len) = mk_constantstring s in int_constant_expr len
+          | BinOp (op, x1, x2, ty) -> self#translate_lhs_binop_expr op x1 x2 ty
+          | UnOp (op, x1,_) -> self#translate_lhs_unop_expr op x1
+          | CastE (_, e) -> self#translate_lhs_expr e
+          | AddrOf lval
+	    | StartOf lval -> self#translate_lhs_address lval ftype
+          | CnApp ("ntp", [Some (Const (CStr s))],_)
+            | CnApp ("ntp", [Some (CastE (_,Const (CStr s)))], _) ->
+             XConst (IntConst (mkNumerical (String.length s)))
+          | _ ->
+             begin
+               log_diagnostics_result
+                 ~tag:"translate_lhs_expr"
+                 ~msg:env#get_functionname
+                 __FILE__ __LINE__
+                 ["x: " ^ (e2s x)];
+               random_constant_expr
+             end)
+        ~error:(fun e ->
+          begin
+            log_error_result
+              ~tag:"translate_lhs_expr"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["x: " ^ (e2s x); String.concat ", " e];
+            random_constant_expr
+          end)
+        (type_of_exp fdecls x)
     with
     | CCHFailure p | CHFailure p ->
        raise
@@ -521,33 +644,60 @@ object (self)
 
   method private translate_lhs_address lval ftype:xpr_t =
     let vmgr = env#get_variable_manager in
-    let logmsg () = () in
     match lval with
     | (Var (_, vid), offset) when vid > 0 ->
-       let vinfo = env#get_varinfo vid in
-       if vinfo.vglob then
-         XVar (env#mk_global_address_value vinfo offset ftype)
-       else
-         XVar (env#mk_stack_address_value vinfo offset ftype)
+       TR.tfold
+         ~ok:(fun vinfo ->
+           if vinfo.vglob then
+             XVar (env#mk_global_address_value vinfo offset ftype)
+           else
+             XVar (env#mk_stack_address_value vinfo offset ftype))
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_lhs_address"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             random_constant_expr
+           end)
+         (env#get_varinfo vid)
     | (Var _, _) -> random_constant_expr
     | (Mem e, offset) ->
        let memxpr = self#translate_lhs_expr e in
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = get_pointer_expr_target_type fdecls e in
-            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
-            XVar (env#mk_memory_address_value memref#index offset)
+            TR.tfold
+            ~ok:(fun memtype ->
+              let memref = vmgr#memrefmgr#mk_external_reference v memtype in
+              XVar (env#mk_memory_address_value memref#index offset))
+            ~error:(fun e ->
+              begin
+                log_error_result
+                  ~tag:"translate_lhs_address"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["lval: " ^ (p2s (lval_to_pretty lval));
+                   String.concat ", " e];
+                random_constant_expr
+              end)
+            (get_pointer_expr_target_type fdecls e)
          | XVar v when env#is_memory_address v -> XVar v
          | _ ->
             begin
-              logmsg ();
+              log_diagnostics_result
+                ~tag:"translate_lhs_address"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                ["lval: " ^ (p2s (lval_to_pretty lval))];
               random_constant_expr
             end
        end
 
-  method private translate_lhs_binop_expr op x1 x2 ty =
-    let ty = fenv#get_type_unrolled ty in
+  method private translate_lhs_binop_expr op x1 x2 _ty =
+    (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
       | PlusA ->
          XOp (XPlus,[self#translate_lhs_expr x1; self#translate_lhs_expr x2])
@@ -573,14 +723,25 @@ object (self)
 	 XOp (XPlus, [self#translate_lhs_expr x1; xoffset])
       | MinusPP ->
 	 begin
-	   match fenv#get_type_unrolled (type_of_exp fdecls x1) with
-	   | TPtr (elTy, _) ->
+	   match TR.tmap fenv#get_type_unrolled (type_of_exp fdecls x1) with
+	   | Ok (TPtr (elTy, _)) ->
 	      let elementSize = size_of_type fdecls elTy in
               let xdiff =
                 XOp (XMinus,
                      [self#translate_lhs_expr x1; self#translate_lhs_expr x2]) in
 	      XOp (XDiv, [xdiff; elementSize])
-	   | t ->
+           | Error e ->
+              begin
+                log_error_result
+                  ~tag:"translate_lhs_binop_expr"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["x1: " ^ (e2s x1);
+                   "x2: " ^ (e2s x2);
+                   String.concat ", " e];
+                random_constant_expr
+              end
+	   | Ok t ->
               raise
                 (CCHFailure
 		   (LBLOCK [
@@ -588,8 +749,9 @@ object (self)
 			typ_to_pretty t]))
 	 end
       | MinusPI ->
-	 let elementSize = size_of_type fdecls ty in
-         let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in
+	 (* let elementSize = size_of_type fdecls ty in *)
+         (* let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in *)
+         let xoffset = self#translate_lhs_expr x2 in
 	 XOp (XMinus, [self#translate_lhs_expr x1; xoffset])
       | Mod ->
          XOp (XMod, [self#translate_lhs_expr x1; self#translate_lhs_expr x2])
@@ -646,60 +808,71 @@ object (self)
     let default () =
       let s = memregmgr#mk_uninterpreted_sym (p2s (exp_to_pretty x)) in
       sym_constant_expr s in
-    let xpr =
-      try
-        let typ = fenv#get_type_unrolled (type_of_exp fdecls x) in
-        if is_pointer_type typ then
-          match x with
-          | Const c -> self#translate_rhs_const_expr c
-          | CastE (TPtr _, e) when exp_is_zero e -> null_constant_expr
-          | CastE (TInt _, CastE (TPtr _, e)) when exp_is_zero e ->
-             null_constant_expr
-          | Lval lval -> self#translate_rhs_variable_expr lval
-          | AddrOf (Var (vname, vid), _)
-            | StartOf (Var (vname, vid),_) when vid > 0 ->
-             let vinfo = env#get_varinfo vid in
-             let progvar = env#mk_program_var vinfo NoOffset SYM_VAR_TYPE in
-             let progvar =
-               if env#is_memory_variable progvar then
-                 let (memref, _) = env#get_memory_variable progvar in
-                 match memref#get_base with
-                 | CStackAddress v -> v
-                 | CGlobalAddress v -> v
-                 | CBaseVar (v, _) -> v
-                 | _ ->
-                    raise
-                      (CCHFailure
-                         (LBLOCK [
-                              STR "Unexpected memory base for variable: ";
-                              STR vname]))
-               else
-                 progvar in
-             if vinfo.vglob then
-               let s = memregmgr#mk_global_region_sym progvar in
-               sym_constant_expr s
-             else
-               let s = memregmgr#mk_stack_region_sym progvar in
-               sym_constant_expr s
-          | BinOp (op, x1, x2, ty) -> self#translate_rhs_binop_expr op x1 x2 ty
-          | CastE (_, e) -> self#translate_rhs_expr e
-          | _ -> default ()
+    TR.tfold
+      ~ok:(fun typ ->
+        let xpr =
+          if is_pointer_type typ then
+            match x with
+            | Const c -> self#translate_rhs_const_expr c
+            | CastE (TPtr _, e) when exp_is_zero e -> null_constant_expr
+            | CastE (TInt _, CastE (TPtr _, e)) when exp_is_zero e ->
+               null_constant_expr
+            | Lval lval -> self#translate_rhs_variable_expr lval
+            | AddrOf (Var (vname, vid), _)
+              | StartOf (Var (vname, vid),_) when vid > 0 ->
+               TR.tfold
+               ~ok:(fun vinfo ->
+                 let progvar = env#mk_program_var vinfo NoOffset SYM_VAR_TYPE in
+                 let progvar =
+                   if env#is_memory_variable progvar then
+                     let (memref, _) = env#get_memory_variable progvar in
+                     match memref#get_base with
+                     | CStackAddress v -> v
+                     | CGlobalAddress v -> v
+                     | CBaseVar (v, _) -> v
+                     | _ ->
+                        raise
+                          (CCHFailure
+                             (LBLOCK [
+                                  STR "Unexpected memory base for variable: ";
+                                  STR vname]))
+                   else
+                     progvar in
+                 if vinfo.vglob then
+                   let s = memregmgr#mk_global_region_sym progvar in
+                   sym_constant_expr s
+                 else
+                   let s = memregmgr#mk_stack_region_sym progvar in
+                   sym_constant_expr s)
+               ~error:(fun err ->
+                 begin
+                   log_error_result
+                     ~tag:"translate_rhs_expr"
+                     ~msg:env#get_functionname
+                     __FILE__ __LINE__
+                     ["x: " ^ (e2s x); String.concat ", " err];
+                     default ()
+                 end)
+               (env#get_varinfo vid)
+            | BinOp (op, x1, x2, ty) -> self#translate_rhs_binop_expr op x1 x2 ty
+            | CastE (_, e) -> self#translate_rhs_expr e
+            | _ -> default ()
+          else
+            random_constant_expr in
+        if (is_pointer_type typ) && is_random xpr then
+          default ()
         else
+          xpr)
+      ~error:(fun e ->
+        begin
+          log_error_result
+            ~tag:"translate_rhs_expr"
+            ~msg:env#get_functionname
+            __FILE__ __LINE__
+            ["x: " ^ (e2s x); String.concat ", " e];
           random_constant_expr
-      with
-      | CCHFailure p ->
-         raise
-           (CCHFailure
-              (LBLOCK [
-                   STR "Error in translating exp ";
-                   exp_to_pretty x;
-                   STR ": ";
-                   p])) in
-    if is_pointer_type (fenv#get_type_unrolled (type_of_exp fdecls x))
-       && is_random xpr then
-      default ()
-    else
-      xpr
+        end)
+      (TR.tmap fenv#get_type_unrolled (type_of_exp fdecls x))
 
   method private translate_rhs_variable_expr (lval:lval) =
     let lvar = self#translate_lhs_lval lval in
@@ -731,7 +904,8 @@ object (self)
       | CastE (_, e) -> is_zero e
       | _ -> false in
     match cond with
-    | UnOp (LNot, (Lval lval as e), _) when is_pointer_type (type_of_exp fdecls e) ->
+    | UnOp (LNot, (Lval lval as e), _)
+         when (TR.tfold_default is_pointer_type false (type_of_exp fdecls e)) ->
        let symvar = self#translate_lhs_lval lval in
        if symvar#isTmp then
          (SKIP, SKIP)
@@ -787,38 +961,86 @@ object (self)
        end
 
   method private translate_expr (x:exp):xpr_t =
-    let ftype = type_of_exp fdecls x in
-    match x with
-    | Const c -> self#translate_const_expr c
-    | CastE (_, xx) -> self#translate_expr xx
-    | Lval lval -> self#translate_variable_expr lval ftype
-    | AddrOf lval
-      | StartOf lval -> self#translate_address lval ftype
-    | BinOp (op, x1, x2, ty) -> self#translate_binop_expr op x1 x2 ty
-    | _ -> random_constant_expr
+    TR.tfold
+      ~ok:(fun ftype ->
+        match x with
+        | Const c -> self#translate_const_expr c
+        | CastE (_, xx) -> self#translate_expr xx
+        | Lval lval -> self#translate_variable_expr lval ftype
+        | AddrOf lval
+          | StartOf lval -> self#translate_address lval ftype
+        | BinOp (op, x1, x2, ty) -> self#translate_binop_expr op x1 x2 ty
+        | _ ->
+           begin
+             log_diagnostics_result
+               ~tag:"translate_expr"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["x: " ^ (e2s x)];
+             random_constant_expr
+           end)
+      ~error:(fun e ->
+        begin
+          log_error_result
+            ~tag:"translate_expr"
+            ~msg:env#get_functionname
+            __FILE__ __LINE__
+            ["x: " ^ (e2s x); String.concat ", " e];
+          random_constant_expr
+        end)
+      (type_of_exp fdecls x)
 
-  method private translate_address lval ftype:xpr_t =
+  method private translate_address (lval: lval) (ftype: typ):xpr_t =
     let vmgr = env#get_variable_manager in
-    let logmsg () = () in
     match lval with
     | (Var (_, vid), offset) ->
-       let vinfo = env#get_varinfo vid in
-       if vinfo.vglob then
-         XVar (env#mk_global_address_value vinfo offset ftype)
-       else
-         XVar (env#mk_stack_address_value vinfo offset ftype)
+       TR.tfold
+         ~ok:(fun vinfo ->
+           if vinfo.vglob then
+             XVar (env#mk_global_address_value vinfo offset ftype)
+           else
+             XVar (env#mk_stack_address_value vinfo offset ftype))
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_address"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             random_constant_expr
+           end)
+         (env#get_varinfo vid)
     | (Mem e, offset) ->
        let memxpr = self#translate_expr e in
        begin
          match memxpr with
          | XVar v when env#is_initial_value v || env#is_function_return_value v ->
-            let memtype = get_pointer_expr_target_type fdecls e in
-            let memref = vmgr#memrefmgr#mk_external_reference v memtype in
-            XVar (env#mk_memory_address_value memref#index offset)
+            TR.tfold
+              ~ok:(fun memtype ->
+                let memref = vmgr#memrefmgr#mk_external_reference v memtype in
+                XVar (env#mk_memory_address_value memref#index offset))
+              ~error:(fun err ->
+                begin
+                  log_error_result
+                    ~tag:"translate_address"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    ["e: " ^ (e2s e);
+                     "memxpr: " ^ (x2s memxpr);
+                     "v: " ^ (p2s v#toPretty);
+                     String.concat ", " err];
+                  random_constant_expr
+                end)
+              (get_pointer_expr_target_type fdecls e)
          | XVar v when env#is_memory_address v -> XVar v
          | _ ->
             begin
-              logmsg ();
+              log_diagnostics_result
+                ~tag:"translate_address"
+                ~msg:env#get_functionname
+                __FILE__ __LINE__
+                ["memxpr: " ^ (x2s memxpr)];
               random_constant_expr
             end
        end
@@ -876,18 +1098,30 @@ object (self)
            match e with CnApp _ -> false | _ -> is_constant_index o result in
     match lval with
     | (Var (_, vid), offset) ->
-       let vinfo = env#get_varinfo vid in
-       let eoffset = self#externalize_offset offset in
-       if is_constant_index eoffset true then
-         let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
-         if vinfo.vaddrof && vinfo.vglob then
-           env#mk_global_memory_variable vinfo eoffset otype SYM_VAR_TYPE
-         else if vinfo.vaddrof then
-           env#mk_stack_memory_variable vinfo eoffset otype SYM_VAR_TYPE
-         else
-           env#mk_program_var vinfo eoffset SYM_VAR_TYPE
-       else
-         env#mk_temp SYM_VAR_TYPE
+       TR.tfold
+         ~ok:(fun vinfo ->
+           let eoffset = self#externalize_offset offset in
+           if is_constant_index eoffset true then
+             let otype = type_of_offset env#get_fdecls vinfo.vtype offset in
+             if vinfo.vaddrof && vinfo.vglob then
+               env#mk_global_memory_variable vinfo eoffset otype SYM_VAR_TYPE
+             else if vinfo.vaddrof then
+               env#mk_stack_memory_variable vinfo eoffset otype SYM_VAR_TYPE
+             else
+               env#mk_program_var vinfo eoffset SYM_VAR_TYPE
+           else
+             env#mk_temp SYM_VAR_TYPE)
+         ~error:(fun err ->
+           begin
+             log_error_result
+               ~tag:"translate_lval"
+               ~msg:env#get_functionname
+               __FILE__ __LINE__
+               ["lval: " ^ (p2s (lval_to_pretty lval));
+                String.concat ", " err];
+             env#mk_temp SYM_VAR_TYPE
+           end)
+         (env#get_varinfo vid)
     | (Mem e, offset) ->
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
@@ -907,8 +1141,19 @@ object (self)
        | XVar v when env#is_initial_value v || env#is_function_return_value v ->
           let resultv =
             (match type_of_exp fdecls e with
-             | TPtr (t, _) ->
+             | Ok (TPtr (t, _)) ->
                 env#mk_base_address_memory_variable v NoOffset t NUM_VAR_TYPE
+             | Error err ->
+                begin
+                  log_error_result
+                    ~tag:"translate_lval"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    ["lval: " ^ (p2s (lval_to_pretty lval));
+                     "v: " ^ (p2s v#toPretty);
+                     String.concat ", " err];
+                  env#mk_temp SYM_VAR_TYPE
+                end
              | _ ->
                 env#mk_temp SYM_VAR_TYPE) in
           let _ =
@@ -932,8 +1177,19 @@ object (self)
           let ioffset = CCHTypesUtil.mk_constant_index_offset n in
           let (resultv, t) =
             (match type_of_exp fdecls e with
-             | TPtr (t, _) ->
+             | Ok (TPtr (t, _)) ->
                 (env#mk_base_address_memory_variable base ioffset t SYM_VAR_TYPE, t)
+             | Error err ->
+                begin
+                  log_error_result
+                    ~tag:"translate_lval"
+                    ~msg:env#get_functionname
+                    __FILE__ __LINE__
+                    [String.concat ", " err];
+                  raise
+                    (CCHFailure
+                       (LBLOCK [STR "Unable to obtain type from expression"]))
+                end
              | _ ->
                 raise
                   (CCHFailure
