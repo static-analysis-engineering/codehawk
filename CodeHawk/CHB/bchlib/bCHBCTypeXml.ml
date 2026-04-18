@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -131,6 +131,10 @@ let get_standard_txt_type (t: string): btype_t option =
   | "DWORD" -> Some (TInt (IUInt, []))
   | "gid_t" -> Some (TInt (IUInt, []))
   | "id_t" -> Some (TInt (IUInt, []))     (* used in getpriority *)
+  | "in_addr_t" ->
+     (* equivalent to the type uint32_t, see
+        https://pubs.opengroup.org/onlinepubs/9699919799/ *)
+     Some (TInt (IUInt, []))
   | "int" -> Some (TInt (IInt, []))
   | "Integer" -> Some (TInt (IInt, []))
   | "long" -> Some (TInt (ILong, []))
