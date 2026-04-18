@@ -19,7 +19,7 @@
         <type><ptr>char</ptr></type>
 	<pre><deref-read-nt/></pre>
       </par>
-      <returntype>ch__in_addr</returntype>
+      <returntype>in_addr_t</returntype>
     </api>
     <semantics>
       <io-actions/>
