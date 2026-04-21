@@ -10,7 +10,7 @@ XPRLIB = $(CODEHAWK)/CH/xprlib
 
 CAMLDOC := ocamldoc
 
-CAMLC := ocamlopt  -I str -I cmi -I cmx \
+CAMLC := ocamlopt -I str -I cmi -I cmx \
 	-I $(EXTLIB) \
 	-I $(ZIPLIB) \
 	-I $(ZARITHLIB) \
@@ -23,13 +23,13 @@ OCAMLDEP := ocamldep
 
 MLIS := \
 	bCHBCTypes \
-	bCHBCAttributes \
 	bCHBCSumTypeSerializer \
 	bCHBCTypeTransformer \
 	bCHLibTypes \
 	bCHVersion \
 	bCHXprUtil \
 	bCHUtilities \
+	bCHBCAttributesUtil \
 	bCHSystemSettings \
 	bCHCPURegisters \
 	bCHBasicTypes \
@@ -82,6 +82,7 @@ MLIS := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
+	bCHBCAttributes \
 	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \
@@ -120,6 +121,7 @@ SOURCES := \
 	bCHVersion \
 	bCHXprUtil \
 	bCHUtilities \
+	bCHBCAttributesUtil \
 	bCHBasicTypes \
 	bCHDoubleword \
 	bCHSystemSettings \

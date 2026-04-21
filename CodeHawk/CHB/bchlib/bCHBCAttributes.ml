@@ -41,6 +41,7 @@ open BCHFunctionInterface
 open BCHLibTypes
 
 
+
 let convert_b_attributes_to_function_conditions
       (name: string)
       (fintf: function_interface_t)
@@ -121,6 +122,31 @@ let convert_b_attributes_to_function_conditions
                  ([], [])
                end) in
          (pre @ xpre, side @ xside, xpost)
+
+      | Attr (("format" | "chk_format"), params) ->
+         let pre =
+           (match params with
+            | [ACons ("printf", []); AInt fmtrefindex; AInt _]
+              | [ACons ("printf", []); AInt fmtrefindex] ->
+               let fmtpar = get_par fmtrefindex in
+               [XXOutputFormatString (ArgValue fmtpar)]
+            | [ACons ("scanf", []); AInt fmtrefindex; AInt _]
+              | [ACons ("scanf", []); AInt fmtrefindex] ->
+               let fmtpar = get_par fmtrefindex in
+               [XXInputFormatString (ArgValue fmtpar)]
+            | _ ->
+               begin
+                 log_diagnostics_result
+                   ~msg:("attribute conversion for " ^ name ^ ": "
+                         ^ "attribute parameters "
+                         ^ (String.concat
+                              ", " (List.map b_attrparam_to_string params)))
+                   ~tag:"attribute conversion"
+                   __FILE__ __LINE__ [];
+                 []
+               end) in
+         (pre, [] , [])
+
       | Attr ("chk_pre", params) ->
          let pre =
            (match params with
