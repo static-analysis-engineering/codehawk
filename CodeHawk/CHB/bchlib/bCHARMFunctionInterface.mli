@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,7 +73,8 @@ val arm_argument_state_to_string: arm_argument_state_t -> string
 
 (** exposed for unit tests only *)
 val get_arm_int_param_next_state:
-  int
+  ?fmt:formatstring_type_t
+  -> int
   -> string
   -> btype_t
   -> arm_argument_state_t
@@ -98,7 +99,8 @@ val get_arm_struct_param_next_state:
   -> (fts_parameter_t * arm_argument_state_t)
 
 
-val arm_vfp_params: bfunarg_t list -> fts_parameter_t list
+val arm_vfp_params:
+  ?attrs:b_attributes_t -> ?varargs:bool -> bfunarg_t list -> fts_parameter_t list
 
 val get_arm_format_spec_parameters:
   fts_parameter_t list -> argspec_int list -> fts_parameter_t list

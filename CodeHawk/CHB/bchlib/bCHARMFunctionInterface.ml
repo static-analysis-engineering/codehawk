@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -410,6 +410,7 @@ let get_int_paramlocpart_next_state
 
 
 let get_arm_int_param_next_state
+      ?(fmt=NoFormat)
       (size: int)
       (name: string)
       (btype: btype_t)
@@ -419,7 +420,7 @@ let get_arm_int_param_next_state
   | Some reg ->
      let register = register_of_arm_register reg in
      let par: fts_parameter_t =
-       mk_indexed_register_parameter ~btype ~name ~size register index in
+       mk_indexed_register_parameter ~fmt ~btype ~name ~size register index in
      let ncr = get_next_core_reg reg in
      let naas =
        match ncr with
@@ -434,7 +435,7 @@ let get_arm_int_param_next_state
      (match aa_state.aas_next_offset with
       | Some offset ->
          let par: fts_parameter_t =
-           mk_indexed_stack_parameter ~btype ~name offset index in
+           mk_indexed_stack_parameter ~fmt ~btype ~name offset index in
          let naas =
            {aa_state with aas_next_offset = Some (offset + size)} in
          (par, naas)
@@ -577,7 +578,14 @@ let get_arm_struct_param_next_state
   (param, naas)
 
 
-let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
+let arm_vfp_params
+      ?(attrs=[])
+      ?(varargs=false)
+      (funargs: bfunarg_t list): fts_parameter_t list =
+  let fmt (index: int) =
+    match BCHBCAttributesUtil.get_format_archetype attrs index with
+    | Some fmtstringtype -> fmtstringtype
+    | _ -> NoFormat in
   let (_, _, params) =
     List.fold_left
       (fun (index, aa_state, params) (name, btype, _) ->
@@ -594,9 +602,14 @@ let arm_vfp_params (funargs: bfunarg_t list): fts_parameter_t list =
         | Ok btype, Ok tysize ->
            (* assume no packing at the argument top level *)
            let size = if tysize < 4 then 4 else tysize in
+           let fmt =
+             if varargs then
+               fmt index
+             else
+               NoFormat in
            let (param, new_state) =
              if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
-               get_arm_int_param_next_state size name btype aa_state index
+               get_arm_int_param_next_state ~fmt size name btype aa_state index
              else if (is_int btype || is_pointer btype) then
                get_long_int_param_next_state size name btype aa_state index
              else if is_float btype then

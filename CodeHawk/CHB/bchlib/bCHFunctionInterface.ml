@@ -1259,7 +1259,7 @@ let bfuntype_to_function_interface
        | None -> []
        | Some funargs ->
           (match system_settings#get_architecture with
-           | "arm" -> arm_vfp_params funargs
+           | "arm" -> arm_vfp_params ~attrs ~varargs funargs
            | "x86" -> x86_cdecl_params funargs
            | "mips" -> mips_params funargs
            | arch ->
