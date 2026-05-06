@@ -71,6 +71,9 @@ let _type_arg_mode_compare (m1: type_arg_mode_t) (m2: type_arg_mode_t): int =
   | (ArgFunctionPointer, _) -> -1
   | (_, ArgFunctionPointer) -> 1
   | (ArgScalarValue, ArgScalarValue) -> 0
+  | (ArgScalarValue, _) -> -1
+  | (_, ArgScalarValue) -> 1
+  | (ArgOutputFormatString, ArgOutputFormatString) -> 0
 
 
 let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
@@ -145,6 +148,7 @@ let type_arg_mode_to_string (m: type_arg_mode_t) =
   | ArgDeallocate -> "d"
   | ArgFunctionPointer -> "fp"
   | ArgScalarValue -> "sv"
+  | ArgOutputFormatString -> "ofs"
 
 
 let type_operation_kind_to_string (op: type_operation_kind_t) =
@@ -478,7 +482,9 @@ let convert_function_capabilities_to_attributes
     | ArgDerefWrite size -> mkcons "write_only" size
     | ArgDeallocate -> ACons ("deallocate", [])
     | ArgFunctionPointer -> ACons ("fp", [])
-    | ArgScalarValue -> ACons ("sv", []) in
+    | ArgScalarValue -> ACons ("sv", [])
+    | ArgOutputFormatString -> ACons ("printf_format_string", [])
+  in
   let result = new CHUtils.IntCollections.set_t in
   let _ =
     List.iter (fun cap ->

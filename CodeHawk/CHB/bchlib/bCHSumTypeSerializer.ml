@@ -543,8 +543,9 @@ object
     | ArgDeallocate -> "d"
     | ArgFunctionPointer -> "fp"
     | ArgScalarValue -> "s"
+    | ArgOutputFormatString -> "fmt"
 
-  method !tags = ["d"; "fp"; "r"; "rw"; "s"; "w"]
+  method !tags = ["d"; "fmt"; "fp"; "r"; "rw"; "s"; "w"]
 
 end
 

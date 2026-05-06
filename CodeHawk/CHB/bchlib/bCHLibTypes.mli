@@ -3260,6 +3260,7 @@ type type_arg_mode_t =
   | ArgDeallocate
   | ArgFunctionPointer
   | ArgScalarValue
+  | ArgOutputFormatString
 
 
 type type_operation_kind_t =
