@@ -136,6 +136,15 @@ object (self)
            else
              Open
         | _ -> Open)
+    | XPOTrustedString x | XPOTrustedOsCmdString (x, false, _) ->
+       (match x with
+        | XConst (IntConst n) ->
+           let dw = numerical_mod_to_doubleword n in
+           if string_table#has_string dw then
+             Discharged ("constant string: " ^ (string_table#get_string dw))
+           else
+             Open
+        | _ -> Open)
     | XPOOutputFormatString x ->
        (match x with
         | XConst (IntConst n) ->
@@ -165,6 +174,11 @@ object (self)
         | _ -> Open)
     | _ -> Open
 
+  (* Relies on the expression externalizer, which, at present, has only been
+     implemented for mips.
+     An alternative for delegating proof obligations is in the method
+     discharge_proofobligations in function_info.
+     Eventually these two methods should be merged or at least unified.*)
   method private delegate_precondition (xpo: xpo_predicate_t): po_status_t =
     match xpo with
     | XPONotNull x ->

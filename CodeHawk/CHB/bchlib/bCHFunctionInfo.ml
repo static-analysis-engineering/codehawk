@@ -1721,6 +1721,31 @@ object (self)
              (match get_elf_string_reference x with
               | Some s -> Discharged ("constant string: " ^ s)
               | _ -> Open)
+          | XPOOutputFormatString (XVar v)
+               when self#env#is_initial_register_value v ->
+             TR.tfold
+               ~ok:(fun reg ->
+                 let _ =
+                   self#update_summary
+                     (self#get_summary#add_register_parameter_location
+                        reg t_charptr 4) in
+                 let ftspar = self#get_summary#get_parameter_for_register reg in
+                 let dst = ArgValue ftspar in
+                 let xpred = XXOutputFormatString dst in
+                 let updatedsummary = self#get_summary#add_precondition xpred in
+                 let _ = self#update_summary updatedsummary in
+                 Delegated xpred)
+               ~error:(fun e ->
+                 begin
+                   log_error_result
+                     ~tag:"delegate_proofobligation"
+                     __FILE__ __LINE__
+                     ["v: " ^ (p2s v#toPretty);
+                      String.concat ", " e];
+                   Open
+                 end)
+               (self#env#get_initial_register_value_register v)
+
           | XPOBuffer (
               _ty,
               XOp (XMinus, [XVar v; XConst (IntConst off)]),
