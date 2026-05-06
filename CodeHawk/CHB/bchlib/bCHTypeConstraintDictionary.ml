@@ -93,7 +93,8 @@ object (self)
         | ArgDerefWrite optsize -> (tags, [index_opt optsize])
       | ArgDeallocate
         | ArgFunctionPointer
-        | ArgScalarValue -> (tags, []) in
+        | ArgScalarValue
+        | ArgOutputFormatString -> (tags, []) in
     type_arg_mode_table#add key
 
   method get_type_arg_mode (index: int): type_arg_mode_t =
@@ -104,6 +105,7 @@ object (self)
     let getsize () = if (a 0) = (-1) then None else Some (a 0) in
     match (t 0) with
     | "d" -> ArgDeallocate
+    | "fmt" -> ArgOutputFormatString
     | "fp" -> ArgFunctionPointer
     | "r" -> ArgDerefRead (getsize ())
     | "rw" -> ArgDerefReadWrite (getsize ())
