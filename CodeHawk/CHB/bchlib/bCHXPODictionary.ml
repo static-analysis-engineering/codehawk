@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -99,6 +99,9 @@ object (self)
       | XPOSetsErrno -> (tags, [])
       | XPOStartsThread (x, xl) -> (tags, (ix x) :: (List.map ix xl))
       | XPOTainted x -> (tags, [ix x])
+      | XPOTrustedString x -> (tags, [ix x])
+      | XPOTrustedOsCmdString (x, isfmtstring, q) ->
+         (tags @ [quote_status_mfts#ts q], [ix x; if isfmtstring then 1 else 0])
       | XPOValidMem x -> (tags, [ix x])
       | XPODisjunction pl -> (tags, List.map self#index_xpo_predicate pl)
       | XPOConditional (p1, p2) ->

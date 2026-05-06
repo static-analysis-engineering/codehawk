@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -521,6 +521,9 @@ object (self)
       | XXSetsErrno -> (tags, [])
       | XXStartsThread (t, tl) -> (tags, List.map it (t::tl))
       | XXTainted t -> (tags, [it t])
+      | XXTrustedString t -> (tags, [it t])
+      | XXTrustedOsCmdString (t, isfmtstring, q) ->
+         (tags @ [quote_status_mfts#ts q], [it t; if isfmtstring then 1 else 0])
       | XXValidMem t -> (tags, [it t])
       | XXDisjunction pl -> (tags, [self#index_xxpredicate_list pl])
       | XXConditional (p1, p2) ->
@@ -573,6 +576,8 @@ object (self)
     | "errno" -> XXSetsErrno
     | "st" -> XXStartsThread (gt (a 0), List.map gt (List.tl args))
     | "t" -> XXTainted (gt (a 0))
+    | "tc" -> XXTrustedOsCmdString (gt (a 0), (a 1) = 1, quote_status_mfts#fs (t 1))
+    | "ts" -> XXTrustedString (gt (a 0))
     | "v" -> XXValidMem (gt (a 0))
     | "dis" -> XXDisjunction (self#get_xxpredicate_list (a 0))
     | "con" -> XXConditional (self#get_xxpredicate (a 0), self#get_xxpredicate (a 1))

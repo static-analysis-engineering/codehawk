@@ -32,7 +32,16 @@
     <io-actions>
      <io-action cat="system" desc="executes a system command"/>
     </io-actions>
-    <preconditions/>
+    <preconditions>
+      <pre>
+        <math>
+          <apply>
+            <trusted-os-cmd-string fmtstring="false" quotes="NO_QUOTES"/>
+            <ci>command</ci>
+          </apply>
+        </math>
+      </pre>
+    </preconditions>
     <postconditions>
       <nonnegative-negone/>
     </postconditions>

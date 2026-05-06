@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,9 @@
 
 (* chlib *)
 open CHPretty
+
+(* chutil *)
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -78,6 +81,10 @@ val xxpredicate_terms: xxpredicate_t -> bterm_t list
 
 
 (** {1 Printing}*)
+
+val quote_status_to_string: quote_status_t -> string
+
+val string_to_quote_status: string -> quote_status_t traceresult
 
 val relational_op_to_string: relational_op_t -> string
 

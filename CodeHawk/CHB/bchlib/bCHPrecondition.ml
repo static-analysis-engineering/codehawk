@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,8 @@ open BCHCStructConstant
 open BCHExternalPredicate
 open BCHLibTypes
 open BCHTypeDefinitions
+
+module TR = CHTraceResult
 
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
@@ -223,7 +225,25 @@ let read_xml_precondition_xxpredicate
          let dest = gt (arg 1) in
 	 [XXBlockWrite (gty (arg 0), dest, gt (arg 2)); XXNotNull dest]
       | "deref-write-null" ->
-	[XXBlockWrite (gty (arg 0), gt (arg 1), gt (arg 2))]
+	 [XXBlockWrite (gty (arg 0), gt (arg 1), gt (arg 2))]
+      | "trusted-os-cmd-string" ->
+         let s = gt (arg 0) in
+         let fmtstring =
+           (pNode#hasNamedAttribute "fmtstring")
+           && (pNode#getAttribute "fmtstring") = "true" in
+         if pNode#hasNamedAttribute "quotes" then
+           let a = pNode#getAttribute "quotes" in
+           TR.tfold
+             ~ok:(fun q -> [XXTrustedOsCmdString(s, fmtstring, q)])
+             ~error:(fun e ->
+               raise_xml_error
+                 node
+                 (LBLOCK [
+                      STR "Problem in parsing trusted-os-cmd-string: ";
+                      STR (String.concat ", " e)]))
+             (string_to_quote_status a)
+         else
+           [XXTrustedOsCmdString(s, fmtstring, NO_QUOTES)]
       | s ->
          raise_xml_error
            node
