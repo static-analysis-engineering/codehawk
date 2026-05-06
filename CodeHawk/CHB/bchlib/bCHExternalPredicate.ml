@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2023-2024  Aarno Labs LLC
+   Copyright (c) 2023-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ open CHPretty
 
 (* chutil *)
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -44,6 +45,27 @@ open BCHBTerm
 open BCHCStructConstant
 open BCHLibTypes
 open BCHUtilities
+
+
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
+
+
+let quote_status_to_string (q: quote_status_t): string =
+  match q with
+  | NO_QUOTES -> "NO_QUOTES"
+  | SINGLE_QUOTES -> "SINGLE_QUOTES"
+  | DOUBLE_QUOTES -> "DOUBLE_QUOTES"
+
+
+let string_to_quote_status (s: string): quote_status_t traceresult =
+  match s with
+  | "NO_QUOTES" -> Ok NO_QUOTES
+  | "SINGLE_QUOTES" -> Ok SINGLE_QUOTES
+  | "DOUBLE_QUOTES" -> Ok DOUBLE_QUOTES
+  | _ ->
+     Error [(elocm __LINE__) ^ "Illegal quote_status: " ^ s]
 
 
 let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
@@ -151,6 +173,12 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   | (XXTainted t1, XXTainted t2) -> btc t1 t2
   | (XXTainted _, _) -> -1
   | (_, XXTainted _) -> 1
+  | (XXTrustedString t1, XXTrustedString t2) -> btc t1 t2
+  | (XXTrustedString _, _) -> -1
+  | (_, XXTrustedString _) -> 1
+  | (XXTrustedOsCmdString (t1, _, _), XXTrustedOsCmdString (t2, _, _)) -> btc t1 t2
+  | (XXTrustedOsCmdString _, _) -> -1
+  | (_, XXTrustedOsCmdString _) -> 1
   | (XXValidMem t1, XXValidMem t2) -> btc t1 t2
   | (XXValidMem _, _) -> -1
   | (_, XXValidMem _) -> 1
@@ -198,6 +226,8 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXSetsErrno -> []
   | XXStartsThread (t, tt) -> t :: tt
   | XXTainted t -> [t]
+  | XXTrustedString t -> [t]
+  | XXTrustedOsCmdString (t, _, _) -> [t]
   | XXValidMem t -> [t]
   | XXDisjunction pl -> List.concat (List.map xxpredicate_terms pl)
   | XXConditional (p1, p2) ->
@@ -347,6 +377,16 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   | XXSetsErrno -> STR "sets errno"
   | XXStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XXTainted t -> default "tainted" [t]
+  | XXTrustedString t -> default "trusted-string" [t]
+  | XXTrustedOsCmdString (t, isfmtstring, quotes) ->
+     LBLOCK [
+         STR "trusted-os-cmd-string(";
+         btp t;
+         STR ", ";
+         STR (if isfmtstring then "true" else "false");
+         STR ", ";
+         STR (quote_status_to_string quotes);
+         STR ")"]
   | XXValidMem t -> default "valid-mem" [t]
   | XXDisjunction pl ->
      pretty_print_list pl xxpredicate_to_pretty "[" " || " "]"
@@ -391,6 +431,9 @@ let rec modify_types_xxp
   | XXSetsErrno -> XXSetsErrno
   | XXStartsThread (t, tt) -> XXStartsThread (mbt t, List.map mbt tt)
   | XXTainted t -> XXTainted (mbt t)
+  | XXTrustedString t -> XXTrustedString (mbt t)
+  | XXTrustedOsCmdString (t, isfmtstring, q) ->
+     XXTrustedOsCmdString (mbt t, isfmtstring, q)
   | XXValidMem t -> XXValidMem (mbt t)
   | XXDisjunction xl -> XXDisjunction (List.map mxp xl)
   | XXConditional (x1, x2) -> XXConditional (mxp x1, mxp x2)

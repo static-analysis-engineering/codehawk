@@ -2363,6 +2363,9 @@ type c_struct_constant_t =
 | FieldCallTarget of call_target_t
 
 
+type quote_status_t = NO_QUOTES | SINGLE_QUOTES | DOUBLE_QUOTES
+
+
 (** Predicate over external terms to represent function preconditions,
     postconditions, and side effects.*)
 type xxpredicate_t =
@@ -2408,6 +2411,7 @@ type xxpredicate_t =
   | XXNullTerminated of bterm_t  (** term points to null-terminated string *)
   | XXOutputFormatString of bterm_t
   (** term points to format string for output (e.g., sprintf) *)
+
   | XXRelationalExpr
     of relational_op_t * bterm_t * bterm_t  (** relational expression *)
   | XXSetsErrno
@@ -2415,8 +2419,15 @@ type xxpredicate_t =
   (** starts a thread with [t1] as start address and the remaining terms as
       parameters *)
   | XXTainted of bterm_t (** value of term is externally controlled *)
+  | XXTrustedString of bterm_t  (** value of term is trusted *)
+  | XXTrustedOsCmdString of bterm_t * bool * quote_status_t
+  (** value of term is safe to pass as an argument to system(.), or is
+      safe to pass as a format argument with the given quotation status
+      if is_fmt_string is true. *)
+
   | XXValidMem of bterm_t
   (** memory region pointed to be by term has not been freed *)
+
   | XXDisjunction of xxpredicate_t list
   | XXConditional of xxpredicate_t * xxpredicate_t
 
@@ -2598,6 +2609,8 @@ type xpo_predicate_t =
   | XPOSetsErrno
   | XPOStartsThread of xpr_t * xpr_t list
   | XPOTainted of xpr_t
+  | XPOTrustedString of xpr_t
+  | XPOTrustedOsCmdString of xpr_t * bool * quote_status_t
   | XPOValidMem of xpr_t
   | XPODisjunction of xpo_predicate_t list
   | XPOConditional of xpo_predicate_t * xpo_predicate_t

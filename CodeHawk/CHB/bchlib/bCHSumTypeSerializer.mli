@@ -37,6 +37,7 @@ val calling_convention_mfts: calling_convention_t mfts_int
 val arithmetic_op_mfts: arithmetic_op_t mfts_int
 val g_arithmetic_op_mfts: g_arithmetic_op mfts_int
 val relational_op_mfts: relational_op_t mfts_int
+val quote_status_mfts: quote_status_t mfts_int
 
 val arg_io_mfts: arg_io_t mfts_int
 val formatstring_type_mfts: formatstring_type_t mfts_int

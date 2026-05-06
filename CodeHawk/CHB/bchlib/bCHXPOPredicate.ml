@@ -92,6 +92,9 @@ let rec xxp_to_xpo_predicate
   | XXSetsErrno -> XPOSetsErrno
   | XXStartsThread (t1, t2) -> XPOStartsThread (btx t1, List.map btx t2)
   | XXTainted t -> XPOTainted (btx t)
+  | XXTrustedString t -> XPOTrustedString (btx t)
+  | XXTrustedOsCmdString (t, isfmtstring, quotes) ->
+     XPOTrustedOsCmdString (btx t, isfmtstring, quotes)
   | XXValidMem t -> XPOValidMem (btx t)
   | XXDisjunction xl ->
      XPODisjunction (List.map (xxp_to_xpo_predicate termev loc) xl)
@@ -169,6 +172,16 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPOSetsErrno -> STR "sets errno"
   | XPOStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XPOTainted t -> default "tainted" [t]
+  | XPOTrustedString t -> default "trusted" [t]
+  | XPOTrustedOsCmdString (t, isfmtstring, quotes) ->
+     LBLOCK [
+         STR "trusted-os-cmd-string(";
+         x2p t;
+         STR ", ";
+         STR (if isfmtstring then "true" else "false");
+         STR ", ";
+         STR (quote_status_to_string quotes);
+         STR ")"]
   | XPOValidMem t -> default "valid-mem" [t]
   | XPODisjunction pl ->
      pretty_print_list pl xpo_predicate_to_pretty "[" " || " "]"

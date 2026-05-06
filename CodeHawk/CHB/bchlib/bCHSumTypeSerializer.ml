@@ -40,6 +40,14 @@ let calling_convention_mfts: calling_convention_t mfts_int =
   mk_mfts "calling_convention_t" [(StdCall, "s"); (CDecl, "c")]
 
 
+let quote_status_mfts: quote_status_t mfts_int =
+  mk_mfts
+    "quote_status_t"
+    [(NO_QUOTES, "n");
+     (SINGLE_QUOTES, "s");
+     (DOUBLE_QUOTES, "d")]
+
+
 let relational_op_mfts: relational_op_t mfts_int =
   mk_mfts
     "relational_op_t"
@@ -443,6 +451,8 @@ object
     | XXSetsErrno -> "errno"
     | XXStartsThread _ -> "st"
     | XXTainted _ -> "t"
+    | XXTrustedString _ -> "ts"
+    | XXTrustedOsCmdString _ -> "tc"
     | XXValidMem _ -> "v"
     | XXDisjunction _ -> "dis"
     | XXConditional _ -> "con"
@@ -451,7 +461,7 @@ object
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
-      "pos"; "sa"; "st"; "t"; "v"; "x"
+      "pos"; "sa"; "st"; "t"; "tc"; "ts"; "v"; "x"
     ]
 
 end
@@ -496,6 +506,8 @@ object
     | XPOSetsErrno -> "errno"
     | XPOStartsThread _ -> "st"
     | XPOTainted _ -> "t"
+    | XPOTrustedString _ -> "ts"
+    | XPOTrustedOsCmdString _ -> "tc"
     | XPOValidMem _ -> "v"
     | XPODisjunction _ -> "dis"
     | XPOConditional _ -> "con"
@@ -504,7 +516,7 @@ object
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
-      "pos"; "sa"; "st"; "t"; "v"; "x"
+      "pos"; "sa"; "st"; "t"; "tc"; "ts"; "v"; "x"
     ]
 
 end
