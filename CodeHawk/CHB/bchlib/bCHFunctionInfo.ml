@@ -1711,11 +1711,16 @@ object (self)
 
   method proofobligations = proofobligations
 
-  method discharge_proofobligations =
+  method discharge_proofobligations
+    ?(get_elf_string_reference=(fun _ -> None)) () =
     let openpos = self#proofobligations#open_proofobligations in
     List.iter (fun po ->
         let newstatus =
           match po#xpo with
+          | XPOTrustedOsCmdString (x, false, _) ->
+             (match get_elf_string_reference x with
+              | Some s -> Discharged ("constant string: " ^ s)
+              | _ -> Open)
           | XPOBuffer (
               _ty,
               XOp (XMinus, [XVar v; XConst (IntConst off)]),

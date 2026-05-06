@@ -5719,8 +5719,17 @@ object
   method proofobligations: proofobligations_int
 
   (** Attempts to discharge some open proof obligations and if successful
-      updates their status.*)
-  method discharge_proofobligations: unit
+      updates their status. The optional argument [get_elf_string_reference]
+      allows this function to check if an argument is a constant string in
+      the binary. A constant string in the binary is considered trusted.
+
+      The reason that it is passed in as an argument is that the elf library
+      code is not directly accessible from this point. It means that this
+      function should preferably be called from a location that has access
+      to the elf library.
+*)
+  method discharge_proofobligations:
+           ?get_elf_string_reference:(xpr_t -> string option) -> unit -> unit
 
 
   (** {1 Function invariants} *)
