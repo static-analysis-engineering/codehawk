@@ -167,7 +167,22 @@ let has_inverse_cc (cc: arm_opcode_cc_t): bool =
   Option.is_some (get_inverse_cc cc)
 
 
-let get_string_reference (floc:floc_int) (xpr:xpr_t) =
+let get_elf_string_reference (xpr: xpr_t): string option =
+  match xpr with
+  | XConst (IntConst num) ->
+     TR.tfold
+       ~ok:elf_header#get_string_at_address
+       ~error:(fun e ->
+         begin
+           log_error_result __FILE__ __LINE__
+             ["xpr: " ^ num#toString; String.concat ", " e];
+           None
+         end)
+       (numerical_to_doubleword num)
+  | _ -> None
+
+
+let get_string_reference (floc:floc_int) (xpr:xpr_t): string option =
   try
     match xpr with
     | XConst (IntConst num) ->

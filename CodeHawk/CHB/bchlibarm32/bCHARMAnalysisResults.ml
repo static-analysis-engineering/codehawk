@@ -43,6 +43,7 @@ open BCHTypeConstraintStore
 (* bchlibarm32 *)
 open BCHARMAssemblyFunctions
 open BCHARMDictionary
+open BCHARMDisassemblyUtils
 open BCHARMLoopStructure
 open BCHARMTypes
 open BCHFnARMDictionary
@@ -225,7 +226,7 @@ object (self)
       mmap#write_xml_references faddr vard grNode;
       (* self#write_xml_btypes bNode; *)
       id#write_xml dNode;
-      finfo#discharge_proofobligations;
+      finfo#discharge_proofobligations ~get_elf_string_reference ();
       finfo#proofobligations#write_xml poNode;
       finfo#xpod#write_xml xpodNode;
       append [cNode; dNode; iiNode; jjNode; sfNode; grNode; xpodNode; poNode]
