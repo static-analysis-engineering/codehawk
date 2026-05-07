@@ -5732,6 +5732,8 @@ object
   method discharge_proofobligations:
            ?get_elf_string_reference:(xpr_t -> string option) -> unit -> unit
 
+  method convert_preconditions_to_attributes: b_attributes_t
+
 
   (** {1 Function invariants} *)
 
