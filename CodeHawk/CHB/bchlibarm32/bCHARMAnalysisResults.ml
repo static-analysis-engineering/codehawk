@@ -311,6 +311,12 @@ object (self)
            typeconstraints#record_type_constraints;
            (ignore (typeconstraintstore#get_function_type_constraints faddr));
            (ignore (typeconstraintstore#evaluate_function_type faddr));
+           fndata#set_reglhs_types (typeconstraintstore#resolve_reglhs_types faddr);
+           fndata#set_stack_offset_types
+             (typeconstraintstore#resolve_local_stack_lhs_types faddr);
+           fnadata#write_xml_register_types node fndata#get_reglhs_types;
+           fnadata#write_xml_stack_types node fndata#get_stack_offset_types;
+           fnadata#write_xml node;
            (if mksignature then
               let fname =
                 BCHFunctionData.get_default_functionsummary_name_dw
@@ -321,13 +327,9 @@ object (self)
                   fname resolvents in
               let (regtypes, _) = resolvents in
               let attrs = List.concat (List.map (fun (_, _, a) -> a) regtypes) in
+              let attrs = (finfo#convert_preconditions_to_attributes) @ attrs in
               BCHBCFiles.bcfiles#add_fundef ~attrs fname ftype);
-           fndata#set_reglhs_types (typeconstraintstore#resolve_reglhs_types faddr);
-           fndata#set_stack_offset_types
-             (typeconstraintstore#resolve_local_stack_lhs_types faddr);
-           fnadata#write_xml_register_types node fndata#get_reglhs_types;
-           fnadata#write_xml_stack_types node fndata#get_stack_offset_types;
-           fnadata#write_xml node;
+
            node#setAttribute "a" faddr;
            save_app_function_results_file faddr node;
            save_vars faddr vard
