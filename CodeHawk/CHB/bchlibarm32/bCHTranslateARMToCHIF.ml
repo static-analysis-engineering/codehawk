@@ -712,6 +712,10 @@ let translate_arm_instruction
         register_of_arm_register AR0 in
     let returnvar = floc#f#env#mk_register_variable returnreg in
     let (usecmds, use, usehigh) =
+      (* This doesn't seem quite right, because the variable may be either
+         written or read. Here the assumption is made that the variable
+         is just read (i.e., it is used) rather than written, which would
+         require a def.*)
       List.fold_left (fun (acccmds, accuse, accusehigh) (p, x) ->
           let ptype = get_parameter_type p in
           let addressedvars =
@@ -759,14 +763,44 @@ let translate_arm_instruction
                       floc#l#toPretty;
                       STR "  Parameter type not recognized in call translation"])))
         ([], [], []) callargs in
-    let usehigh = usehigh @ (get_use_high_vars (List.map snd callargs)) in
+
+    let (xprdefs, xpuse, xpusehigh) =
+      let sem = floc#get_call_target#get_semantics in
+      List.fold_left (fun (accdefs, accuse, accusehigh) p ->
+          match p with
+          | XXBlockWrite (_, dest, _) ->
+             (match floc#evaluate_summary_address_term dest with
+              | Some memVar -> (memVar :: accdefs, accuse, accusehigh)
+              | _  -> (accdefs, accuse, accusehigh))
+          | XXBuffer (_, dest, _) ->
+             (match floc#evaluate_summary_address_term dest with
+              | Some memVar -> (accdefs, memVar :: accuse, memVar :: accusehigh)
+              | _ -> (accdefs, accuse, accusehigh))
+          | _ -> (accdefs, accuse, accusehigh)) ([], [], []) sem.fsem_pre in
+
+    let _ =
+      log_diagnostics_result
+        ~tag:"calltgt_cmds"
+        __FILE__ __LINE__
+        ["call target: " ^ floc#get_call_target#get_name;
+         "rdefs: " ^ (String.concat ", "
+                        (List.map (fun d -> p2s d#toPretty) xprdefs));
+         "use: " ^ (String.concat ", "
+                      (List.map (fun u -> p2s u#toPretty) xpuse));
+         "usehigh: " ^ (String.concat ", "
+                        (List.map (fun u -> p2s u#toPretty) xpusehigh))
+        ] in
+
+    let usehigh =
+      usehigh @ xpusehigh @ (get_use_high_vars (List.map snd callargs)) in
+    let use = use @ xpuse in
     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
     let callcmds = floc#get_arm_call_commands in
     let defcmds =
       floc#get_vardef_commands
-        ~defs:[returnvar]
+        ~defs:(returnvar :: xprdefs)
         ~clobbers:[vr1; vr2; vr3]
         ~use
         ~usehigh

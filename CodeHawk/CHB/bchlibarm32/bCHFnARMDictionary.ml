@@ -298,7 +298,7 @@ object (self)
       TR.tfold_default get_rdef (-1) x_r in
 
     let get_all_rdefs (xpr: xpr_t): int list =
-      let vars = floc#env#variables_in_expr xpr in
+      let vars = floc#env#variables_in_expr ~include_addressof:false xpr in
       List.fold_left (fun acc v ->
           let symvar = floc#env#mk_symbolic_variable v in
           let varinvs = varinv#get_var_reaching_defs symvar in
@@ -725,18 +725,53 @@ object (self)
           else
             register_of_arm_register AR0 in
         (floc#f#env#mk_register_variable reg, rtype) in
+      let _ =
+        log_diagnostics_result
+          ~tag:"callinstr_key"
+          __FILE__ __LINE__
+          ["target: " ^ floc#get_call_target#get_name;
+           "xprs -> rdefs: " ^ (String.concat ", " (List.map x2s xprs))] in
       let xrdefs =
         List.fold_left (fun acc x ->
             let rdefs = get_all_rdefs x in
             let newixs = List.filter (fun ix -> not (List.mem ix acc)) rdefs in
             acc @ newixs) [] xprs in
+      let derefuses =
+        let sem = floc#get_call_target#get_semantics in
+        List.fold_left (fun acc p ->
+            match p with
+            | XXBlockWrite (_, dest, _) ->
+               (match floc#evaluate_summary_address_term dest with
+                | Some memVar -> memVar :: acc
+                | _ -> acc)
+            | _ -> acc) [] sem.fsem_pre in
+      let derefrdefs =
+        let sem = floc#get_call_target#get_semantics in
+        List.fold_left (fun acc p ->
+            match p with
+            | XXBuffer (_, dest, _) ->
+               (match floc#evaluate_summary_address_term dest with
+                | Some memVar -> (get_rdef (XVar memVar)) :: acc
+                | _ -> acc)
+            | _ -> acc) [] sem.fsem_pre in
+      let _ =
+        log_diagnostics_result
+          ~tag:"callinstr_key"
+          __FILE__ __LINE__
+          ["target: " ^ floc#get_call_target#get_name;
+           "deref-uses: "
+           ^ (String.concat ", " (List.map (fun v -> p2s v#toPretty) derefuses));
+           "rdefs: " ^ (String.concat ", " (List.map string_of_int rdefs));
+           "xrdefs: " ^ (String.concat ", " (List.map string_of_int xrdefs));
+           "deref-rdefs: "
+           ^ (String.concat ", " (List.map string_of_int derefrdefs))] in
       let vars_r = [Ok vrd] in
       let xprs_r = (List.rev (List.map (fun x -> Ok x) xprs)) @ (List.rev xvars) in
       let cxprs_r = List.rev cxprs_r in
       let types = [rtype] in
-      let rdefs = (List.rev rdefs) @ xrdefs in
-      let uses = [get_def_use vrd] in
-      let useshigh = [get_def_use_high vrd] in
+      let rdefs = (List.rev rdefs) @ xrdefs @ derefrdefs in
+      let uses = [get_def_use vrd] @ (List.map get_def_use derefuses) in
+      let useshigh = [get_def_use_high vrd] @ (List.map get_def_use derefuses) in
       let (tagstring, args) =
         mk_instrx_data_r
           ~vars_r ~types ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
