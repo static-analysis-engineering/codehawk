@@ -75,7 +75,6 @@ open BCHUtilities
 open BCHVariable
 open BCHVariableNames
 open BCHXPODictionary
-open BCHXPOPredicate
 
 module H = Hashtbl
 module LF = CHOnlineCodeSet.LanguageFactory
@@ -1109,7 +1108,8 @@ object (self)
     else
       []
 
-  method variables_in_expr (expr: xpr_t): variable_t list =
+  method variables_in_expr
+           ?(include_addressof=true) (expr: xpr_t): variable_t list =
     let s = new VariableCollections.set_t in
     let rec vs x =
       match x with
@@ -1120,6 +1120,7 @@ object (self)
            List.iter vs xprs
          end
       | XConst _ -> ()
+      | XOp (Xf "addressofvar", _) when not include_addressof -> ()
       | XOp (_, l) -> List.iter vs l
       | XAttr (_, e) -> vs e in
     begin
@@ -1711,118 +1712,6 @@ object (self)
 
   method proofobligations = proofobligations
 
-  method discharge_proofobligations
-    ?(get_elf_string_reference=(fun _ -> None)) () =
-    let openpos = self#proofobligations#open_proofobligations in
-    List.iter (fun po ->
-        let newstatus =
-          match po#xpo with
-          | XPOTrustedOsCmdString (x, false, _) ->
-             (match get_elf_string_reference x with
-              | Some s -> Discharged ("constant string: " ^ s)
-              | _ -> Open)
-          | XPOOutputFormatString (XVar v)
-               when self#env#is_initial_register_value v ->
-             TR.tfold
-               ~ok:(fun reg ->
-                 let _ =
-                   self#update_summary
-                     (self#get_summary#add_register_parameter_location
-                        reg t_charptr 4) in
-                 let ftspar = self#get_summary#get_parameter_for_register reg in
-                 let dst = ArgValue ftspar in
-                 let xpred = XXOutputFormatString dst in
-                 let updatedsummary = self#get_summary#add_precondition xpred in
-                 let _ = self#update_summary updatedsummary in
-                 Delegated xpred)
-               ~error:(fun e ->
-                 begin
-                   log_error_result
-                     ~tag:"delegate_proofobligation"
-                     __FILE__ __LINE__
-                     ["v: " ^ (p2s v#toPretty);
-                      String.concat ", " e];
-                   Open
-                 end)
-               (self#env#get_initial_register_value_register v)
-
-          | XPOBuffer (
-              _ty,
-              XOp (XMinus, [XVar v; XConst (IntConst off)]),
-              XConst (IntConst size))
-            | XPOBlockWrite (
-              _ty,
-              XOp (XMinus, [XVar v; XConst (IntConst off)]),
-              XConst (IntConst size))
-               when self#env#is_initial_stackpointer_value v ->
-             let buffer = self#stackframe#get_max_slot_size off#neg#toInt in
-             (match buffer with
-              | Some slotsize ->
-                 if size#toInt <= slotsize then
-                   Discharged (
-                       "buffer size " ^ size#toString
-                       ^ " fits in available space of "
-                       ^ (string_of_int slotsize)
-                       ^ " bytes")
-                 else
-                   Violated (
-                       "buffer size "
-                       ^ size#toString ^ " is too large; available space is "
-                       ^ (string_of_int slotsize) ^ " bytes")
-              | _ ->
-                 let _ =
-                   log_diagnostics_result
-                     ~tag:"discharge_proofobligations:open"
-                     ~msg:(p2s po#loc#toPretty)
-                     __FILE__ __LINE__
-                     ["xpo: " ^ (p2s (xpo_predicate_to_pretty po#xpo));
-                      "Unable to determine buffer size at offset "
-                        ^ off#toString] in
-                 Open)
-          | XPOBlockWrite (ty, XVar v, bwlen) when
-                 self#env#is_initial_register_value v ->
-               TR.tfold
-                 ~ok:(fun reg ->
-                   let paramty = TPtr (ty, []) in
-                   let _ =
-                     self#update_summary
-                       (self#get_summary#add_register_parameter_location
-                          reg paramty 4) in
-                   let ftspar = self#get_summary#get_parameter_for_register reg in
-                   let dst = ArgValue ftspar in
-                   let lenterm =
-                     match bwlen with
-                     | XConst (IntConst size) -> NumConstant size
-                     | _ -> RunTimeValue in
-                   let xpred = XXBlockWrite (ty, dst, lenterm) in
-                   let updatedsummary = self#get_summary#add_precondition xpred in
-                   let updatedsummary = updatedsummary#add_sideeffect xpred in
-                   let _ = self#update_summary updatedsummary in
-                   Delegated xpred)
-                 ~error:(fun e ->
-                   begin
-                     log_error_result
-                       ~tag:"delegate_proofobligation"
-                       __FILE__ __LINE__
-                       ["v: " ^ (p2s v#toPretty);
-                        String.concat ", " e];
-                     Open
-                   end)
-                 (self#env#get_initial_register_value_register v)
-          | _ -> Open in
-        match newstatus with
-        | Open -> ()
-        | _ ->
-           begin
-             log_diagnostics_result
-               ~tag:"discharge_proofobligations"
-               ~msg:(p2s po#loc#toPretty)
-               __FILE__ __LINE__
-               ["xpo: " ^ (p2s (xpo_predicate_to_pretty po#xpo));
-                "status: " ^ (p2s (po_status_to_pretty newstatus))];
-             po#update_status newstatus
-           end) openpos
-
   method convert_preconditions_to_attributes =
     let delegatedpos = self#proofobligations#delegated_proofobligations in
     List.fold_left (fun acc po ->
@@ -2060,6 +1949,37 @@ object (self)
   method get_summary = appsummary
 
   method update_summary (fs: function_summary_int) = appsummary <- fs
+
+  method add_precondition (pre: xxpredicate_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_precondition"
+        ~msg:self#get_name
+        __FILE__ __LINE__
+        ["pre: " ^ (p2s (BCHExternalPredicate.xxpredicate_to_pretty pre))] in
+    self#update_summary (self#get_summary#add_precondition pre)
+
+  method add_sideeffect (se: xxpredicate_t) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_sideeffect"
+        ~msg:self#get_name
+        __FILE__ __LINE__
+        ["se: " ^ (p2s (BCHExternalPredicate.xxpredicate_to_pretty se))] in
+    self#update_summary (self#get_summary#add_sideeffect se)
+
+  method add_register_parameter_location
+           (reg: register_t) (btype: btype_t) (size: int) =
+    let _ =
+      log_diagnostics_result
+        ~tag:"add_register_parameter_location"
+        ~msg:self#get_name
+        __FILE__ __LINE__
+        ["reg: " ^ (register_to_string reg);
+         "btype: " ^ (btype_to_string btype);
+         "size: " ^ (string_of_int size)] in
+    self#update_summary
+      (self#get_summary#add_register_parameter_location reg btype size)
 
   method private get_function_semantics =
     self#get_summary#get_function_semantics

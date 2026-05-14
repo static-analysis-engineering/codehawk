@@ -123,7 +123,15 @@ let convert_b_attributes_to_function_conditions
                end) in
          (pre @ xpre, side @ xside, xpost)
 
-      | Attr (("format" | "chk_format"), params) ->
+      (* Generation of the precondition for the format string requires
+         using chk_format, in addition to the format attribute, because the first
+         one is attached to the varinfo (which is used here), while the second is
+         attached to the TFun type (as provided by CIL).
+
+         In effect this requires the attribute annotation:
+         __attribute__ ((chk_format(printf, 1), format(printf, 1)))
+       *)
+      | Attr (("chk_format"), params) ->
          let pre =
            (match params with
             | [ACons ("printf", []); AInt fmtrefindex; AInt _]
@@ -145,7 +153,7 @@ let convert_b_attributes_to_function_conditions
                    __FILE__ __LINE__ [];
                  []
                end) in
-         (pre, [] , [])
+         (pre @ xpre, xside , xpost)
 
       | Attr ("chk_pre", params) ->
          let pre =
@@ -214,5 +222,12 @@ let convert_b_attributes_to_function_conditions
                end) in
          (pre @ xpre, xside, xpost)
 
-      | _ ->
-         acc) ([], [], []) attrs
+      | Attr (attrname, _) ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_b_attributes_to_function_conditions"
+             ~msg:(name ^ ": with attribute: " ^ attrname ^ " not recognized")
+             __FILE__ __LINE__
+             ["attrname: " ^ attrname];
+           acc
+         end) ([], [], []) attrs

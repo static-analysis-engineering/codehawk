@@ -49,6 +49,11 @@ open BCHLibTypes
 val get_floc : location_int -> floc_int
 
 
+(** [get_finfo_floc finfo floc] returns a [floc] object within function [finfo]
+    at the location [loc].*)
+val get_finfo_floc: function_info_int -> location_int -> floc_int
+
+
 (** [get_floc_by_address faddr iaddr] returns a [floc] object for the context-free
     instruction address [iaddr] in the function with address [faddr] *)
 val get_floc_by_address: doubleword_int -> doubleword_int -> floc_int

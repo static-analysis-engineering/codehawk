@@ -174,11 +174,50 @@ end
 
 class arm_expression_externalizer_t
         (finfo: function_info_int): expression_externalizer_int =
-object
+object (self)
 
   method finfo = finfo
 
-  method xpr_to_bterm (_: btype_t) (_: xpr_t) = None
+  method xpr_to_bterm (btype: btype_t) (xpr: xpr_t) =
+    match xpr with
+    | XConst (IntConst n) -> Some (NumConstant n)
+    | XVar v when finfo#env#is_initial_register_value v ->
+       TR.tfold
+         ~ok:(fun reg ->
+           let _ =
+             finfo#update_summary
+               (finfo#get_summary#add_register_parameter_location
+                  reg btype 4) in
+           let ftspar = finfo#get_summary#get_parameter_for_register reg in
+           Some (ArgValue ftspar))
+         ~error:(fun e ->
+           begin
+             log_error_result
+               ~tag:"xpr_to_bterm"
+               __FILE__ __LINE__
+               ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+             None
+           end)
+         (finfo#env#get_initial_register_value_register v)
+    | XOp ((Xf "indexsize"), [xx]) ->
+       let optt = self#xpr_to_bterm t_int xx in
+       (match optt with
+        | Some tt -> Some (IndexSize tt)
+        | _ -> None)
+    | XOp ((Xf "ntpos"), [xx]) ->
+       let optt = self#xpr_to_bterm t_int xx in
+       (match optt with
+        | Some tt -> Some (ArgNullTerminatorPos tt)
+        | _ -> None)
+
+    | _ ->
+       begin
+         log_diagnostics_result
+           ~tag:"xpr_to_bterm:not supported"
+           __FILE__ __LINE__
+           ["xpr: " ^ (x2s xpr)];
+         None
+       end
 
 end
 
@@ -442,7 +481,26 @@ object (self)
 
   method has_call_target = self#f#has_call_target self#cia
 
-  method get_call_target = self#f#get_call_target self#cia
+  method get_call_target: call_target_info_int =
+    self#f#get_call_target self#cia
+
+  method get_bterm_evaluator: bterm_evaluator_int option =
+    if self#has_call_target then
+      let arch = system_settings#get_architecture in
+      let callargs = self#get_call_arguments in
+      match arch with
+      | "mips" -> Some (new mips_bterm_evaluator_t self#f callargs)
+      | "arm" -> Some (new arm_bterm_evaluator_t self#f callargs)
+      | _ -> None
+    else
+      None
+
+  method get_expression_externalizer: expression_externalizer_int option =
+    let arch = system_settings#get_architecture in
+    match arch with
+    | "mips" -> Some (new mips_expression_externalizer_t self#f)
+    | "arm" -> Some (new arm_expression_externalizer_t self#f)
+    | _ -> None
 
   method update_call_target =
     if self#has_call_target then
@@ -3381,6 +3439,7 @@ object (self)
      | ([], _) -> errorPostCommands
      | _ -> [BRANCH [LF.mkCode postCommands; LF.mkCode errorPostCommands]]
 
+   (* Only used for x86 *)
    method private record_precondition_effect (pre:xxpredicate_t) =
      match pre with
      | XXFunctionPointer (_,t) ->
@@ -3523,6 +3582,7 @@ object (self)
 	  []
         end
 
+   (* Only used for x86 *)
    method private record_precondition_effects (sem:function_semantics_t) =
      List.iter self#record_precondition_effect sem.fsem_pre
 
@@ -3658,25 +3718,6 @@ object (self)
      let abstrRegs = List.map self#env#mk_register_variable defClobbered in
      [OPERATION { op_name = opname; op_args = [] };
        ABSTRACT_VARS (v1::abstrRegs); returnassign]
-
-   method private get_bterm_xpr
-                    (t: bterm_t)
-                    (parargs: (fts_parameter_t * xpr_t) list): xpr_t option =
-     match t with
-     | ArgValue p ->
-        List.fold_left (fun acc (par, x) ->
-            match acc with
-            | Some _ -> acc
-            | _ ->
-               if (fts_parameter_compare p par) = 0 then
-                 Some x
-               else
-                 acc) None parargs
-     | ArgBufferSize tt -> self#get_bterm_xpr tt parargs
-     | IndexSize tt -> self#get_bterm_xpr tt parargs
-     | ByteSize tt -> self#get_bterm_xpr tt parargs
-     | ArgNullTerminatorPos tt -> self#get_bterm_xpr tt parargs
-     | _ -> None
 
    method get_mips_call_commands =
      let parargs = self#get_call_arguments in
@@ -3836,6 +3877,10 @@ end
 
 let get_floc (loc:location_int) =
   new floc_t (get_function_info loc#f) loc
+
+
+let get_finfo_floc (finfo: function_info_int) (loc: location_int) =
+  new floc_t finfo loc
 
 
 let get_floc_by_address (faddr: doubleword_int) (iaddr: doubleword_int) =

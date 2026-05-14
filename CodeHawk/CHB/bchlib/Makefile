@@ -111,6 +111,7 @@ MLIS := \
 	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
+	bCHFunctionPODischarge \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \
@@ -204,6 +205,7 @@ SOURCES := \
 	bCHCallSemanticsRecorder \
 	bCHFloc \
 	bCHCallgraph \
+	bCHFunctionPODischarge \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \

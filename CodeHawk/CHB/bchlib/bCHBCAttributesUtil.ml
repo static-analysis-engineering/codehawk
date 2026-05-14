@@ -29,6 +29,8 @@
 open BCHBCTypes
 
 
+(* Note that CIL attaches the format attribute to the TFun type, while most
+   other attributes are attached to the varinfo of the function definition.*)
 let get_format_archetype
       (attrs: b_attributes_t) (index: int): BCHLibTypes.formatstring_type_t option =
   List.fold_left (fun acc attr ->
@@ -36,7 +38,7 @@ let get_format_archetype
       | Some _ -> acc
       | _ ->
          match attr with
-         | Attr (("format" | "chk_format"), params) ->
+         | Attr ("format", params) ->
             (match params with
              | [ACons ("printf", []); AInt fmtrefindex; AInt _]
                | [ACons ("printf", []); AInt fmtrefindex] ->

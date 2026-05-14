@@ -44,7 +44,6 @@ open BCHBCTypeUtil
 open BCHBTerm
 open BCHDoubleword
 open BCHExternalPredicate
-open BCHGlobalState
 open BCHLibTypes
 open BCHStrings
 open BCHXPOPredicate
@@ -136,7 +135,7 @@ object (self)
            else
              Open
         | _ -> Open)
-    | XPOTrustedString x | XPOTrustedOsCmdString (x, false, _) ->
+    | XPOTrustedString x | XPOTrustedOsCmdString x ->
        (match x with
         | XConst (IntConst n) ->
            let dw = numerical_mod_to_doubleword n in
@@ -174,76 +173,6 @@ object (self)
         | _ -> Open)
     | _ -> Open
 
-  (* Relies on the expression externalizer, which, at present, has only been
-     implemented for mips.
-     An alternative for delegating proof obligations is in the method
-     discharge_proofobligations in function_info.
-     Eventually these two methods should be merged or at least unified.*)
-  method private delegate_precondition (xpo: xpo_predicate_t): po_status_t =
-    match xpo with
-    | XPONotNull x ->
-       let x = simplify_xpr x in
-       (match self#xprxt#xpr_to_bterm t_voidptr x with
-        | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = numerical_mod_to_doubleword n in
-           DelegatedGlobal (dw, XXNotNull (NumConstant n))
-        | Some t -> Delegated (XXNotNull t)
-        | _ -> Open)
-    | XPONullTerminated x ->
-       let x = simplify_xpr x in
-       (match self#xprxt#xpr_to_bterm t_voidptr x with
-        | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = numerical_mod_to_doubleword n in
-           DelegatedGlobal (dw, XXNullTerminated (NumConstant n))
-        | Some t -> Delegated (XXNullTerminated t)
-        | _ -> Open)
-    | XPOBlockWrite (ty, ptr, size) ->
-       (match self#xprxt#xpr_to_bterm t_voidptr ptr with
-        | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = numerical_mod_to_doubleword n in
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some (NumConstant ns) ->
-               DelegatedGlobal
-                 (dw, XXBlockWrite(ty, NumConstant n, NumConstant ns))
-            | _ -> Open)
-        | Some ptrt ->
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some sizet ->
-               Delegated (XXBlockWrite (ty, ptrt, sizet))
-            | _ -> Open)
-        | _ -> Open)
-    | XPOBuffer (ty, ptr, size) ->
-       (match self#xprxt#xpr_to_bterm t_voidptr ptr with
-        | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = numerical_mod_to_doubleword n in
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some (NumConstant ns) ->
-               DelegatedGlobal
-                 (dw, XXBlockWrite(ty, NumConstant n, NumConstant ns))
-            | _ -> Open)
-        | Some ptrt ->
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some sizet ->
-               Delegated (XXBuffer (ty, ptrt, sizet))
-            | _ -> Open)
-        | _ -> Open)
-    | XPOInitializedRange (ty, ptr, size) ->
-       (match self#xprxt#xpr_to_bterm t_voidptr ptr with
-        | Some (NumConstant n) when n#gt numerical_zero ->
-           let dw = numerical_mod_to_doubleword n in
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some (NumConstant ns) ->
-               DelegatedGlobal
-                 (dw, XXBlockWrite(ty, NumConstant n, NumConstant ns))
-            | _ -> Open)
-        | Some ptrt ->
-           (match self#xprxt#xpr_to_bterm t_int size with
-            | Some sizet ->
-               Delegated (XXInitializedRange (ty, ptrt, sizet))
-            | _ -> Open)
-        | _ -> Open)
-    | _ -> Open
-
   method record_precondition (pre: xxpredicate_t) =
     let xpo = xxp_to_xpo_predicate self#termev self#loc pre in
     let status = self#simplify_precondition xpo in
@@ -253,23 +182,7 @@ object (self)
         ~msg:(p2s loc#toPretty)
         __FILE__ __LINE__
         ["pre: " ^ (p2s (xxpredicate_to_pretty pre))] in
-    match status with
-    | Discharged _ -> self#add_po xpo status
-    | _ ->
-       let status = self#delegate_precondition xpo in
-       match status with
-       | Delegated xxp ->
-          begin
-            self#add_po xpo status;
-            self#add_pre xxp
-          end
-       | DelegatedGlobal (dw, xxp) ->
-          begin
-            self#add_po xpo status;
-            self#add_gpo dw xxp
-          end
-       | _ ->
-          self#add_po xpo status
+    self#add_po xpo status
 
   method private record_blockreads (pre: xxpredicate_t) =
     let _ =
@@ -312,12 +225,6 @@ object (self)
         __FILE__ __LINE__
         ["po: " ^ (p2s (xpo_predicate_to_pretty xpo))] in
     self#finfo#proofobligations#add_proofobligation self#loc#ci xpo status
-
-  method private add_gpo (dw: doubleword_int) (xxp: xxpredicate_t) =
-    global_system_state#add_precondition dw self#loc xxp
-
-  method private add_pre (xxp: xxpredicate_t) =
-    self#finfo#update_summary (self#finfo#get_summary#add_precondition xxp)
 
   method private add_se (xxp: xxpredicate_t) =
     self#finfo#update_summary (self#finfo#get_summary#add_sideeffect xxp)

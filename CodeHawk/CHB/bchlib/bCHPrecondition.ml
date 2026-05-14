@@ -226,24 +226,8 @@ let read_xml_precondition_xxpredicate
 	 [XXBlockWrite (gty (arg 0), dest, gt (arg 2)); XXNotNull dest]
       | "deref-write-null" ->
 	 [XXBlockWrite (gty (arg 0), gt (arg 1), gt (arg 2))]
-      | "trusted-os-cmd-string" ->
-         let s = gt (arg 0) in
-         let fmtstring =
-           (pNode#hasNamedAttribute "fmtstring")
-           && (pNode#getAttribute "fmtstring") = "true" in
-         if pNode#hasNamedAttribute "quotes" then
-           let a = pNode#getAttribute "quotes" in
-           TR.tfold
-             ~ok:(fun q -> [XXTrustedOsCmdString(s, fmtstring, q)])
-             ~error:(fun e ->
-               raise_xml_error
-                 node
-                 (LBLOCK [
-                      STR "Problem in parsing trusted-os-cmd-string: ";
-                      STR (String.concat ", " e)]))
-             (string_to_quote_status a)
-         else
-           [XXTrustedOsCmdString(s, fmtstring, NO_QUOTES)]
+      | "trusted-os-cmd-string" -> [XXTrustedOsCmdString(gt (arg 0))]
+
       | s ->
          raise_xml_error
            node
