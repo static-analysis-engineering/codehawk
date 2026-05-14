@@ -53,6 +53,13 @@ let po_status_to_pretty (s: po_status_t): pretty_t =
   match s with
   | Discharged s -> LBLOCK [STR "discharged("; STR s; STR ")"]
   | Delegated x -> LBLOCK [STR "delegated("; xxpredicate_to_pretty x; STR ")"]
+  | DelegatedLocal (ci, x) ->
+     LBLOCK [
+         STR "delegated-local(";
+         STR ci;
+         STR ", ";
+         xpo_predicate_to_pretty x;
+         STR ")"]
   | Requested (dw, x) ->
      LBLOCK [
          STR "requested("; dw#toPretty; STR ", "; xxpredicate_to_pretty x; STR ")"]
@@ -67,7 +74,8 @@ let po_status_to_pretty (s: po_status_t): pretty_t =
   | Open -> STR "open"
 
 
-let write_xml_po_status (node: xml_element_int) (s: po_status_t) =
+let write_xml_po_status
+      (node: xml_element_int) (xpod: xpodictionary_int) (s: po_status_t) =
   match s with
   | Discharged s ->
      begin
@@ -78,6 +86,12 @@ let write_xml_po_status (node: xml_element_int) (s: po_status_t) =
      begin
        node#setAttribute "s" "del";
        id#write_xml_xxpredicate node x
+     end
+  | DelegatedLocal (ci, x) ->
+     begin
+       node#setAttribute "s" "local";
+       node#setAttribute "iaddr" ci;
+       xpod#write_xml_xpo_predicate node x
      end
   | Requested (dw, x) ->
      begin
@@ -196,9 +210,11 @@ object (self)
                (List.map
                   (fun po ->
                     let ponode = xmlElement "po" in
+                    let stnode = xmlElement "status" in
                     begin
                       self#xpod#write_xml_xpo_predicate ponode po#xpo;
-                      write_xml_po_status ponode po#status;
+                      write_xml_po_status stnode xpod po#status;
+                      ponode#appendChildren [stnode];
                       ponode
                     end) polist);
              anode

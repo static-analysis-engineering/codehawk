@@ -126,6 +126,7 @@ let read_xml_sideeffect
       (thisf: bterm_t)
     (parameters: fts_parameter_t list): xxpredicate_t =
   let get_term n = read_xml_bterm n thisf parameters in
+  let gt = get_term in
   let get_type n =
     let t = read_xml_type n in
     match t with
@@ -159,6 +160,24 @@ let read_xml_sideeffect
               thisf
               parameters) in
        XXConditional (condition, aux (node#getTaggedChild "apply"))
+      | "writes-string-from-fmt-string" ->
+         let kind =
+           if pNode#hasNamedAttribute "kind" then
+             pNode#getAttribute "kind"
+           else
+             "fmt_args" in
+         let kind =
+           match kind  with
+           | "va_list" -> VA_LIST
+           | "fmt_args" -> FMT_ARGS
+           | _ -> FMT_ARGS in
+         let optlen =
+           if (List.length argNodes) = 3 then
+             Some (gt (arg 2))
+           else
+             None in
+         XXWritesStringFromFmtString (gt (arg 0), gt (arg 1), kind, optlen)
+
     | s ->
        raise_xml_error
          node

@@ -46,6 +46,7 @@ open BCHSideeffect
 open BCHLibTypes
 open BCHPostcondition
 
+let p2s = CHPrettyUtil.pretty_to_string
 
 let id = BCHInterfaceDictionary.interface_dictionary
 
@@ -322,22 +323,29 @@ let bvarinfo_to_function_semantics
     let (preconditions, sideeffects, _) =
       convert_b_attributes_to_function_conditions vinfo.bvname fintf vinfo.bvattr in
     let _ =
-      chlog#add
-        "bvarinfo attributes"
-        (LBLOCK [
-             STR vinfo.bvname;
-             STR ": ";
-             STR (attributes_to_string vinfo.bvattr)]) in
+      log_diagnostics_result
+        ~tag:"bvarinfo_to_function_semantics"
+        ~msg:vinfo.bvname
+        __FILE__ __LINE__
+        ["pre: " ^ (string_of_int (List.length preconditions));
+         "side: " ^ (string_of_int (List.length sideeffects));
+         "attrs: " ^ (attributes_to_string vinfo.bvattr)] in
     let fsem =
       {default_function_semantics with
         fsem_pre = preconditions; fsem_sideeffects = sideeffects} in
     let _ =
-      ch_diagnostics_log#add
-        "function semantics"
-        (LBLOCK [STR vinfo.bvname; STR ": ";
-                 function_semantics_to_pretty fsem]) in
+      log_diagnostics_result
+        ~tag:"bvarinfo_to_function_semantics"
+        ~msg:vinfo.bvname
+        __FILE__ __LINE__
+        ["semantics: " ^ (p2s (function_semantics_to_pretty fsem))] in
     fsem
   else
+    let _ =
+      log_diagnostics_result
+        ~tag:"bvarinfo_to_function_semantics:default"
+        __FILE__ __LINE__
+        ["vinfo: " ^ vinfo.bvname] in
     default_function_semantics
 
 
