@@ -487,6 +487,8 @@ object (self)
   method index_xxpredicate (p: xxpredicate_t) =
     let ib b = if b then 1 else 0 in
     let it = self#index_bterm in
+    let optit optbt = match optbt with Some bt -> it bt | _ -> -1 in
+    let ioptlen optlen = match optlen with Some i -> i | _ -> -1 in
     let ity = bcd#index_typ in
     let tags = [xxpredicate_mcts#ts p] in
     let key = match p with
@@ -522,8 +524,14 @@ object (self)
       | XXStartsThread (t, tl) -> (tags, List.map it (t::tl))
       | XXTainted t -> (tags, [it t])
       | XXTrustedString t -> (tags, [it t])
-      | XXTrustedOsCmdString (t, isfmtstring, q) ->
-         (tags @ [quote_status_mfts#ts q], [it t; if isfmtstring then 1 else 0])
+      | XXTrustedOsCmdString t -> (tags, [it t])
+      | XXTrustedOsCmdFmtString (t, kind, optlen) ->
+         (tags @ [format_args_kind_mfts#ts kind], [it t; optit optlen])
+      | XXTrustedOsCmdFmtArgString (t, quotes, optlen) ->
+         (tags @ [quote_status_mfts#ts quotes], [it t; ioptlen optlen])
+      | XXWritesStringFromFmtString (dest, fmt, kind, optlen) ->
+         (tags @ [format_args_kind_mfts#ts kind],
+          [it dest; it fmt; optit optlen])
       | XXValidMem t -> (tags, [it t])
       | XXDisjunction pl -> (tags, [self#index_xxpredicate_list pl])
       | XXConditional (p1, p2) ->
@@ -544,7 +552,9 @@ object (self)
     let t = t name tags in
     let a = a name args in
     let gt = self#get_bterm in
+    let gt_opt i = if i >= 0 then Some (gt i) else None in
     let gty = bcd#get_typ in
+    let getoptlen a = if a >= 0 then Some a else None in
     match (t 0) with
     | "ab" -> XXAllocationBase (gt (a 0))
     | "bw" -> XXBlockWrite (gty (a 0), gt (a 1), gt (a 2))
@@ -576,9 +586,18 @@ object (self)
     | "errno" -> XXSetsErrno
     | "st" -> XXStartsThread (gt (a 0), List.map gt (List.tl args))
     | "t" -> XXTainted (gt (a 0))
-    | "tc" -> XXTrustedOsCmdString (gt (a 0), (a 1) = 1, quote_status_mfts#fs (t 1))
+    | "tc" -> XXTrustedOsCmdString (gt (a 0))
+    | "tfa" ->
+       XXTrustedOsCmdFmtArgString (
+           gt (a 0), quote_status_mfts#fs (t 1), getoptlen (a 1))
+    | "tfs" ->
+       XXTrustedOsCmdFmtString (
+           gt (a 0), format_args_kind_mfts#fs (t 1), gt_opt (a 1))
     | "ts" -> XXTrustedString (gt (a 0))
     | "v" -> XXValidMem (gt (a 0))
+    | "wfs" ->
+       XXWritesStringFromFmtString (
+           gt (a 0), gt (a 1), format_args_kind_mfts#fs (t 1), gt_opt (a 2))
     | "dis" -> XXDisjunction (self#get_xxpredicate_list (a 0))
     | "con" -> XXConditional (self#get_xxpredicate (a 0), self#get_xxpredicate (a 1))
     | s -> raise_tag_error name s xxpredicate_mcts#tags

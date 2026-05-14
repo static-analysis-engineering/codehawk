@@ -68,6 +68,21 @@ let string_to_quote_status (s: string): quote_status_t traceresult =
      Error [(elocm __LINE__) ^ "Illegal quote_status: " ^ s]
 
 
+let format_args_kind_to_string (f: format_args_kind_t): string =
+  match f with
+  | VA_LIST -> "VA_LIST"
+  | FMT_ARGS -> "FMT_ARGS"
+
+
+let string_to_format_args_kind (s: string): format_args_kind_t traceresult =
+  match s with
+  | "VA_LIST" -> Ok VA_LIST
+  | "FMT_ARGS" -> Ok FMT_ARGS
+  | _ ->
+     Error [(elocm __LINE__) ^ "Illegal format_args_kind: " ^ s]
+
+
+
 let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   let btc = bterm_compare in
   match (p1, p2) with
@@ -176,9 +191,26 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   | (XXTrustedString t1, XXTrustedString t2) -> btc t1 t2
   | (XXTrustedString _, _) -> -1
   | (_, XXTrustedString _) -> 1
-  | (XXTrustedOsCmdString (t1, _, _), XXTrustedOsCmdString (t2, _, _)) -> btc t1 t2
+  | (XXTrustedOsCmdString t1, XXTrustedOsCmdString t2) -> btc t1 t2
   | (XXTrustedOsCmdString _, _) -> -1
   | (_, XXTrustedOsCmdString _) -> 1
+  | (XXTrustedOsCmdFmtString (t1, _, _), XXTrustedOsCmdFmtString (t2, _, _)) ->
+     btc t1 t2
+  | (XXTrustedOsCmdFmtString _, _) -> -1
+  | (_, XXTrustedOsCmdFmtString _) -> 1
+  | (XXTrustedOsCmdFmtArgString (t1, _, _), XXTrustedOsCmdFmtArgString (t2, _, _)) ->
+     btc t1 t2
+  | (XXTrustedOsCmdFmtArgString _, _) -> -1
+  | (_, XXTrustedOsCmdFmtArgString _) -> 1
+  | (XXWritesStringFromFmtString (t11, t12, _, _),
+     XXWritesStringFromFmtString (t21, t22, _, _)) ->
+     let l1 = btc t11 t21 in
+     if l1 = 0 then
+       btc t12 t22
+     else
+       l1
+  | (XXWritesStringFromFmtString _, _) -> -1
+  | (_, XXWritesStringFromFmtString _) -> 1
   | (XXValidMem t1, XXValidMem t2) -> btc t1 t2
   | (XXValidMem _, _) -> -1
   | (_, XXValidMem _) -> 1
@@ -227,7 +259,10 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXStartsThread (t, tt) -> t :: tt
   | XXTainted t -> [t]
   | XXTrustedString t -> [t]
-  | XXTrustedOsCmdString (t, _, _) -> [t]
+  | XXTrustedOsCmdString t -> [t]
+  | XXTrustedOsCmdFmtString (t, _, _) -> [t]
+  | XXTrustedOsCmdFmtArgString (t, _, _) -> [t]
+  | XXWritesStringFromFmtString (t1, t2, _, _) -> [t1; t2]
   | XXValidMem t -> [t]
   | XXDisjunction pl -> List.concat (List.map xxpredicate_terms pl)
   | XXConditional (p1, p2) ->
@@ -378,14 +413,34 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   | XXStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XXTainted t -> default "tainted" [t]
   | XXTrustedString t -> default "trusted-string" [t]
-  | XXTrustedOsCmdString (t, isfmtstring, quotes) ->
+  | XXTrustedOsCmdString t -> default "trusted-os-cmd-string" [t]
+  | XXTrustedOsCmdFmtString (t, kind, optlen) ->
      LBLOCK [
-         STR "trusted-os-cmd-string(";
+         STR "trusted-os-cmd-fmt-string(";
          btp t;
          STR ", ";
-         STR (if isfmtstring then "true" else "false");
+         STR (format_args_kind_to_string kind);
+         STR ", ";
+         (match optlen with Some i -> btp i | _ -> STR "_");
+         STR ")"]
+  | XXTrustedOsCmdFmtArgString (t, quotes, optlen) ->
+     LBLOCK [
+         STR "trusted-os-cmd-fmt-arg-string(";
+         btp t;
          STR ", ";
          STR (quote_status_to_string quotes);
+         STR ", ";
+         (match optlen with Some i -> INT i | _ -> STR "_");
+         STR ")"]
+  | XXWritesStringFromFmtString (t1, t2, kind, optlen) ->
+     LBLOCK [
+         STR "writes-string-from-format-string(";
+         btp t1;
+         STR ", ";
+         btp t2;
+         STR (format_args_kind_to_string kind);
+         STR ", ";
+         (match optlen with Some i -> btp i | _ -> STR "_");
          STR ")"]
   | XXValidMem t -> default "valid-mem" [t]
   | XXDisjunction pl ->
@@ -432,8 +487,13 @@ let rec modify_types_xxp
   | XXStartsThread (t, tt) -> XXStartsThread (mbt t, List.map mbt tt)
   | XXTainted t -> XXTainted (mbt t)
   | XXTrustedString t -> XXTrustedString (mbt t)
-  | XXTrustedOsCmdString (t, isfmtstring, q) ->
-     XXTrustedOsCmdString (mbt t, isfmtstring, q)
+  | XXTrustedOsCmdString t -> XXTrustedOsCmdString (mbt t)
+  | XXTrustedOsCmdFmtString (t, kind, optlen) ->
+     XXTrustedOsCmdFmtString (mbt t, kind, optlen)
+  | XXTrustedOsCmdFmtArgString (t, quotes, optlen) ->
+     XXTrustedOsCmdFmtArgString (mbt t, quotes, optlen)
+  | XXWritesStringFromFmtString (t1, t2, kind, optlen) ->
+     XXWritesStringFromFmtString (mbt t1, mbt t2, kind, optlen)
   | XXValidMem t -> XXValidMem (mbt t)
   | XXDisjunction xl -> XXDisjunction (List.map mxp xl)
   | XXConditional (x1, x2) -> XXConditional (mxp x1, mxp x2)

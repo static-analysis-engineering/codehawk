@@ -48,6 +48,11 @@ let quote_status_mfts: quote_status_t mfts_int =
      (DOUBLE_QUOTES, "d")]
 
 
+let format_args_kind_mfts: format_args_kind_t mfts_int =
+  mk_mfts
+    "format_args_kind_t" [(VA_LIST, "v"); (FMT_ARGS, "f")]
+
+
 let relational_op_mfts: relational_op_t mfts_int =
   mk_mfts
     "relational_op_t"
@@ -453,6 +458,9 @@ object
     | XXTainted _ -> "t"
     | XXTrustedString _ -> "ts"
     | XXTrustedOsCmdString _ -> "tc"
+    | XXTrustedOsCmdFmtString _ -> "tfs"
+    | XXTrustedOsCmdFmtArgString _ -> "tfa"
+    | XXWritesStringFromFmtString _ -> "wfs"
     | XXValidMem _ -> "v"
     | XXDisjunction _ -> "dis"
     | XXConditional _ -> "con"
@@ -461,7 +469,7 @@ object
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
-      "pos"; "sa"; "st"; "t"; "tc"; "ts"; "v"; "x"
+      "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
     ]
 
 end
@@ -508,6 +516,9 @@ object
     | XPOTainted _ -> "t"
     | XPOTrustedString _ -> "ts"
     | XPOTrustedOsCmdString _ -> "tc"
+    | XPOTrustedOsCmdFmtString _ -> "tfs"
+    | XPOTrustedOsCmdFmtArgString _ -> "tfa"
+    | XPOWritesStringFromFmtString _ -> "wfs"
     | XPOValidMem _ -> "v"
     | XPODisjunction _ -> "dis"
     | XPOConditional _ -> "con"
@@ -516,7 +527,7 @@ object
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
-      "pos"; "sa"; "st"; "t"; "tc"; "ts"; "v"; "x"
+      "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
     ]
 
 end
