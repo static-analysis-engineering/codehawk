@@ -160,6 +160,7 @@ object (self)
       self#write_xml_cfg cNode;
       self#write_xml_instructions iiNode;
       finfo#stackframe#write_xml sfNode;
+      BCHFunctionPODischarge.discharge_function_proofobligations finfo;
       finfo#proofobligations#write_xml poNode;
       finfo#xpod#write_xml xpodNode;
       id#write_xml dNode;
