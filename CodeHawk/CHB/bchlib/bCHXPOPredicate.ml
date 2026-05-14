@@ -60,7 +60,10 @@ let rec xxp_to_xpo_predicate
            "unable to convert bterm"
            (LBLOCK [loc#toPretty; STR " "; (bterm_to_pretty t)]) in
        random_constant_expr in
-
+  let optbtx opt_t =
+    match opt_t with
+    | Some t -> Some (btx t)
+    | _ -> None in
   match xxp with
   | XXAllocationBase t -> XPOAllocationBase (btx t)
   | XXBlockWrite (ty, t1, t2) -> XPOBlockWrite (ty, btx t1, btx t2)
@@ -93,8 +96,13 @@ let rec xxp_to_xpo_predicate
   | XXStartsThread (t1, t2) -> XPOStartsThread (btx t1, List.map btx t2)
   | XXTainted t -> XPOTainted (btx t)
   | XXTrustedString t -> XPOTrustedString (btx t)
-  | XXTrustedOsCmdString (t, isfmtstring, quotes) ->
-     XPOTrustedOsCmdString (btx t, isfmtstring, quotes)
+  | XXTrustedOsCmdString t -> XPOTrustedOsCmdString (btx t)
+  | XXTrustedOsCmdFmtString (t, fmtargs, optlen) ->
+     XPOTrustedOsCmdFmtString (btx t, fmtargs, optbtx optlen)
+  | XXTrustedOsCmdFmtArgString (t, quotes, optlen) ->
+     XPOTrustedOsCmdFmtArgString (btx t, quotes, optlen)
+  | XXWritesStringFromFmtString (dest, fmt, fmtargs, optlen) ->
+     XPOWritesStringFromFmtString (btx dest, btx fmt, fmtargs, optbtx optlen)
   | XXValidMem t -> XPOValidMem (btx t)
   | XXDisjunction xl ->
      XPODisjunction (List.map (xxp_to_xpo_predicate termev loc) xl)
@@ -172,15 +180,36 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPOSetsErrno -> STR "sets errno"
   | XPOStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XPOTainted t -> default "tainted" [t]
-  | XPOTrustedString t -> default "trusted" [t]
-  | XPOTrustedOsCmdString (t, isfmtstring, quotes) ->
+  | XPOTrustedString t -> default "trusted-string" [t]
+  | XPOTrustedOsCmdString t -> default "trusted-os-cmd-string" [t]
+  | XPOTrustedOsCmdFmtString (t, kind, optlen) ->
      LBLOCK [
-         STR "trusted-os-cmd-string(";
+         STR "trusted-os-cmd-fmt-string(";
          x2p t;
          STR ", ";
-         STR (if isfmtstring then "true" else "false");
+         STR (format_args_kind_to_string kind);
+         STR ", ";
+         (match optlen with Some i -> x2p i | _ -> STR "_");
+         STR ")"]
+  | XPOTrustedOsCmdFmtArgString (t, quotes, optlen) ->
+     LBLOCK [
+         STR "trusted-os-cmd-fmt-arg-string(";
+         x2p t;
          STR ", ";
          STR (quote_status_to_string quotes);
+         STR ", ";
+         (match optlen with Some i -> INT i | _ -> STR "_");
+         STR ")"]
+  | XPOWritesStringFromFmtString (t1, t2, kind, optlen) ->
+     LBLOCK [
+         STR "writes-string-from-fmt-string(";
+         x2p t1;
+         STR ", ";
+         x2p t2;
+         STR ", ";
+         STR (format_args_kind_to_string kind);
+         STR ", ";
+         (match optlen with Some i -> x2p i | _ -> STR "_");
          STR ")"]
   | XPOValidMem t -> default "valid-mem" [t]
   | XPODisjunction pl ->

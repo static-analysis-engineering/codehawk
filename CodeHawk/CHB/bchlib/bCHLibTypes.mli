@@ -2365,6 +2365,8 @@ type c_struct_constant_t =
 
 type quote_status_t = NO_QUOTES | SINGLE_QUOTES | DOUBLE_QUOTES
 
+type format_args_kind_t = VA_LIST | FMT_ARGS
+
 
 (** Predicate over external terms to represent function preconditions,
     postconditions, and side effects.*)
@@ -2420,10 +2422,25 @@ type xxpredicate_t =
       parameters *)
   | XXTainted of bterm_t (** value of term is externally controlled *)
   | XXTrustedString of bterm_t  (** value of term is trusted *)
-  | XXTrustedOsCmdString of bterm_t * bool * quote_status_t
-  (** value of term is safe to pass as an argument to system(.), or is
-      safe to pass as a format argument with the given quotation status
-      if is_fmt_string is true. *)
+  | XXTrustedOsCmdString of bterm_t
+  (** value of term is safe to pass as an argument to system(.) *)
+
+  | XXTrustedOsCmdFmtString of bterm_t * format_args_kind_t * bterm_t option
+  (** the string value constructed by the format string bterm is safe to
+      pass as an argument to system(.). If a length is given the string
+      must evaluate to a value that has string length less than the given
+      length*)
+
+  | XXTrustedOsCmdFmtArgString of bterm_t * quote_status_t * int option
+  (** the string value bterm is safe to pass as a format argument where the
+      format specifier is enclosed in quotes according to the quote_status.
+      If a length is given the string length is less than the given length.*)
+
+  | XXWritesStringFromFmtString of
+      bterm_t * bterm_t * format_args_kind_t * bterm_t option
+  (** side effect that asserts that a string is constructed from the format
+      string indicated by the second bterm and written to the first bterm.
+      An optional length imposes a maximum length on the string being written.*)
 
   | XXValidMem of bterm_t
   (** memory region pointed to be by term has not been freed *)
@@ -2610,7 +2627,10 @@ type xpo_predicate_t =
   | XPOStartsThread of xpr_t * xpr_t list
   | XPOTainted of xpr_t
   | XPOTrustedString of xpr_t
-  | XPOTrustedOsCmdString of xpr_t * bool * quote_status_t
+  | XPOTrustedOsCmdString of xpr_t
+  | XPOTrustedOsCmdFmtString of xpr_t * format_args_kind_t * xpr_t option
+  | XPOTrustedOsCmdFmtArgString of xpr_t * quote_status_t * int option
+  | XPOWritesStringFromFmtString of xpr_t * xpr_t * format_args_kind_t * xpr_t option
   | XPOValidMem of xpr_t
   | XPODisjunction of xpo_predicate_t list
   | XPOConditional of xpo_predicate_t * xpo_predicate_t
@@ -5516,7 +5536,7 @@ class type function_environment_int =
 
     method get_initialized_string_value: variable_t -> int -> string
 
-    method variables_in_expr: xpr_t -> variable_t list
+    method variables_in_expr: ?include_addressof:bool -> xpr_t -> variable_t list
 
     (** {1 Scope and transactions} *)
 
@@ -5636,6 +5656,7 @@ class type xpodictionary_int =
 type po_status_t =
   | Discharged of string
   | Delegated of xxpredicate_t
+  | DelegatedLocal of ctxt_iaddress_t * xpo_predicate_t
   | Requested of doubleword_int * xxpredicate_t
   | DelegatedGlobal of doubleword_int * xxpredicate_t
   | Violated of string
@@ -5718,19 +5739,6 @@ object
 
   (** Returns the object containing all active proof obligations.*)
   method proofobligations: proofobligations_int
-
-  (** Attempts to discharge some open proof obligations and if successful
-      updates their status. The optional argument [get_elf_string_reference]
-      allows this function to check if an argument is a constant string in
-      the binary. A constant string in the binary is considered trusted.
-
-      The reason that it is passed in as an argument is that the elf library
-      code is not directly accessible from this point. It means that this
-      function should preferably be called from a location that has access
-      to the elf library.
-*)
-  method discharge_proofobligations:
-           ?get_elf_string_reference:(xpr_t -> string option) -> unit -> unit
 
   method convert_preconditions_to_attributes: b_attributes_t
 
@@ -5913,6 +5921,12 @@ object
   method get_summary: function_summary_int
 
   method update_summary: function_summary_int -> unit
+
+  method add_precondition: xxpredicate_t -> unit
+
+  method add_sideeffect: xxpredicate_t -> unit
+
+  method add_register_parameter_location: register_t -> btype_t -> int -> unit
 
 
   (** {2 Function signature}*)
@@ -6530,6 +6544,9 @@ class type floc_int =
     method get_call_target: call_target_info_int
     method get_call_args: (fts_parameter_t * xpr_t) list
     method get_call_arguments: (fts_parameter_t * xpr_t) list
+
+    method get_bterm_evaluator: bterm_evaluator_int option
+    method get_expression_externalizer: expression_externalizer_int option
 
     (** {1 Function summary}*)
 

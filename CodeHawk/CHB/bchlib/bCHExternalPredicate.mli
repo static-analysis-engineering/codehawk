@@ -86,6 +86,10 @@ val quote_status_to_string: quote_status_t -> string
 
 val string_to_quote_status: string -> quote_status_t traceresult
 
+val format_args_kind_to_string: format_args_kind_t -> string
+
+val string_to_format_args_kind: string -> format_args_kind_t traceresult
+
 val relational_op_to_string: relational_op_t -> string
 
 val relational_op_to_xml_string: relational_op_t -> string

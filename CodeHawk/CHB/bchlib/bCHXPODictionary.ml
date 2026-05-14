@@ -65,8 +65,10 @@ object (self)
   method index_xpo_predicate (xpo: xpo_predicate_t) =
     let tags = [xpo_predicate_mcts#ts xpo] in
     let ib b = if b then 1 else 0 in
+    let ioptlen optlen = match optlen with Some i -> i | _ -> -1 in
     let ix = self#xd#index_xpr in
     let it = bcd#index_typ in
+    let optix optlen = match optlen with Some x -> ix x | _ -> -1 in
     let key = match xpo with
       | XPOAllocationBase x -> (tags, [ix x])
       | XPOBlockWrite (ty, x1, x2) -> (tags, [it ty; ix x1; ix x2])
@@ -100,8 +102,13 @@ object (self)
       | XPOStartsThread (x, xl) -> (tags, (ix x) :: (List.map ix xl))
       | XPOTainted x -> (tags, [ix x])
       | XPOTrustedString x -> (tags, [ix x])
-      | XPOTrustedOsCmdString (x, isfmtstring, q) ->
-         (tags @ [quote_status_mfts#ts q], [ix x; if isfmtstring then 1 else 0])
+      | XPOTrustedOsCmdString x -> (tags, [ix x])
+      | XPOTrustedOsCmdFmtString (x, kind, optlen) ->
+         (tags @ [format_args_kind_mfts#ts kind], [ix x; optix optlen])
+      | XPOTrustedOsCmdFmtArgString (x, quotes, optlen) ->
+         (tags @ [quote_status_mfts#ts quotes], [ix x; ioptlen optlen])
+      | XPOWritesStringFromFmtString (x1, x2, kind, optlen) ->
+         (tags @ [format_args_kind_mfts#ts kind], [ix x1; ix x2; optix optlen])
       | XPOValidMem x -> (tags, [ix x])
       | XPODisjunction pl -> (tags, List.map self#index_xpo_predicate pl)
       | XPOConditional (p1, p2) ->
