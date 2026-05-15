@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,6 @@ open BCHLibTypes
  *)
 
 val convert_b_attributes_to_function_conditions:
-  string
-  -> function_interface_t
+  function_interface_t
   -> b_attributes_t
   -> (xxpredicate_t list * xxpredicate_t list * xxpredicate_t list)
