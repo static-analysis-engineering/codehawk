@@ -1712,25 +1712,6 @@ object (self)
 
   method proofobligations = proofobligations
 
-  method convert_preconditions_to_attributes =
-    let delegatedpos = self#proofobligations#delegated_proofobligations in
-    List.fold_left (fun acc po ->
-        match po#status with
-        | Delegated xpred ->
-           (match xpred with
-            | XXOutputFormatString (ArgValue par) ->
-               let argindex = par.apar_index in
-               (match argindex with
-               | Some argindex ->
-                  let attr =
-                    Attr ("chk_pre",
-                          [ACons ("output_format_string", []);
-                           AInt argindex]) in
-                  attr :: acc
-               | _ -> acc)
-            | _ -> acc)
-        | _ -> acc) [] delegatedpos
-
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
 

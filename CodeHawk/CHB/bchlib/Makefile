@@ -82,7 +82,7 @@ MLIS := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
-	bCHBCAttributes \
+	bCHAttributesFunctionSemantics \
 	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \
@@ -112,6 +112,7 @@ MLIS := \
 	bCHFloc \
 	bCHCallgraph \
 	bCHFunctionPODischarge \
+	bCHFunctionSemanticsAttributes \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \
@@ -176,7 +177,7 @@ SOURCES := \
 	bCHPrecondition \
 	bCHPostcondition \
 	bCHSideeffect \
-	bCHBCAttributes \
+	bCHAttributesFunctionSemantics \
 	bCHFunctionSemantics \
 	bCHFunctionSummary \
 	bCHVariable \
@@ -206,6 +207,7 @@ SOURCES := \
 	bCHFloc \
 	bCHCallgraph \
 	bCHFunctionPODischarge \
+	bCHFunctionSemanticsAttributes \
 	bCHMetricsHandler \
 	bCHDisassemblySummary \
 	bCHMetrics \
