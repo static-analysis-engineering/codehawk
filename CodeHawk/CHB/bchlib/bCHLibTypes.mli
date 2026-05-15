@@ -5740,8 +5740,6 @@ object
   (** Returns the object containing all active proof obligations.*)
   method proofobligations: proofobligations_int
 
-  method convert_preconditions_to_attributes: b_attributes_t
-
 
   (** {1 Function invariants} *)
 

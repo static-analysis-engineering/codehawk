@@ -326,7 +326,9 @@ object (self)
                   fname resolvents in
               let (regtypes, _) = resolvents in
               let attrs = List.concat (List.map (fun (_, _, a) -> a) regtypes) in
-              let attrs = (finfo#convert_preconditions_to_attributes) @ attrs in
+              let attrs =
+                (BCHFunctionSemanticsAttributes.convert_semantics_to_attributes finfo)
+                @ attrs in
               BCHBCFiles.bcfiles#add_fundef ~attrs fname ftype);
 
            node#setAttribute "a" faddr;

@@ -35,7 +35,7 @@ open CHLogger
 open CHXmlDocument
 
 (* bchlib *)
-open BCHBCAttributes
+open BCHAttributesFunctionSemantics
 open BCHBCTypePretty
 open BCHBCTypes
 open BCHBCTypeUtil
@@ -321,7 +321,7 @@ let bvarinfo_to_function_semantics
            (vinfo: bvarinfo_t) (fintf: function_interface_t): function_semantics_t =
   if (List.length vinfo.bvattr) > 0 then
     let (preconditions, sideeffects, _) =
-      convert_b_attributes_to_function_conditions vinfo.bvname fintf vinfo.bvattr in
+      convert_b_attributes_to_function_conditions fintf vinfo.bvattr in
     let _ =
       log_diagnostics_result
         ~tag:"bvarinfo_to_function_semantics"
