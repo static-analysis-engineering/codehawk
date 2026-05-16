@@ -2592,6 +2592,10 @@ object ('a)
 end
 
 
+type annotated_format_arg_t =
+  CHFormatStringParser.conversion_t * CHFormatStringParser.fieldwidth_t * xpr_t
+
+
 (** Instantiated xxpredicate (or other condition) with expressions in the
     context of a function (proof obligation that can be discharged against
     invariants).*)
@@ -2628,7 +2632,8 @@ type xpo_predicate_t =
   | XPOTainted of xpr_t
   | XPOTrustedString of xpr_t
   | XPOTrustedOsCmdString of xpr_t
-  | XPOTrustedOsCmdFmtString of xpr_t * format_args_kind_t * xpr_t option
+  | XPOTrustedOsCmdFmtString of
+      xpr_t * format_args_kind_t * xpr_t option * annotated_format_arg_t list
   | XPOTrustedOsCmdFmtArgString of xpr_t * quote_status_t * int option
   | XPOWritesStringFromFmtString of xpr_t * xpr_t * format_args_kind_t * xpr_t option
   | XPOValidMem of xpr_t
@@ -6200,6 +6205,7 @@ class type expression_externalizer_int =
 
   end
 
+
 (** Evaluator of terms used in a particular function call.*)
 class type bterm_evaluator_int =
   object
@@ -6207,9 +6213,19 @@ class type bterm_evaluator_int =
     (** Return the function info in which context the term is to be evaluated.*)
     method finfo: function_info_int
 
+    (** [is_format_string t] returns true if t represents a parameter and that
+        parameter is used as a format string. *)
+    method is_format_string: bterm_t -> bool
+
     (** [bterm_xpr t] returns the expression with which [t] was instantiated
         in the call.*)
     method bterm_xpr: bterm_t -> xpr_t option
+
+    (** [get_format_arguments t] returns a list of (converter, xpr) pairs that
+        are the format arguments associated with the format string denoted by
+        [t]. If [t] does not denote a format string, None is returned.*)
+    method get_annotated_format_arguments:
+             bterm_t -> annotated_format_arg_t list option
 
     (** [xpr_local_stack_address x] returns the stack offset (from the initial
         value of the stack pointer at function entry) if [x] is a stack address

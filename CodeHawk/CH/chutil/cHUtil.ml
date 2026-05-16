@@ -174,6 +174,17 @@ let list_split_p (p:'a -> bool) (l:'a list):('a list * 'a list) =
   loop [] [] l
 
 
+let list_slice (lst: 'a list) (index: int) (count:int): 'a list option  =
+  if index < 0 || count < 0 || (List.length lst) < index + count then
+    None
+  else
+    let rec aux l i n result =
+      if i > 0 then aux (List.tl l) (i-1) n result
+      else if n > 0 then aux (List.tl l) 0 (n-1) ((List.hd l) :: result)
+      else List.rev result in
+    Some (aux lst index count [])
+
+
 let list_suffix (n:int) (l:'a list) =
   let rec aux n l =
     match l with

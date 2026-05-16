@@ -733,6 +733,17 @@ let translate_arm_instruction
                         let _ = log_dc_error_result __FILE__ __LINE__ e in
                         [])
                       (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
+
+            else if is_pointer ptype then
+              (* necessary step to create a stack slot if the address is a
+                 stack address. A side effect of get_var_at_address is to
+                 create a stack slot. Without no reaching definitions are
+                 created for the buffer at this stack address.
+
+                 To be done in a better way, eventually. *)
+              let xx = rewrite_expr floc x in
+              let _ = floc#get_var_at_address ~btype:(ptr_deref ptype) xx in
+              []
             else
               [] in
           if is_register_parameter p then
@@ -771,7 +782,15 @@ let translate_arm_instruction
           | XXBlockWrite (_, dest, _) ->
              (match floc#evaluate_summary_address_term dest with
               | Some memVar -> (memVar :: accdefs, accuse, accusehigh)
-              | _  -> (accdefs, accuse, accusehigh))
+              | _ ->
+                 begin
+                   log_diagnostics_result
+                     ~tag:"calltgt_cmds:blockwrite dest not evaluated"
+                     __FILE__ __LINE__
+                     ["call target: " ^ floc#get_call_target#get_name;
+                      "dest: " ^ (BCHBTerm.bterm_to_string dest)];
+                   (accdefs, accuse, accusehigh)
+                 end)
           | XXBuffer (_, dest, _) ->
              (match floc#evaluate_summary_address_term dest with
               | Some memVar -> (accdefs, memVar :: accuse, memVar :: accusehigh)

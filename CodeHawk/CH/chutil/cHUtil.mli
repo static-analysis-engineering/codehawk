@@ -60,6 +60,13 @@ val list_split_p: ('a -> bool) -> 'a list -> ('a list * 'a list)
 
 val list_sub: 'a list -> int -> int -> 'a list
 
+(** [list_slice lst index count] returns a list of [count] elements from [st]
+    starting at [index] (counting from zero).
+
+    Returns None if [index] or [count] are negative, or if [lst] does not
+    include sufficient elements to fill the slice. *)
+val list_slice: 'a list -> int -> int -> 'a list option
+
 val list_suffix: int -> 'a list -> 'a list
 
 val list_maxf: 'a list -> ('a -> 'a -> int) -> 'a
@@ -84,7 +91,7 @@ val pair_compare:
   ('a * 'b) -> ('a * 'b) -> ('a -> 'a -> int) -> ('b -> 'b -> int) -> int
 
 
-  (** [triple_compare t1 t2 returns the result of the element-wise comparison
+  (** [triple_compare t1 t2] returns the result of the element-wise comparison
       of triples [t1] and [t2], using [f1], [f2], and [f3] as comparison
       functions for the three elements, respectively.*)
 val triple_compare:
