@@ -276,7 +276,9 @@ class default_bterm_evaluator_t
 object
 
   method finfo = finfo
+  method is_format_string (_t: bterm_t) = false
   method bterm_xpr (_t: bterm_t) = None
+  method get_annotated_format_arguments (_t: bterm_t) = None
   method xpr_local_stack_address (_x: xpr_t) = None
   method bterm_stack_address (_t: bterm_t) = None
   method constant_bterm (_t: bterm_t) = None
@@ -295,6 +297,24 @@ object (self)
   val callargs = callargs
 
   method finfo = finfo
+
+  method is_format_string (t: bterm_t): bool =
+    match t with
+    | ArgValue par ->
+       let cpar_o =
+         List.fold_left (fun acc (cpar, _) ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                if (fts_parameter_equal cpar par) then Some cpar else None)
+           None callargs in
+       (match cpar_o with
+        | Some cpar ->
+           (match cpar.apar_fmt with
+            | NoFormat -> false
+            | _ -> true)
+        | _ -> false)
+    | _ -> false
 
   method bterm_xpr (t: bterm_t): xpr_t option =
     match t with
@@ -316,6 +336,97 @@ object (self)
         | Some x -> Some (XOp ((Xf "ntpos"), [x]))
         | _ -> None)
     | _ -> None
+
+  method private argument_index (t: bterm_t): int option =
+    match t with
+    | ArgValue par ->
+       let cpar_o =
+         List.fold_left (fun acc (cpar, _) ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                if (fts_parameter_equal cpar par) then Some cpar else None)
+           None callargs in
+       (match cpar_o with
+        | Some cpar -> cpar.apar_index
+        | _ -> None)
+    | _ -> None
+
+  method get_annotated_format_arguments
+           (t: bterm_t): annotated_format_arg_t list option =
+    match self#argument_index t with
+    | None ->
+       begin
+         log_diagnostics_result
+           ~tag:"get_annotated_format_arguments"
+           ~msg:finfo#get_name
+           __FILE__ __LINE__
+           ["Unable to determine index of the bterm: " ^ (bterm_to_string t)];
+         None
+       end
+    | Some index ->    (* 1-based index in the parameter list *)
+       match self#bterm_xpr t with
+       | None ->
+          begin
+            log_diagnostics_result
+              ~tag:"get_annotated_format_arguments"
+              ~msg:finfo#get_name
+              __FILE__ __LINE__
+              ["Unable to resolve bterm: " ^ (bterm_to_string t)];
+            None
+          end
+       | Some xpr ->
+          match xpr with
+          | XConst (IntConst n) ->
+             let dw = BCHDoubleword.numerical_mod_to_doubleword n in
+             if BCHStrings.string_table#has_string dw then
+               let fmtstring = BCHStrings.string_table#get_string dw in
+               let fmtspec =
+                 CHFormatStringParser.parse_formatstring fmtstring false in
+               let argspecs = fmtspec#get_arguments in
+               let argxprs = List.map (fun (_, x) -> x) callargs in
+               (match CHUtil.list_slice argxprs index (List.length argspecs) with
+                | Some fmtargs ->
+                   Some
+                    (List.map2
+                       (fun argspec argxpr ->
+                         let fw =
+                           if argspec#has_fieldwidth then
+                             argspec#get_fieldwidth
+                           else
+                             CHFormatStringParser.NoFieldwidth in
+                         (argspec#get_conversion, fw, argxpr))
+                       argspecs fmtargs)
+                | _ ->
+                   begin
+                     log_error_result
+                       ~tag:"get_annotated_format_arguments"
+                       ~msg:finfo#get_name
+                       __FILE__ __LINE__
+                       ["Error in retrieving format arguments from call arguments";
+                        "fmtspec count: " ^ (string_of_int (List.length argspecs));
+                        "argxprs count: " ^ (string_of_int (List.length argxprs))];
+                     None
+                   end)
+             else
+               begin
+                 log_error_result
+                   ~tag:"get_annotated_format_arguments"
+                   ~msg:finfo#get_name
+                   __FILE__ __LINE__
+                   ["No constant format string found in string table"];
+                 None
+               end
+          | _ ->
+             begin
+               log_diagnostics_result
+                 ~tag:"get_annotated_format_arguments"
+                 ~msg:finfo#get_name
+                 __FILE__ __LINE__
+                 ["Unable to retrieve format string from non-constant xpr: "
+                  ^ (x2s xpr)];
+               None
+             end
 
   method xpr_local_stack_address (x: xpr_t): int option =
     match x with
@@ -381,6 +492,24 @@ object (self)
 
   method finfo = finfo
 
+  method is_format_string (t: bterm_t): bool =
+    match t with
+    | ArgValue par ->
+       let cpar_o =
+         List.fold_left (fun acc (cpar, _) ->
+             match acc with
+             | Some _ -> acc
+             | _ ->
+                if (fts_parameter_equal cpar par) then Some cpar else None)
+           None callargs in
+       (match cpar_o with
+        | Some cpar ->
+           (match cpar.apar_fmt with
+            | NoFormat -> false
+            | _ -> true)
+        | _ -> false)
+    | _ -> false
+
   method bterm_xpr (t: bterm_t): xpr_t option =
     match t with
     | ArgValue par ->
@@ -401,6 +530,8 @@ object (self)
         | Some x -> Some (XOp ((Xf "ntpos"), [x]))
         | _ -> None)
     | _ -> None
+
+  method get_annotated_format_arguments (_t: bterm_t) = None
 
   method xpr_local_stack_address (x: xpr_t): int option =
     match x with
@@ -3211,7 +3342,7 @@ object (self)
              | _ ->
                 begin
                   log_diagnostics_result
-                    ~tag:"evaluate_fts_address_argument"
+                    ~tag:"evaluate_fts_address_argument:no stackslot found"
                     ~msg:(p2s self#l#toPretty)
                     __FILE__ __LINE__
                     ["parameter: " ^ (fts_parameter_to_string p);

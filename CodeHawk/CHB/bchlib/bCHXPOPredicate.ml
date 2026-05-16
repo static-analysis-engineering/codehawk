@@ -98,7 +98,7 @@ let rec xxp_to_xpo_predicate
   | XXTrustedString t -> XPOTrustedString (btx t)
   | XXTrustedOsCmdString t -> XPOTrustedOsCmdString (btx t)
   | XXTrustedOsCmdFmtString (t, fmtargs, optlen) ->
-     XPOTrustedOsCmdFmtString (btx t, fmtargs, optbtx optlen)
+     XPOTrustedOsCmdFmtString (btx t, fmtargs, optbtx optlen, [])
   | XXTrustedOsCmdFmtArgString (t, quotes, optlen) ->
      XPOTrustedOsCmdFmtArgString (btx t, quotes, optlen)
   | XXWritesStringFromFmtString (dest, fmt, fmtargs, optlen) ->
@@ -182,7 +182,7 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPOTainted t -> default "tainted" [t]
   | XPOTrustedString t -> default "trusted-string" [t]
   | XPOTrustedOsCmdString t -> default "trusted-os-cmd-string" [t]
-  | XPOTrustedOsCmdFmtString (t, kind, optlen) ->
+  | XPOTrustedOsCmdFmtString (t, kind, optlen, fmtargs) ->
      LBLOCK [
          STR "trusted-os-cmd-fmt-string(";
          x2p t;
@@ -190,6 +190,8 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
          STR (format_args_kind_to_string kind);
          STR ", ";
          (match optlen with Some i -> x2p i | _ -> STR "_");
+         STR ", ";
+         INT (List.length fmtargs);
          STR ")"]
   | XPOTrustedOsCmdFmtArgString (t, quotes, optlen) ->
      LBLOCK [

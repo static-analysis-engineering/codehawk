@@ -174,7 +174,19 @@ object (self)
     | _ -> Open
 
   method record_precondition (pre: xxpredicate_t) =
-    let xpo = xxp_to_xpo_predicate self#termev self#loc pre in
+    let xpo =
+      match pre with
+      | XXTrustedOsCmdFmtString (fmt, FMT_ARGS, _optlen) ->
+         (match xxp_to_xpo_predicate self#termev self#loc pre with
+          | XPOTrustedOsCmdFmtString (xfmt, xkind, xoptlen, []) as xpre ->
+             let fmtargs = self#termev#get_annotated_format_arguments fmt in
+             (match fmtargs with
+              | Some fmtargs ->
+                 XPOTrustedOsCmdFmtString (xfmt, xkind, xoptlen, fmtargs)
+              | _ -> xpre)
+          | xpre -> xpre)
+      | _ ->
+         xxp_to_xpo_predicate self#termev self#loc pre in
     let status = self#simplify_precondition xpo in
     let _ =
       log_diagnostics_result

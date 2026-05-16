@@ -231,8 +231,12 @@ let trusted_os_cmd_string_delegate_local_instr
                          match optlen with
                          | Some len -> btermev#bterm_xpr len
                          | _ -> None in
+                       let fmtargs =
+                         match btermev#get_annotated_format_arguments src with
+                         | Some fmtargs -> fmtargs
+                         | _ -> [] in
                        let new_xpo =
-                         XPOTrustedOsCmdFmtString (srcptr, fmtkind, xlen) in
+                         XPOTrustedOsCmdFmtString (srcptr, fmtkind, xlen, fmtargs) in
                        let _ =
                          finfo#proofobligations#add_proofobligation
                            floc#l#ci new_xpo Open in
@@ -322,8 +326,7 @@ let trusted_os_cmd_fmt_string_va_list_delegate
      (match xpxt#xpr_to_bterm BCHBCTypeUtil.t_charptr x with
       | Some xfmt ->
          let xpred = XXTrustedOsCmdFmtString (xfmt, FMT_ARGS, xoptlen) in
-         let updatedsummary = finfo#get_summary#add_precondition xpred in
-         let _ = finfo#update_summary updatedsummary in
+         let _ = finfo#add_precondition xpred in
          Delegated (xpred)
       | _ -> Open)
   | _ -> Open
@@ -342,7 +345,8 @@ let discharge_trusted_os_cmd_fmt_string
        (match kind with
         | VA_LIST ->
            trusted_os_cmd_fmt_string_va_list_delegate finfo loc x optlen
-        | _ -> Open)
+        | FMT_ARGS -> status)
+        (* trusted_os_cmd_fmt_string_fmt_args_delegate_local finfo loc x optlen) *)
     | _ -> status in
   match status with
   | Open ->
@@ -963,7 +967,7 @@ let discharge_one
   | XPOTrustedOsCmdString x ->
      discharge_trusted_os_cmd_string finfo po#loc x
 
-  | XPOTrustedOsCmdFmtString (x, kind, optlen) ->
+  | XPOTrustedOsCmdFmtString (x, kind, optlen, _) ->
      discharge_trusted_os_cmd_fmt_string finfo po#loc x kind optlen
 
   | XPOOutputFormatString x ->

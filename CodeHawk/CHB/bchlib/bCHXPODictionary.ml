@@ -26,6 +26,7 @@
    ============================================================================= *)
 
 (* chutil *)
+open CHFormatStringParser
 open CHIndexTable
 open CHXmlDocument
 
@@ -46,12 +47,14 @@ class xpodictionary_t (xd: xprdictionary_int): xpodictionary_int =
 object (self)
 
   val xd = xd
+  val format_arg_table = mk_index_table "format-arg-table"
   val xpo_predicate_table = mk_index_table "xpo-predicate-table"
 
   val mutable tables = []
 
   initializer
     tables <- [
+      format_arg_table;
       xpo_predicate_table
     ]
 
@@ -61,6 +64,29 @@ object (self)
     end
 
   method xd = xd
+
+  method private index_format_arg (c, fw, x) =
+    let conversion_tag =
+      match c with
+      | IntConverter -> "int"
+      | DecimalConverter -> "decimal"
+      | UnsignedOctalConverter -> "unsigned-octal"
+      | UnsignedDecimalConverter -> "unsigned-decimal"
+      | UnsignedHexConverter _ -> "unsigned-hex"
+      | FixedDoubleConverter _ -> "fixed-double"
+      | ExpDoubleConverter _ -> "exp-double"
+      | FlexDoubleConverter _ -> "flex-double"
+      | HexDoubleConverter _ -> "hex-double"
+      | UnsignedCharConverter -> "unsigned-char"
+      | StringConverter -> "string"
+      | PointerConverter -> "pointer"
+      | OutputArgument -> "output-argument" in
+    let fieldwidth_tag =
+      match fw with
+      | FieldwidthConstant n -> string_of_int n
+      | _ -> "other" in
+    let key = ([conversion_tag; fieldwidth_tag], [self#xd#index_xpr x]) in
+    format_arg_table#add key
 
   method index_xpo_predicate (xpo: xpo_predicate_t) =
     let tags = [xpo_predicate_mcts#ts xpo] in
@@ -103,8 +129,9 @@ object (self)
       | XPOTainted x -> (tags, [ix x])
       | XPOTrustedString x -> (tags, [ix x])
       | XPOTrustedOsCmdString x -> (tags, [ix x])
-      | XPOTrustedOsCmdFmtString (x, kind, optlen) ->
-         (tags @ [format_args_kind_mfts#ts kind], [ix x; optix optlen])
+      | XPOTrustedOsCmdFmtString (x, kind, optlen, fmtargs) ->
+         (tags @ [format_args_kind_mfts#ts kind],
+          [ix x; optix optlen] @ (List.map self#index_format_arg fmtargs))
       | XPOTrustedOsCmdFmtArgString (x, quotes, optlen) ->
          (tags @ [quote_status_mfts#ts quotes], [ix x; ioptlen optlen])
       | XPOWritesStringFromFmtString (x1, x2, kind, optlen) ->
