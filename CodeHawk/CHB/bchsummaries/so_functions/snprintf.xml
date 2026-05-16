@@ -102,6 +102,16 @@
        </apply>
       </math>
      </sideeffect>
+      <sideeffect>
+        <math>
+          <apply>
+            <writes-string-from-fmt-string kind="fmt_args"/>
+            <ci>buffer</ci>
+            <ci>format</ci>
+            <ci>count</ci>
+          </apply>
+        </math>
+      </sideeffect>
     </sideeffects>
    </semantics>
   </libfun>

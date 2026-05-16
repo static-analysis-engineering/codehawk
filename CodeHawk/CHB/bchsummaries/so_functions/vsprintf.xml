@@ -82,6 +82,15 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+        <math>
+          <apply>
+            <writes-string-from-fmt-string kind="va_list"/>
+            <ci>buffer</ci>
+            <ci>format</ci>
+          </apply>
+        </math>
+      </sideeffect>
     </sideeffects>
    </semantics>
   </libfun>
