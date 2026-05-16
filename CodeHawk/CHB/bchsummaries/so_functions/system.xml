@@ -36,7 +36,7 @@
       <pre>
         <math>
           <apply>
-            <trusted-os-cmd-string fmtstring="false" quotes="NO_QUOTES"/>
+            <trusted-os-cmd-string/>
             <ci>command</ci>
           </apply>
         </math>
