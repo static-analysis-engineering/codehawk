@@ -499,49 +499,43 @@ let blockwrite_delegate
        Open
      end
   | Some xprxt ->
+     let xlenterm =
+       (* If the destination is external, but the length term cannot be
+          externalized, an external predicate is created with a runtime
+          value argument for its length. The rationale for still
+          delegating this proof obligation is that communicating that
+          this function writes to an external buffer takes priority over
+          having an incomplete predicate, as the writing affects the
+          semantics of the caller. *)
+       match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int bwlen with
+       | Some bterm -> bterm
+       | _ -> RunTimeValue in
      (match xprxt#xpr_to_bterm ty xpr with
       | Some (NumConstant n) when n#gt CHNumerical.numerical_zero ->
          let dw = BCHDoubleword.numerical_mod_to_doubleword n in
-         (match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int bwlen with
-          | Some (NumConstant ns) ->
-             let xxp = XXBlockWrite (ty, NumConstant n, NumConstant ns) in
-             begin
-               global_system_state#add_precondition dw loc xxp;
-               log_diagnostics_result
-                 ~tag:"blockwrite_delegate:delegate_global"
-                 ~msg:(p2s loc#toPretty)
-                 __FILE__ __LINE__
-                 ["dw: " ^ dw#to_hex_string;
-                  "xxp: " ^ (p2s (xxpredicate_to_pretty xxp))];
-               DelegatedGlobal (dw, xxp)
-             end
-          | _ ->
-             begin
-               log_diagnostics_result
-                 ~tag:"blockwrite_delegate:delegate_global:open"
-                 ~msg:(p2s loc#toPretty)
-                 __FILE__ __LINE__
-                 ["dw: " ^ dw#to_hex_string; "bwlen: " ^ (x2s bwlen)];
-               Open
-             end)
+         let xxp = XXBlockWrite (ty, NumConstant n, xlenterm) in
+         begin
+           global_system_state#add_precondition dw loc xxp;
+           log_diagnostics_result
+             ~tag:"blockwrite_delegate:delegate_global"
+             ~msg:(p2s loc#toPretty)
+             __FILE__ __LINE__
+             ["dw: " ^ dw#to_hex_string;
+              "xxp: " ^ (p2s (xxpredicate_to_pretty xxp))];
+           DelegatedGlobal (dw, xxp)
+         end
       | Some dst ->
-         (match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int bwlen with
-          | Some lenterm ->
-             let xpred = XXBlockWrite (ty, dst, lenterm) in
-             begin
-               finfo#add_precondition xpred;
-               finfo#add_sideeffect xpred;
-               Delegated xpred
-             end
-          | _ ->
-             begin
-               log_diagnostics_result
-                 ~tag:"blockwrite_delegate:dest:open"
-                 ~msg:(p2s loc#toPretty)
-                 __FILE__ __LINE__
-                 ["dst: " ^ (BCHBTerm.bterm_to_string dst); "bwlen: " ^ (x2s bwlen)];
-               Open
-             end)
+         let xpred = XXBlockWrite (ty, dst, xlenterm) in
+         begin
+           finfo#add_precondition xpred;
+           finfo#add_sideeffect xpred;
+           log_diagnostics_result
+             ~tag:"blockwrite_delegate:delegate_api_sideeffect"
+             ~msg:(p2s loc#toPretty)
+             __FILE__ __LINE__
+             ["xpred: " ^ (p2s (xxpredicate_to_pretty xpred))];
+           Delegated xpred
+         end
       | _ ->
          begin
            log_diagnostics_result
