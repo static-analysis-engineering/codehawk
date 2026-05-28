@@ -33,7 +33,16 @@
     </api>
     <semantics>
       <io-actions/>
-      <preconditions/>
+      <preconditions>
+        <pre>
+          <math>
+            <apply>
+              <trusted-os-cmd-string/>
+              <ci>command</ci>
+            </apply>
+          </math>
+        </pre>
+      </preconditions>
       <postconditions>
 	<notnull-null/>
       </postconditions>
