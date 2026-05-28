@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -189,6 +189,9 @@ let speclist =
      "exclude the function with the given address from the analysis");
     ("-fn_include", Arg.String (fun s -> include_function s),
      "include the function with the given address in the analysis");
+    ("-fn_include_callees",
+     Arg.Unit (fun () -> set_fn_include_callees ()),
+     "expand the set of functions to be analyzed with the callees of the included functions");
     ("-fn_no_lineq", Arg.String (fun s -> add_no_lineq s),
      "do not apply linear equality analysis to the function with the given address");
     ("-lineq_instr_cutoff",
