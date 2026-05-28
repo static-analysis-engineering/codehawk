@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?xml version="1.0" encoding="UTF-8"?>
 <codehawk-binary-analyzer>
   <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
   <header date="2020-04-28 23:28:35"/>
