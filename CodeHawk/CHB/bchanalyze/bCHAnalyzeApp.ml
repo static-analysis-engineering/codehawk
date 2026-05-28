@@ -99,6 +99,45 @@ let no_lineq = ref []
 let add_no_lineq s = no_lineq := s :: !no_lineq
 
 
+(** Expands a list of function address hex strings with the direct application
+    callees of each function, as recorded in saved function info. Silently
+    skips functions whose info is not yet available (e.g. first analysis pass).
+    Emits a diagnostics log entry for every callee added. *)
+let expand_fns_with_callees (fns: string list) : string list =
+  List.fold_left
+    (fun acc faddr_str ->
+      match string_to_doubleword faddr_str with
+      | Error _ -> acc
+      | Ok faddr ->
+        let callees =
+          try
+            let finfo = load_function_info faddr in
+            List.filter_map
+              (fun ct ->
+                if ct#is_app_call then Some ct#get_app_address
+                else None)
+              finfo#get_callees
+          with _ -> []
+        in
+        List.fold_left
+          (fun acc2 callee ->
+            let s = callee#to_hex_string in
+            if List.mem s acc2 then
+              acc2
+            else
+              begin
+                log_diagnostics_result
+                  ~tag:"expand_fns_with_callees"
+                  __FILE__ __LINE__
+                  ["add callee: " ^ s ^ " of: " ^ faddr_str];
+                s :: acc2
+              end)
+          acc
+          callees)
+    fns
+    fns
+
+
 let analyze_x86_function faddr f count =
   let _ =
     if system_settings#show_function_timing then
@@ -173,7 +212,9 @@ let analyze_x86_function faddr f count =
 
 
 let analyze starttime =
-  let fns_included = included_functions () in
+  let fns_included =
+    let fns = included_functions () in
+    if fn_include_callees () then expand_fns_with_callees fns else fns in
   let fns_excluded = excluded_functions () in
   let count = ref 0 in
   let failedfunctions = ref [] in
@@ -409,7 +450,9 @@ let analyze_mips_function faddr f count =
 
 
 let analyze_mips starttime =
-  let fns_included = included_functions () in
+  let fns_included =
+    let fns = included_functions () in
+    if fn_include_callees () then expand_fns_with_callees fns else fns in
   let fns_excluded = excluded_functions () in
   let count = ref 0 in
   let failedfunctions = ref [] in
@@ -565,7 +608,9 @@ let analyze_arm_function faddr f count =
 
 
 let analyze_arm starttime =
-  let fns_included = included_functions () in
+  let fns_included =
+    let fns = included_functions () in
+    if fn_include_callees () then expand_fns_with_callees fns else fns in
   let fns_excluded = excluded_functions () in
   let count = ref 0 in
   let failedfunctions = ref [] in
@@ -678,7 +723,9 @@ let analyze_pwr_function
 
 
 let analyze_pwr (starttime: float) =
-  let fns_included = included_functions () in
+  let fns_included =
+    let fns = included_functions () in
+    if fn_include_callees () then expand_fns_with_callees fns else fns in
   let fns_excluded = excluded_functions () in
   let count = ref 0 in
   begin

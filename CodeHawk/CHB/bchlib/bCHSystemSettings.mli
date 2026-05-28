@@ -42,3 +42,6 @@ val included_functions: unit -> string list
 
 val exclude_function: string -> unit
 val excluded_functions: unit -> string list
+
+val set_fn_include_callees: unit -> unit
+val fn_include_callees: unit -> bool

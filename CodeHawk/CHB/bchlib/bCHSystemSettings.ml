@@ -50,6 +50,11 @@ let exclude_function (s: string) = fns_excluded := s :: !fns_excluded
 let excluded_functions () = !fns_excluded
 
 
+let fn_include_callees = ref false
+let set_fn_include_callees () = fn_include_callees := true
+let fn_include_callees () = !fn_include_callees
+
+
 let arm_typingrules_settings = H.create 23
 
 let _ =
