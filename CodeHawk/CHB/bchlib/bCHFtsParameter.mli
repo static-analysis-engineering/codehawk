@@ -227,7 +227,11 @@ val is_register_parameter_for_register: fts_parameter_t -> register_t -> bool
 
 val is_arg_parameter: fts_parameter_t -> bool
 
+val formatstring_type_to_string: formatstring_type_t -> string
+
 val is_formatstring_parameter: fts_parameter_t -> bool
+
+val is_scanformat_parameter: fts_parameter_t -> bool
 
 val is_floating_point_parameter: fts_parameter_t -> bool
 

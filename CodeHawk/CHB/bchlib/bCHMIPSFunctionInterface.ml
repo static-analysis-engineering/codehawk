@@ -91,6 +91,7 @@ let get_mips_int_param_next_state
 
 let get_mips_format_spec_parameters
       (cpars: fts_parameter_t list)
+      (isinput: bool)
       (argspecs: argspec_int list): fts_parameter_t list =
   let nextindex = (List.length cpars) + 1 in
   let update_core_reg mas (r: mips_reg_t) =
@@ -130,23 +131,28 @@ let get_mips_format_spec_parameters
       mas_start_state cpars in
   let (_, pars, _, _) =
     List.fold_left (fun (mas, accpars, varargindex, nxtindex) argspec ->
-        let ftype = get_fmt_spec_type argspec in
-        let size_r = size_of_btype ftype in
         let name = "vararg_" ^ (string_of_int varargindex) in
         let (param, new_state) =
-          match size_r with
-          | Ok 4 -> get_mips_int_param_next_state 4 name ftype mas nxtindex
-          | Ok size ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Var-arg size: "; INT size; STR " not supported"]))
-          | Error e ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in mips_format_spec_parameters: ";
-                       STR (String.concat "; " e)])) in
+          if isinput then
+            let vtype = get_fmt_spec_type argspec in
+            let ftype = TPtr (vtype, []) in
+            get_mips_int_param_next_state 4 name ftype mas nxtindex
+          else
+            let ftype = get_fmt_spec_type argspec in
+            let size_r = size_of_btype ftype in
+            match size_r with
+            | Ok 4 -> get_mips_int_param_next_state 4 name ftype mas nxtindex
+            | Ok size ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Var-arg size: "; INT size; STR " not supported"]))
+            | Error e ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Error in mips_format_spec_parameters: ";
+                         STR (String.concat "; " e)])) in
         (new_state, param :: accpars, varargindex + 1, nxtindex + 1))
       (fmtmas, [], 1, nextindex) argspecs in
   pars

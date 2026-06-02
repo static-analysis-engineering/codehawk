@@ -1371,12 +1371,13 @@ let function_type_resolvents_to_bfuntype
    addition of (inferred) parameters to the function interface itself.*)
 let add_format_spec_parameters
       (fintf: function_interface_t)
+      (isinput: bool)
       (argspecs: argspec_int list): function_interface_t =
   let pars = get_fts_parameters fintf in
   let fmtpars =
     match system_settings#get_architecture with
-    | "arm" -> get_arm_format_spec_parameters pars argspecs
-    | "mips" -> get_mips_format_spec_parameters pars argspecs
+    | "arm" -> get_arm_format_spec_parameters pars isinput argspecs
+    | "mips" -> get_mips_format_spec_parameters pars isinput argspecs
     | arch ->
        let _ =
          ch_error_log#add

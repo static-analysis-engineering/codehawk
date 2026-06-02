@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -183,6 +183,14 @@ let update_target_interface
   let semantics = ctinfo#get_semantics in
   let tgt = ctinfo#get_target in
   mk_call_target_info fintf semantics tgt
+
+
+let update_target_interface_and_semantics
+      (ctinfo: call_target_info_int)
+      (fintf: function_interface_t)
+      (sem: function_semantics_t) =
+  let tgt = ctinfo#get_target in
+  mk_call_target_info fintf sem tgt
 
 
 let mk_call_target_info (ctgt: call_target_t): call_target_info_int =

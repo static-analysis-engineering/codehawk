@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2020       Henny B. Sipma
-   Copyright (c) 2021-2024  Aarno Labs LLC
+   Copyright (c) 2021-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -147,3 +147,10 @@ val mk_call_target_info: call_target_t -> call_target_info_int
     is still consistent with the updated function interface.*)
 val update_target_interface:
   call_target_info_int -> function_interface_t -> call_target_info_int
+
+
+val update_target_interface_and_semantics:
+  call_target_info_int
+  -> function_interface_t
+  -> function_semantics_t
+  -> call_target_info_int

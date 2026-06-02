@@ -86,7 +86,7 @@ let _arg_io_to_string (i:arg_io_t) =
   | ArgReadWrite -> "rw"
 
 
-let _formatstring_type_to_string (t:formatstring_type_t) =
+let formatstring_type_to_string (t:formatstring_type_t) =
   match t with
   | NoFormat -> "no"
   | PrintFormat -> "print"
@@ -390,6 +390,12 @@ let is_formatstring_parameter (p: fts_parameter_t) =
   match p.apar_fmt with
   | NoFormat -> false
   | _ -> true
+
+
+let is_scanformat_parameter (p: fts_parameter_t) =
+  match p.apar_fmt with
+  | ScanFormat -> true
+  | _ -> false
 
 
 let is_floating_point_parameter (p: fts_parameter_t) =

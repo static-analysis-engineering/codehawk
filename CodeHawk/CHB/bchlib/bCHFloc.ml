@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -646,17 +646,32 @@ object (self)
           ctinfo in
       if ctinfo#is_signature_valid then
         begin
+          let fintf = ctinfo#get_function_interface in
+          let sem = ctinfo#get_semantics in
+          let _ =
+            log_diagnostics_result
+              ~tag:"update-call-target"
+              ~msg:self#cia
+              __FILE__ __LINE__
+              ["callee: " ^ ctinfo#get_name;
+               "pars: "
+               ^ (string_of_int
+                    (List.length (get_fts_parameters fintf)));
+               "sideeffects: "
+               ^ (string_of_int
+                    (List.length sem.fsem_sideeffects))] in
           (try
-             match self#update_varargs ctinfo#get_function_interface with
-             | Some fintf ->
+             match self#update_varargs fintf sem with
+             | Some (new_fintf, new_sem) ->
                 let _ =
                   chlog#add
                     "update call target api"
                     (LBLOCK [
                          self#l#toPretty;
                          STR ": ";
-                         (function_interface_to_pretty fintf)]) in
-                self#set_call_target (update_target_interface ctinfo fintf)
+                         (function_interface_to_pretty new_fintf)]) in
+                self#set_call_target
+                  (update_target_interface_and_semantics ctinfo new_fintf new_sem)
              | _ -> ()
            with _ ->
              ());
@@ -664,9 +679,13 @@ object (self)
     else
       ()
 
-  method private update_x86_varargs (_s: function_interface_t) = None
+  method private update_x86_varargs
+        (_fintf: function_interface_t)
+        (_sem: function_semantics_t) = None
 
-  method private update_arm_varargs (fintf: function_interface_t) =
+  method private update_arm_varargs
+        (fintf: function_interface_t)
+        (sem: function_semantics_t) =
     let args = self#get_call_arguments in
     let argcount = List.length args in
     if argcount = 0 then
@@ -674,6 +693,14 @@ object (self)
     else
       let (lastpar, lastx) = List.nth args (argcount - 1) in
       let arg = if is_formatstring_parameter lastpar then Some lastx else None in
+      let _ =
+        log_diagnostics_result
+          ~tag:"update-arm-varargs"
+          ~msg:self#cia
+          __FILE__ __LINE__
+          ["last-par: " ^ lastpar.apar_name;
+           "fmt: " ^ (formatstring_type_to_string lastpar.apar_fmt);
+           "is-fmtstring: " ^ (if Option.is_some arg then "yes" else "no")] in
       match arg with
       | Some (XConst (IntConst n)) ->
          log_tfold_default
@@ -681,22 +708,77 @@ object (self)
               ~tag:"update_arm_varargs"
               (self#cia ^ ": constant: " ^ n#toString))
            (fun addr ->
-             if string_table#has_string addr then
+             let in_table = string_table#has_string addr in
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-arm-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["fmt-string addr: " ^ addr#to_hex_string;
+                  "in-string-table: " ^ (if in_table then "yes" else "no")] in
+             if in_table then
                let fmtstring = string_table#get_string addr in
-               let fmtspec = parse_formatstring fmtstring false in
+               let isinput = is_scanformat_parameter lastpar in
+               let _ =
+                 log_diagnostics_result
+                   ~tag:"update-arm-varargs"
+                   ~msg:self#cia
+                   __FILE__ __LINE__
+                   ["fmt-string: \"" ^ fmtstring ^ "\"";
+                    "isinput: " ^ (if isinput then "yes" else "no")] in
+               let fmtspec = parse_formatstring fmtstring isinput in
+               let _ =
+                 log_diagnostics_result
+                   ~tag:"update-arm-varargs"
+                   ~msg:self#cia
+                   __FILE__ __LINE__
+                   ["fmt-args found: "
+                    ^ (string_of_int (List.length fmtspec#get_arguments))] in
                if fmtspec#has_arguments then
                  let fmtargs = fmtspec#get_arguments in
-                 let newfintf = add_format_spec_parameters fintf fmtargs in
-                 Some newfintf
+                 let orig_npar = List.length (get_fts_parameters fintf) in
+                 let newfintf = add_format_spec_parameters fintf isinput fmtargs in
+                 let new_sem =
+                   if isinput then
+                     let new_pars =
+                       List.filteri
+                         (fun i _ -> i >= orig_npar)
+                         (get_fts_parameters newfintf) in
+                     let new_ses =
+                       List.map (fun p ->
+                           match p.apar_type with
+                           | TPtr (vtype, _) ->
+                              XXBlockWrite
+                                (vtype, ArgValue p,
+                                 IndexSize (NumConstant (mkNumerical 1)))
+                           | _ ->
+                              XXBlockWrite
+                                (p.apar_type, ArgValue p,
+                                 IndexSize (NumConstant (mkNumerical 1))))
+                         new_pars in
+                     {sem with
+                       fsem_sideeffects = sem.fsem_sideeffects @ new_ses}
+                   else
+                     sem in
+                 Some (newfintf, new_sem)
                else
                  None
              else
                None)
            None
            (numerical_to_doubleword n)
-      | _ -> None
+      | _ ->
+         let _ =
+           log_diagnostics_result
+             ~tag:"update-arm-varargs"
+             ~msg:self#cia
+             __FILE__ __LINE__
+             ["format string address is not a constant"] in
+         None
 
-  method private update_mips_varargs (fintf: function_interface_t) =
+  method private update_mips_varargs
+        (fintf: function_interface_t)
+        (sem: function_semantics_t) =
     let args = self#get_call_arguments in
     let argcount = List.length args in
     if argcount = 0 then
@@ -704,6 +786,14 @@ object (self)
     else
       let (lastpar, lastx) = List.nth args (argcount - 1) in
       let arg = if is_formatstring_parameter lastpar then Some lastx else None in
+      let _ =
+        log_diagnostics_result
+          ~tag:"update-mips-varargs"
+          ~msg:self#cia
+          __FILE__ __LINE__
+          ["last-par: " ^ lastpar.apar_name;
+           "fmt: " ^ (formatstring_type_to_string lastpar.apar_fmt);
+           "is-fmtstring: " ^ (if Option.is_some arg then "yes" else "no")] in
       match arg with
       | Some (XConst (IntConst n)) ->
          log_tfold_default
@@ -711,32 +801,100 @@ object (self)
               ~tag:"update_mips_varargs"
               (self#cia ^ ": constant: " ^ n#toString))
            (fun addr ->
-             if string_table#has_string addr then
+             let in_table = string_table#has_string addr in
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-mips-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["fmt-string addr: " ^ addr#to_string;
+                  "in-string-table: " ^ (if in_table then "yes" else "no")] in
+             if in_table then
                let fmtstring = string_table#get_string addr in
-               let fmtspec = parse_formatstring fmtstring false in
+               let isinput = is_scanformat_parameter lastpar in
+               let _ =
+                 log_diagnostics_result
+                   ~tag:"update-mips-varargs"
+                   ~msg:self#cia
+                   __FILE__ __LINE__
+                   ["fmt-string: \"" ^ fmtstring ^ "\"";
+                    "isinput: " ^ (if isinput then "yes" else "no")] in
+               let fmtspec = parse_formatstring fmtstring isinput in
+               let _ =
+                 log_diagnostics_result
+                   ~tag:"update-mips-varargs"
+                   ~msg:self#cia
+                   __FILE__ __LINE__
+                   ["fmt-args found: "
+                    ^ (string_of_int (List.length fmtspec#get_arguments))] in
                if fmtspec#has_arguments then
                  let fmtargs = fmtspec#get_arguments in
-                 let newfintf = add_format_spec_parameters fintf fmtargs in
-                 Some newfintf
+                 let orig_npar = List.length (get_fts_parameters fintf) in
+                 let newfintf = add_format_spec_parameters fintf isinput fmtargs in
+                 let new_sem =
+                   if isinput then
+                     let new_pars =
+                       List.filteri
+                         (fun i _ -> i >= orig_npar)
+                         (get_fts_parameters newfintf) in
+                     let new_ses =
+                       List.map (fun p ->
+                           match p.apar_type with
+                           | TPtr (vtype, _) ->
+                              XXBlockWrite
+                                (vtype, ArgValue p,
+                                 IndexSize (NumConstant (mkNumerical 1)))
+                           | _ ->
+                              XXBlockWrite
+                                (p.apar_type, ArgValue p,
+                                 IndexSize (NumConstant (mkNumerical 1))))
+                         new_pars in
+                     {sem with
+                       fsem_sideeffects = sem.fsem_sideeffects @ new_ses}
+                   else
+                     sem in
+                 Some (newfintf, new_sem)
                else
                  None
              else
                None)
            None
            (numerical_to_doubleword n)
-      | _ -> None
+      | _ ->
+         let _ =
+           log_diagnostics_result
+             ~tag:"update-mips-varargs"
+             ~msg:self#cia
+             __FILE__ __LINE__
+             ["format string address is not a constant"] in
+         None
 
-  method private update_varargs (fintf: function_interface_t) =
+  method private update_varargs
+        (fintf: function_interface_t)
+        (sem: function_semantics_t) =
     let fts = fintf.fintf_type_signature in
     match fts.fts_va_list with
-    | Some _ -> None
+    | Some _ ->
+       let _ =
+         log_diagnostics_result
+           ~tag:"update-varargs"
+           ~msg:self#cia
+           __FILE__ __LINE__
+           ["skipped (va_list already set)"] in
+       None
     | _ ->
        if system_settings#is_mips then
-         self#update_mips_varargs fintf
+         self#update_mips_varargs fintf sem
        else if system_settings#is_arm then
-         self#update_arm_varargs fintf
+         self#update_arm_varargs fintf sem
        else
-         self#update_x86_varargs fintf
+         let _ =
+           log_diagnostics_result
+             ~tag:"update-varargs"
+             ~msg:self#cia
+             __FILE__ __LINE__
+             ["x86 vararg update not yet implemented"] in
+         self#update_x86_varargs fintf sem
 
   (* Power32 uses r3 through r10 as default argument registers *)
       (*
@@ -3227,6 +3385,13 @@ object (self)
        [ABSTRACT_VARS [lhs]]
 
      else
+       let _ =
+         log_diagnostics_result
+           ~msg:(p2s self#l#toPretty)
+           ~tag:"get_assign_cmds: ASSIGN_NUM"
+           __FILE__ __LINE__
+           ["lhs: " ^ (p2s lhs#toPretty);
+            "rhs: " ^ (p2s (numerical_exp_to_pretty rhs))] in
        rhsCmds @ [ASSIGN_NUM (lhs, rhs)]
 
    method get_ssa_assign_commands
@@ -3329,37 +3494,63 @@ object (self)
 
    method private evaluate_fts_address_argument
                     (p: fts_parameter_t):variable_t option =
+     let resolve_stack_address xpr tag =
+       match xpr with
+       | XOp (XMinus, [XVar _v; XConst (IntConst n)]) when n#geq numerical_zero ->
+          let spoffset = n#neg in
+          (match self#f#stackframe#containing_stackslot spoffset#toInt with
+           | Some stackslot ->
+              let stackvar = self#f#env#mk_stackslot_variable stackslot NoOffset in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"evaluate_fts_address_argument:resolve_stack_address"
+                  ~msg:(p2s self#l#toPretty)
+                  __FILE__ __LINE__
+                  ["parameter: " ^ (fts_parameter_to_string p);
+                   "xpr: " ^ (x2s xpr);
+                   "offset: " ^ (spoffset#toString);
+                   "stackvar: " ^ (p2s stackvar#toPretty)] in
+              Some stackvar
+           | _ ->
+              begin
+                log_diagnostics_result
+                  ~tag:(tag ^ ":no stackslot found")
+                  ~msg:(p2s self#l#toPretty)
+                  __FILE__ __LINE__
+                  ["parameter: " ^ (fts_parameter_to_string p);
+                   "xpr: " ^ (x2s xpr);
+                   "offset: " ^ (spoffset#toString)];
+                None
+              end)
+       | _ ->
+          begin
+            log_diagnostics_result
+              ~tag
+              ~msg:(p2s self#l#toPretty)
+              __FILE__ __LINE__
+              ["parameter: " ^ (fts_parameter_to_string p);
+               "xpr: " ^ (x2s xpr)];
+            None
+          end in
      match p.apar_location with
      | [RegisterParameter (r, _, _)] ->
         let argvar = self#env#mk_register_variable r in
         let xpr = self#rewrite_variable_to_external argvar in
-        (match xpr with
-         | XOp (XMinus, [XVar _v; XConst (IntConst n)]) when n#geq numerical_zero ->
-            let spoffset = n#neg in
-            (match self#f#stackframe#containing_stackslot spoffset#toInt with
-             | Some stackslot ->
-                Some (self#f#env#mk_stackslot_variable stackslot NoOffset)
-             | _ ->
-                begin
-                  log_diagnostics_result
-                    ~tag:"evaluate_fts_address_argument:no stackslot found"
-                    ~msg:(p2s self#l#toPretty)
-                    __FILE__ __LINE__
-                    ["parameter: " ^ (fts_parameter_to_string p);
-                     "external argvar: " ^ (x2s xpr);
-                     "offset: " ^ (spoffset#toString)];
-                  None
-                end)
-         | _ ->
-            begin
-              log_diagnostics_result
-                ~tag:"evaluate_fts_address_argument"
-                ~msg:(p2s self#l#toPretty)
-                __FILE__ __LINE__
-                ["parameter: " ^ (fts_parameter_to_string p);
-                 "external argvar: " ^ (x2s xpr)];
-              None
-            end)
+        resolve_stack_address xpr "evaluate_fts_address_argument"
+     | [StackParameter (offset, _, _)] ->
+        let memref = self#f#env#mk_local_stack_reference in
+        let p_offset = mkNumerical offset in
+        log_tfold_default
+          (mk_tracelog_spec
+             ~tag:"evaluate_fts_address_argument"
+             (self#cia ^ ": stack parameter at offset " ^ (string_of_int offset)))
+          (fun s_offset ->
+            let svar =
+              self#f#env#mk_memory_variable memref (s_offset#add p_offset) in
+            let xpr = self#inv#rewrite_expr (XVar svar) in
+            resolve_stack_address xpr "evaluate_fts_address_argument")
+          None
+          self#get_singleton_stackpointer_offset
      | _ ->
         begin
           log_diagnostics_result
@@ -3666,6 +3857,16 @@ object (self)
                       ~btype:(Some ty) self#cia numoffset (bterm_to_string dest)
                  | _ ->
 	            self#env#mk_side_effect_value self#cia (bterm_to_string dest)) in
+           let _ =
+             log_diagnostics_result
+               ~tag:"get_sideeffect_assign:rhs"
+               ~msg:self#cia
+               __FILE__ __LINE__
+               ["side-effect: " ^ (p2s (xxpredicate_to_pretty side_effect));
+                "memVar: " ^ (p2s memVar#toPretty);
+                "rhs: " ^ (x2s (XVar rhs));
+                "rhs-rewritten: "
+                ^ (x2s (self#inv#rewrite_expr (XVar rhs)))] in
 	   let seAssign =
              let _ =
                chlog#add
@@ -3682,11 +3883,19 @@ object (self)
 	   let fldAssigns = [] in
 	   seAssign @ fldAssigns
 	 | _ ->
+            let btermxpr =
+              match termev#bterm_xpr dest with
+              | Some x -> x
+              | _ -> random_constant_expr in
             begin
               log_error_result
                 ~msg:(p2s msg)
                 ~tag:"side-effect ignored"
-                __FILE__ __LINE__ [];
+                __FILE__ __LINE__
+                ["dest: " ^ (bterm_to_string dest);
+                 "adest: " ^ (x2s adest);
+                 "xpo: " ^ (p2s (BCHXPOPredicate.xpo_predicate_to_pretty xpo));
+                 "btermxpr: " ^ (x2s btermxpr)];
               []
 	    end
        end
