@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs LLC
+   Copyright (c) 2021-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -553,9 +553,12 @@ let translate_arm_instruction
      instruction.
    *)
   let floc = get_floc loc in
-  let log_dc_error_result (file: string) (line: int) (e: string list) =
+  let log_dc_error_result
+        ?(tag:string option) (file: string) (line: int) (e: string list) =
     if BCHSystemSettings.system_settings#collect_data then
-      log_error_result ~msg:(p2s floc#l#toPretty) file line e
+      match tag with
+      | Some tag -> log_error_result ~tag ~msg:(p2s floc#l#toPretty) file line e
+      | _ -> log_error_result ~msg:(p2s floc#l#toPretty) file line e
     else
       () in
   let pcv = TR.tget_ok ((pc_r RD)#to_variable floc) in
@@ -737,7 +740,7 @@ let translate_arm_instruction
             else if is_pointer ptype then
               (* necessary step to create a stack slot if the address is a
                  stack address. A side effect of get_var_at_address is to
-                 create a stack slot. Without no reaching definitions are
+                 create a stack slot. Without, no reaching definitions are
                  created for the buffer at this stack address.
 
                  To be done in a better way, eventually. *)
@@ -775,31 +778,48 @@ let translate_arm_instruction
                       STR "  Parameter type not recognized in call translation"])))
         ([], [], []) callargs in
 
-    let (xprdefs, xpuse, xpusehigh) =
+    (* Add uses for buffer reads, as expressed in the callee's preconditions *)
+    let (xpuse, xpusehigh) =
       let sem = floc#get_call_target#get_semantics in
-      List.fold_left (fun (accdefs, accuse, accusehigh) p ->
+      List.fold_left (fun (accuse, accusehigh) p ->
+          match p with
+          | XXBuffer (_, dest, _) ->
+             (match floc#evaluate_summary_address_term dest with
+              | Some memVar -> (memVar :: accuse, memVar :: accusehigh)
+              | _ ->
+                 begin
+                   log_dc_error_result
+                     ~tag:"calltgt_cmds:buffer dest not evaluated"
+                     __FILE__ __LINE__
+                     ["call target: " ^ floc#get_call_target#get_name;
+                      "dest: " ^ (BCHBTerm.bterm_to_string dest)];
+                   (accuse, accusehigh)
+                 end)
+          | _ -> (accuse, accusehigh)) (use, usehigh) sem.fsem_pre in
+
+    (* Add rdefs for buffer writes, as expressed in the callee's side effects *)
+    let xprdefs =
+      let sem = floc#get_call_target#get_semantics in
+      List.fold_left (fun accdefs p ->
           match p with
           | XXBlockWrite (_, dest, _) ->
              (match floc#evaluate_summary_address_term dest with
-              | Some memVar -> (memVar :: accdefs, accuse, accusehigh)
+              | Some memVar -> memVar :: accdefs
               | _ ->
                  begin
-                   log_diagnostics_result
+                   log_dc_error_result
                      ~tag:"calltgt_cmds:blockwrite dest not evaluated"
                      __FILE__ __LINE__
                      ["call target: " ^ floc#get_call_target#get_name;
                       "dest: " ^ (BCHBTerm.bterm_to_string dest)];
-                   (accdefs, accuse, accusehigh)
+                   accdefs
                  end)
-          | XXBuffer (_, dest, _) ->
-             (match floc#evaluate_summary_address_term dest with
-              | Some memVar -> (accdefs, memVar :: accuse, memVar :: accusehigh)
-              | _ -> (accdefs, accuse, accusehigh))
-          | _ -> (accdefs, accuse, accusehigh)) ([], [], []) sem.fsem_pre in
+          | _ -> accdefs) [] sem.fsem_sideeffects in
 
     let _ =
       log_diagnostics_result
         ~tag:"calltgt_cmds"
+        ~msg:(p2s floc#l#toPretty)
         __FILE__ __LINE__
         ["call target: " ^ floc#get_call_target#get_name;
          "rdefs: " ^ (String.concat ", "
@@ -810,9 +830,8 @@ let translate_arm_instruction
                         (List.map (fun u -> p2s u#toPretty) xpusehigh))
         ] in
 
-    let usehigh =
-      usehigh @ xpusehigh @ (get_use_high_vars (List.map snd callargs)) in
-    let use = use @ xpuse in
+    let usehigh = xpusehigh @ (get_use_high_vars (List.map snd callargs)) in
+    let use = xpuse in
     let vr1 = floc#f#env#mk_arm_register_variable AR1 in
     let vr2 = floc#f#env#mk_arm_register_variable AR2 in
     let vr3 = floc#f#env#mk_arm_register_variable AR3 in
