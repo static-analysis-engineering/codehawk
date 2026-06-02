@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -500,6 +500,9 @@ object (self)
         self#integrate_fact inv
       end
 
+  method private remove_fact (inv: invariant_int) =
+    H.remove facts (invd#index_invariant_fact inv#get_fact)
+
   method remove_initial_value_fact (fvar: variable_t) (fval: variable_t) =
     let index = fvar#getName#getSeqNumber in
     if H.mem table index then
@@ -522,104 +525,164 @@ object (self)
     else
       ()
 
-  method private integrate_fact  (inv:invariant_int) =
-    let add (v: variable_t) (f: invariant_int) =
-      let index = v#getName#getSeqNumber in
-      let entry =
-	if H.mem table index then
-	  let e = H.find table index in
-	  if List.exists (fun w -> (f#compare w) = 0) e then
-	    e
-              (* remove base-offset value when a symbolic expression is found *)
-          else if f#is_symbolic_expr then
-            f :: (List.filter (fun p -> not p#is_base_offset_value) e)
-              (* only allow one interval in the set of facts *)
-	  else if f#is_interval then
-	    let pfacts = List.filter (fun p -> p#is_interval) e in
-	    match pfacts with
-	    | [] -> f :: e
-	    | [p] when f#is_smaller p ->
-	      f :: (List.filter (fun p -> not p#is_interval) e)
-	    | [_] -> e
-	    | _ ->
-               let msg =
-                 LBLOCK [
-                     STR "Multiple interval facts: ";
-		     pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}";
-                     STR " at ";
-                     STR iaddr] in
-	      begin
-		ch_error_log#add "interval facts" msg;
-		raise (BCH_failure msg)
-	      end
-          else if f#is_base_offset_value then
-            let pfacts = List.filter (fun p -> p#is_base_offset_value) e in
-            match pfacts with
-            | [] -> f :: e
-            | [p] when f#is_smaller p ->
-               f :: (List.filter (fun p -> not p#is_base_offset_value) e)
-            | [_] -> e
-            | _ ->
-               let msg =
-                 LBLOCK [
-                     STR "Multiple base-offset-value  facts: ";
-                     pretty_print_list pfacts
-                       (fun p -> p#toPretty) "{" "," "}"] in
-               begin
-                 ch_error_log#add "base-offset-value facts" msg;
-                 raise (BCH_failure msg)
-               end
-          else
-            f :: e
-	else
-	  [f] in
-      H.replace table index entry in
-    let add_relational_equality f =
-      if f#is_variable_equality then
-        let eqvars = f#get_variable_equality_variables in
-        match eqvars with
-        | [v1; v2] ->
-           let v1index = v1#getName#getSeqNumber in
-           let v2index = v2#getName#getSeqNumber in
-           if H.mem table v2index then
-             let v2facts = H.find table v2index in
-             let v1newfacts =
-               List.fold_left (fun a f ->
-                   match f#get_fact with
-                   | NonRelationalFact (_, _nrv) ->
-                      let _ =
-                        chlog#add
-                          "transfer invariant"
-                          (LBLOCK [
-                               STR iaddr;
-                               STR ": ";
-                               v1#toPretty;
-                               STR " to ";
-                               v2#toPretty;
-                               STR ": ";
-                               f#toPretty]) in
+  (* Integrate a non-relational fact f for variable v into the per-variable
+     table at this location.  Six cases:
 
-                      (f#transfer v1) :: a
-                   | _ -> a) [] v2facts in
-             if H.mem table v1index then
-               let v1facts = H.find table v1index in
-               List.iter (fun f -> add v1 f) (v1newfacts @ v1facts)
-             else
-               H.add table v1index v1newfacts
-           else
-             ()
-        | _ -> ()
+     Case 0: variable not yet seen at this location — create a singleton list.
+
+     Case 1: exact duplicate — discard new fact (idempotency).  Facts are
+     compared by their dictionary index, so this O(n) scan catches semantically
+     equal facts that were assigned a different index by the dictionary.
+
+     Case 2: incoming fact is a symbolic expression (e.g., a side-effect value
+     written by an external call such as sscanf).  Evict any existing constant
+     and base-offset facts for this variable from both the per-variable list
+     ('table') and the global fact index ('facts') via remove_fact.
+
+     Background on the eviction: StackParameter vararg arguments require
+     additional analysis rounds before their side-effect value can be
+     established — one round to discover the expanded vararg interface, and one
+     more to create the stack location variable.  By that time, constant facts
+     from earlier initialization have already propagated through all downstream
+     locations.  When the symbolic expression finally arrives it must displace
+     both constant and base-offset facts.  Register-parameter varargs do not
+     have this problem because their locations exist from the first analysis
+     round.
+
+     Cases 3 & 4: interval and base-offset facts follow a monotone-refinement
+     policy.  At most one of each type is maintained per variable; a new fact
+     replaces the existing one only if it is strictly tighter (i.e., carries
+     more information).
+
+     Case 5: all other fact types (InitialVarEquality, InitialVarDisEquality,
+     TestVarEquality) — append unconditionally; no conflict resolution is
+     needed for these types. *)
+  method private add_nonrelational_fact (v: variable_t) (f: invariant_int) =
+    let index = v#getName#getSeqNumber in
+    let entry =
+      if H.mem table index then
+        let e = H.find table index in
+
+        (* Case 1: exact duplicate. *)
+        if List.exists (fun w -> (f#compare w) = 0) e then
+          e
+
+        (* Case 2: symbolic expression — evict conflicting constants and
+           base-offset values. *)
+        else if f#is_symbolic_expr then
+          let conflictingfacts =
+            List.filter (fun p -> p#is_base_offset_value || p#is_constant) e in
+          let otherfacts =
+            List.filter (fun p ->
+                not (p#is_base_offset_value || p#is_constant)) e in
+          let _ =
+            log_diagnostics_result
+              ~tag:"add_nonrelational_fact:symbolic_expr"
+              ~msg:iaddr
+              __FILE__ __LINE__
+              ["inv: " ^ (p2s f#toPretty);
+               "evicted: "
+               ^ (String.concat "; "
+                    (List.map (fun p -> p2s p#toPretty) conflictingfacts));
+               "remaining: "
+               ^ (String.concat "; "
+                    (List.map (fun p -> p2s p#toPretty) otherfacts))] in
+          let _ = List.iter self#remove_fact conflictingfacts in
+          f :: otherfacts
+
+        (* Case 3: interval — keep only the tightest interval. *)
+        else if f#is_interval then
+          let pfacts = List.filter (fun p -> p#is_interval) e in
+          (match pfacts with
+          | [] -> f :: e
+          | [p] when f#is_smaller p ->
+            f :: (List.filter (fun p -> not p#is_interval) e)
+          | [_] -> e
+          | _ ->
+            let msg =
+              LBLOCK [
+                  STR "Multiple interval facts: ";
+                  pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}";
+                  STR " at ";
+                  STR iaddr] in
+            begin
+              ch_error_log#add "interval facts" msg;
+              raise (BCH_failure msg)
+            end)
+
+        (* Case 4: base-offset value — keep only the tightest. *)
+        else if f#is_base_offset_value then
+          let pfacts = List.filter (fun p -> p#is_base_offset_value) e in
+          (match pfacts with
+          | [] -> f :: e
+          | [p] when f#is_smaller p ->
+            f :: (List.filter (fun p -> not p#is_base_offset_value) e)
+          | [_] -> e
+          | _ ->
+            let msg =
+              LBLOCK [
+                  STR "Multiple base-offset-value facts: ";
+                  pretty_print_list pfacts (fun p -> p#toPretty) "{" "," "}"] in
+            begin
+              ch_error_log#add "base-offset-value facts" msg;
+              raise (BCH_failure msg)
+            end)
+
+        (* Case 5: all other fact types — append unconditionally. *)
+        else
+          f :: e
+
+      (* Case 0: first fact for this variable at this location. *)
       else
-        () in
-    begin
-      match inv#get_fact with
-      | NonRelationalFact (v, _)
-        | InitialVarEquality (v, _)
-        | InitialVarDisEquality (v, _)
-        | TestVarEquality (v, _, _, _) -> add v inv
-      | RelationalFact _ -> add_relational_equality inv
+        [f] in
+    H.replace table index entry
+
+  (* Forward propagation for variable equalities: when v1 == v2 is established,
+     any non-relational facts already known for v2 are transferred to v1, so
+     downstream queries on v1 can immediately benefit from them. *)
+  method private add_relational_equality_fact (f: invariant_int) =
+    if f#is_variable_equality then
+      let eqvars = f#get_variable_equality_variables in
+      match eqvars with
+      | [v1; v2] ->
+         let v1index = v1#getName#getSeqNumber in
+         let v2index = v2#getName#getSeqNumber in
+         if H.mem table v2index then
+           let v2facts = H.find table v2index in
+           let v1newfacts =
+             List.fold_left (fun a nrf ->
+                 match nrf#get_fact with
+                 | NonRelationalFact (_, _nrv) ->
+                    let _ =
+                      log_diagnostics_result
+                        ~tag:"add_relational_equality_fact:transfer invariant"
+                        ~msg:iaddr
+                        __FILE__ __LINE__
+                        ["v1: " ^ (p2s v1#toPretty);
+                         "v2: " ^ (p2s v2#toPretty);
+                         "fact: " ^ (p2s nrf#toPretty)] in
+                    (nrf#transfer v1) :: a
+                 | _ -> a) [] v2facts in
+           if H.mem table v1index then
+             let v1facts = H.find table v1index in
+             List.iter (fun nrf -> self#add_nonrelational_fact v1 nrf)
+               (v1newfacts @ v1facts)
+           else
+             H.add table v1index v1newfacts
+         else
+           ()
       | _ -> ()
-    end
+    else
+      ()
+
+  method private integrate_fact (inv: invariant_int) =
+    match inv#get_fact with
+    | NonRelationalFact (v, _)
+      | InitialVarEquality (v, _)
+      | InitialVarDisEquality (v, _)
+      | TestVarEquality (v, _, _, _) -> self#add_nonrelational_fact v inv
+    | RelationalFact _ -> self#add_relational_equality_fact inv
+    | _ -> ()
 
   method private get_var_facts (v:variable_t) =
     let index = v#getName#getSeqNumber in
