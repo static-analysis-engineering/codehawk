@@ -630,6 +630,7 @@ let arm_vfp_params
 
 let get_arm_format_spec_parameters
       (cpars: fts_parameter_t list)
+      (isinput: bool)
       (argspecs: argspec_int list): fts_parameter_t list =
   let nextindex = (List.length cpars) + 1 in
   let update_core_reg aas (r: arm_reg_t) =
@@ -707,30 +708,35 @@ let get_arm_format_spec_parameters
       aas_start_state cpars in
   let (_, pars, _, _) =
     List.fold_left (fun (aas, accpars, varargindex, nxtindex) argspec ->
-        let ftype = get_fmt_spec_type argspec in
-        let ftype =
-          if is_float ftype then
-            promote_float ftype
-          else if is_int ftype then
-            promote_int ftype
-          else
-            ftype in
-        let size_r = size_of_btype ftype in
         let name = "vararg_" ^ (string_of_int varargindex) in
         let (param, new_state) =
-          match size_r with
-          | Ok 4 -> get_arm_int_param_next_state 4 name ftype aas nxtindex
-          | Ok 8 -> get_long_int_param_next_state 8 name ftype aas varargindex
-          | Ok size ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Var-arg size: "; INT size; STR " not supported"]))
-          | Error e ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Error in var-args: "; STR (String.concat "; " e)])) in
+          if isinput then
+            let vtype = get_fmt_spec_type argspec in
+            let ftype = TPtr (vtype, []) in
+            get_arm_int_param_next_state 4 name ftype aas nxtindex
+          else
+            let ftype = get_fmt_spec_type argspec in
+            let ftype =
+              if is_float ftype then
+                promote_float ftype
+              else if is_int ftype then
+                promote_int ftype
+              else
+                ftype in
+            let size_r = size_of_btype ftype in
+            match size_r with
+            | Ok 4 -> get_arm_int_param_next_state 4 name ftype aas nxtindex
+            | Ok 8 -> get_long_int_param_next_state 8 name ftype aas varargindex
+            | Ok size ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Var-arg size: "; INT size; STR " not supported"]))
+            | Error e ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Error in var-args: "; STR (String.concat "; " e)])) in
         (new_state, param :: accpars, varargindex + 1, nxtindex + 1))
       (fmtaas, [], 1, nextindex) argspecs in
   pars

@@ -153,7 +153,7 @@ val add_function_global_parameter_location:
 
 
 val add_format_spec_parameters:
-  function_interface_t -> argspec_int list -> function_interface_t
+  function_interface_t -> bool -> argspec_int list -> function_interface_t
 
 
 (** Modifies the types of the function type signature according to a type

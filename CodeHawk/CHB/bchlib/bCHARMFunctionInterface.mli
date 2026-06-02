@@ -103,4 +103,4 @@ val arm_vfp_params:
   ?attrs:b_attributes_t -> ?varargs:bool -> bfunarg_t list -> fts_parameter_t list
 
 val get_arm_format_spec_parameters:
-  fts_parameter_t list -> argspec_int list -> fts_parameter_t list
+  fts_parameter_t list -> bool -> argspec_int list -> fts_parameter_t list

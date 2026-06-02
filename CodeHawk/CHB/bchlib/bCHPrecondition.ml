@@ -148,7 +148,10 @@ let read_xml_par_preconditions
     | "allocation-base" -> [XXAllocationBase t]
     | "function-pointer" ->
        let typ = ty () in [XXFunctionPointer (typ, t)]
-    | "format-string" -> [XXOutputFormatString t]
+    | "format-string" ->
+       (match thispar.apar_fmt with
+        | ScanFormat -> [XXInputFormatString t]
+        | _ -> [XXOutputFormatString t])
     | "includes" ->
       let name = node#getAttribute "name" in
       [XXIncludes (t,get_structconstant name)]
