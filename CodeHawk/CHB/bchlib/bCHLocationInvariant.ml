@@ -401,6 +401,12 @@ object (self:'a)
     | NonRelationalFact (_, FSymbolicExpr _) -> true
     | _ -> false
 
+  method is_symbolic_side_effect_value =
+    match fact with
+    | NonRelationalFact (_, FSymbolicExpr (XVar v)) ->
+       (String.sub v#getName#getBaseName 0 3) = "se_"
+    | _ -> false
+
   method is_linear_equality =
     match fact with
     | RelationalFact _ -> true
@@ -549,12 +555,16 @@ object (self)
      have this problem because their locations exist from the first analysis
      round.
 
-     Cases 3 & 4: interval and base-offset facts follow a monotone-refinement
+     Case 3: incoming fact is a symbolic expression. Evict any existing
+     base-offset facts for this variable from both the per-variable list
+     ('table') and the global fact index ('facts') via remove_fact.
+
+     Cases 4 & 5: interval and base-offset facts follow a monotone-refinement
      policy.  At most one of each type is maintained per variable; a new fact
      replaces the existing one only if it is strictly tighter (i.e., carries
      more information).
 
-     Case 5: all other fact types (InitialVarEquality, InitialVarDisEquality,
+     Case 6: all other fact types (InitialVarEquality, InitialVarDisEquality,
      TestVarEquality) — append unconditionally; no conflict resolution is
      needed for these types. *)
   method private add_nonrelational_fact (v: variable_t) (f: invariant_int) =
@@ -567,14 +577,25 @@ object (self)
         if List.exists (fun w -> (f#compare w) = 0) e then
           e
 
-        (* Case 2: symbolic expression — evict conflicting constants and
-           base-offset values. *)
+        (* Case 2: side-effect value: evict all other invariants, as this
+           value is most likely discovered at a later time, invalidating existing
+           invariants for that variable *)
+        else if f#is_symbolic_side_effect_value then
+          let _ =
+            log_diagnostics_result
+              ~tag:"add_nonrelational_fact:symbolic_side_effect_value"
+              ~msg:iaddr
+              __FILE__ __LINE__
+              ["inv: " ^ (p2s f#toPretty);
+               "removed: "
+               ^ (String.concat ", " (List.map (fun p -> p2s p#toPretty) e))] in
+          let _ = List.iter self#remove_fact e in
+          [f]
+
+        (* Case 3: symbolic expression — evict base-offset values. *)
         else if f#is_symbolic_expr then
-          let conflictingfacts =
-            List.filter (fun p -> p#is_base_offset_value || p#is_constant) e in
-          let otherfacts =
-            List.filter (fun p ->
-                not (p#is_base_offset_value || p#is_constant)) e in
+          let conflictingfacts = List.filter (fun p -> p#is_base_offset_value) e in
+          let otherfacts = List.filter (fun p -> not (p#is_base_offset_value)) e in
           let _ =
             log_diagnostics_result
               ~tag:"add_nonrelational_fact:symbolic_expr"
@@ -590,7 +611,7 @@ object (self)
           let _ = List.iter self#remove_fact conflictingfacts in
           f :: otherfacts
 
-        (* Case 3: interval — keep only the tightest interval. *)
+        (* Case 4: interval — keep only the tightest interval. *)
         else if f#is_interval then
           let pfacts = List.filter (fun p -> p#is_interval) e in
           (match pfacts with
@@ -610,7 +631,7 @@ object (self)
               raise (BCH_failure msg)
             end)
 
-        (* Case 4: base-offset value — keep only the tightest. *)
+        (* Case 5: base-offset value — keep only the tightest. *)
         else if f#is_base_offset_value then
           let pfacts = List.filter (fun p -> p#is_base_offset_value) e in
           (match pfacts with
@@ -628,7 +649,7 @@ object (self)
               raise (BCH_failure msg)
             end)
 
-        (* Case 5: all other fact types — append unconditionally. *)
+        (* Case 6: all other fact types — append unconditionally. *)
         else
           f :: e
 
