@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2023 Aarno Labs
+   Copyright (c) 2021-2026 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -388,7 +388,8 @@ object (self)
       ffres_idadata = {
           ida_function_entry_points = self#get_ida_function_entry_points};
       ffres_fns_included = included_functions ();
-      ffres_fns_excluded = excluded_functions ()
+      ffres_fns_excluded = excluded_functions ();
+      ffres_include_callees = fn_include_callees ();
     }
 
   method write_xml_analysis_stats (node:xml_element_int) =

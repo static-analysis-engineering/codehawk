@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2024 Aarno Labs
+   Copyright (c) 2021-2026 Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -1364,7 +1364,8 @@ object
       ffres_userdata = userdata_metrics_handler#init_value;
       ffres_idadata = ida_data_handler#init_value;
       ffres_fns_included = included_functions ();
-      ffres_fns_excluded = excluded_functions ()
+      ffres_fns_excluded = excluded_functions ();
+      ffres_include_callees = fn_include_callees ();
     }
 
   method !write_xml (node:xml_element_int) (d:file_results_t) =
@@ -1406,6 +1407,8 @@ object
       (if (List.length d.ffres_fns_included) > 0 then
         begin
           incNode#setAttribute "addrs" (String.concat "," d.ffres_fns_included);
+          (if d.ffres_include_callees then
+            incNode#setAttribute "include-callees" "yes");
           append [incNode]
         end);
       (if (List.length d.ffres_fns_excluded) > 0 then
@@ -1422,6 +1425,7 @@ object
     let getc = node#getTaggedChild in
     let getf tag = float_of_string (get tag) in
     let has = node#hasNamedAttribute in
+    let hasc = node#hasOneTaggedChild in
     { ffres_stable = if has "stable" then (get "stable") = "yes" else false;
       ffres_time = getf "time";
       ffres_runs =
@@ -1442,7 +1446,18 @@ object
       ffres_userdata = userdata_metrics_handler#read_xml (getc "userdata");
       ffres_idadata = ida_data_handler#read_xml (getc "idadata");
       ffres_fns_included =
-        if has "fns-included" then nsplit ',' (get "addrs") else [];
+        if hasc "fns-included" then
+          let fnsnode = getc "fns-included" in
+          nsplit ',' (fnsnode#getAttribute "addrs") else [];
+      ffres_include_callees =
+        (if hasc "fns-included" then
+           let fnsnode = getc "fns-included" in
+           if fnsnode#hasNamedAttribute "include-callees" then
+             (fnsnode#getAttribute "include-callees") = "yes"
+           else
+             false
+         else
+           false);
       ffres_fns_excluded =
         if has "fns-excluded" then nsplit ',' (get "addrs") else [];
     }
