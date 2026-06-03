@@ -1911,6 +1911,7 @@ object ('a)
   method is_interval: bool
   method is_base_offset_value: bool
   method is_symbolic_expr: bool
+  method is_symbolic_side_effect_value: bool
   method is_linear_equality: bool
   method is_loopcounter_equality: bool
   method is_variable_equality: bool

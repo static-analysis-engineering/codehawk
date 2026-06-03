@@ -4115,14 +4115,14 @@ object (self)
        let globals =
          List.filter self#f#env#is_mutable_global_variable self#env#get_variables in
        let _ =
-         ch_diagnostics_log#add
-           "call: abstract globals"
-           (LBLOCK [
-                self#l#toPretty; STR ": ";
-                pretty_print_list
-                  globals
-                  (fun v -> STR (self#f#env#variable_name_to_string v))
-                  "[" ", " "]"]) in
+         log_diagnostics_result
+           ~tag:"get_arm_call_commands:abstract globals"
+           ~msg:(p2s self#l#toPretty)
+           __FILE__ __LINE__
+           ["globals: "
+            ^ (String.concat
+                 ", "
+                 (List.map self#f#env#variable_name_to_string globals))] in
        [ABSTRACT_VARS globals] in
      let sideeffect_assigns =
        self#get_sideeffect_assigns termev self#get_call_target#get_semantics in
