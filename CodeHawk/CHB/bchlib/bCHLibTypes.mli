@@ -7182,6 +7182,7 @@ type file_results_t = {
   ffres_idadata: ida_data_t;
   ffres_fns_included: string list;
   ffres_fns_excluded: string list;
+  ffres_include_callees: bool;
 }
 
 
