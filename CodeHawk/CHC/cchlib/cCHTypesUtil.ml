@@ -418,7 +418,17 @@ let is_longlong ik =
   match ik with ILongLong | IULongLong -> true | _ -> false
 
 
-(** {1 Integer promotion: C Standard 6.3.1.8}
+(** {1 Integer promotion: C Standard 6.3.1.1,  6.3.1.8}
+
+   The following may be used in an expression wherever an int or unsigned
+   int may be used:
+   - an object or expression with an integer type whose integer conversion
+     rank is less than or equal to the rank of int and unsigned int.
+   - a bit-field of type _Bool, int, signed int, unsigned int.
+
+   If an int can represent all values of the original type, the value is
+   converted to an int; otherwise it is converted to an unsigned int. These
+   are called the integer promotions. A
 
    First, both types are promoted to either signed or unsigned int.
 
@@ -442,21 +452,21 @@ let is_longlong ik =
    corresponding  to the type of the operand with signed integer type.
  *)
 
-let get_integer_promotion (ty1:typ) (ty2:typ) =
+let get_integer_promotion (ty1: typ) (ty2: typ) =
   let promote ik =
     match ik with
-    | IChar | ISChar | IShort -> IInt
-    | IUChar | IUShort -> IUInt
+    | IChar | ISChar | IUChar | IShort | IBool -> IInt
+    | IUShort -> IUInt
     | _ -> ik in
-  let ik = match (ty1,ty2) with
-    | (TInt (ik1,_), TInt (ik2,_)) ->
+  let ik = match (ty1, ty2) with
+    | (TInt (ik1, _), TInt (ik2, _)) ->
        let ik1 = promote ik1 in
        let ik2 = promote ik2 in
        if ik1 = ik2 then
          ik1
        else
          begin
-           match (ik1,ik2) with
+           match (ik1, ik2) with
            | (IInt, ILong) | (ILong, IInt) -> ILong
            | (IInt, ILongLong) | (ILongLong, IInt) -> ILongLong
            | (ILong, ILongLong) | (ILongLong, ILong) -> ILongLong
