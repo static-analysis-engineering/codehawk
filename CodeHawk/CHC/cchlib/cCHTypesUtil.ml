@@ -452,51 +452,54 @@ let is_longlong ik =
    corresponding  to the type of the operand with signed integer type.
  *)
 
-let get_integer_promotion (ty1: typ) (ty2: typ) =
-  let promote ik =
+let get_integer_promotion (ty1: typ) (ty2: typ): typ =
+  let promote_ikind (ik: ikind): ikind =
     match ik with
     | IChar | ISChar | IUChar | IShort | IBool -> IInt
     | IUShort -> IUInt
     | _ -> ik in
-  let ik = match (ty1, ty2) with
-    | (TInt (ik1, _), TInt (ik2, _)) ->
-       let ik1 = promote ik1 in
-       let ik2 = promote ik2 in
-       if ik1 = ik2 then
-         ik1
-       else
-         begin
-           match (ik1, ik2) with
-           | (IInt, ILong) | (ILong, IInt) -> ILong
-           | (IInt, ILongLong) | (ILongLong, IInt) -> ILongLong
-           | (ILong, ILongLong) | (ILongLong, ILong) -> ILongLong
-           | (IUInt, IULong) | (IULong, IUInt) -> IULong
-           | (_, IULongLong) | (IULongLong, _) -> IULongLong
-           | (IInt, IUInt) | (IUInt, IInt) -> IUInt
-           | (ILong, IULong) | (IULong, ILong) -> IULong
-           | (IInt, IULong) | (IULong, IInt) -> IULong
-           | (ILong, IUInt) | (IUInt, ILong) -> ILong
-           | (ILongLong, IUInt) | (IUInt, ILongLong) -> ILongLong
-           | (IUInt128, _) | (_, IUInt128) -> IUInt128
-           | (IInt128, _) | (_, IInt128) -> IInt128
-           | _ ->
-              raise
-                (CCHFailure
-                   (LBLOCK [
-                        STR "Missing case in integer promotion: ";
-                        STR (int_type_to_string ik1);
-                        STR " and ";
-                        STR (int_type_to_string ik2)]))
-         end
+  let promote_type (ty: typ): ikind =
+    match ty with
+    | TInt (ik, _) -> promote_ikind ik
+    | TEnum (ename, _) ->
+       let einfo = CCHFileEnvironment.file_environment#get_enum ename in
+       promote_ikind einfo.ekind
     | _ ->
        raise
          (CCHFailure
             (LBLOCK [
                  STR "Unexpected types for integer promotion: ";
-                 typ_to_pretty ty1;
+                 typ_to_pretty ty1])) in
+  let usual_arithmetic_conversion (ik1: ikind) (ik2: ikind): ikind =
+    match (ik1, ik2) with
+    | (IInt, ILong) | (ILong, IInt) -> ILong
+    | (IInt, ILongLong) | (ILongLong, IInt) -> ILongLong
+    | (ILong, ILongLong) | (ILongLong, ILong) -> ILongLong
+    | (IUInt, IULong) | (IULong, IUInt) -> IULong
+    | (_, IULongLong) | (IULongLong, _) -> IULongLong
+    | (IInt, IUInt) | (IUInt, IInt) -> IUInt
+    | (ILong, IULong) | (IULong, ILong) -> IULong
+    | (IInt, IULong) | (IULong, IInt) -> IULong
+    | (ILong, IUInt) | (IUInt, ILong) -> ILong
+    | (ILongLong, IUInt) | (IUInt, ILongLong) -> ILongLong
+    | (IUInt128, _) | (_, IUInt128) -> IUInt128
+    | (IInt128, _) | (_, IInt128) -> IInt128
+    | _ ->
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "Missing case in integer promotion: ";
+                 STR (int_type_to_string ik1);
                  STR " and ";
-                 typ_to_pretty ty2])) in
-  TInt  (ik, [])
+                 STR (int_type_to_string ik2)])) in
+  let ik1 = promote_type ty1 in
+  let ik2 = promote_type ty2 in
+  let result_ik =
+    if ik1 = ik2 then
+      ik1
+    else
+      usual_arithmetic_conversion ik1 ik2 in
+  TInt  (result_ik, [])
 
 
 let rec get_field_offset offset =
