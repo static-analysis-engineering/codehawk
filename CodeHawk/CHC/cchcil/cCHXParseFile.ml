@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny B. Sipma
-   Copyright (c) 2022-2024 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -72,6 +72,8 @@ let speclist = [
      "directory to store the generated xml files");
     ("-keep_system_includes", Arg.Unit (fun () -> keep_system_includes := true),
      "don't filter out functions in files with an absolute path name");
+    ("-loglevel", Arg.String set_log_level,
+     "set level for logging (default: WARNING)");
     ("-keepUnused",
      Arg.Set keepUnused, "keep unused type and function definitions")]
 
@@ -263,7 +265,6 @@ let save_xml_file f =
 let main () =
   try
     let _ = read_args () in
-    let _ = set_log_level "DEBUG" in
     let _ = cildeclarations#set_filename !filename in
     let cilfile = Frontc.parse !filename () in
     let _ = log_info "Parsed %s [%s:%d]" !filename __FILE__ __LINE__ in

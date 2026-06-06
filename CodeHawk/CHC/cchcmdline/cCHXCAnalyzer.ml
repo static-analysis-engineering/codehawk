@@ -135,6 +135,8 @@ let speclist = [
    "disable printing timing log messages");
   ("-verbose", Arg.Unit (fun () -> system_settings#set_verbose true),
    "print status on proof obligations and invariants");
+  ("-loglevel", Arg.String set_log_level,
+   "set level for logging (default: WARNING)");
   ("-projectname", Arg.String system_settings#set_projectname,
    "name of the project (determines name of results directory)");
   ("-keep_system_includes",
@@ -166,7 +168,6 @@ let save_log_files (contenttype:string) =
 
 let main () =
   try
-    let _ = set_log_level "WARNING" in
     let _ = read_args () in
     let _ = chlog#set_max_entry_size 1000 in
     let _ = log_info "AIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAIAI" in
