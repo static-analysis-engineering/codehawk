@@ -58,7 +58,7 @@ SOURCES := \
 
 OBJECTS := $(addprefix cmx/,$(SOURCES:%=%.cmx))
 
-all: make_dirs cCHPOCheckInitializedTest cCHPOCheckLocallyInitializedTest cCHPOCheckOutputParameterInitializedTest
+all: make_dirs cCHPOCheckLocallyInitializedTest cCHPOCheckOutputParameterInitializedTest
 
 doc: 
 
@@ -66,17 +66,13 @@ make_dirs:
 	@mkdir -p cmx
 	@mkdir -p cmi
 
-cCHPOCheckInitializedTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHPOCheckInitializedTest.cmi cmx/cCHPOCheckInitializedTest.cmx
-	$(CAMLLINK) -o cCHPOCheckInitializedTest $(OBJECTS) cmx/cCHPOCheckInitializedTest.cmx
-
 cCHPOCheckLocallyInitializedTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHPOCheckLocallyInitializedTest.cmi cmx/cCHPOCheckLocallyInitializedTest.cmx
 	$(CAMLLINK) -o cCHPOCheckLocallyInitializedTest $(OBJECTS) cmx/cCHPOCheckLocallyInitializedTest.cmx
 
 cCHPOCheckOutputParameterInitializedTest: $(OBJECTS) $(CMIS) $(CHLIB)/chlib.cmxa $(CHUTIL)/chutil.cmxa $(ZIPLIB)/zip.cmxa $(TESTLIB)/tchlib.cmxa $(CCHLIB)/cchlib.cmxa $(CCHPRE)/cchpre.cmxa $(CCHANALYZE)/cchanalyze.cmxa cmi/cCHPOCheckOutputParameterInitializedTest.cmi cmx/cCHPOCheckOutputParameterInitializedTest.cmx
 	$(CAMLLINK) -o cCHPOCheckOutputParameterInitializedTest $(OBJECTS) cmx/cCHPOCheckOutputParameterInitializedTest.cmx
 
-run: cCHPOCheckInitializedTest cCHPOCheckLocallyInitializedTest cCHPOCheckOutputParameterInitializedTest
-	./cCHPOCheckInitializedTest
+run: cCHPOCheckLocallyInitializedTest cCHPOCheckOutputParameterInitializedTest
 	./cCHPOCheckLocallyInitializedTest
 	./cCHPOCheckOutputParameterInitializedTest
 
@@ -100,6 +96,5 @@ clean:
 	rm -f *.ml~
 	rm -f *.mli~
 	rm -f Makefile~
-	rm -f cCHPOCheckInitializedTest
 	rm -f cCHPOCheckLocallyInitializedTest
 	rm -f cCHPOCheckOutputParameterInitialized

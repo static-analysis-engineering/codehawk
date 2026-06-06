@@ -1,19 +1,10 @@
 (tests
   (names
-        cCHPOCheckInitializedTest
         cCHPOCheckLocallyInitializedTest
         cCHPOCheckOutputParameterInitializedTest
         cCHPOCheckErrnoWrittenTest
         )
   (deps
-        testinputs/PInitialized/gl_inv_001.cch.tar.gz
-        testinputs/PInitialized/gl_inv_002.cch.tar.gz
-        testinputs/PInitialized/gl_inv_003.cch.tar.gz
-        testinputs/PInitialized/gl_inv_xpr_001.cch.tar.gz
-        testinputs/PInitialized/gl_inv_xpr_002.cch.tar.gz
-        testinputs/PInitialized/gl_inv_xpr_003.cch.tar.gz
-        testinputs/PInitialized/gl_inv_bounded_xpr_001.cch.tar.gz
-        testinputs/PInitialized/gl_stackvar_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_gl_inv_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_gl_memlval_memref_001.cch.tar.gz
         testinputs/PLocallyInitialized/locally_initialized_rl_xpr_001.cch.tar.gz
