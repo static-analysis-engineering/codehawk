@@ -39,6 +39,7 @@ open CHTraceResult
 open CHUtil
 
 (* cchlib *)
+open CCHArithmeticConversion
 open CCHBasicTypes
 open CCHContext
 open CCHDictionary
@@ -283,12 +284,12 @@ and create_po_binop
 
   | Shiftlt | Shiftrt ->
   (* result is undefined if second operand is negative or if second operand
-     is greater than or equal to the width of the first operand,
+     is greater than or equal to the width of the promoted left operand,
      ref. C99:6.5.7(3) *)
     begin
       match fenv#get_type_unrolled t with
       | TInt (ik,_) ->
-         let ty = get_integer_promotion (TInt (ik,[])) (TInt (IInt,[])) in
+         let ty = get_integer_promotion (TInt (ik, [])) in
 	 begin
            match ty with
            | TInt (ikp,_) ->

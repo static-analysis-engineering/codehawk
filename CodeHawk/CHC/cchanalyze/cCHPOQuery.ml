@@ -46,6 +46,7 @@ open Xsimplify
 open XprUtil
 
 (* cchlib *)
+open CCHArithmeticConversion
 open CCHBasicTypes
 open CCHExternalPredicate
 open CCHFileContract
@@ -1685,24 +1686,32 @@ object (self)
                 ~ok:(fun ty1 ->
                   TR.tfold
                     ~ok:(fun ty2 ->
-                      begin
-                        match op with
-                        | XPlus ->
-                           Some (BinOp (PlusA, a1, a2, get_integer_promotion ty1 ty2))
-                        | XMinus ->
-                           Some (BinOp (MinusA, a1, a2, get_integer_promotion ty1 ty2))
-                        | XMult ->
-                           Some (BinOp (Mult, a1, a2, get_integer_promotion ty1 ty2))
-                        | XDiv ->
-                           Some (BinOp (Div, a1, a2, get_integer_promotion ty1 ty2))
-                        | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
-                        | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
-                        | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool,[])))
-                        | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool,[])))
-                        | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool,[])))
-                        | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool,[])))
-                        | _ -> None
-                      end)
+                      TR.tfold
+                         ~ok:(fun resulttyp ->
+                           begin
+                             match op with
+                             | XPlus -> Some (BinOp (PlusA, a1, a2, resulttyp))
+                             | XMinus -> Some (BinOp (MinusA, a1, a2, resulttyp))
+                             | XMult -> Some (BinOp (Mult, a1, a2, resulttyp))
+                             | XDiv -> Some (BinOp (Div, a1, a2, resulttyp))
+                             | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
+                             | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
+                             | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool, [])))
+                             | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool, [])))
+                             | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool, [])))
+                             | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool, [])))
+                             | _ -> None
+                           end)
+                         ~error:(fun err ->
+                           begin
+                             log_diagnostics_result
+                               ~tag:"x2api:integer-promotion"
+                               ~msg:self#env#get_functionname
+                               __FILE__ __LINE__
+                               [String.concat ", " err];
+                             None
+                           end)
+                         (usual_arithmetic_conversion ty1 ty2))
                     ~error:(fun err ->
                       begin
                         log_diagnostics_result
