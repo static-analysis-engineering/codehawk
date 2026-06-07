@@ -65,8 +65,6 @@ val is_unsigned_type: ikind -> bool
 
 val is_character_type: ikind -> bool
 
-val get_integer_promotion: typ -> typ -> typ
-
 val ikind_size_leq : ikind -> ikind -> bool
 
 val const_fits_kind: constant -> ikind -> bool

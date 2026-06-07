@@ -46,6 +46,7 @@ MLIS := \
 	cCHCodewalker \
 	cCHTypesSize \
 	cCHTypesUtil \
+	cCHArithmeticConversion \
 	cCHBasicTypesXml \
 	cCHInterfaceDictionary \
 	cCHExternalPredicate \
@@ -74,6 +75,7 @@ SOURCES := \
 	cCHCodewalker \
 	cCHTypesSize \
 	cCHTypesUtil \
+	cCHArithmeticConversion \
 	cCHBasicTypesXml \
 	cCHInterfaceDictionary \
 	cCHExternalPredicate \
