@@ -1621,14 +1621,25 @@ object (self)
          match (self#x2global x1, self#x2global x2) with
          | (Some a1, Some a2) ->
             TR.tfold
-              ~ok:(fun ty ->
-                begin
-                  match op with
-                  | XPlus -> Some (BinOp (PlusA, a1, a2, ty))
-                  | XMinus -> Some (BinOp (MinusA, a1, a2, ty))
-                  | XMult -> Some (BinOp (Mult, a1, a2, ty))
-                  | _ -> None
-                end)
+              ~ok:(fun ty1 ->
+                TR.tfold
+                  ~ok:(fun ty2 ->
+                    if is_arithmetic_type ty1 && is_arithmetic_type ty2 then
+                      self#x2api_arithmetic_expr op a1 a2 ty1 ty2
+                    else
+                      self#x2api_pointer_expr op a1 a2 ty1 ty2)
+                  ~error:(fun e ->
+                    begin
+                      log_diagnostics_result
+                        ~tag:"x2global"
+                        ~msg:self#fname
+                        __FILE__ __LINE__
+                        ["Unable to determine type of exp: "
+                         ^ (p2s (exp_to_pretty a2));
+                         String.concat "; " e];
+                      None
+                    end)
+                  (type_of_exp fenv a2))
               ~error:(fun e ->
                 begin
                   log_diagnostics_result
@@ -1640,7 +1651,7 @@ object (self)
                      String.concat "; " e];
                   None
                 end)
-            (type_of_exp fenv a1)
+              (type_of_exp fenv a1)
          | _ -> None
        end
     | _ ->
@@ -1648,6 +1659,80 @@ object (self)
          self#record_unevaluated x;
          None
        end
+
+  method private x2api_arithmetic_expr
+                   (op: xop_t) (a1: exp) (a2: exp) (ty1: typ) (ty2: typ): exp option =
+    TR.tfold
+      ~ok:(fun resulttyp ->
+        begin
+          match op with
+          | XPlus -> Some (BinOp (PlusA, a1, a2, resulttyp))
+          | XMinus -> Some (BinOp (MinusA, a1, a2, resulttyp))
+          | XMult -> Some (BinOp (Mult, a1, a2, resulttyp))
+          | XDiv -> Some (BinOp (Div, a1, a2, resulttyp))
+          | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
+          | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
+          | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool, [])))
+          | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool, [])))
+          | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool, [])))
+          | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool, [])))
+          | _ -> None
+        end)
+      ~error:(fun err ->
+        begin
+          log_diagnostics_result
+            ~tag:"x2api_arithmetic_expr"
+            ~msg:self#env#get_functionname
+            __FILE__ __LINE__
+            [String.concat ", " err];
+          None
+        end)
+      (usual_arithmetic_conversion ty1 ty2)
+
+  method private x2api_pointer_expr
+                   (op: xop_t) (a1: exp) (a2: exp) (ty1: typ) (ty2: typ): exp option =
+    if is_pointer_type ty1 && is_arithmetic_type ty2 then
+      match op with
+      | XPlus -> Some (BinOp (PlusPI, a1, a2, ty1))
+      | XMinus -> Some (BinOp (MinusPI, a1, a2, ty1))
+      | _ ->
+         begin
+           log_diagnostics_result
+             ~tag:"x2api_pointer_expr"
+             ~msg:self#env#get_functionname
+             __FILE__ __LINE__
+             ["pointer type and arithmetic type with operator "
+              ^ (XprToPretty.xop_to_string op)];
+           None
+         end
+    else if is_pointer_type ty1 && is_pointer_type ty2 then
+      match op with
+      | XMinus -> Some (BinOp (MinusPP, a1, a2, TInt (IInt, [])))
+      | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool, [])))
+      | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool, [])))
+      | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool, [])))
+      | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool, [])))
+      | _ ->
+         begin
+           log_diagnostics_result
+             ~tag:"x2api_pointer_expr"
+             ~msg:self#env#get_functionname
+             __FILE__ __LINE__
+             ["2-pointer expr with operator: "
+              ^ (XprToPretty.xop_to_string op)];
+           None
+         end
+    else
+      begin
+        log_diagnostics_result
+          ~tag:"x2api_pointer_expr"
+          ~msg:self#env#get_functionname
+          __FILE__ __LINE__
+          ["op: " ^ (XprToPretty.xop_to_string op);
+           "ty1: " ^ (p2s (typ_to_pretty ty1));
+           "ty2: " ^ (p2s (typ_to_pretty ty2))];
+        None
+      end
 
   method x2api (x:xpr_t):exp option =
     match x with
@@ -1686,32 +1771,10 @@ object (self)
                 ~ok:(fun ty1 ->
                   TR.tfold
                     ~ok:(fun ty2 ->
-                      TR.tfold
-                         ~ok:(fun resulttyp ->
-                           begin
-                             match op with
-                             | XPlus -> Some (BinOp (PlusA, a1, a2, resulttyp))
-                             | XMinus -> Some (BinOp (MinusA, a1, a2, resulttyp))
-                             | XMult -> Some (BinOp (Mult, a1, a2, resulttyp))
-                             | XDiv -> Some (BinOp (Div, a1, a2, resulttyp))
-                             | XShiftrt -> Some (BinOp (Shiftrt, a1, a2, ty1))
-                             | XShiftlt -> Some (BinOp (Shiftlt, a1, a2, ty1))
-                             | XLt -> Some (BinOp (Lt, a1, a2, TInt (IBool, [])))
-                             | XLe -> Some (BinOp (Le, a1, a2, TInt (IBool, [])))
-                             | XGt -> Some (BinOp (Gt, a1, a2, TInt (IBool, [])))
-                             | XGe -> Some (BinOp (Ge, a1, a2, TInt (IBool, [])))
-                             | _ -> None
-                           end)
-                         ~error:(fun err ->
-                           begin
-                             log_diagnostics_result
-                               ~tag:"x2api:integer-promotion"
-                               ~msg:self#env#get_functionname
-                               __FILE__ __LINE__
-                               [String.concat ", " err];
-                             None
-                           end)
-                         (usual_arithmetic_conversion ty1 ty2))
+                      if is_arithmetic_type ty1 && is_arithmetic_type ty2 then
+                        self#x2api_arithmetic_expr op a1 a2 ty1 ty2
+                      else
+                        self#x2api_pointer_expr op a1 a2 ty1 ty2)
                     ~error:(fun err ->
                       begin
                         log_diagnostics_result
