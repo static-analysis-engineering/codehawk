@@ -716,6 +716,12 @@ let is_system_struct (t: typ): bool =
        | _ -> false
 
 
+let is_arithmetic_type (t: typ): bool =
+  match fenv#get_type_unrolled t with
+  | TInt _ | TEnum _ | TFloat _ -> true
+  | _ -> false
+
+
 let is_integral_type (t:typ) =
   match fenv#get_type_unrolled t with
   | TInt _ -> true

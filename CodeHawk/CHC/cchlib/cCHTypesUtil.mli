@@ -105,6 +105,8 @@ val returntype_of_exp: cfundeclarations_int -> exp -> typ traceresult
 
 val is_system_struct: typ -> bool
 
+val is_arithmetic_type: typ -> bool
+
 val is_integral_type: typ -> bool
 
 val is_pointer_type : typ -> bool
