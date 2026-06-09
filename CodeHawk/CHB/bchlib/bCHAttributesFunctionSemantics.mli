@@ -31,55 +31,187 @@ open BCHLibTypes
 
 (** {1 Function attributes} *)
 
-(** Function declarations in C can be decorated with attributes. These attributes
-    are generally used to allow certain compiler optimizations
-    (https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html). Here
-    we use them to communicate preconditions about dynamically linked library
-    functions.
+(** Function declarations in C can be decorated with attributes to communicate
+    preconditions, side effects, and postconditions about dynamically linked
+    library functions to the analyzer.
 
-    For many standard libc library functions the analyzer has comprehensive
+    For many standard libc library functions the analyzer has a comprehensive
     collection of (hand-made) function summaries that include pre- and
-    postconditions, side effects, etc, represented in xml.
-    However, binaries may of course be dynamically linked to a wide variety of
-    other libraries, for which it is not directly feasible to create these
-    summaries (e.g., because suitable binaries are not available for analysis).
-    One possibility is for the user to manually create the xml function summaries
-    for all functions of interest. A more user-friendly means of providing
-    similar information is through function prototypes decorated with suitable
-    attributes, as described here.
+    postconditions, side effects, etc., represented in XML. However, binaries
+    may be dynamically linked to a wide variety of other libraries for which
+    it is not feasible to create such summaries. A more user-friendly means of
+    providing this information is through function prototypes decorated with
+    suitable attributes, as described here.
 
-    We use the same syntax as presented in
-    (https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html).
-    Currently the following attributes are supported:
+    {2 Attribute policy}
 
+    Two categories of attributes are accepted on input. Only [chk_pre],
+    [chk_se], and [chk_post] are emitted in generated output headers; the
+    GCC compatibility attributes are read-only (see
+    bCHFunctionSemanticsAttributes.ml for the output path).
+
+    {3 GCC compatibility attributes (read-only)}
+
+    These attributes are accepted so that existing annotated system headers
+    (e.g., glibc) can be consumed without modification.
+
+    {4 access}
+
+    Syntax (GCC standard):
     {[
-    (access (access-mode, ref-index))
-    (access (access-mode, ref-index, size-index))
-    (nonnull (ref-indices))
+    __attribute__ ((access (access-mode, ref-index)))
+    __attribute__ ((access (access-mode, ref-index, size-index)))
     ]}
 
-    Access modes supported are [read_only], [read_write], and [write_only]; the
-    [ref-index] is an integer denoting the (1-based) index of the pointer
-    argument being accessed, and [size-index] is an integer denoting the
-    (1-based) index of an argument that provides a maximum size (in bytes)
-    for the memory region accessed.
+    Access modes: [read_only] -> {!XXBuffer}; [write_only] -> {!XXBlockWrite};
+    [read_write] -> both. [ref-index] is the 1-based index of the pointer
+    argument; [size-index] is the 1-based index of the argument giving the
+    size in bytes. [write_only] and [read_write] also produce an
+    {!XXBlockWrite} side effect.
 
-    As an example, for [memcpy] this would be decorated as:
+    {4 nonnull}
 
+    Syntax:
+    {[
+    __attribute__ ((nonnull))
+    __attribute__ ((nonnull (ref-index, ...)))
+    ]}
+
+    Bare form: all pointer-typed parameters must be non-null -> {!XXNotNull}
+    for each. Indexed form: listed parameters must be non-null -> {!XXNotNull}
+    per index.
+
+    {4 format}
+
+    Syntax:
+    {[
+    __attribute__ ((format (archetype, string-index, first-to-check)))
+    ]}
+
+    [printf] and [gnu_printf] archetypes -> {!XXOutputFormatString} on the
+    format string parameter. [scanf] and [gnu_scanf] archetypes ->
+    {!XXInputFormatString} on the format string parameter. Other archetypes
+    are accepted but produce no precondition.
+
+    {3 CodeHawk-specific attributes}
+
+    These are the canonical forms used in hand-written CodeHawk header files
+    and in generated output headers. All use the [chk_pre] attribute name
+    with a sub-tag as the first parameter identifying the predicate kind.
+
+    All argument indices are 1-based. Index 0 refers to the return value
+    (relevant for postconditions via [chk_post]).
+
+    {4 Buffer and memory region predicates}
+
+    {[
+    __attribute__ ((chk_pre (deref_read, ref-index)))
+    __attribute__ ((chk_pre (deref_read, ref-index, size-index)))
+    __attribute__ ((chk_pre (deref_read (size), ref-index)))
+    __attribute__ ((chk_pre (deref_read (ntp), ref-index)))
+    ]}
+    -> {!XXBuffer}: pointer argument [ref-index] must be readable for at
+    least the given number of bytes ([size-index] argument, constant [size],
+    or up to the null terminator [ntp]).
+
+    {[
+    __attribute__ ((chk_pre (deref_write, ref-index)))
+    __attribute__ ((chk_pre (deref_write, ref-index, size-index)))
+    __attribute__ ((chk_pre (deref_write (size), ref-index)))
+    ]}
+    -> {!XXBlockWrite}: pointer argument [ref-index] must be writable for at
+    least the given number of bytes.
+
+    {[
+    __attribute__ ((chk_pre (initialized_range (ntp), ref-index)))
+    ]}
+    -> {!XXInitializedRange}: memory starting at [ref-index] is initialized
+    up to the null terminator.
+
+    {[
+    __attribute__ ((chk_pre (no_overlap, ref-index-1, ref-index-2)))
+    ]}
+    -> {!XXNoOverlap}: the memory regions pointed to by the two arguments
+    must not overlap.
+
+    {4 Null and zero predicates}
+
+    {[
+    __attribute__ ((chk_pre (not_null, ref-index)))
+    ]}
+    -> {!XXNotNull}: argument must not be null.
+
+    {[
+    __attribute__ ((chk_pre (null_terminated, ref-index)))
+    ]}
+    -> {!XXNullTerminated}: argument points to a null-terminated string.
+
+    {[
+    __attribute__ ((chk_pre (not_zero, ref-index)))
+    ]}
+    -> {!XXNotZero}: argument must not be zero.
+
+    {[
+    __attribute__ ((chk_pre (non_negative, ref-index)))
+    ]}
+    -> {!XXNonNegative}: argument must not be negative.
+
+    {4 Relational predicates}
+
+    {[
+    __attribute__ ((chk_pre (relational_expr (op), ref-index-1, ref-index-2)))
+    ]}
+    -> {!XXRelationalExpr}: the two arguments satisfy the given relation.
+    Operators: [eq], [lt], [leq], [gt], [geq], [neq].
+
+    {4 Format string predicates}
+
+    {[
+    __attribute__ ((chk_pre (output_format_string, ref-index)))
+    ]}
+    -> {!XXOutputFormatString}: argument is a printf-style format string.
+
+    {[
+    __attribute__ ((chk_pre (input_format_string, ref-index)))
+    ]}
+    -> {!XXInputFormatString}: argument is a scanf-style format string.
+
+    {4 Trusted string and allocation predicates}
+
+    {[
+    __attribute__ ((chk_pre (allocation_base, ref-index)))
+    ]}
+    -> {!XXAllocationBase}: argument is the base address of a dynamically
+    allocated region.
+
+    {[
+    __attribute__ ((chk_pre (trusted_string, ref-index)))
+    ]}
+    -> {!XXTrustedString}: argument is a trusted string value.
+
+    {[
+    __attribute__ ((chk_pre (trusted_os_cmd_string, ref-index)))
+    ]}
+    -> {!XXTrustedOsCmdString}: argument is safe to pass to [system(3)].
+
+    {[
+    __attribute__ ((chk_pre (trusted_os_cmd_fmt_string (kind, size), ref-index)))
+    ]}
+    -> {!XXTrustedOsCmdFmtString}: the string constructed from this format
+    argument is safe to pass to [system(3)].
+
+    {2 Example}
+
+    For [memcpy]:
     {[
     __attribute__ ((access (read_only, 2, 3)),
-                   (access (write_only, 1, 3)), (nonnull (1, 2)))
-    void* memcpy (void *dst, const void *src, size_t len);
+                   (access (write_only, 1, 3)),
+                   (nonnull (1, 2)))
+    void *memcpy (void *dst, const void *src, size_t len);
     ]}
 
-    (Note that the analyzer has a comprehensive function summary for memcpy, so
-    it is only shown here as an example, because of its familiar semantics.)
-
-    A prototype thus decorated will automatically generate a function interface
-    with the function semantics that include the corresponding preconditions
-    (and, in case of write_only, the corresponding side effect) for the given
-    library function, resulting in the appropriate proof obligations at their
-    call sites.
+    (The analyzer has a comprehensive built-in summary for [memcpy]; this
+    is shown only as an illustration of the attribute syntax.)
  *)
 
 val convert_b_attributes_to_function_conditions:

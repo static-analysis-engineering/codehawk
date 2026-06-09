@@ -333,6 +333,140 @@ let get_trusted_os_cmd_fmt_string_precondition
             attrparams_to_string "argparams" argparams]
 
 
+let string_to_relational_op (s: string): relational_op_t traceresult =
+  match s with
+  | "eq"  -> Ok PEquals
+  | "lt"  -> Ok PLessThan
+  | "leq" -> Ok PLessEqual
+  | "gt"  -> Ok PGreaterThan
+  | "geq" -> Ok PGreaterEqual
+  | "neq" -> Ok PNotEqual
+  | _ -> Error [(elocm __LINE__) ^ "Unknown relational operator: " ^ s]
+
+
+let get_input_format_string_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXInputFormatString (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "input_format_string params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_not_zero_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXNotZero (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "not_zero params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_non_negative_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXNonNegative (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "non_negative params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_relational_expr_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([ACons (opstr, [])], [AInt index1; AInt index2]) ->
+     let* op = string_to_relational_op opstr in
+     let* par1 = get_par fparams index1 in
+     let* par2 = get_par fparams index2 in
+     Ok (XXRelationalExpr (op, ArgValue par1, ArgValue par2))
+  | _ ->
+     Error [(elocm __LINE__) ^ "relational_expr params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_no_overlap_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt index1; AInt index2]) ->
+     let* par1 = get_par fparams index1 in
+     let* par2 = get_par fparams index2 in
+     Ok (XXNoOverlap (ArgValue par1, ArgValue par2))
+  | _ ->
+     Error [(elocm __LINE__) ^ "no_overlap params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_allocation_base_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXAllocationBase (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "allocation_base params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_trusted_string_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXTrustedString (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "trusted_string params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_trusted_os_cmd_string_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXTrustedOsCmdString (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "trusted_os_cmd_string params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
 let get_chk_pre_conditions
       (name: string)
       (fparams: fts_parameter_t list)
@@ -435,6 +569,118 @@ let get_chk_pre_conditions
            []
          end)
        (get_trusted_os_cmd_fmt_string_precondition fparams tagparams argparams)
+
+  | (ACons ("input_format_string", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:input_format_string"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_input_format_string_precondition fparams tagparams argparams)
+
+  | (ACons ("not_zero", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:not_zero"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_not_zero_precondition fparams tagparams argparams)
+
+  | (ACons ("non_negative", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:non_negative"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_non_negative_precondition fparams tagparams argparams)
+
+  | (ACons ("relational_expr", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:relational_expr"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_relational_expr_precondition fparams tagparams argparams)
+
+  | (ACons ("no_overlap", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:no_overlap"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_no_overlap_precondition fparams tagparams argparams)
+
+  | (ACons ("allocation_base", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:allocation_base"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_allocation_base_precondition fparams tagparams argparams)
+
+  | (ACons ("trusted_string", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:trusted_string"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_trusted_string_precondition fparams tagparams argparams)
+
+  | (ACons ("trusted_os_cmd_string", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:trusted_os_cmd_string"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_trusted_os_cmd_string_precondition fparams tagparams argparams)
 
   | (ACons (tag, _)) :: _ ->
      begin
