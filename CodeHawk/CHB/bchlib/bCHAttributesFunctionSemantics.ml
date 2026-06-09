@@ -25,6 +25,17 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* Input path: attributes → function semantics (preconditions, side effects,
+   postconditions).
+
+   Accepted attribute forms:
+   - GCC compatibility (read-only; never emitted on output):
+       access, nonnull, format
+   - Canonical CodeHawk forms (input and output):
+       chk_pre, chk_se, chk_post
+
+   See bCHFunctionSemanticsAttributes.ml for the output path. *)
+
 (* chutil *)
 open CHLogger
 open CHTraceResult
@@ -213,6 +224,63 @@ let get_not_null_precondition
             fparams_to_string fparams;
             attrparams_to_string "tagparams" tagparams;
             attrparams_to_string "argparams" argparams]
+
+
+let get_nonnull_preconditions
+      (fparams: fts_parameter_t list)
+      (attrparams: b_attrparam_t list): xxpredicate_t list =
+  match attrparams with
+  | [] ->
+     (* bare nonnull: all pointer parameters must be non-null *)
+     List.filter_map (fun par ->
+         if is_pointer par.apar_type then
+           Some (XXNotNull (ArgValue par))
+         else
+           None) fparams
+  | _ ->
+     (* indexed nonnull: listed parameters must be non-null *)
+     List.filter_map (fun attrparam ->
+         match attrparam with
+         | AInt index ->
+            TR.tfold
+              ~ok:(fun par -> Some (XXNotNull (ArgValue par)))
+              ~error:(fun _ -> None)
+              (get_par fparams index)
+         | _ -> None) attrparams
+
+
+let get_format_preconditions
+      (name: string)
+      (fparams: fts_parameter_t list)
+      (attrparams: b_attrparam_t list): xxpredicate_t list =
+  match attrparams with
+  | ACons (archetype, []) :: AInt string_index :: _ ->
+     let mk_pre constructor =
+       TR.tfold
+         ~ok:(fun par -> [constructor (ArgValue par)])
+         ~error:(fun _ -> [])
+         (get_par fparams string_index) in
+     (match archetype with
+      | "printf" | "gnu_printf" -> mk_pre (fun t -> XXOutputFormatString t)
+      | "scanf" | "gnu_scanf" -> mk_pre (fun t -> XXInputFormatString t)
+      | _ ->
+         begin
+           log_diagnostics_result
+             ~tag:"get_format_preconditions:archetype not handled"
+             ~msg:name
+             __FILE__ __LINE__
+             ["archetype: " ^ archetype];
+           []
+         end)
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_format_preconditions:params not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         [attrparams_to_string "attrparams" attrparams];
+       []
+     end
 
 
 let get_null_terminated_precondition
@@ -537,10 +605,18 @@ let convert_b_attributes_to_function_conditions
 
   List.fold_left (fun ((xpre, xside, xpost) as acc) attr ->
       match attr with
-      | Attr (("acccess" | "chk_access"), attrparams) ->
+      | Attr ("access", attrparams) ->
          let pre = get_access_preconditions name fparameters attrparams in
          let side = get_access_sideeffect name fparameters attrparams in
          (pre @ xpre, side @ xside, xpost)
+
+      | Attr ("nonnull", attrparams) ->
+         let pre = get_nonnull_preconditions fparameters attrparams in
+         (pre @ xpre, xside, xpost)
+
+      | Attr ("format", attrparams) ->
+         let pre = get_format_preconditions name fparameters attrparams in
+         (pre @ xpre, xside, xpost)
 
       | Attr ("chk_pre", attrparams) ->
          let pre = get_chk_pre_conditions name fparameters attrparams in

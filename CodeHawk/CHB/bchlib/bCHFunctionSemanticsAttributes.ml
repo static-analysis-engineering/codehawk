@@ -25,6 +25,15 @@
    SOFTWARE.
    ============================================================================= *)
 
+(* Output path: function semantics → attributes (for delegated preconditions,
+   side effects, postconditions in generated header files).
+
+   Only canonical CodeHawk forms (chk_pre, chk_se, chk_post) are emitted.
+   GCC compatibility forms (access, nonnull, format) are accepted on input
+   but never generated here.
+
+   See bCHAttributesFunctionSemantics.ml for the input path. *)
+
 (* chutil *)
 open CHLogger
 open CHTraceResult
