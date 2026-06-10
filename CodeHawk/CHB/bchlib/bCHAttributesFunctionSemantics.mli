@@ -46,9 +46,9 @@ open BCHLibTypes
     {2 Attribute policy}
 
     Two categories of attributes are accepted on input. Only [chk_pre],
-    [chk_se], and [chk_post] are emitted in generated output headers; the
-    GCC compatibility attributes are read-only (see
-    bCHFunctionSemanticsAttributes.ml for the output path).
+    [chk_se], [chk_post], [chk_epost], and [chk_qual] are emitted in
+    generated output headers; the GCC compatibility attributes are read-only
+    (see bCHFunctionSemanticsAttributes.ml for the output path).
 
     {3 GCC compatibility attributes (read-only)}
 
@@ -243,6 +243,81 @@ open BCHLibTypes
     -> {!XXTrustedOsCmdFmtString}: the string constructed from this format
     argument is safe to pass to [system(3)].
 
+    {3 chk_post / chk_epost: CodeHawk postconditions}
+
+    These are the canonical forms for postconditions on the return value
+    ([chk_post] for the success case, [chk_epost] for the error case). Index 0
+    always refers to the return value; no argument index is specified.
+
+    {[
+    __attribute__ ((chk_post (not_null)))
+    ]}
+    -> {!XXNotNull} on the return value (return is not null on success).
+
+    {[
+    __attribute__ ((chk_post (null)))
+    ]}
+    -> {!XXNull} on the return value (return is null on success).
+
+    {[
+    __attribute__ ((chk_post (non_negative)))
+    ]}
+    -> {!XXNonNegative} on the return value (return >= 0 on success).
+
+    {[
+    __attribute__ ((chk_post (not_zero)))
+    ]}
+    -> {!XXNotZero} on the return value (return != 0 on success).
+
+    {[
+    __attribute__ ((chk_post (positive)))
+    ]}
+    -> {!XXPositive} on the return value (return > 0 on success).
+
+    {[
+    __attribute__ ((chk_post (null_terminated)))
+    ]}
+    -> {!XXNullTerminated} on the return value (return points to a
+    null-terminated string on success).
+
+    {[
+    __attribute__ ((chk_post (new_memory)))
+    ]}
+    -> {!XXNewMemory} on the return value (return is freshly allocated
+    memory on success).
+
+    {[
+    __attribute__ ((chk_post (allocation_base)))
+    ]}
+    -> {!XXAllocationBase} on the return value (return is the base of an
+    allocation on success).
+
+    The following forms are primarily useful as error postconditions with
+    [chk_epost], but are accepted by both:
+
+    {[
+    __attribute__ ((chk_epost (null)))       (* return is NULL on error *)
+    __attribute__ ((chk_epost (negone)))      (* return is -1 on error  *)
+    __attribute__ ((chk_epost (zero)))        (* return is 0 on error   *)
+    __attribute__ ((chk_epost (negative)))    (* return < 0 on error    *)
+    __attribute__ ((chk_epost (nonpositive))) (* return <= 0 on error   *)
+    ]}
+
+    Common paired patterns (each requires two attributes):
+    {[
+    /* notnull-null: success=not null, error=null */
+    __attribute__ ((chk_post (not_null), chk_epost (null)))
+
+    /* zero-negone: success=0, error=-1 */
+    __attribute__ ((chk_post (zero), chk_epost (negone)))
+
+    /* nonnegative-negative: success>=0, error<0 */
+    __attribute__ ((chk_post (non_negative), chk_epost (negative)))
+
+    /* positive-zero: success>0, error=0 */
+    __attribute__ ((chk_post (positive), chk_epost (zero)))
+    ]}
+
     {3 chk_qual: CodeHawk function qualifiers}
 
     These are the canonical forms for non-predicate function properties that
@@ -284,6 +359,7 @@ val convert_b_attributes_to_function_conditions:
   function_interface_t
   -> b_attributes_t
   -> (xxpredicate_t list
+      * xxpredicate_t list
       * xxpredicate_t list
       * xxpredicate_t list
       * function_qualifiers_t)
