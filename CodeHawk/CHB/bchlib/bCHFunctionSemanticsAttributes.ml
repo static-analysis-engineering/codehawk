@@ -26,9 +26,17 @@
    ============================================================================= *)
 
 (* Output path: function semantics → attributes (for delegated preconditions,
-   side effects, postconditions in generated header files).
+   side effects, postconditions, error-postconditions, and qualifiers in
+   generated header files).
 
-   Only canonical CodeHawk forms (chk_pre, chk_se, chk_post) are emitted.
+   Emitted forms:
+   - chk_pre  : delegated proof obligations (preconditions)
+   - chk_se   : side effects (block-write, freed, modifies, invalidates)
+   - chk_post : postconditions on the return value or a parameter
+   - chk_epost: error-path postconditions
+   - chk_qual : CodeHawk-specific qualifiers (sets_errno)
+   - noreturn, pure, const, warn_unused_result: standard GCC qualifiers
+
    GCC compatibility forms (access, nonnull, format) are accepted on input
    but never generated here.
 
@@ -46,6 +54,7 @@ open BCHLibTypes
 
 module TR = CHTraceResult
 
+let (let*) x f = CHTraceResult.tbind f x
 
 let p2s = CHPrettyUtil.pretty_to_string
 
@@ -274,8 +283,257 @@ let convert_preconditions_to_attributes
       | _ -> acc) [] preconditions      
 
 
+let convert_xxpredicate_to_post_attrparams
+      (ctx: string)
+      (xpred: xxpredicate_t): b_attrparam_t list option =
+  let target_params target =
+    match target with
+    | ReturnValue _ -> Some []
+    | ArgValue par ->
+       (match par.apar_index with
+        | Some index -> Some [AInt index]
+        | None ->
+           begin
+             log_diagnostics_result
+               ~tag:"convert_xxpredicate_to_post_attrparams:no index"
+               ~msg:ctx
+               __FILE__ __LINE__
+               ["par: " ^ (bterm_to_string (ArgValue par))];
+             None
+           end)
+    | _ ->
+       begin
+         log_diagnostics_result
+           ~tag:"convert_xxpredicate_to_post_attrparams:unexpected target"
+           ~msg:ctx
+           __FILE__ __LINE__
+           ["target: " ^ (bterm_to_string target)];
+         None
+       end in
+  let make pred target =
+    match target_params target with
+    | None -> None
+    | Some argparams -> Some (ACons (pred, []) :: argparams) in
+  let zero = CHNumerical.numerical_zero in
+  let negone = CHNumerical.mkNumerical (-1) in
+  match xpred with
+  | XXNotNull target         -> make "not_null" target
+  | XXNull target            -> make "null" target
+  | XXNonNegative target     -> make "non_negative" target
+  | XXNotZero target         -> make "not_zero" target
+  | XXPositive target        -> make "positive" target
+  | XXNullTerminated target  -> make "null_terminated" target
+  | XXNewMemory (target, RunTimeValue) -> make "new_memory" target
+  | XXAllocationBase target  -> make "allocation_base" target
+  | XXTrustedString target   -> make "trusted_string" target
+  | XXTrustedOsCmdString target -> make "trusted_os_cmd_string" target
+  | XXTainted target         -> make "tainted" target
+  | XXRelationalExpr (PEquals, target, NumConstant n) when n#equal negone ->
+     make "negone" target
+  | XXRelationalExpr (PEquals, target, NumConstant n) when n#equal zero ->
+     make "zero" target
+  | XXRelationalExpr (PLessThan, target, NumConstant n) when n#equal zero ->
+     make "negative" target
+  | XXRelationalExpr (PLessEqual, target, NumConstant n) when n#equal zero ->
+     make "nonpositive" target
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"convert_xxpredicate_to_post_attrparams:not representable"
+         ~msg:ctx
+         __FILE__ __LINE__
+         ["pred: " ^ (p2s (BCHExternalPredicate.xxpredicate_to_pretty xpred))];
+       None
+     end
+
+
+let convert_postconditions_to_attributes
+      (ctx: string)
+      (attrname: string)
+      (postconditions: xxpredicate_t list): b_attributes_t =
+  List.filter_map (fun xpred ->
+      match convert_xxpredicate_to_post_attrparams ctx xpred with
+      | None -> None
+      | Some params -> Some (Attr (attrname, params))) postconditions
+
+
+let convert_sideeffect_to_attribute
+      (ctx: string)
+      (xpred: xxpredicate_t): b_attribute_t option =
+  let par_index par =
+    match par.apar_index with
+    | Some index -> Ok index
+    | None ->
+       Error [(elocm __LINE__)
+              ^ "parameter has no index: "
+              ^ par.apar_name] in
+  match xpred with
+  | XXBlockWrite (_, ArgValue par, RunTimeValue) ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se", [ACons ("deref_write", []); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:deref_write"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXBlockWrite (_, ArgValue par, ArgValue sizepar) ->
+     TR.tfold
+       ~ok:(fun (index, sizeindex) ->
+         Some (Attr ("chk_se",
+                     [ACons ("deref_write", []); AInt index; AInt sizeindex])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:deref_write(sized)"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (let* i = par_index par in
+        let* s = par_index sizepar in
+        Ok (i, s))
+
+  | XXBlockWrite (_, ArgValue par, NumConstant n) ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se",
+                     [ACons ("deref_write", [AInt n#toInt]); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:deref_write(const)"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXFreed (ArgValue par) ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se", [ACons ("freed", []); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:freed"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXModified (ArgValue par) ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se", [ACons ("modifies", []); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:modifies"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXInvalidated (ArgValue par) ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se", [ACons ("invalidates", []); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:invalidates"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXConditional (XXNotNull (ArgValue par),
+                   XXBlockWrite (_, ArgValue par', RunTimeValue))
+       when is_same_bterm_par (ArgValue par) (ArgValue par') ->
+     TR.tfold
+       ~ok:(fun index ->
+         Some (Attr ("chk_se", [ACons ("deref_write_null", []); AInt index])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:deref_write_null"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (par_index par)
+
+  | XXConditional (XXNotNull (ArgValue par),
+                   XXBlockWrite (_, ArgValue par', ArgValue sizepar))
+       when is_same_bterm_par (ArgValue par) (ArgValue par') ->
+     TR.tfold
+       ~ok:(fun (index, sizeindex) ->
+         Some (Attr ("chk_se",
+                     [ACons ("deref_write_null", []); AInt index; AInt sizeindex])))
+       ~error:(fun e ->
+         begin
+           log_diagnostics_result
+             ~tag:"convert_sideeffect_to_attribute:deref_write_null(sized)"
+             ~msg:ctx __FILE__ __LINE__ e;
+           None
+         end)
+       (let* i = par_index par in
+        let* s = par_index sizepar in
+        Ok (i, s))
+
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"convert_sideeffect_to_attribute:not representable"
+         ~msg:ctx
+         __FILE__ __LINE__
+         ["pred: " ^ (p2s (BCHExternalPredicate.xxpredicate_to_pretty xpred))];
+       None
+     end
+
+
+let convert_sideeffects_to_attributes
+      (ctx: string)
+      (sideeffects: xxpredicate_t list): b_attributes_t =
+  List.filter_map (convert_sideeffect_to_attribute ctx) sideeffects
+
+
+let convert_qualifiers_to_attributes
+      (qualifiers: function_qualifiers_t): b_attributes_t =
+  let attrs = [] in
+  let attrs =
+    match qualifiers.fq_noreturn with
+    | Some true -> Attr ("noreturn", []) :: attrs
+    | _ -> attrs in
+  let attrs =
+    match qualifiers.fq_functional with
+    | Some FPure  -> Attr ("pure", []) :: attrs
+    | Some FConst -> Attr ("const", []) :: attrs
+    | _ -> attrs in
+  let attrs =
+    match qualifiers.fq_sets_errno with
+    | Some true ->
+       Attr ("chk_qual", [ACons ("sets_errno", [])]) :: attrs
+    | _ -> attrs in
+  let attrs =
+    match qualifiers.fq_must_use_return with
+    | Some true -> Attr ("warn_unused_result", []) :: attrs
+    | _ -> attrs in
+  attrs
+
+
 let convert_semantics_to_attributes (finfo: function_info_int): b_attributes_t =
+  let ctx = finfo#get_name in
   let delegatedpos = finfo#proofobligations#delegated_proofobligations in
+  let sem = finfo#get_summary#get_function_semantics in
   let preattrs = convert_preconditions_to_attributes finfo delegatedpos in
-  preattrs
-  
+  let seattrs = convert_sideeffects_to_attributes ctx sem.fsem_sideeffects in
+  let postattrs =
+    convert_postconditions_to_attributes ctx "chk_post" sem.fsem_post in
+  let epostattrs =
+    convert_postconditions_to_attributes ctx "chk_epost" sem.fsem_errorpost in
+  let qualattrs = convert_qualifiers_to_attributes sem.fsem_qualifiers in
+  preattrs @ seattrs @ postattrs @ epostattrs @ qualattrs
+
