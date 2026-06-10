@@ -217,4 +217,7 @@ open BCHLibTypes
 val convert_b_attributes_to_function_conditions:
   function_interface_t
   -> b_attributes_t
-  -> (xxpredicate_t list * xxpredicate_t list * xxpredicate_t list)
+  -> (xxpredicate_t list
+      * xxpredicate_t list
+      * xxpredicate_t list
+      * function_qualifiers_t)

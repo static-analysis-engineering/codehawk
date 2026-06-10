@@ -88,6 +88,7 @@ object (self)
   val fts_parameter_value_table = mk_index_table "parameter-value-table"
   val function_signature_table = mk_index_table "function-signature-table"
   val function_interface_table = mk_index_table "function-interface-table"
+  val function_qualifiers_table = mk_index_table "function-qualifiers-table"
   val function_semantics_table = mk_index_table "function-semantics-table"
   val xxpredicate_table = mk_index_table "xxpredicate-table"
   val xxpredicate_list_table = mk_index_table "xxpredicate-list-table"
@@ -117,6 +118,7 @@ object (self)
       fts_parameter_value_table;
       function_signature_table;
       function_interface_table;
+      function_qualifiers_table;
       function_semantics_table;
       xxpredicate_table;
       xxpredicate_list_table;
@@ -459,6 +461,28 @@ object (self)
       fintf_bctype = if (a 6) = (-1) then None else Some (bcd#get_typ (a 6))
     }
 
+  method index_function_qualifiers (fq: function_qualifiers_t) =
+    let ibo = function Some true -> 1 | Some false -> 0 | None -> -1 in
+    let ifunc = function Some FConst -> 1 | Some FPure -> 0 | None -> -1 in
+    let args = [
+        ibo fq.fq_noreturn;
+        ifunc fq.fq_functional;
+        ibo fq.fq_sets_errno;
+        ibo fq.fq_must_use_return
+      ] in
+    function_qualifiers_table#add ([], args)
+
+  method get_function_qualifiers (index: int): function_qualifiers_t =
+    let name = "function-qualifiers" in
+    let (_, args) = function_qualifiers_table#retrieve index in
+    let a = a name args in
+    let gbo = function 1 -> Some true | 0 -> Some false | _ -> None in
+    let gfunc = function 1 -> Some FConst | 0 -> Some FPure | _ -> None in
+    { fq_noreturn = gbo (a 0);
+      fq_functional = gfunc (a 1);
+      fq_sets_errno = gbo (a 2);
+      fq_must_use_return = gbo (a 3) }
+
   method index_function_semantics (fsem: function_semantics_t) =
     let tags = [] in
     let args = [
@@ -466,7 +490,8 @@ object (self)
         self#index_xxpredicate_list fsem.fsem_post;
         self#index_xxpredicate_list fsem.fsem_errorpost;
         self#index_xxpredicate_list fsem.fsem_sideeffects;
-        self#index_xxpredicate_list fsem.fsem_postrequests
+        self#index_xxpredicate_list fsem.fsem_postrequests;
+        self#index_function_qualifiers fsem.fsem_qualifiers
       ] in
     function_semantics_table#add (tags, args)
 
@@ -481,7 +506,8 @@ object (self)
       fsem_postrequests = self#get_xxpredicate_list (a 4);
       fsem_io_actions = [];
       fsem_desc = "id";
-      fsem_throws = []
+      fsem_throws = [];
+      fsem_qualifiers = self#get_function_qualifiers (a 5)
     }
 
   method index_xxpredicate (p: xxpredicate_t) =
@@ -498,7 +524,6 @@ object (self)
       | XXEnum (t, s, b) -> (tags, [it t; bd#index_string s; ib b])
       | XXFalse -> (tags, [])
       | XXFreed t -> (tags, [it t])
-      | XXFunctional -> (tags, [])
       | XXFunctionPointer (ty, t) -> (tags, [ity ty; it t])
       | XXIncludes (t, c) -> (tags, [it t; self#index_c_struct_constant c])
       | XXInitialized t -> (tags, [it t])
@@ -562,7 +587,6 @@ object (self)
     | "e" -> XXEnum (gt (a 0), bd#get_string (a 1), (a 2) = 1)
     | "f" -> XXFalse
     | "fr" -> XXFreed (gt (a 0))
-    | "fn" -> XXFunctional
     | "fp" -> XXFunctionPointer (gty (a 0), gt (a 1))
     | "inc" -> XXIncludes (gt (a 0), self#get_c_struct_constant (a 1))
     | "i" -> XXInitialized (gt (a 0))

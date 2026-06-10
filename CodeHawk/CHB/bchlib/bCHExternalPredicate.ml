@@ -105,9 +105,6 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   | (XXFreed t1, XXFreed t2) -> btc t1 t2
   | (XXFreed _, _) -> -1
   | (_, XXFreed _) -> 1
-  | (XXFunctional, XXFunctional) -> 0
-  | (XXFunctional, _) -> -1
-  | (_, XXFunctional) -> 1
   | (XXFunctionPointer (_, t1), XXFunctionPointer (_, t2)) -> btc t1 t2
   | (XXFunctionPointer _, _) -> -1
   | (_, XXFunctionPointer _) -> 1
@@ -234,7 +231,6 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXEnum (t, _, _) -> [t]
   | XXFalse -> []
   | XXFreed t -> [t]
-  | XXFunctional -> []
   | XXFunctionPointer (_, t) -> [t]
   | XXIncludes (t, _) -> [t]
   | XXInitialized t -> [t]
@@ -372,7 +368,6 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
          btp t; STR ": member of "; STR s; (if b then STR " (flags)" else STR "")]
   | XXFalse -> STR "false"
   | XXFreed t -> default "freed" [t]
-  | XXFunctional -> STR "functional"
   | XXFunctionPointer (ty, t) ->
      LBLOCK [
          STR "function-pointer(";
@@ -462,7 +457,6 @@ let rec modify_types_xxp
   | XXEnum (t, s, b) -> XXEnum (mbt t, s, b)
   | XXFalse -> XXFalse
   | XXFreed t -> XXFreed (mbt t)
-  | XXFunctional -> XXFunctional
   | XXFunctionPointer (ty, t) -> XXFunctionPointer (mt ty, mbt t)
   | XXIncludes (t, c) -> XXIncludes (mbt t, c)
   | XXInitialized t -> XXInitialized (mbt t)

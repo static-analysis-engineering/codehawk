@@ -195,7 +195,18 @@ let read_xml_function_semantics
 	else
 	  [];
     fsem_desc = (if has "desc" then get "desc" else "");
-    fsem_io_actions = io_actions
+    fsem_io_actions = io_actions;
+    fsem_qualifiers =
+      { fq_noreturn =
+          if has "noreturn" then Some true else None;
+        fq_functional =
+          if has "const" then Some FConst
+          else if has "pure" then Some FPure
+          else None;
+        fq_sets_errno =
+          if has "sets-errno" then Some true else None;
+        fq_must_use_return =
+          if has "must-use-return" then Some true else None }
   }
 
 
@@ -240,7 +251,17 @@ let write_xml_function_semantics
     (if (List.length pre) > 0 then setlist "pre" pre);
     (if (List.length post) > 0 then setlist "post" post);
     (if (List.length epost) > 0 then setlist "epost" epost);
-    (if (List.length sidee) > 0 then setlist "sidee" sidee)
+    (if (List.length sidee) > 0 then setlist "sidee" sidee);
+    (match sem.fsem_qualifiers.fq_functional with
+     | Some FConst -> node#setAttribute "const" "yes"
+     | Some FPure -> node#setAttribute "pure" "yes"
+     | None -> ());
+    (if sem.fsem_qualifiers.fq_noreturn = Some true then
+       node#setAttribute "noreturn" "yes");
+    (if sem.fsem_qualifiers.fq_sets_errno = Some true then
+       node#setAttribute "sets-errno" "yes");
+    (if sem.fsem_qualifiers.fq_must_use_return = Some true then
+       node#setAttribute "must-use-return" "yes")
   end
 
 
@@ -300,9 +321,30 @@ let join_semantics
     fsem_postrequests = sem.fsem_postrequests @ s.fsem_postrequests;
     fsem_io_actions = sem.fsem_io_actions @ s.fsem_io_actions;
     fsem_throws = sem.fsem_throws @ s.fsem_throws;
-    fsem_desc = sem.fsem_desc ^ "; " ^ s.fsem_desc
+    fsem_desc = sem.fsem_desc ^ "; " ^ s.fsem_desc;
+    fsem_qualifiers =
+      let q1 = sem.fsem_qualifiers and q2 = s.fsem_qualifiers in
+      let join_bool a b = match (a, b) with
+        | (Some x, Some y) when x = y -> Some x
+        | _ -> None in
+      { fq_noreturn = join_bool q1.fq_noreturn q2.fq_noreturn;
+        fq_functional =
+          (match (q1.fq_functional, q2.fq_functional) with
+           | (Some FConst, Some FConst) -> Some FConst
+           | (Some _, Some _) -> Some FPure
+           | _ -> None);
+        fq_sets_errno = join_bool q1.fq_sets_errno q2.fq_sets_errno;
+        fq_must_use_return = join_bool q1.fq_must_use_return q2.fq_must_use_return }
     }
   | _ -> sem
+
+
+let default_function_qualifiers = {
+    fq_noreturn = None;
+    fq_functional = None;
+    fq_sets_errno = None;
+    fq_must_use_return = None
+  }
 
 
 let default_function_semantics = {
@@ -313,14 +355,15 @@ let default_function_semantics = {
     fsem_postrequests = [];
     fsem_io_actions = [];
     fsem_throws = [];
-    fsem_desc = ""
+    fsem_desc = "";
+    fsem_qualifiers = default_function_qualifiers
   }
 
 
 let bvarinfo_to_function_semantics
            (vinfo: bvarinfo_t) (fintf: function_interface_t): function_semantics_t =
   if (List.length vinfo.bvattr) > 0 then
-    let (preconditions, sideeffects, _) =
+    let (preconditions, sideeffects, _, qualifiers) =
       convert_b_attributes_to_function_conditions fintf vinfo.bvattr in
     let _ =
       log_diagnostics_result
@@ -332,7 +375,9 @@ let bvarinfo_to_function_semantics
          "attrs: " ^ (attributes_to_string vinfo.bvattr)] in
     let fsem =
       {default_function_semantics with
-        fsem_pre = preconditions; fsem_sideeffects = sideeffects} in
+        fsem_pre = preconditions;
+        fsem_sideeffects = sideeffects;
+        fsem_qualifiers = qualifiers} in
     let _ =
       log_diagnostics_result
         ~tag:"bvarinfo_to_function_semantics"
