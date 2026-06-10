@@ -845,28 +845,42 @@ let get_access_sideeffect
 let convert_b_attributes_to_function_conditions
       (fintf: function_interface_t)
       (attrs: b_attributes_t):
-      (xxpredicate_t list * xxpredicate_t list * xxpredicate_t list) =
+      (xxpredicate_t list
+       * xxpredicate_t list
+       * xxpredicate_t list
+       * function_qualifiers_t) =
   let fparameters = get_fts_parameters fintf in
   let name = fintf.fintf_name in
+  let empty_qualifiers = {
+      fq_noreturn = None;
+      fq_functional = None;
+      fq_sets_errno = None;
+      fq_must_use_return = None } in
 
-  List.fold_left (fun ((xpre, xside, xpost) as acc) attr ->
+  List.fold_left (fun ((xpre, xside, xpost, xqual) as acc) attr ->
       match attr with
       | Attr ("access", attrparams) ->
          let pre = get_access_preconditions name fparameters attrparams in
          let side = get_access_sideeffect name fparameters attrparams in
-         (pre @ xpre, side @ xside, xpost)
+         (pre @ xpre, side @ xside, xpost, xqual)
 
       | Attr ("nonnull", attrparams) ->
          let pre = get_nonnull_preconditions fparameters attrparams in
-         (pre @ xpre, xside, xpost)
+         (pre @ xpre, xside, xpost, xqual)
 
       | Attr ("format", attrparams) ->
          let pre = get_format_preconditions name fparameters attrparams in
-         (pre @ xpre, xside, xpost)
+         (pre @ xpre, xside, xpost, xqual)
+
+      | Attr ("pure", []) ->
+         (xpre, xside, xpost, {xqual with fq_functional = Some FPure})
+
+      | Attr ("const", []) ->
+         (xpre, xside, xpost, {xqual with fq_functional = Some FConst})
 
       | Attr ("chk_pre", attrparams) ->
          let pre = get_chk_pre_conditions name fparameters attrparams in
-         (pre @ xpre, xside, xpost)
+         (pre @ xpre, xside, xpost, xqual)
 
       | Attr (attrname, _) ->
          begin
@@ -876,4 +890,4 @@ let convert_b_attributes_to_function_conditions
              __FILE__ __LINE__
              ["attrname: " ^ attrname];
            acc
-         end) ([], [], []) attrs
+         end) ([], [], [], empty_qualifiers) attrs

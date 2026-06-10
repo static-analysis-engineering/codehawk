@@ -40,6 +40,8 @@ open BCHLibTypes
 
 (** {1 Creation}*)
 
+val default_function_qualifiers: function_qualifiers_t
+
 val default_function_semantics: function_semantics_t
 
 val join_semantics:

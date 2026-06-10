@@ -71,7 +71,6 @@ let rec xxp_to_xpo_predicate
   | XXEnum (t, s, b) -> XPOEnum (btx t, s, b)
   | XXFalse -> XPOFalse
   | XXFreed t -> XPOFreed (btx t)
-  | XXFunctional -> XPOFunctional
   | XXFunctionPointer (ty, t) -> XPOFunctionPointer (ty, btx t)
   | XXIncludes (t, c) -> XPOIncludes (btx t, c)
   | XXInitialized t -> XPOInitialized (btx t)
@@ -140,7 +139,6 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
          x2p t; STR ": member of "; STR s; (if b then STR " (flags)" else STR "")]
   | XPOFalse -> STR "false"
   | XPOFreed t -> default "freed" [t]
-  | XPOFunctional -> STR "functional"
   | XPOFunctionPointer (ty, t) ->
      LBLOCK [
          STR "function-pointer(";

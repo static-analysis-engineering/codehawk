@@ -2386,7 +2386,6 @@ type xxpredicate_t =
   | XXFalse
     (** always false, used as a post condition to indicate non-returning*)
   | XXFreed of bterm_t  (** term pointed to is freed *)
-  | XXFunctional  (** function has no observable side effects *)
   | XXFunctionPointer of btype_t * bterm_t  (** term is pointer to a function *)
   | XXIncludes of bterm_t * c_struct_constant_t
   | XXInitialized of bterm_t (** lval denoted is initialized *)
@@ -2461,6 +2460,34 @@ type io_action_t = {
 
 (** {2 Function semantics} *)
 
+(** Purity level of a function: [FPure] means no observable side effects but
+    may read global or pointed-to memory (GCC [pure]); [FConst] means no side
+    effects and reads only direct arguments (GCC [const], strictly stronger). *)
+type function_purity_t = FPure | FConst
+
+
+(** Non-predicate qualifiers of a function: boolean or simple-enum properties
+    that describe function-level behavior and calling protocol, but are not
+    predicates over argument or return values.
+
+    All fields use [bool option] or an enum option to allow a three-valued
+    interpretation: [Some v] means the property is positively documented,
+    [None] means unknown.
+
+    - [fq_noreturn]: function never returns (GCC [noreturn], C23 [_Noreturn]).
+    - [fq_functional]: purity level — [FPure] or [FConst] (GCC [pure]/[const]).
+    - [fq_sets_errno]: documented to set [errno] on the error path.
+    - [fq_must_use_return]: caller must inspect the return value before
+      continuing (implied by any error postcondition; corresponds to GCC
+      [warn_unused_result] when consumed from third-party headers). *)
+type function_qualifiers_t = {
+  fq_noreturn: bool option;
+  fq_functional: function_purity_t option;
+  fq_sets_errno: bool option;
+  fq_must_use_return: bool option
+}
+
+
 (** Function semantics, combining pre- and postconditions and side effects.*)
 type function_semantics_t = {
   fsem_pre: xxpredicate_t list;
@@ -2470,7 +2497,8 @@ type function_semantics_t = {
   fsem_sideeffects: xxpredicate_t list;
   fsem_io_actions: io_action_t list;
   fsem_desc: string;
-  fsem_throws: string list
+  fsem_throws: string list;
+  fsem_qualifiers: function_qualifiers_t
 }
 
 
@@ -2607,7 +2635,6 @@ type xpo_predicate_t =
   | XPOEnum of xpr_t * string * bool
   | XPOFalse
   | XPOFreed of xpr_t
-  | XPOFunctional
   | XPOFunctionPointer of btype_t * xpr_t
   | XPOIncludes of xpr_t * c_struct_constant_t
   | XPOInitialized of xpr_t
@@ -2866,6 +2893,11 @@ class type interface_dictionary_int =
              ?tag:string -> xml_element_int -> function_interface_t -> unit
     method read_xml_function_interface:
              ?tag:string -> xml_element_int -> function_interface_t
+
+    (** {1 Function qualifiers}*)
+
+    method index_function_qualifiers: function_qualifiers_t -> int
+    method get_function_qualifiers: int -> function_qualifiers_t
 
     (** {1 Function semantics}*)
 

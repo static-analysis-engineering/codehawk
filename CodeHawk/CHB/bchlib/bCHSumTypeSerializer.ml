@@ -432,7 +432,6 @@ object
     | XXEnum _ -> "e"
     | XXFalse -> "f"
     | XXFreed _ -> "fr"
-    | XXFunctional -> "fn"
     | XXFunctionPointer _ -> "fp"
     | XXIncludes _ -> "inc"
     | XXInitialized _ -> "i"
@@ -466,7 +465,7 @@ object
     | XXConditional _ -> "con"
 
   method !tags = [
-      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
+      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
       "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
@@ -490,7 +489,6 @@ object
     | XPOEnum _ -> "e"
     | XPOFalse -> "f"
     | XPOFreed _ -> "fr"
-    | XPOFunctional -> "fn"
     | XPOFunctionPointer _ -> "fp"
     | XPOIncludes _ -> "inc"
     | XPOInitialized _ -> "i"
@@ -524,7 +522,7 @@ object
     | XPOConditional _ -> "con"
 
   method !tags = [
-      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fn"; "fp"; "fr"; "ga";
+      "ab"; "b"; "bw"; "con"; "dis"; "e"; "f"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
       "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
       "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
