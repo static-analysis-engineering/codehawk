@@ -29,7 +29,7 @@
       </par>
       <returntype>int</returntype>
     </api>
-    <semantics>
+    <semantics sets-errno="yes">
       <io-actions/>
       <preconditions>
 	<pre>
@@ -45,13 +45,7 @@
       <postconditions>
         <zero-negone/>
       </postconditions>
-      <sideeffects>
-        <sideeffect>
-          <math>
-            <sets-errno/>
-          </math>
-        </sideeffect>
-      </sideeffects>
+      <sideeffects/>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

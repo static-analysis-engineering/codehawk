@@ -42,7 +42,7 @@
       <type>size_t</type>
     </par>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
      <io-actions>
        <io-action cat="memops" desc="transforms a string"/>
      </io-actions>
@@ -78,11 +78,6 @@
         <ci>dst</ci>
         <ci>count</ci>
        </apply>
-      </math>
-     </sideeffect>
-     <sideeffect>
-      <math>
-       <sets-errno/>
       </math>
      </sideeffect>
     </sideeffects>

@@ -41,7 +41,7 @@
      <sideeffects><block-write/></sideeffects>
     </par>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
     <io-actions>
        <io-action cat="filesystem" desc="obtains status information on a file"/>
     </io-actions>
@@ -49,13 +49,7 @@
     <postconditions>
       <zero-negone/>
     </postconditions>
-    <sideeffects>
-      <sideeffect>
-        <math>
-          <sets-errno/>
-        </math>
-      </sideeffect>
-    </sideeffects>
+    <sideeffects/>
    </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

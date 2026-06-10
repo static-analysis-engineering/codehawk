@@ -38,7 +38,7 @@
     </par>
     <pre><non-negative/></pre>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
      <io-actions>
        <io-action cat="network"
 		  desc="retrieves the standard host name of the local computer"/>
@@ -59,7 +59,6 @@
       <zero-negone/>
     </postconditions>
     <sideeffects>
-     <sideeffect><math><sets-errno/></math></sideeffect>
      <sideeffect>
       <math>
        <apply>

@@ -18,19 +18,13 @@
     <api adj="0" cc="cdecl" name="setsid">
       <returntype>pid_t</returntype>
     </api>
-    <semantics>
+    <semantics sets-errno="yes">
       <io-actions/>
       <preconditions/>
       <postconditions>
         <nonnegative-negone/>
       </postconditions>
-      <sideeffects>
-        <sideeffect>
-          <math>
-            <sets-errno/>
-          </math>
-        </sideeffect>
-      </sideeffects>
+      <sideeffects/>
     </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

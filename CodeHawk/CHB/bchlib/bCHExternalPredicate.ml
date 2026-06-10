@@ -172,9 +172,6 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
        l0
   | (XXRelationalExpr _, _) -> -1
   | (_, XXRelationalExpr _) -> 1
-  | (XXSetsErrno, XXSetsErrno) -> 0
-  | (XXSetsErrno, _) -> -1
-  | (_, XXSetsErrno) -> 1
   | (XXStartsThread (t1, tl1), XXStartsThread (t2, tl2)) ->
      let l0 = btc t1 t2 in if l0 = 0 then list_compare tl1 tl2 btc else l0
   | (XXStartsThread _, _) -> -1
@@ -247,7 +244,6 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXOutputFormatString t -> [t]
   | XXPositive t -> [t]
   | XXRelationalExpr (_, t1, t2) -> [t1; t2]
-  | XXSetsErrno -> []
   | XXStartsThread (t, tt) -> t :: tt
   | XXTainted t -> [t]
   | XXTrustedString t -> [t]
@@ -399,7 +395,6 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   | XXPositive t -> default "positive" [t]
   | XXRelationalExpr (op, t1, t2) ->
      LBLOCK [btp t1; STR (relational_op_to_string op); btp t2]
-  | XXSetsErrno -> STR "sets errno"
   | XXStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XXTainted t -> default "tainted" [t]
   | XXTrustedString t -> default "trusted-string" [t]
@@ -471,7 +466,6 @@ let rec modify_types_xxp
   | XXNullTerminated t -> XXNullTerminated (mbt t)
   | XXOutputFormatString t -> XXOutputFormatString (mbt t)
   | XXRelationalExpr (op, t1, t2) -> XXRelationalExpr (op, mbt t1, mbt t2)
-  | XXSetsErrno -> XXSetsErrno
   | XXStartsThread (t, tt) -> XXStartsThread (mbt t, List.map mbt tt)
   | XXTainted t -> XXTainted (mbt t)
   | XXTrustedString t -> XXTrustedString (mbt t)

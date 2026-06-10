@@ -20,7 +20,7 @@
     </par>
     <returntype>time_t</returntype>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
     <io-actions>
       <io-action cat="memops" desc="converts local time to calendar time"/>
     </io-actions>
@@ -28,13 +28,7 @@
     <postconditions>
       <nonnegative-negone/>
     </postconditions>
-    <sideeffects>
-      <sideeffect>
-        <math>
-          <sets-errno/>
-        </math>
-      </sideeffect>
-    </sideeffects>
+    <sideeffects/>
    </semantics>
   </libfun>
  </codehawk-binary-analyzer>
