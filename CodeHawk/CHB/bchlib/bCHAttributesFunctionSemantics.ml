@@ -842,6 +842,38 @@ let get_access_sideeffect
      end
 
 
+let get_chk_qual_conditions
+      (name: string)
+      (attrparams: b_attrparam_t list)
+      (xqual: function_qualifiers_t): function_qualifiers_t =
+  match attrparams with
+  | [ACons ("sets_errno", [])] ->
+     {xqual with fq_sets_errno = Some true}
+
+  | [ACons ("must_use_return", [])] ->
+     {xqual with fq_must_use_return = Some true}
+
+  | (ACons (tag, _)) :: _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_qual_conditions:tag not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         ["tag: " ^ tag];
+       xqual
+     end
+
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_qual_conditions:not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         [attrparams_to_string "attrparams" attrparams];
+       xqual
+     end
+
+
 let convert_b_attributes_to_function_conditions
       (fintf: function_interface_t)
       (attrs: b_attributes_t):
@@ -881,9 +913,15 @@ let convert_b_attributes_to_function_conditions
       | Attr ("const", []) ->
          (xpre, xside, xpost, {xqual with fq_functional = Some FConst})
 
+      | Attr ("warn_unused_result", []) ->
+         (xpre, xside, xpost, {xqual with fq_must_use_return = Some true})
+
       | Attr ("chk_pre", attrparams) ->
          let pre = get_chk_pre_conditions name fparameters attrparams in
          (pre @ xpre, xside, xpost, xqual)
+
+      | Attr ("chk_qual", attrparams) ->
+         (xpre, xside, xpost, get_chk_qual_conditions name attrparams xqual)
 
       | Attr (attrname, _) ->
          begin

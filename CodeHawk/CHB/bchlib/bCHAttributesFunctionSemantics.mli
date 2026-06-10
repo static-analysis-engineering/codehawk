@@ -125,6 +125,17 @@ open BCHLibTypes
     function reads only its direct arguments and has no side effects
     (e.g., [abs], [sqrt]). Strictly stronger than [pure].
 
+    {4 warn_unused_result}
+
+    Syntax:
+    {[
+    __attribute__ ((warn_unused_result))
+    ]}
+
+    Sets [fq_must_use_return = Some true] in {!function_qualifiers_t}. The
+    caller is obligated to inspect the return value. Equivalent to
+    [chk_qual(must_use_return)] for headers that use the GCC standard form.
+
     {3 CodeHawk-specific attributes}
 
     These are the canonical forms used in hand-written CodeHawk header files
@@ -231,6 +242,29 @@ open BCHLibTypes
     ]}
     -> {!XXTrustedOsCmdFmtString}: the string constructed from this format
     argument is safe to pass to [system(3)].
+
+    {3 chk_qual: CodeHawk function qualifiers}
+
+    These are the canonical forms for non-predicate function properties that
+    have no GCC-standard attribute equivalent. Unlike [chk_pre] (preconditions)
+    and [chk_se] (side effects), [chk_qual] qualifiers carry no argument
+    indices — they are properties of the function itself.
+
+    {[
+    __attribute__ ((chk_qual (sets_errno)))
+    ]}
+    Sets [fq_sets_errno = Some true] in {!function_qualifiers_t}. The function
+    sets [errno] to indicate the specific error when it fails. This is a
+    property documented in the C standard and POSIX, distinct from any
+    observable memory side effect.
+
+    {[
+    __attribute__ ((chk_qual (must_use_return)))
+    ]}
+    Sets [fq_must_use_return = Some true] in {!function_qualifiers_t}. The
+    caller is obligated to inspect the return value (e.g., to check for an
+    error code). Implied by the presence of an error-postcondition in a
+    function summary; provided here for use in hand-written CodeHawk headers.
 
     {2 Example}
 
