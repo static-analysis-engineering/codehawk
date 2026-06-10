@@ -41,7 +41,7 @@
       </par>
       <returntype><ptr>char</ptr></returntype>
     </api>
-    <semantics>
+    <semantics sets-errno="yes">
       <io-actions/>
       <preconditions>
 	<pre>
@@ -67,11 +67,6 @@
 	    </apply>
 	  </math>
 	</sideeffect>
-        <sideeffect>
-          <math>
-            <sets-errno/>
-          </math>
-        </sideeffect>
       </sideeffects>
     </semantics>
   </libfun>

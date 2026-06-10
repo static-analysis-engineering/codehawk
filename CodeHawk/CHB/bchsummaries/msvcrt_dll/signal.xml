@@ -32,19 +32,13 @@
      <pre><deref-read/></pre>
     </par>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
     <io-actions>
        <io-action cat="process" desc="sets up signal handling"/>
     </io-actions>
     <preconditions/>
     <postconditions/>
-    <sideeffects>
-     <sideeffect>
-      <math>
-       <sets-errno/>
-      </math>
-     </sideeffect>
-    </sideeffects>
+    <sideeffects/>
    </semantics>
   </libfun>
   <copyright-notice>Copyright 2012-2016, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

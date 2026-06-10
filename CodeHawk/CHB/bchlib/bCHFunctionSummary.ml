@@ -269,8 +269,7 @@ object (self:'a)
       sem.fsem_sideeffects
 
   method sets_errno =
-    List.exists (fun p -> match p with XXSetsErrno -> true | _ -> false)
-      sem.fsem_sideeffects
+    sem.fsem_qualifiers.fq_sets_errno = Some true
 
   method is_nonreturning =
     sem.fsem_qualifiers.fq_noreturn = Some true

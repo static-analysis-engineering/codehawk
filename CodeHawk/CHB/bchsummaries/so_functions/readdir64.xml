@@ -21,19 +21,13 @@
       </par>
       <returntype><ptr>ch__dirent</ptr></returntype>
     </api>
-    <semantics>
+    <semantics sets-errno="yes">
       <io-actions/>
       <preconditions/>
       <postconditions>
 	<notnull-null/>
       </postconditions>
-      <sideeffects>
-        <sideeffect>
-          <math>
-            <sets-errno/>
-          </math>
-        </sideeffect>
-      </sideeffects>
+      <sideeffects/>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

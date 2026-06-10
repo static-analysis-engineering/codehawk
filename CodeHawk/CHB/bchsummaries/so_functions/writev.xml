@@ -37,7 +37,7 @@
       </par>
       <returntype>ssize_t</returntype>
     </api>
-    <semantics>
+    <semantics sets-errno="yes">
       <io-actions/>
       <preconditions>
 	<pre>
@@ -55,13 +55,7 @@
 	</pre>
       </preconditions>
       <postconditions/>
-      <sideeffects>
-        <sideeffect>
-          <math>
-            <sets-errno/>
-          </math>
-        </sideeffect>
-      </sideeffects>
+      <sideeffects/>
     </semantics>
   </libfun>
 </codehawk-binary-analyzer>

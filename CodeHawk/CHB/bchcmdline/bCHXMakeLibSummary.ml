@@ -173,18 +173,7 @@ let write_xml_postconditions (node:xml_element_int) =
     begin pNode#setAttribute "name" p; pNode :: acc end) pNodes !enumpost in
   append pNodes
 
-let write_xml_sideeffects (node:xml_element_int) =
-  if !sets_errno then
-    let sNode = xmlElement "sideeffect" in
-    let mNode = xmlElement "math" in
-    let eNode = xmlElement "sets-errno" in
-    begin
-      sNode#appendChildren [mNode];
-      mNode#appendChildren [eNode];
-      node#appendChildren [sNode]
-    end
-  else
-    ()
+let write_xml_sideeffects (_node:xml_element_int) = ()
 
 let write_xml_io_actions (node:xml_element_int) _parameters =
   if !iox_cat = "" then () else
@@ -216,6 +205,7 @@ let write_xml_summary (node:xml_element_int) parameters =
   begin
     write_xml_doc docNode parameters;
     write_xml_api apiNode parameters;
+    (if !sets_errno then semNode#setAttribute "sets-errno" "yes");
     write_xml_sem semNode parameters;
     append [docNode; apiNode; semNode]
   end

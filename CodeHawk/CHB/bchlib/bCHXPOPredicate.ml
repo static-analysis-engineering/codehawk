@@ -90,7 +90,6 @@ let rec xxp_to_xpo_predicate
   | XXNullTerminated t -> XPONullTerminated (btx t)
   | XXOutputFormatString t -> XPOOutputFormatString (btx t)
   | XXRelationalExpr (op, t1, t2) -> XPORelationalExpr (op, btx t1, btx t2)
-  | XXSetsErrno -> XPOSetsErrno
   | XXStartsThread (t1, t2) -> XPOStartsThread (btx t1, List.map btx t2)
   | XXTainted t -> XPOTainted (btx t)
   | XXTrustedString t -> XPOTrustedString (btx t)
@@ -173,7 +172,6 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPOPositive t -> default "positive" [t]
   | XPORelationalExpr (op, t1, t2) ->
      LBLOCK [x2p t1; STR (relational_op_to_string op); x2p t2]
-  | XPOSetsErrno -> STR "sets errno"
   | XPOStartsThread (t, tt) -> default "starts-thread" (t :: tt)
   | XPOTainted t -> default "tainted" [t]
   | XPOTrustedString t -> default "trusted-string" [t]

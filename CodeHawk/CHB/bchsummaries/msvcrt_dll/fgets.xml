@@ -56,7 +56,7 @@
      <pre><deref-read/></pre>
     </par>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
     <io-actions>
        <io-action cat="filesystem" desc="reads characters from a file"/>
     </io-actions>
@@ -108,11 +108,6 @@
         <ci>str</ci>
         <ci>count</ci>
        </apply>
-      </math>
-     </sideeffect>
-     <sideeffect>
-      <math>
-       <sets-errno/>
       </math>
      </sideeffect>
     </sideeffects>

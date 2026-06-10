@@ -151,7 +151,6 @@ let read_xml_sideeffect
     | "starts-thread" ->
       XXStartsThread (get_term (arg 0), List.map get_term (List.tl argNodes))
     | "invalidates" -> XXInvalidated (get_term (arg 0))
-    | "sets-errno" -> XXSetsErrno
     | "implies" ->
        let condition =
          List.hd
@@ -185,10 +184,7 @@ let read_xml_sideeffect
               STR "Sideeffect predicate ";
               STR s;
               STR " not recognized"]) in
-  match (node#getTaggedChild "math")#getChild#getTag with
-  | "sets-errno" -> XXSetsErrno
-  (* | "unknown-sideeffect" -> UnknownSideeffect *)
-  | _ -> aux ((node#getTaggedChild "math")#getTaggedChild "apply")
+  aux ((node#getTaggedChild "math")#getTaggedChild "apply")
 
 
 let read_xml_sideeffects

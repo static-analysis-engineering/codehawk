@@ -48,7 +48,7 @@
      <pre><deref-read/></pre>
     </par>
    </api>
-   <semantics>
+   <semantics sets-errno="yes">
      <io-actions>
        <io-action cat="filesystem" desc="reads binary input from file"/>
      </io-actions>
@@ -97,11 +97,6 @@
          <ci>nitems</ci>
         </apply>
        </apply>
-      </math>
-     </sideeffect>
-     <sideeffect>
-      <math>
-       <sets-errno/>
       </math>
      </sideeffect>
     </sideeffects>

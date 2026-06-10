@@ -122,7 +122,6 @@ object (self)
       | XPOOutputFormatString x -> (tags, [ix x])
       | XPORelationalExpr (op, x1, x2) ->
          (tags @ [relational_op_mfts#ts op], [ix x1; ix x2])
-      | XPOSetsErrno -> (tags, [])
       | XPOStartsThread (x, xl) -> (tags, (ix x) :: (List.map ix xl))
       | XPOTainted x -> (tags, [ix x])
       | XPOTrustedString x -> (tags, [ix x])

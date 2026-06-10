@@ -2414,7 +2414,6 @@ type xxpredicate_t =
 
   | XXRelationalExpr
     of relational_op_t * bterm_t * bterm_t  (** relational expression *)
-  | XXSetsErrno
   | XXStartsThread of bterm_t * bterm_t list
   (** starts a thread with [t1] as start address and the remaining terms as
       parameters *)
@@ -2652,7 +2651,6 @@ type xpo_predicate_t =
   | XPONullTerminated of xpr_t
   | XPOOutputFormatString of xpr_t
   | XPORelationalExpr of relational_op_t * xpr_t * xpr_t
-  | XPOSetsErrno
   | XPOStartsThread of xpr_t * xpr_t list
   | XPOTainted of xpr_t
   | XPOTrustedString of xpr_t
