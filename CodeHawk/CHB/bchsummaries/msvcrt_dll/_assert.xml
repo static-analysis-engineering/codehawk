@@ -39,14 +39,12 @@
     </par>
     <returntype>void</returntype>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
     <io-actions>
        <io-action cat="filesystem" desc="assertion failed"/>
     </io-actions>
     <preconditions/>
-    <postconditions>
-      <post><math><apply><non-returning/></apply></math></post>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

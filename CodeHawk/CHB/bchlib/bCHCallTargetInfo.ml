@@ -192,8 +192,7 @@ object (self)
 	   | _ -> None) None self#get_preconditions
 
   method is_nonreturning =
-    List.exists
-      (fun p -> match p with XXFalse -> true | _ -> false) sem.fsem_post
+    sem.fsem_qualifiers.fq_noreturn = Some true
 
   method has_sideeffects =
     match self#get_sideeffects with

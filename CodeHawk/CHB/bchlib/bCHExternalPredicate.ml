@@ -99,9 +99,6 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
      let l0 = btc t1 t2 in if l0 = 0 then Stdlib.compare s1 s2 else l0
   | (XXEnum _, _) -> -1
   | (_, XXEnum _) -> 1
-  | (XXFalse, XXFalse) -> 0
-  | (XXFalse, _) -> -1
-  | (_, XXFalse) -> 1
   | (XXFreed t1, XXFreed t2) -> btc t1 t2
   | (XXFreed _, _) -> -1
   | (_, XXFreed _) -> 1
@@ -229,7 +226,6 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXBlockWrite (_, t1, t2) -> [t1; t2]
   | XXBuffer (_, t1, t2) -> [t1; t2]
   | XXEnum (t, _, _) -> [t]
-  | XXFalse -> []
   | XXFreed t -> [t]
   | XXFunctionPointer (_, t) -> [t]
   | XXIncludes (t, _) -> [t]
@@ -366,7 +362,6 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   | XXEnum (t, s, b) ->
      LBLOCK [
          btp t; STR ": member of "; STR s; (if b then STR " (flags)" else STR "")]
-  | XXFalse -> STR "false"
   | XXFreed t -> default "freed" [t]
   | XXFunctionPointer (ty, t) ->
      LBLOCK [
@@ -455,7 +450,6 @@ let rec modify_types_xxp
   | XXBlockWrite (ty, t1, t2) -> XXBlockWrite (mt ty, mbt t1, mbt t2)
   | XXBuffer (ty, t1, t2) -> XXBuffer (mt ty, mbt t1, mbt t2)
   | XXEnum (t, s, b) -> XXEnum (mbt t, s, b)
-  | XXFalse -> XXFalse
   | XXFreed t -> XXFreed (mbt t)
   | XXFunctionPointer (ty, t) -> XXFunctionPointer (mt ty, mbt t)
   | XXIncludes (t, c) -> XXIncludes (mbt t, c)

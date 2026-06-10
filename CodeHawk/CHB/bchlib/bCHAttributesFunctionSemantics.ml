@@ -872,6 +872,9 @@ let convert_b_attributes_to_function_conditions
          let pre = get_format_preconditions name fparameters attrparams in
          (pre @ xpre, xside, xpost, xqual)
 
+      | Attr ("noreturn", []) ->
+         (xpre, xside, xpost, {xqual with fq_noreturn = Some true})
+
       | Attr ("pure", []) ->
          (xpre, xside, xpost, {xqual with fq_functional = Some FPure})
 

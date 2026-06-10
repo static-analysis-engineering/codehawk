@@ -42,14 +42,12 @@
       </par>
       <returntype>void</returntype>
     </api>
-    <semantics>
+    <semantics noreturn="yes">
       <io-actions>
         <io-action desc="terminates the java virtual machine" cat="jni"/>
       </io-actions>
       <preconditions/>
-      <postconditions>
-         <non-returning/>
-      </postconditions>
+      <postconditions/>
       <sideeffects/>
     </semantics>
   </jnifun>

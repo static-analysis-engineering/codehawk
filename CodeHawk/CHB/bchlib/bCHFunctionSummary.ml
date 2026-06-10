@@ -273,9 +273,7 @@ object (self:'a)
       sem.fsem_sideeffects
 
   method is_nonreturning =
-    List.exists
-      (fun p -> match p with XXFalse -> true | _ -> false)
-      sem.fsem_post
+    sem.fsem_qualifiers.fq_noreturn = Some true
 
   method is_jni_function =
     match finterface.fintf_jni_index with Some _ -> true | _ -> false

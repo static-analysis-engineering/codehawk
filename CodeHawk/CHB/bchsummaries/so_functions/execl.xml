@@ -34,12 +34,10 @@
       </par>
       <returntype>int</returntype>
     </api>
-    <semantics>
+    <semantics noreturn="yes">
       <io-actions/>
       <preconditions/>
-      <postconditions>
-	<non-returning/>
-      </postconditions>
+      <postconditions/>
       <sideeffects/>
     </semantics>
   </libfun>

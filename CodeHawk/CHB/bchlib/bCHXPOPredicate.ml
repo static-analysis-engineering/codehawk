@@ -69,7 +69,6 @@ let rec xxp_to_xpo_predicate
   | XXBlockWrite (ty, t1, t2) -> XPOBlockWrite (ty, btx t1, btx t2)
   | XXBuffer (ty, t1, t2) -> XPOBuffer (ty, btx t1, btx t2)
   | XXEnum (t, s, b) -> XPOEnum (btx t, s, b)
-  | XXFalse -> XPOFalse
   | XXFreed t -> XPOFreed (btx t)
   | XXFunctionPointer (ty, t) -> XPOFunctionPointer (ty, btx t)
   | XXIncludes (t, c) -> XPOIncludes (btx t, c)
@@ -137,7 +136,6 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPOEnum (t, s, b) ->
      LBLOCK [
          x2p t; STR ": member of "; STR s; (if b then STR " (flags)" else STR "")]
-  | XPOFalse -> STR "false"
   | XPOFreed t -> default "freed" [t]
   | XPOFunctionPointer (ty, t) ->
      LBLOCK [

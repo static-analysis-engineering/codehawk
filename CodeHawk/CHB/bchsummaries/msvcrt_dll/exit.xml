@@ -19,20 +19,14 @@
      </roles>
     </par>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
      <io-actions>
        <io-action cat="process"
 		  desc="terminates the process immediately">
        </io-action>
      </io-actions>
     <preconditions/>
-    <postconditions>
-     <post>
-      <math>
-       <non-returning/>
-      </math>
-     </post>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

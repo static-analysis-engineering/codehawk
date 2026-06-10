@@ -34,14 +34,12 @@
     </par>
     <returntype>void</returntype>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
     <io-actions>
        <io-action cat="process" desc="throws an exception"/>
     </io-actions>
     <preconditions/>
-    <postconditions>
-      <post><math><non-returning/></math></post>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

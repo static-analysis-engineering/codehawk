@@ -33,15 +33,13 @@
       </roles>
     </par>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
      <io-actions>
        <io-action cat="process"
 		  desc="displays a message box and terminates the application"/>
      </io-actions>
     <preconditions/>
-    <postconditions>
-      <non-returning/>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

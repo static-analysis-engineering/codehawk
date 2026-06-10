@@ -2383,8 +2383,6 @@ type xxpredicate_t =
   | XXEnum of bterm_t * string * bool
   (** term t is one of the values included in the named enumeration, if [flags]
       is true, the constant is a set of flags *)
-  | XXFalse
-    (** always false, used as a post condition to indicate non-returning*)
   | XXFreed of bterm_t  (** term pointed to is freed *)
   | XXFunctionPointer of btype_t * bterm_t  (** term is pointer to a function *)
   | XXIncludes of bterm_t * c_struct_constant_t
@@ -2633,7 +2631,6 @@ type xpo_predicate_t =
   | XPOBlockWrite of btype_t * xpr_t * xpr_t
   | XPOBuffer of btype_t * xpr_t * xpr_t
   | XPOEnum of xpr_t * string * bool
-  | XPOFalse
   | XPOFreed of xpr_t
   | XPOFunctionPointer of btype_t * xpr_t
   | XPOIncludes of xpr_t * c_struct_constant_t

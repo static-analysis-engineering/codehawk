@@ -3723,18 +3723,6 @@ object (self)
      | XXNull term -> get_null_commands term
      | XXNotNull term -> get_not_null_commands term
      | XXRelationalExpr (op, t1, t2) -> get_post_expr_commands op t1 t2
-     | XXFalse ->
-        let ctinfo = self#get_call_target in
-        if ctinfo#is_nonreturning then
-          [] (* was known during translation, or has been established earlier *)
-        else
-	  begin
-	    (* ctinfo#set_nonreturning; *)
-	    chlog#add
-              "function retracing"
-              (LBLOCK [self#l#toPretty; STR ": "; STR name]);
-	    raise Request_function_retracing
-	  end
      | _ ->
        let msg = xxpredicate_to_pretty post in
        begin
@@ -3747,6 +3735,20 @@ object (self)
                     (returnvar:variable_t)
                     (string_retriever:doubleword_int -> string option) =
      let name = summary#get_name in
+     if summary#is_nonreturning then
+       begin
+         let ctinfo = self#get_call_target in
+         if ctinfo#is_nonreturning then
+           [] (* was known during translation, or has been established earlier *)
+         else
+           begin
+             chlog#add
+               "function retracing"
+               (LBLOCK [self#l#toPretty; STR ": "; STR name]);
+             raise Request_function_retracing
+           end
+       end
+     else
      let postCommands = List.concat
        (List.map (fun post ->
 	    self#assert_post name post returnvar string_retriever)
