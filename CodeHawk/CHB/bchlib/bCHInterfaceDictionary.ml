@@ -462,8 +462,8 @@ object (self)
     }
 
   method index_function_qualifiers (fq: function_qualifiers_t) =
-    let ibo = function Some true -> 1 | Some false -> 0 | None -> -1 in
-    let ifunc = function Some FConst -> 1 | Some FPure -> 0 | None -> -1 in
+    let ibo = function Some true -> 2 | Some false -> 1 | None -> -1 in
+    let ifunc = function Some FConst -> 2 | Some FPure -> 1 | None -> -1 in
     let args = [
         ibo fq.fq_noreturn;
         ifunc fq.fq_functional;
@@ -476,8 +476,8 @@ object (self)
     let name = "function-qualifiers" in
     let (_, args) = function_qualifiers_table#retrieve index in
     let a = a name args in
-    let gbo = function 1 -> Some true | 0 -> Some false | _ -> None in
-    let gfunc = function 1 -> Some FConst | 0 -> Some FPure | _ -> None in
+    let gbo = function 2 -> Some true | 1 -> Some false | _ -> None in
+    let gfunc = function 2 -> Some FConst | 1 -> Some FPure | _ -> None in
     { fq_noreturn = gbo (a 0);
       fq_functional = gfunc (a 1);
       fq_sets_errno = gbo (a 2);

@@ -1344,7 +1344,7 @@ let function_interface_to_bfuntype (fintf: function_interface_t): btype_t =
   let par_funarg (_, name, ty) = (name, ty, []) in
   let funargs =
     Some ((List.map par_funarg regPars) @ (List.map par_funarg stackPars)) in
-  TFun (fts.fts_returntype, funargs, false, [])
+  TFun (fts.fts_returntype, funargs, fts.fts_varargs, [])
 
 
 let function_type_resolvents_to_bfuntype
