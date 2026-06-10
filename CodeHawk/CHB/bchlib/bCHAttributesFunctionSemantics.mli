@@ -243,6 +243,45 @@ open BCHLibTypes
     -> {!XXTrustedOsCmdFmtString}: the string constructed from this format
     argument is safe to pass to [system(3)].
 
+    {3 chk_se: CodeHawk side effects}
+
+    The canonical form for side effects on pointer arguments. The sub-tag
+    identifies the kind; [ref-index] is the 1-based index of the pointer
+    parameter.
+
+    {[
+    __attribute__ ((chk_se (deref_write, ref-index)))
+    __attribute__ ((chk_se (deref_write, ref-index, size-index)))
+    __attribute__ ((chk_se (deref_write (size), ref-index)))
+    ]}
+    -> {!XXBlockWrite}: the function writes into the buffer at [ref-index].
+    Size is given by [size-index] argument, a constant, or is unknown
+    ([RunTimeValue]).
+
+    {[
+    __attribute__ ((chk_se (deref_write_null, ref-index)))
+    __attribute__ ((chk_se (deref_write_null, ref-index, size-index)))
+    ]}
+    -> {!XXConditional} ({!XXNotNull}, {!XXBlockWrite}): the function writes
+    into [ref-index] only when it is not null.
+
+    {[
+    __attribute__ ((chk_se (freed, ref-index)))
+    ]}
+    -> {!XXFreed}: the function frees the pointer at [ref-index].
+
+    {[
+    __attribute__ ((chk_se (modifies, ref-index)))
+    ]}
+    -> {!XXModified}: the function modifies the memory at [ref-index] in an
+    unspecified way.
+
+    {[
+    __attribute__ ((chk_se (invalidates, ref-index)))
+    ]}
+    -> {!XXInvalidated}: the pointer at [ref-index] becomes invalid after the
+    call (e.g., after [realloc] the old pointer must not be used).
+
     {3 chk_post / chk_epost: CodeHawk postconditions}
 
     These are the canonical forms for postconditions on the return value

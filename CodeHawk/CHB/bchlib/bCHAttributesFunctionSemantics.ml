@@ -800,6 +800,172 @@ let get_deref_write_sideeffect
             attrparams_to_string "argparams" argparams]
 
 
+let get_freed_sideeffect
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXFreed (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "freed params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_modifies_sideeffect
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXModified (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "modifies params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_invalidates_sideeffect
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     Ok (XXInvalidated (ArgValue par))
+  | _ ->
+     Error [(elocm __LINE__) ^ "invalidates params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_deref_write_null_sideeffect
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], [AInt refindex]) ->
+     let* par = get_par fparams refindex in
+     let* ty = get_derefty par in
+     let pval = ArgValue par in
+     Ok (XXConditional (XXNotNull pval, XXBlockWrite (ty, pval, RunTimeValue)))
+
+  | ([], [AInt refindex; AInt sizeindex]) ->
+     let* bufferparam = get_par fparams refindex in
+     let* sizeparam = get_par fparams sizeindex in
+     let* ty = get_derefty bufferparam in
+     let pval = ArgValue bufferparam in
+     Ok (XXConditional (XXNotNull pval, XXBlockWrite (ty, pval, ArgValue sizeparam)))
+
+  | _ ->
+     Error [(elocm __LINE__) ^ "deref_write_null params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
+let get_chk_se_conditions
+      (name: string)
+      (fparams: fts_parameter_t list)
+      (attrparams: b_attrparam_t list): xxpredicate_t list =
+  match attrparams with
+  | (ACons ("deref_write", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xse -> [xse])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_se_conditions:deref_write"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_deref_write_sideeffect fparams tagparams argparams)
+
+  | (ACons ("deref_write_null", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xse -> [xse])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_se_conditions:deref_write_null"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_deref_write_null_sideeffect fparams tagparams argparams)
+
+  | (ACons ("freed", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xse -> [xse])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_se_conditions:freed"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_freed_sideeffect fparams tagparams argparams)
+
+  | (ACons ("modifies", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xse -> [xse])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_se_conditions:modifies"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_modifies_sideeffect fparams tagparams argparams)
+
+  | (ACons ("invalidates", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xse -> [xse])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_se_conditions:invalidates"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_invalidates_sideeffect fparams tagparams argparams)
+
+  | (ACons (tag, _)) :: _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_se_conditions:tag not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         ["tag: " ^ tag];
+       []
+     end
+
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_se_conditions:not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         [fparams_to_string fparams; attrparams_to_string "attrparams" attrparams];
+       []
+     end
+
+
 let get_access_sideeffect
       (name: string)
       (fparams: fts_parameter_t list)
@@ -964,6 +1130,10 @@ let convert_b_attributes_to_function_conditions
       | Attr ("chk_pre", attrparams) ->
          let pre = get_chk_pre_conditions name fparameters attrparams in
          (pre @ xpre, xside, xpost, xepost, xqual)
+
+      | Attr ("chk_se", attrparams) ->
+         let side = get_chk_se_conditions name fparameters attrparams in
+         (xpre, side @ xside, xpost, xepost, xqual)
 
       | Attr ("chk_post", attrparams) ->
          let post = get_chk_post_one name attrparams in
