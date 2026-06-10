@@ -93,6 +93,38 @@ open BCHLibTypes
     {!XXInputFormatString} on the format string parameter. Other archetypes
     are accepted but produce no precondition.
 
+    {4 noreturn}
+
+    Syntax:
+    {[
+    __attribute__ ((noreturn))
+    ]}
+
+    Sets [fq_noreturn = Some true] in {!function_qualifiers_t}. Indicates
+    that the function does not return to the caller.
+
+    {4 pure}
+
+    Syntax:
+    {[
+    __attribute__ ((pure))
+    ]}
+
+    Sets [fq_functional = Some FPure] in {!function_qualifiers_t}. The
+    function has no side effects but its return value may depend on global
+    state or memory passed via pointers (e.g., [strlen]).
+
+    {4 const}
+
+    Syntax:
+    {[
+    __attribute__ ((const))
+    ]}
+
+    Sets [fq_functional = Some FConst] in {!function_qualifiers_t}. The
+    function reads only its direct arguments and has no side effects
+    (e.g., [abs], [sqrt]). Strictly stronger than [pure].
+
     {3 CodeHawk-specific attributes}
 
     These are the canonical forms used in hand-written CodeHawk header files

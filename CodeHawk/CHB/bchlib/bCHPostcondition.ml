@@ -88,7 +88,6 @@ let read_xml_postcondition
       | "not-null" -> XXNotNull (get_term (arg 0))
       | "null-terminated" -> XXNullTerminated (get_term (arg 0))
       | "enum" -> XXEnum (get_term (arg 0), pNode#getAttribute "name", false)
-      | "non-returning" -> XXFalse
       | "or" -> XXDisjunction (List.map aux pNode#getChildren)
       | "implies" ->
          let condition =
@@ -106,9 +105,7 @@ let read_xml_postcondition
                 STR "Postcondition predicate ";
                 STR s;
                 STR " not recognized"]) in
-  match (node#getTaggedChild "math")#getChild#getTag with
-  | "non-returning" -> XXFalse
-  | _ -> aux ((node#getTaggedChild "math")#getTaggedChild "apply")
+  aux ((node#getTaggedChild "math")#getTaggedChild "apply")
 
 
 let read_xml_postconditions
@@ -137,7 +134,6 @@ let read_xml_shortcut_postconditions
     match n#getTag with
     | "post" | "error-post" -> (p, ep)
     | "enum" -> ((XXEnum (rv, n#getAttribute "name", false)):: p, ep)
-    | "non-returning" -> (XXFalse :: p, ep)
     | "null-terminated" -> ((XXNullTerminated rv) :: p, ep)
     | "notzero-zero" | "nonzero-zero" ->
       ((XXRelationalExpr (PNotEqual, rv, zero)) :: p,

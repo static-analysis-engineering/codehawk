@@ -20,20 +20,14 @@
       </par>
       <returntype>void</returntype>
     </api>
-    <semantics>
+    <semantics noreturn="yes">
       <io-actions>
        <io-action cat="process"
 		  desc="terminates the thread immediately">
        </io-action>
       </io-actions>
       <preconditions/>
-      <postconditions>
-	<post>
-	  <math>
-	    <non-returning/>
-	  </math>
-	</post>
-      </postconditions>
+      <postconditions/>
       <sideeffects/>
     </semantics>
   </libfun>

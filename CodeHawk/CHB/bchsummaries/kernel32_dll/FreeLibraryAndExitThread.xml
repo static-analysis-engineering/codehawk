@@ -42,15 +42,13 @@
     </par>
     <returntype>VOID</returntype>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
      <io-actions>
        <io-action cat="process"
 		  desc="frees a DLL and terminates the calling thread"/>
      </io-actions>	 
     <preconditions/>
-    <postconditions>
-      <non-returning/>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

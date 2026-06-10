@@ -47,7 +47,7 @@
       </roles>
     </par>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
      <io-actions>
         <io-action cat="process" desc="raises an exception"/>
      </io-actions>
@@ -63,13 +63,7 @@
       </math>
      </pre>
     </preconditions>
-    <postconditions>
-     <post>
-      <math>
-       <non-returning/>
-      </math>
-     </post>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

@@ -21,14 +21,12 @@
    <api adj="0" cc="stdcall" name="DebugBreak">
     <returnbtype tname="void" ttag="tnamed"/>
    </api>
-   <semantics>
+   <semantics noreturn="yes">
     <external-effects>
       <xeffect xtgt="process" xaction="breakpoint exception"/>
     </external-effects>
     <preconditions/>
-    <postconditions>
-      <non-returning/>
-    </postconditions>
+    <postconditions/>
     <sideeffects/>
    </semantics>
   </libfun>

@@ -51,16 +51,10 @@
       </par>
       <returntype>void</returntype>
     </api>
-    <semantics>
+    <semantics noreturn="yes">
       <io-actions/>
       <preconditions/>
-      <postconditions>
-	<post>
-	  <math>
-	    <non-returning/>
-	  </math>
-	</post>
-      </postconditions>
+      <postconditions/>
       <sideeffects/>
     </semantics>
   </libfun>

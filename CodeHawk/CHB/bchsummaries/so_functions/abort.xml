@@ -13,20 +13,14 @@
     <api adj="0" cc="cdecl" name="abort">
       <returntype>void</returntype>
     </api>
-    <semantics>
+    <semantics noreturn="yes">
       <io-actions>
        <io-action cat="process"
 		  desc="terminates the process abnormally">
        </io-action>
       </io-actions>
       <preconditions/>
-      <postconditions>
-	<post>
-	  <math>
-	    <non-returning/>
-	  </math>
-	</post>
-      </postconditions>
+      <postconditions/>
       <sideeffects/>
     </semantics>
   </libfun>
