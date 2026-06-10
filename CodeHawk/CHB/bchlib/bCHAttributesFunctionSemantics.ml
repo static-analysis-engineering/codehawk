@@ -1010,46 +1010,61 @@ let get_access_sideeffect
 
 let get_chk_post_one
       (name: string)
+      (fparams: fts_parameter_t list)
       (attrparams: b_attrparam_t list): xxpredicate_t list =
   let thisf = NamedConstant name in
   let rv = ReturnValue thisf in
   let zero = NumConstant CHNumerical.numerical_zero in
-  match attrparams with
-  | [ACons ("not_null", [])] -> [XXNotNull rv]
-  | [ACons ("null", [])] -> [XXNull rv]
-  | [ACons ("non_negative", [])] -> [XXNonNegative rv]
-  | [ACons ("not_zero", [])] -> [XXNotZero rv]
-  | [ACons ("positive", [])] -> [XXPositive rv]
-  | [ACons ("null_terminated", [])] -> [XXNullTerminated rv]
-  | [ACons ("new_memory", [])] -> [XXNewMemory (rv, RunTimeValue)]
-  | [ACons ("allocation_base", [])] -> [XXAllocationBase rv]
-  | [ACons ("negone", [])] ->
-     let negone = NumConstant (CHNumerical.mkNumerical (-1)) in
-     [XXRelationalExpr (PEquals, rv, negone)]
-  | [ACons ("zero", [])] ->
-     [XXRelationalExpr (PEquals, rv, zero)]
-  | [ACons ("negative", [])] ->
-     [XXRelationalExpr (PLessThan, rv, zero)]
-  | [ACons ("nonpositive", [])] ->
-     [XXRelationalExpr (PLessEqual, rv, zero)]
-  | (ACons (tag, _)) :: _ ->
-     begin
-       log_diagnostics_result
-         ~tag:"get_chk_post_one:tag not recognized"
-         ~msg:name
-         __FILE__ __LINE__
-         ["tag: " ^ tag];
-       []
-     end
-  | _ ->
-     begin
-       log_diagnostics_result
-         ~tag:"get_chk_post_one:not recognized"
-         ~msg:name
-         __FILE__ __LINE__
-         [attrparams_to_string "attrparams" attrparams];
-       []
-     end
+  (* Resolve target term: bare predicate → return value; predicate + AInt → parameter *)
+  let target_result =
+    match attrparams with
+    | [ACons (pred, [])] -> Ok (pred, rv)
+    | [ACons (pred, []); AInt refindex] ->
+       let* par = get_par fparams refindex in
+       Ok (pred, ArgValue par)
+    | (ACons (tag, _)) :: _ ->
+       Error [(elocm __LINE__) ^ "chk_post tag not recognized: " ^ tag]
+    | _ ->
+       Error [(elocm __LINE__) ^ "chk_post params not recognized";
+              attrparams_to_string "attrparams" attrparams] in
+  TR.tfold
+    ~error:(fun e ->
+      begin
+        log_diagnostics_result
+          ~tag:"get_chk_post_one:not recognized"
+          ~msg:name
+          __FILE__ __LINE__
+          e;
+        []
+      end)
+    ~ok:(fun (pred, target) ->
+      let negone = NumConstant (CHNumerical.mkNumerical (-1)) in
+      match pred with
+      | "not_null"            -> [XXNotNull target]
+      | "null"                -> [XXNull target]
+      | "non_negative"        -> [XXNonNegative target]
+      | "not_zero"            -> [XXNotZero target]
+      | "positive"            -> [XXPositive target]
+      | "null_terminated"     -> [XXNullTerminated target]
+      | "new_memory"          -> [XXNewMemory (target, RunTimeValue)]
+      | "allocation_base"     -> [XXAllocationBase target]
+      | "trusted_string"      -> [XXTrustedString target]
+      | "trusted_os_cmd_string" -> [XXTrustedOsCmdString target]
+      | "tainted"             -> [XXTainted target]
+      | "negone"              -> [XXRelationalExpr (PEquals, target, negone)]
+      | "zero"                -> [XXRelationalExpr (PEquals, target, zero)]
+      | "negative"            -> [XXRelationalExpr (PLessThan, target, zero)]
+      | "nonpositive"         -> [XXRelationalExpr (PLessEqual, target, zero)]
+      | tag ->
+         begin
+           log_diagnostics_result
+             ~tag:"get_chk_post_one:tag not recognized"
+             ~msg:name
+             __FILE__ __LINE__
+             ["tag: " ^ tag];
+           []
+         end)
+    target_result
 
 
 let get_chk_qual_conditions
@@ -1136,11 +1151,11 @@ let convert_b_attributes_to_function_conditions
          (xpre, side @ xside, xpost, xepost, xqual)
 
       | Attr ("chk_post", attrparams) ->
-         let post = get_chk_post_one name attrparams in
+         let post = get_chk_post_one name fparameters attrparams in
          (xpre, xside, post @ xpost, xepost, xqual)
 
       | Attr ("chk_epost", attrparams) ->
-         let epost = get_chk_post_one name attrparams in
+         let epost = get_chk_post_one name fparameters attrparams in
          (xpre, xside, xpost, epost @ xepost, xqual)
 
       | Attr ("chk_qual", attrparams) ->

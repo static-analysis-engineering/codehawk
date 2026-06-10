@@ -284,9 +284,18 @@ open BCHLibTypes
 
     {3 chk_post / chk_epost: CodeHawk postconditions}
 
-    These are the canonical forms for postconditions on the return value
-    ([chk_post] for the success case, [chk_epost] for the error case). Index 0
-    always refers to the return value; no argument index is specified.
+    These are the canonical forms for postconditions ([chk_post] for the
+    success case, [chk_epost] for the error case).
+
+    Each attribute takes a predicate name and an optional 1-based argument
+    index. When no index is given the predicate applies to the return value;
+    when an index is given the predicate applies to the post-call state of
+    that parameter.
+
+    {[
+    __attribute__ ((chk_post (pred)))           (* applies to return value *)
+    __attribute__ ((chk_post (pred, ref-index))) (* applies to parameter   *)
+    ]}
 
     {[
     __attribute__ ((chk_post (not_null)))
@@ -331,6 +340,28 @@ open BCHLibTypes
     -> {!XXAllocationBase} on the return value (return is the base of an
     allocation on success).
 
+    {[
+    __attribute__ ((chk_post (trusted_string)))
+    ]}
+    -> {!XXTrustedString} on the return value (return is a trusted string
+    value). Used in patching: a sanitizing replacement function can declare
+    its output trusted so that downstream proof obligations on the string
+    value are discharged.
+
+    {[
+    __attribute__ ((chk_post (trusted_os_cmd_string)))
+    ]}
+    -> {!XXTrustedOsCmdString} on the return value (return is safe to pass
+    to [system(3)]). Used in patching: a command-injection sanitizer declares
+    its output safe, discharging the [XPOTrustedOsCmdString] proof obligation
+    at the [system] call site.
+
+    {[
+    __attribute__ ((chk_post (tainted)))
+    ]}
+    -> {!XXTainted} on the return value (return value is externally controlled
+    and must not be used without validation).
+
     The following forms are primarily useful as error postconditions with
     [chk_epost], but are accepted by both:
 
@@ -355,6 +386,13 @@ open BCHLibTypes
 
     /* positive-zero: success>0, error=0 */
     __attribute__ ((chk_post (positive), chk_epost (zero)))
+    ]}
+
+    Parameter postcondition example ([strcpy]-style: destination is
+    null-terminated after the call):
+    {[
+    __attribute__ ((chk_post (null_terminated, 1)))
+    char *strcpy (char *dst, const char *src);
     ]}
 
     {3 chk_qual: CodeHawk function qualifiers}
