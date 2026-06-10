@@ -363,7 +363,7 @@ let default_function_semantics = {
 let bvarinfo_to_function_semantics
            (vinfo: bvarinfo_t) (fintf: function_interface_t): function_semantics_t =
   if (List.length vinfo.bvattr) > 0 then
-    let (preconditions, sideeffects, _, qualifiers) =
+    let (preconditions, sideeffects, postconditions, errorpostconditions, qualifiers) =
       convert_b_attributes_to_function_conditions fintf vinfo.bvattr in
     let _ =
       log_diagnostics_result
@@ -372,11 +372,15 @@ let bvarinfo_to_function_semantics
         __FILE__ __LINE__
         ["pre: " ^ (string_of_int (List.length preconditions));
          "side: " ^ (string_of_int (List.length sideeffects));
+         "post: " ^ (string_of_int (List.length postconditions));
+         "epost: " ^ (string_of_int (List.length errorpostconditions));
          "attrs: " ^ (attributes_to_string vinfo.bvattr)] in
     let fsem =
       {default_function_semantics with
         fsem_pre = preconditions;
         fsem_sideeffects = sideeffects;
+        fsem_post = postconditions;
+        fsem_errorpost = errorpostconditions;
         fsem_qualifiers = qualifiers} in
     let _ =
       log_diagnostics_result

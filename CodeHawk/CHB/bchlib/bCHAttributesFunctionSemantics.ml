@@ -842,6 +842,50 @@ let get_access_sideeffect
      end
 
 
+let get_chk_post_one
+      (name: string)
+      (attrparams: b_attrparam_t list): xxpredicate_t list =
+  let thisf = NamedConstant name in
+  let rv = ReturnValue thisf in
+  let zero = NumConstant CHNumerical.numerical_zero in
+  match attrparams with
+  | [ACons ("not_null", [])] -> [XXNotNull rv]
+  | [ACons ("null", [])] -> [XXNull rv]
+  | [ACons ("non_negative", [])] -> [XXNonNegative rv]
+  | [ACons ("not_zero", [])] -> [XXNotZero rv]
+  | [ACons ("positive", [])] -> [XXPositive rv]
+  | [ACons ("null_terminated", [])] -> [XXNullTerminated rv]
+  | [ACons ("new_memory", [])] -> [XXNewMemory (rv, RunTimeValue)]
+  | [ACons ("allocation_base", [])] -> [XXAllocationBase rv]
+  | [ACons ("negone", [])] ->
+     let negone = NumConstant (CHNumerical.mkNumerical (-1)) in
+     [XXRelationalExpr (PEquals, rv, negone)]
+  | [ACons ("zero", [])] ->
+     [XXRelationalExpr (PEquals, rv, zero)]
+  | [ACons ("negative", [])] ->
+     [XXRelationalExpr (PLessThan, rv, zero)]
+  | [ACons ("nonpositive", [])] ->
+     [XXRelationalExpr (PLessEqual, rv, zero)]
+  | (ACons (tag, _)) :: _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_post_one:tag not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         ["tag: " ^ tag];
+       []
+     end
+  | _ ->
+     begin
+       log_diagnostics_result
+         ~tag:"get_chk_post_one:not recognized"
+         ~msg:name
+         __FILE__ __LINE__
+         [attrparams_to_string "attrparams" attrparams];
+       []
+     end
+
+
 let get_chk_qual_conditions
       (name: string)
       (attrparams: b_attrparam_t list)
@@ -880,6 +924,7 @@ let convert_b_attributes_to_function_conditions
       (xxpredicate_t list
        * xxpredicate_t list
        * xxpredicate_t list
+       * xxpredicate_t list
        * function_qualifiers_t) =
   let fparameters = get_fts_parameters fintf in
   let name = fintf.fintf_name in
@@ -889,39 +934,47 @@ let convert_b_attributes_to_function_conditions
       fq_sets_errno = None;
       fq_must_use_return = None } in
 
-  List.fold_left (fun ((xpre, xside, xpost, xqual) as acc) attr ->
+  List.fold_left (fun ((xpre, xside, xpost, xepost, xqual) as acc) attr ->
       match attr with
       | Attr ("access", attrparams) ->
          let pre = get_access_preconditions name fparameters attrparams in
          let side = get_access_sideeffect name fparameters attrparams in
-         (pre @ xpre, side @ xside, xpost, xqual)
+         (pre @ xpre, side @ xside, xpost, xepost, xqual)
 
       | Attr ("nonnull", attrparams) ->
          let pre = get_nonnull_preconditions fparameters attrparams in
-         (pre @ xpre, xside, xpost, xqual)
+         (pre @ xpre, xside, xpost, xepost, xqual)
 
       | Attr ("format", attrparams) ->
          let pre = get_format_preconditions name fparameters attrparams in
-         (pre @ xpre, xside, xpost, xqual)
+         (pre @ xpre, xside, xpost, xepost, xqual)
 
       | Attr ("noreturn", []) ->
-         (xpre, xside, xpost, {xqual with fq_noreturn = Some true})
+         (xpre, xside, xpost, xepost, {xqual with fq_noreturn = Some true})
 
       | Attr ("pure", []) ->
-         (xpre, xside, xpost, {xqual with fq_functional = Some FPure})
+         (xpre, xside, xpost, xepost, {xqual with fq_functional = Some FPure})
 
       | Attr ("const", []) ->
-         (xpre, xside, xpost, {xqual with fq_functional = Some FConst})
+         (xpre, xside, xpost, xepost, {xqual with fq_functional = Some FConst})
 
       | Attr ("warn_unused_result", []) ->
-         (xpre, xside, xpost, {xqual with fq_must_use_return = Some true})
+         (xpre, xside, xpost, xepost, {xqual with fq_must_use_return = Some true})
 
       | Attr ("chk_pre", attrparams) ->
          let pre = get_chk_pre_conditions name fparameters attrparams in
-         (pre @ xpre, xside, xpost, xqual)
+         (pre @ xpre, xside, xpost, xepost, xqual)
+
+      | Attr ("chk_post", attrparams) ->
+         let post = get_chk_post_one name attrparams in
+         (xpre, xside, post @ xpost, xepost, xqual)
+
+      | Attr ("chk_epost", attrparams) ->
+         let epost = get_chk_post_one name attrparams in
+         (xpre, xside, xpost, epost @ xepost, xqual)
 
       | Attr ("chk_qual", attrparams) ->
-         (xpre, xside, xpost, get_chk_qual_conditions name attrparams xqual)
+         (xpre, xside, xpost, xepost, get_chk_qual_conditions name attrparams xqual)
 
       | Attr (attrname, _) ->
          begin
@@ -931,4 +984,4 @@ let convert_b_attributes_to_function_conditions
              __FILE__ __LINE__
              ["attrname: " ^ attrname];
            acc
-         end) ([], [], [], empty_qualifiers) attrs
+         end) ([], [], [], [], empty_qualifiers) attrs
