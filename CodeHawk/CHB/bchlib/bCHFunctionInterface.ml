@@ -1350,9 +1350,10 @@ let function_interface_to_bfuntype (fintf: function_interface_t): btype_t =
 let function_type_resolvents_to_bfuntype
       (name: string)
       (resolvents: (register_t * btype_t option * b_attributes_t) list
-       * btype_t option): btype_t =
-  let fintf = default_function_interface name in
-  let (regtypes, returntype) = resolvents in
+       * btype_t option
+       * bool): btype_t =
+  let (regtypes, returntype, varargs) = resolvents in
+  let fintf = default_function_interface ~varargs name in
   let fintf =
     List.fold_left (fun fintf (reg, optty, _) ->
         match optty with

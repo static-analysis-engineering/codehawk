@@ -297,14 +297,14 @@ object (self)
                  let typevar = mk_function_typevar faddr in
                  TR.tfold
                    ~ok:(fun reg ->
-                     let typevar = add_freg_param_capability reg typevar in
+                     let typevar_param = add_freg_param_capability reg typevar in
                      let typevar =
                        add_flows_to_arg_capability
-                         iaddr call argindex argmode typevar in
+                         iaddr call argindex argmode typevar_param in
                      let rule = "BL-arg-param" in
                      let opttc =
                        mk_btype_constraint ~use_voidptr:true typevar argtype in
-                     match opttc with
+                     (match opttc with
                      | Some tc ->
                         if fndata#is_typing_rule_enabled iaddr rule then
                           begin
@@ -319,7 +319,39 @@ object (self)
                           ~msg:(p2s floc#l#toPretty)
                           __FILE__ __LINE__
                           ["x: " ^ (x2s x);
-                           "btype: " ^ (btype_to_string argtype)])
+                           "btype: " ^ (btype_to_string argtype)]);
+                     (match argmode with
+                      | ArgOutputFormatString ->
+                         let typevar_fmt =
+                           add_output_format_string_capability typevar_param in
+                         let opttc =
+                           mk_btype_constraint ~use_voidptr:true typevar_fmt argtype in
+                         (match opttc with
+                          | Some tc ->
+                             if fndata#is_typing_rule_enabled iaddr rule then
+                               begin
+                                 log_type_constraint __LINE__ rule tc;
+                                 store#add_constraint faddr iaddr rule tc
+                               end
+                             else
+                               log_type_constraint_rule_disabled __LINE__ rule tc
+                          | _ -> ())
+                      | ArgInputFormatString ->
+                         let typevar_fmt =
+                           add_input_format_string_capability typevar_param in
+                         let opttc =
+                           mk_btype_constraint ~use_voidptr:true typevar_fmt argtype in
+                         (match opttc with
+                          | Some tc ->
+                             if fndata#is_typing_rule_enabled iaddr rule then
+                               begin
+                                 log_type_constraint __LINE__ rule tc;
+                                 store#add_constraint faddr iaddr rule tc
+                               end
+                             else
+                               log_type_constraint_rule_disabled __LINE__ rule tc
+                          | _ -> ())
+                      | _ -> ()))
                    ~error:(fun e ->
                      log_diagnostics_result
                        ~tag:mnem

@@ -94,7 +94,8 @@ object (self)
       | ArgDeallocate
         | ArgFunctionPointer
         | ArgScalarValue
-        | ArgOutputFormatString -> (tags, []) in
+        | ArgOutputFormatString
+        | ArgInputFormatString -> (tags, []) in
     type_arg_mode_table#add key
 
   method get_type_arg_mode (index: int): type_arg_mode_t =
@@ -107,6 +108,7 @@ object (self)
     | "d" -> ArgDeallocate
     | "fmt" -> ArgOutputFormatString
     | "fp" -> ArgFunctionPointer
+    | "ifs" -> ArgInputFormatString
     | "r" -> ArgDerefRead (getsize ())
     | "rw" -> ArgDerefReadWrite (getsize ())
     | "s" -> ArgScalarValue
@@ -155,6 +157,8 @@ object (self)
       | FlowsFrom t ->
          (tags,
           [match t with Some t -> id#index_bterm t | _ -> (-1)])
+      | FOutputFormatString -> (tags, [])
+      | FInputFormatString -> (tags, [])
       | Load -> (tags, [])
       | Store -> (tags, [])
       | Deref -> (tags, [])
@@ -185,6 +189,8 @@ object (self)
     | "fto" ->
        FlowsToOperation (type_operation_kind_mfts#fs (t 1),
                          if (a 0) = (-1) then None else Some (id#get_bterm (a 0)))
+    | "fofs" -> FOutputFormatString
+    | "fifs" -> FInputFormatString
     | "a" -> OffsetAccess (a 0, a 1)
     | "aa" -> OffsetAccessA (a 0, a 1)
     | s -> raise_tag_error name s type_cap_label_mcts#tags

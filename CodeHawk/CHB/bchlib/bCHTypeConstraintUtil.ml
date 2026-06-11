@@ -74,6 +74,9 @@ let _type_arg_mode_compare (m1: type_arg_mode_t) (m2: type_arg_mode_t): int =
   | (ArgScalarValue, _) -> -1
   | (_, ArgScalarValue) -> 1
   | (ArgOutputFormatString, ArgOutputFormatString) -> 0
+  | (ArgOutputFormatString, _) -> -1
+  | (_, ArgOutputFormatString) -> 1
+  | (ArgInputFormatString, ArgInputFormatString) -> 0
 
 
 let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
@@ -134,6 +137,12 @@ let type_cap_label_compare (c1: type_cap_label_t) (c2: type_cap_label_t) =
   | (_, OffsetAccess _) -> 1
   | (OffsetAccessA (n1, m1), OffsetAccessA (n2, m2)) ->
      Stdlib.compare (n1, m1) (n2, m2)
+  | (OffsetAccessA _, _) -> -1
+  | (_, OffsetAccessA _) -> 1
+  | (FOutputFormatString, FOutputFormatString) -> 0
+  | (FOutputFormatString, _) -> -1
+  | (_, FOutputFormatString) -> 1
+  | (FInputFormatString, FInputFormatString) -> 0
 
 
 let type_arg_mode_to_string (m: type_arg_mode_t) =
@@ -149,6 +158,7 @@ let type_arg_mode_to_string (m: type_arg_mode_t) =
   | ArgFunctionPointer -> "fp"
   | ArgScalarValue -> "sv"
   | ArgOutputFormatString -> "ofs"
+  | ArgInputFormatString -> "ifs"
 
 
 let type_operation_kind_to_string (op: type_operation_kind_t) =
@@ -180,6 +190,8 @@ let type_cap_label_to_string (c: type_cap_label_t) =
      ^ (type_operation_kind_to_string op)
      ^ (optbterm_to_string t)
   | FlowsFrom t -> "flowsfrom" ^ (optbterm_to_string t)
+  | FOutputFormatString -> "output-format-string"
+  | FInputFormatString -> "input-format-string"
   | Load -> "load"
   | Store -> "store"
   | Deref -> "deref"
@@ -469,6 +481,14 @@ let add_stack_address_capability (offset: int) (tv: type_variable_t)
   add_capability [FLocStackAddress offset] tv
 
 
+let add_output_format_string_capability (tv: type_variable_t): type_variable_t =
+  add_capability [FOutputFormatString] tv
+
+
+let add_input_format_string_capability (tv: type_variable_t): type_variable_t =
+  add_capability [FInputFormatString] tv
+
+
 let convert_function_capabilities_to_attributes
       (paramindex: int) (caps: type_cap_label_t list): b_attributes_t =
   let type_arg_mode_to_cons_attrparam (m: type_arg_mode_t) =
@@ -484,6 +504,7 @@ let convert_function_capabilities_to_attributes
     | ArgFunctionPointer -> ACons ("fp", [])
     | ArgScalarValue -> ACons ("sv", [])
     | ArgOutputFormatString -> ACons ("printf_format_string", [])
+    | ArgInputFormatString -> ACons ("scanf_format_string", [])
   in
   let result = new CHUtils.IntCollections.set_t in
   let _ =
@@ -497,6 +518,14 @@ let convert_function_capabilities_to_attributes
                     AStr callee;
                     AInt argindex;
                     type_arg_mode_to_cons_attrparam mode]) in
+           result#add (bcd#index_attribute attr)
+        | FOutputFormatString ->
+           let attr =
+             Attr ("format", [ACons ("printf", []); AInt paramindex; AInt 0]) in
+           result#add (bcd#index_attribute attr)
+        | FInputFormatString ->
+           let attr =
+             Attr ("format", [ACons ("scanf", []); AInt paramindex; AInt 0]) in
            result#add (bcd#index_attribute attr)
         | _ -> ()) caps in
   List.map bcd#get_attribute result#toList

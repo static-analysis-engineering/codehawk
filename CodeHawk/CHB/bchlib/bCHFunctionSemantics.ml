@@ -439,6 +439,20 @@ let get_type_arg_mode
             | Some _ -> acc
             | _ ->
                match p with
+               | XXInputFormatString (ArgValue param)
+                    when Option.is_some param.apar_index
+                         && (Option.get param.apar_index) = argindex ->
+                  Some ArgInputFormatString
+               | _ -> None) None predicates
+      else
+        mode in
+    let mode =
+      if Option.is_none mode then
+        List.fold_left (fun acc p ->
+            match acc with
+            | Some _ -> acc
+            | _ ->
+               match p with
                | XXBuffer (_, ArgValue param, _)
                  when Option.is_some param.apar_index
                  && (Option.get param.apar_index) = argindex ->
