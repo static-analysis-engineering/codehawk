@@ -332,12 +332,29 @@ let trusted_os_cmd_fmt_string_va_list_delegate
   | _ -> Open
 
 
+let trusted_os_cmd_fmt_string_fmt_args_delegate
+      (finfo: function_info_int)
+      (loc: location_int)
+      (fmtargs: annotated_format_arg_t list): po_status_t =
+  let strargs =
+    List.filter (fun (conv, _, _) ->
+        match conv with
+        | CHFormatStringParser.StringConverter -> true
+        | _ -> false) fmtargs in
+  List.fold_left (fun _acc (_, _, argxpr) ->
+      let new_xpo = XPOTrustedOsCmdFmtArgString (argxpr, NO_QUOTES, None) in
+      finfo#proofobligations#add_proofobligation loc#ci new_xpo Open;
+      DelegatedLocal (loc#ci, new_xpo)
+    ) Open strargs
+
+
 let discharge_trusted_os_cmd_fmt_string
       (finfo: function_info_int)
       (loc: location_int)
       (x: xpr_t)
       (kind: format_args_kind_t)
-      (optlen: xpr_t option): po_status_t =
+      (optlen: xpr_t option)
+      (fmtargs: annotated_format_arg_t list): po_status_t =
   let status = trusted_os_cmd_fmt_string_no_string_conversions loc x in
   let status =
     match status with
@@ -345,8 +362,8 @@ let discharge_trusted_os_cmd_fmt_string
        (match kind with
         | VA_LIST ->
            trusted_os_cmd_fmt_string_va_list_delegate finfo loc x optlen
-        | FMT_ARGS -> status)
-        (* trusted_os_cmd_fmt_string_fmt_args_delegate_local finfo loc x optlen) *)
+        | FMT_ARGS ->
+           trusted_os_cmd_fmt_string_fmt_args_delegate finfo loc fmtargs)
     | _ -> status in
   match status with
   | Open ->
@@ -961,8 +978,8 @@ let discharge_one
   | XPOTrustedOsCmdString x ->
      discharge_trusted_os_cmd_string finfo po#loc x
 
-  | XPOTrustedOsCmdFmtString (x, kind, optlen, _) ->
-     discharge_trusted_os_cmd_fmt_string finfo po#loc x kind optlen
+  | XPOTrustedOsCmdFmtString (x, kind, optlen, fmtargs) ->
+     discharge_trusted_os_cmd_fmt_string finfo po#loc x kind optlen fmtargs
 
   | XPOOutputFormatString x ->
      discharge_output_format_string finfo po#loc x
