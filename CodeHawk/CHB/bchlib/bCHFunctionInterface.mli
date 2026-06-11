@@ -117,7 +117,9 @@ val bvarinfo_to_function_interface: bvarinfo_t -> function_interface_t
 
 val function_type_resolvents_to_bfuntype:
   string
-  -> ((register_t * btype_t option * b_attributes_t) list * btype_t option)
+  -> ((register_t * btype_t option * b_attributes_t) list
+      * btype_t option
+      * bool)
   -> btype_t
 
 

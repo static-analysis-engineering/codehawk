@@ -245,6 +245,22 @@ val add_flows_from_capability:
 val add_stack_address_capability: int -> type_variable_t -> type_variable_t
 
 
+(** [add_output_format_string_capability tv] returns a new type variable that
+    appends an [FOutputFormatString] capability to [tv], which is expected to
+    already carry an [FRegParameter] prefix (set via [add_freg_param_capability]).
+    Indicates that the named parameter is a printf-style format string parameter
+    and thus the enclosing function is variadic. *)
+val add_output_format_string_capability: type_variable_t -> type_variable_t
+
+
+(** [add_input_format_string_capability tv] returns a new type variable that
+    appends an [FInputFormatString] capability to [tv], which is expected to
+    already carry an [FRegParameter] prefix (set via [add_freg_param_capability]).
+    Indicates that the named parameter is a scanf-style format string parameter
+    and thus the enclosing function is variadic. *)
+val add_input_format_string_capability: type_variable_t -> type_variable_t
+
+
 val drop_capability: type_cap_label_t -> type_variable_t -> type_variable_t
 
 

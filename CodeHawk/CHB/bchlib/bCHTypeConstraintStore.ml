@@ -564,7 +564,9 @@ object (self)
 
   method resolve_function_type
            (faddr: string)
-         : (register_t * btype_t option * b_attributes_t) list * btype_t option =
+         : (register_t * btype_t option * b_attributes_t) list
+           * btype_t option
+           * bool =
     let evaluation = self#evaluate_function_type faddr in
     let result = H.create 4 in
     let returnresult = ref None in
@@ -752,7 +754,15 @@ object (self)
          "return: " ^ (match !returnresult with
                        | Some ty -> btype_to_string ty
                        | _ -> "?")] in
-    (result, !returnresult)
+    let varargs =
+      H.fold (fun _k capslists acc ->
+          acc
+          || List.exists
+               (fun caps ->
+                 List.mem FOutputFormatString caps
+                 || List.mem FInputFormatString caps) capslists)
+        capresult false in
+    (result, !returnresult, varargs)
 
   method resolve_reglhs_type
            (reg: register_t) (faddr: string) (iaddr: string): btype_t option =

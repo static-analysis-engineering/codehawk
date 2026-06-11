@@ -324,7 +324,7 @@ object (self)
               let ftype =
                 BCHFunctionInterface.function_type_resolvents_to_bfuntype
                   fname resolvents in
-              let (regtypes, _) = resolvents in
+              let (regtypes, _, _) = resolvents in
               let attrs = List.concat (List.map (fun (_, _, a) -> a) regtypes) in
               let attrs =
                 (BCHFunctionSemanticsAttributes.convert_semantics_to_attributes finfo)

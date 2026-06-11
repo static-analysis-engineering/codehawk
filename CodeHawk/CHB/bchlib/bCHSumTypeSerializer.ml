@@ -549,8 +549,9 @@ object
     | ArgFunctionPointer -> "fp"
     | ArgScalarValue -> "s"
     | ArgOutputFormatString -> "fmt"
+    | ArgInputFormatString -> "ifs"
 
-  method !tags = ["d"; "fmt"; "fp"; "r"; "rw"; "s"; "w"]
+  method !tags = ["d"; "fmt"; "fp"; "ifs"; "r"; "rw"; "s"; "w"]
 
 end
 
@@ -593,6 +594,8 @@ object
     | FlowsToArg _ -> "fta"
     | FlowsToOperation _ -> "fto"
     | FlowsFrom _ -> "ffm"
+    | FOutputFormatString -> "fofs"
+    | FInputFormatString -> "fifs"
     | Load -> "l"
     | Store -> "s"
     | Deref -> "d"
@@ -602,8 +605,8 @@ object
     | OffsetAccessA _ -> "aa"
 
   method !tags = [
-      "a"; "aa"; "d"; "faw"; "ffm"; "fr"; "fs"; "fta"; "fto"; "fx"; "l";
-      "lsb"; "lsh"; "s"; "sa"]
+      "a"; "aa"; "d"; "faw"; "ffm"; "fifs"; "fofs"; "fr"; "fs"; "fta"; "fto";
+      "fx"; "l"; "lsb"; "lsh"; "s"; "sa"]
 
 end
 

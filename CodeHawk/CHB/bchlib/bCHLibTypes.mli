@@ -3314,6 +3314,7 @@ type type_arg_mode_t =
   | ArgFunctionPointer
   | ArgScalarValue
   | ArgOutputFormatString
+  | ArgInputFormatString
 
 
 type type_operation_kind_t =
@@ -3333,6 +3334,11 @@ type type_cap_label_t =
 
   | FlowsToOperation of type_operation_kind_t * bterm_t option
   | FlowsFrom of bterm_t option
+
+  | FOutputFormatString
+  (** parameter is a printf-style format string; implies the function is variadic *)
+  | FInputFormatString
+  (** parameter is a scanf-style format string; implies the function is variadic *)
 
   | FReturn  (** for now limited to the default return register *)
   | Load
@@ -3492,6 +3498,9 @@ class type type_constraint_store_int =
              string
              -> (register_t * btype_t option * b_attributes_t) list
                 * btype_t option
+                * bool
+             (** The bool is [true] if any parameter was identified as a
+                 format-string parameter, implying the function is variadic. *)
 
     method resolve_reglhs_type:
              register_t -> string -> string -> btype_t option
