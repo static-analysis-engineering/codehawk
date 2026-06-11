@@ -380,6 +380,76 @@ let discharge_trusted_os_cmd_fmt_string
 
 
 (* -------------------------------------------------------------------------
+   XPOTrustedOsCmdFmtArgString
+   ------------------------------------------------------------------------- *)
+
+let trusted_os_cmd_fmt_arg_string_constant_string_stmt
+      (loc: location_int) (x: xpr_t) (_quotes: quote_status_t): po_status_t =
+  match get_constant_string loc x with
+  | Some s -> Discharged ("constant string: " ^ s)
+  | _ -> Open
+
+
+(** Discharge by matching a [XXTrustedOsCmdString] or [XXTrustedString]
+    postcondition on the call that produced [x] as its return value. *)
+let trusted_os_cmd_fmt_arg_string_return_value_postcondition
+      (finfo: function_info_int)
+      (_loc: location_int)
+      (x: xpr_t)
+      (_quotes: quote_status_t)
+      (_optlen: int option): po_status_t =
+  match x with
+  | XVar v when finfo#env#is_return_value v ->
+     TR.tfold
+       ~ok:(fun callsite ->
+         let ctinfo = finfo#get_call_target callsite in
+         let is_trusted post =
+           match post with
+           | XXTrustedOsCmdString (ReturnValue _) -> true
+           | XXTrustedString (ReturnValue _) -> true
+           | _ -> false in
+         if List.exists is_trusted ctinfo#get_postconditions then
+           Discharged ("return value of " ^ ctinfo#get_name ^ " is trusted")
+         else
+           Open)
+       ~error:(fun _ -> Open)
+       (finfo#env#get_call_site v)
+  | _ -> Open
+
+
+let trusted_os_cmd_fmt_arg_string_delegate_local
+      (_finfo: function_info_int)
+      (_loc: location_int)
+      (_x: xpr_t)
+      (_quotes: quote_status_t)
+      (_optlen: int option): po_status_t =
+  Open
+
+
+let discharge_trusted_os_cmd_fmt_arg_string
+      (finfo: function_info_int)
+      (loc: location_int)
+      (x: xpr_t)
+      (quotes: quote_status_t)
+      (optlen: int option): po_status_t =
+  let status =
+    trusted_os_cmd_fmt_arg_string_constant_string_stmt loc x quotes in
+  let status =
+    match status with
+    | Open ->
+       trusted_os_cmd_fmt_arg_string_return_value_postcondition
+         finfo loc x quotes optlen
+    | _ -> status in
+  let status =
+    match status with
+    | Open ->
+       trusted_os_cmd_fmt_arg_string_delegate_local
+         finfo loc x quotes optlen
+    | _ -> status in
+  status
+
+
+(* -------------------------------------------------------------------------
    XPOOutputFormatString
    ------------------------------------------------------------------------- *)
 
@@ -980,6 +1050,9 @@ let discharge_one
 
   | XPOTrustedOsCmdFmtString (x, kind, optlen, fmtargs) ->
      discharge_trusted_os_cmd_fmt_string finfo po#loc x kind optlen fmtargs
+
+  | XPOTrustedOsCmdFmtArgString (x, quotes, optlen) ->
+     discharge_trusted_os_cmd_fmt_arg_string finfo po#loc x quotes optlen
 
   | XPOOutputFormatString x ->
      discharge_output_format_string finfo po#loc x
