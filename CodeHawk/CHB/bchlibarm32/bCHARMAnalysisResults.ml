@@ -318,8 +318,11 @@ object (self)
            fnadata#write_xml node;
            (if mksignature then
               let fname =
-                BCHFunctionData.get_default_functionsummary_name_dw
-                  fn#get_address in
+                if fndata#has_name then
+                  fndata#get_function_name
+                else
+                  BCHFunctionData.get_default_functionsummary_name_dw
+                    fn#get_address in
               let resolvents = typeconstraintstore#resolve_function_type faddr in
               let ftype =
                 BCHFunctionInterface.function_type_resolvents_to_bfuntype
