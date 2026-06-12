@@ -1117,7 +1117,8 @@ let convert_b_attributes_to_function_conditions
 
   List.fold_left (fun ((xpre, xside, xpost, xepost, xqual) as acc) attr ->
       match attr with
-      | Attr ("access", attrparams) ->
+      | Attr (("access" | "chk_access"), attrparams) ->
+         (* keep chk_access for now for back-compatibility reasons *)
          let pre = get_access_preconditions name fparameters attrparams in
          let side = get_access_sideeffect name fparameters attrparams in
          (pre @ xpre, side @ xside, xpost, xepost, xqual)
