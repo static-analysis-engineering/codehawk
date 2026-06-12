@@ -408,8 +408,14 @@ let trusted_os_cmd_fmt_arg_string_return_value_postcondition
            | XXTrustedOsCmdString (ReturnValue _) -> true
            | XXTrustedString (ReturnValue _) -> true
            | _ -> false in
+         let is_violated post =
+           match post with
+           | XXTainted (ReturnValue _) -> true
+           | _ -> false in
          if List.exists is_trusted ctinfo#get_postconditions then
            Discharged ("return value of " ^ ctinfo#get_name ^ " is trusted")
+         else if List.exists is_violated ctinfo#get_postconditions then
+           Violated ("return value of " ^ ctinfo#get_name ^ " is potentially tainted")
          else
            Open)
        ~error:(fun _ -> Open)
