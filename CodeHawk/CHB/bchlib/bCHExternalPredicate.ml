@@ -157,6 +157,10 @@ let rec xxpredicate_compare (p1: xxpredicate_t) (p2: xxpredicate_t): int =
   | (XXOutputFormatString t1, XXOutputFormatString t2) -> btc t1 t2
   | (XXOutputFormatString _, _) -> -1
   | (_, XXOutputFormatString _) -> 1
+  | (XXRestrictedOutputFormatString (t1, sl1), XXRestrictedOutputFormatString (t2, sl2)) ->
+     let l0 = btc t1 t2 in if l0 = 0 then Stdlib.compare sl1 sl2 else l0
+  | (XXRestrictedOutputFormatString _, _) -> -1
+  | (_, XXRestrictedOutputFormatString _) -> 1
   | (XXPositive t1, XXPositive t2) -> btc t1 t2
   | (XXPositive _, _) -> -1
   | (_, XXPositive _) -> 1
@@ -242,6 +246,7 @@ let rec xxpredicate_terms (p: xxpredicate_t): bterm_t list =
   | XXNonNegative t -> [t]
   | XXNullTerminated t -> [t]
   | XXOutputFormatString t -> [t]
+  | XXRestrictedOutputFormatString (t, _) -> [t]
   | XXPositive t -> [t]
   | XXRelationalExpr (_, t1, t2) -> [t1; t2]
   | XXStartsThread (t, tt) -> t :: tt
@@ -392,6 +397,13 @@ let rec xxpredicate_to_pretty (p: xxpredicate_t) =
   | XXNonNegative t -> default "non-negative" [t]
   | XXNullTerminated t -> default "null-terminated" [t]
   | XXOutputFormatString t -> default "output-format-string" [t]
+  | XXRestrictedOutputFormatString (t, sl) ->
+     LBLOCK [
+         STR "output-format-string-restricted(";
+         btp t;
+         STR ", [";
+         STR (String.concat "," sl);
+         STR "])"]
   | XXPositive t -> default "positive" [t]
   | XXRelationalExpr (op, t1, t2) ->
      LBLOCK [btp t1; STR (relational_op_to_string op); btp t2]
@@ -465,6 +477,7 @@ let rec modify_types_xxp
   | XXPositive t -> XXPositive (mbt t)
   | XXNullTerminated t -> XXNullTerminated (mbt t)
   | XXOutputFormatString t -> XXOutputFormatString (mbt t)
+  | XXRestrictedOutputFormatString (t, sl) -> XXRestrictedOutputFormatString (mbt t, sl)
   | XXRelationalExpr (op, t1, t2) -> XXRelationalExpr (op, mbt t1, mbt t2)
   | XXStartsThread (t, tt) -> XXStartsThread (mbt t, List.map mbt tt)
   | XXTainted t -> XXTainted (mbt t)

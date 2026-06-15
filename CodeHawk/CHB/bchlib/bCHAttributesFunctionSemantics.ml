@@ -315,6 +315,24 @@ let get_output_format_string_precondition
             attrparams_to_string "argparams" argparams]
 
 
+let get_restricted_output_format_string_precondition
+      (fparams: fts_parameter_t list)
+      (tagparams: b_attrparam_t list)
+      (argparams: b_attrparam_t list): xxpredicate_t traceresult =
+  match (tagparams, argparams) with
+  | ([], (AInt refindex) :: rest)
+    when List.for_all (function AStr _ -> true | _ -> false) rest
+         && rest <> [] ->
+     let* par = get_par fparams refindex in
+     let specs = List.map (function AStr s -> s | _ -> assert false) rest in
+     Ok (XXRestrictedOutputFormatString (ArgValue par, specs))
+  | _ ->
+     Error [(elocm __LINE__) ^ "restricted_output_format_string params not recognized";
+            fparams_to_string fparams;
+            attrparams_to_string "tagparams" tagparams;
+            attrparams_to_string "argparams" argparams]
+
+
 let get_trusted_os_cmd_fmt_string_precondition
       (fparams: fts_parameter_t list)
       (tagparams: b_attrparam_t list)
@@ -555,6 +573,20 @@ let get_chk_pre_conditions
            []
          end)
        (get_output_format_string_precondition fparams tagparams argparams)
+
+  | (ACons ("restricted_output_format_string", tagparams)) :: argparams ->
+     TR.tfold
+       ~ok:(fun xpre -> [xpre])
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"get_chk_preconditions:restricted_output_format_string"
+             ~msg:name
+             __FILE__ __LINE__
+             [String.concat ", " e];
+           []
+         end)
+       (get_restricted_output_format_string_precondition fparams tagparams argparams)
 
   | (ACons ("trusted_os_cmd_fmt_string", tagparams)) :: argparams ->
      TR.tfold

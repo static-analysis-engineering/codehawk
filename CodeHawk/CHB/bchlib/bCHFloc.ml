@@ -797,7 +797,7 @@ object (self)
                      ~tag:"update_arm_varargs:no format arg info available"
                      ~msg:self#cia
                      __FILE__ __LINE__
-                     ["argxpr: " ^ (x2s argxpr)] in
+                     ["argxpr: " ^ (x2s (XVar v))] in
                  None)
           | _ ->
              let _ =
@@ -805,8 +805,8 @@ object (self)
                  ~tag:"update_arm_varargs:unable to externalize argument"
                  ~msg:self#cia
                  __FILE__ __LINE__
-                 ["argxpr: " ^ (x2s argxpr)];
-               None)
+                 ["argxpr: " ^ (x2s (XVar v))] in
+             None)
       | Some argxpr ->
          let _ =
            log_diagnostics_result

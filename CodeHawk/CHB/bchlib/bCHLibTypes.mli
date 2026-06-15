@@ -2412,6 +2412,9 @@ type xxpredicate_t =
   | XXNullTerminated of bterm_t  (** term points to null-terminated string *)
   | XXOutputFormatString of bterm_t
   (** term points to format string for output (e.g., sprintf) *)
+  | XXRestrictedOutputFormatString of bterm_t * string list
+  (** term points to a restricted output format string; the string list gives
+      the allowed format specifiers in order (e.g., ["s";"s";"s";"s"]) *)
 
   | XXRelationalExpr
     of relational_op_t * bterm_t * bterm_t  (** relational expression *)
@@ -2651,6 +2654,7 @@ type xpo_predicate_t =
   | XPOPositive of xpr_t
   | XPONullTerminated of xpr_t
   | XPOOutputFormatString of xpr_t
+  | XPORestrictedOutputFormatString of xpr_t * string list
   | XPORelationalExpr of relational_op_t * xpr_t * xpr_t
   | XPOStartsThread of xpr_t * xpr_t list
   | XPOTainted of xpr_t

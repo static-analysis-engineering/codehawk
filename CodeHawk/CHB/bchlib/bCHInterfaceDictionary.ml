@@ -561,6 +561,8 @@ object (self)
       | XXNonNegative t -> (tags, [it t])
       | XXNullTerminated t -> (tags, [it t])
       | XXOutputFormatString t -> (tags, [it t])
+      | XXRestrictedOutputFormatString (t, sl) ->
+         (tags, (it t) :: (List.map bd#index_string sl))
       | XXPositive t -> (tags, [it t])
       | XXRelationalExpr (op, t1, t2) ->
          (tags @ [relational_op_mfts#ts op], [it t1; it t2])
@@ -622,6 +624,8 @@ object (self)
     | "nng" -> XXNonNegative (gt (a 0))
     | "nt" -> XXNullTerminated (gt (a 0))
     | "ofs" -> XXOutputFormatString (gt (a 0))
+    | "rofs" ->
+       XXRestrictedOutputFormatString (gt (a 0), List.map bd#get_string (List.tl args))
     | "pos" -> XXPositive (gt (a 0))
     | "x" -> XXRelationalExpr (relational_op_mfts#fs (t 1), gt (a 0), gt (a 1))
     | "st" -> XXStartsThread (gt (a 0), List.map gt (List.tl args))
