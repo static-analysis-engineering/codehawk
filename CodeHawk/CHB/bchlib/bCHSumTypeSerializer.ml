@@ -472,6 +472,7 @@ object
     | XXPositive _ -> "pos"
     | XXNullTerminated _ -> "nt"
     | XXOutputFormatString _ -> "ofs"
+    | XXRestrictedOutputFormatString _ -> "rofs"
     | XXRelationalExpr _ -> "x"
     | XXStartsThread _ -> "st"
     | XXTainted _ -> "t"
@@ -487,7 +488,7 @@ object
   method !tags = [
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
-      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
+      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs"; "rofs";
       "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
     ]
 
@@ -527,6 +528,7 @@ object
     | XPOPositive _ -> "pos"
     | XPONullTerminated _ -> "nt"
     | XPOOutputFormatString _ -> "ofs"
+    | XPORestrictedOutputFormatString _ -> "rofs"
     | XPORelationalExpr _ -> "x"
     | XPOStartsThread _ -> "st"
     | XPOTainted _ -> "t"
@@ -542,7 +544,7 @@ object
   method !tags = [
       "ab"; "b"; "bw"; "con"; "dis"; "e"; "fp"; "fr"; "ga";
       "ha"; "i"; "ifs"; "inc"; "inv"; "ir"; "m";
-      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs";
+      "nm"; "nn"; "nng"; "no"; "nt"; "nu"; "nz"; "ofs"; "rofs";
       "pos"; "sa"; "st"; "t"; "tc"; "tfa"; "tfs"; "ts"; "v"; "wfs"; "x"
     ]
 

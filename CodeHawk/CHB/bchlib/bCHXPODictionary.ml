@@ -120,6 +120,8 @@ object (self)
       | XPOPositive x -> (tags, [ix x])
       | XPONullTerminated x -> (tags, [ix x])
       | XPOOutputFormatString x -> (tags, [ix x])
+      | XPORestrictedOutputFormatString (x, sl) ->
+         (tags, (ix x) :: (List.map bd#index_string sl))
       | XPORelationalExpr (op, x1, x2) ->
          (tags @ [relational_op_mfts#ts op], [ix x1; ix x2])
       | XPOStartsThread (x, xl) -> (tags, (ix x) :: (List.map ix xl))

@@ -29,6 +29,7 @@
 open CHLanguage
 
 (* chutil *)
+open CHFormatStringParser
 open CHLogger
 
 (* xprlib *)
@@ -505,6 +506,96 @@ let discharge_output_format_string
     | Open -> output_format_string_delegate finfo loc xpr
     | _ -> status in
   status
+
+
+(* -------------------------------------------------------------------------
+   XPORestrictedOutputFormatString
+   ------------------------------------------------------------------------- *)
+
+let specifier_of_conversion (c: conversion_t): string =
+  match c with
+  | StringConverter -> "s"
+  | IntConverter | DecimalConverter -> "d"
+  | UnsignedDecimalConverter -> "u"
+  | UnsignedOctalConverter -> "o"
+  | UnsignedHexConverter false -> "x"
+  | UnsignedHexConverter true -> "X"
+  | FixedDoubleConverter false -> "f"
+  | FixedDoubleConverter true -> "F"
+  | ExpDoubleConverter false -> "e"
+  | ExpDoubleConverter true -> "E"
+  | FlexDoubleConverter false -> "g"
+  | FlexDoubleConverter true -> "G"
+  | HexDoubleConverter false -> "a"
+  | HexDoubleConverter true -> "A"
+  | UnsignedCharConverter -> "c"
+  | PointerConverter -> "p"
+  | OutputArgument -> "n"
+
+
+let restricted_output_format_string_constant_string_stmt
+      (loc: location_int) (x: xpr_t) (sl: string list): po_status_t =
+  match get_constant_string loc x with
+  | Some s ->
+     let fmtspec = parse_formatstring s false in
+     let actual =
+       List.map
+         (fun a -> specifier_of_conversion a#get_conversion)
+         fmtspec#get_arguments in
+     if actual = sl then
+       Discharged (
+           "format specifiers ["
+           ^ (String.concat "," sl)
+           ^ "] match: " ^ s)
+     else
+       Violated (
+           "format specifiers ["
+           ^ (String.concat "," actual)
+           ^ "] do not match required ["
+           ^ (String.concat "," sl)
+           ^ "]: " ^ s)
+  | _ -> Open
+
+
+let restricted_output_format_string_delegate
+      (finfo: function_info_int)
+      (loc: location_int)
+      (x: xpr_t)
+      (sl: string list): po_status_t =
+  match x with
+  | XVar v when finfo#env#is_initial_register_value v ->
+     TR.tfold
+       ~ok:(fun reg ->
+         let _ =
+           finfo#add_register_parameter_location reg BCHBCTypeUtil.t_charptr 4 in
+         let ftspar = finfo#get_summary#get_parameter_for_register reg in
+         let dst = ArgValue ftspar in
+         let xpred = XXRestrictedOutputFormatString (dst, sl) in
+         let _ = finfo#add_precondition xpred in
+         Delegated xpred)
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"discharge_restricted_output_format_string"
+             ~msg:(p2s loc#toPretty)
+             __FILE__ __LINE__
+             ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+           Open
+         end)
+       (finfo#env#get_initial_register_value_register v)
+  | _ ->
+     Open
+
+
+let discharge_restricted_output_format_string
+      (finfo: function_info_int)
+      (loc: location_int)
+      (x: xpr_t)
+      (sl: string list): po_status_t =
+  let status = restricted_output_format_string_constant_string_stmt loc x sl in
+  match status with
+  | Open -> restricted_output_format_string_delegate finfo loc x sl
+  | _ -> status
 
 
 (* -------------------------------------------------------------------------
@@ -1062,6 +1153,9 @@ let discharge_one
 
   | XPOOutputFormatString x ->
      discharge_output_format_string finfo po#loc x
+
+  | XPORestrictedOutputFormatString (x, sl) ->
+     discharge_restricted_output_format_string finfo po#loc x sl
 
   | XPOBlockWrite (ty, x, bwlen) ->
      discharge_blockwrite finfo po#loc ty x bwlen

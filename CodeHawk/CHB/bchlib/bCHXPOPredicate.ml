@@ -89,6 +89,7 @@ let rec xxp_to_xpo_predicate
   | XXPositive t -> XPOPositive (btx t)
   | XXNullTerminated t -> XPONullTerminated (btx t)
   | XXOutputFormatString t -> XPOOutputFormatString (btx t)
+  | XXRestrictedOutputFormatString (t, sl) -> XPORestrictedOutputFormatString (btx t, sl)
   | XXRelationalExpr (op, t1, t2) -> XPORelationalExpr (op, btx t1, btx t2)
   | XXStartsThread (t1, t2) -> XPOStartsThread (btx t1, List.map btx t2)
   | XXTainted t -> XPOTainted (btx t)
@@ -169,6 +170,13 @@ let rec xpo_predicate_to_pretty (p: xpo_predicate_t) =
   | XPONonNegative t -> default "non-negative" [t]
   | XPONullTerminated t -> default "null-terminated" [t]
   | XPOOutputFormatString t -> default "output-format-string" [t]
+  | XPORestrictedOutputFormatString (t, sl) ->
+     LBLOCK [
+         STR "output-format-string-restricted(";
+         x2p t;
+         STR ", [";
+         STR (String.concat "," sl);
+         STR "])"]
   | XPOPositive t -> default "positive" [t]
   | XPORelationalExpr (op, t1, t2) ->
      LBLOCK [x2p t1; STR (relational_op_to_string op); x2p t2]

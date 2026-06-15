@@ -30,6 +30,7 @@
 open CHNumerical
 
 (* chutil *)
+open CHFormatStringParser
 open CHLogger
 open CHPrettyUtil
 
@@ -57,6 +58,27 @@ let x2s x = p2s (x2p x)
 
 let log_error (tag: string) (msg: string): tracelogspec_t =
   mk_tracelog_spec ~tag:("callsemanticsrecorder:" ^ tag) msg
+
+
+let specifier_of_conversion (c: conversion_t): string =
+  match c with
+  | StringConverter -> "s"
+  | IntConverter | DecimalConverter -> "d"
+  | UnsignedDecimalConverter -> "u"
+  | UnsignedOctalConverter -> "o"
+  | UnsignedHexConverter false -> "x"
+  | UnsignedHexConverter true -> "X"
+  | FixedDoubleConverter false -> "f"
+  | FixedDoubleConverter true -> "F"
+  | ExpDoubleConverter false -> "e"
+  | ExpDoubleConverter true -> "E"
+  | FlexDoubleConverter false -> "g"
+  | FlexDoubleConverter true -> "G"
+  | HexDoubleConverter false -> "a"
+  | HexDoubleConverter true -> "A"
+  | UnsignedCharConverter -> "c"
+  | PointerConverter -> "p"
+  | OutputArgument -> "n"
 
 
 class call_semantics_recorder_t
@@ -150,6 +172,32 @@ object (self)
            let dw = numerical_mod_to_doubleword n in
            if string_table#has_string dw then
              Discharged ("constant string: " ^ (string_table#get_string dw))
+           else
+             Open
+        | _ -> Open)
+    | XPORestrictedOutputFormatString (x, sl) ->
+       (match x with
+        | XConst (IntConst n) ->
+           let dw = numerical_mod_to_doubleword n in
+           if string_table#has_string dw then
+             let s = string_table#get_string dw in
+             let fmtspec = CHFormatStringParser.parse_formatstring s false in
+             let actual =
+               List.map
+                 (fun a -> specifier_of_conversion a#get_conversion)
+                 fmtspec#get_arguments in
+             if actual = sl then
+               Discharged (
+                   "format specifiers ["
+                   ^ (String.concat "," sl)
+                   ^ "] match: " ^ s)
+             else
+               Violated (
+                   "format specifiers ["
+                   ^ (String.concat "," actual)
+                   ^ "] do not match required ["
+                   ^ (String.concat "," sl)
+                   ^ "]: " ^ s)
            else
              Open
         | _ -> Open)
