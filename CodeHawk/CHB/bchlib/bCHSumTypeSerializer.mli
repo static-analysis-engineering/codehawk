@@ -41,7 +41,7 @@ val quote_status_mfts: quote_status_t mfts_int
 val format_args_kind_mfts: format_args_kind_t mfts_int
 
 val arg_io_mfts: arg_io_t mfts_int
-val formatstring_type_mfts: formatstring_type_t mfts_int
+(* val formatstring_type_mfts: formatstring_type_t mfts_int *)
 
 (** {1 Architecture-related} *)
 
@@ -74,6 +74,8 @@ val flag_mcts: flag_t mfts_int
 val register_mcts: register_t mfts_int
 
 (** {1 Interface types} *)
+
+val formatstring_type_mcts: formatstring_type_t mfts_int
 
 val parameter_destination_mcts: parameter_destination_t mfts_int
 val pld_position_mcts: pld_position_t mfts_int

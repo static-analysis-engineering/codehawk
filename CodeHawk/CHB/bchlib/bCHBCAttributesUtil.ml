@@ -40,6 +40,15 @@ let get_format_archetype
          match attr with
          | Attr ("format", params) ->
             (match params with
+             | ACons ("printf", []) :: AInt fmtrefindex :: AInt _ :: rest
+               when List.for_all (function AStr _ -> true | _ -> false) rest
+                    && rest <> [] ->
+                if index = fmtrefindex then
+                  let specs =
+                    List.map (function AStr s -> s | _ -> assert false) rest in
+                  Some (BCHLibTypes.RestrictedPrintFormat specs)
+                else
+                  None
              | [ACons ("printf", []); AInt fmtrefindex; AInt _]
                | [ACons ("printf", []); AInt fmtrefindex] ->
                 if index = fmtrefindex then
