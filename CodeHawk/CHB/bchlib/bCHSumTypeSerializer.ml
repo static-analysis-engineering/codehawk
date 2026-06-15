@@ -80,11 +80,12 @@ let arg_io_mfts: arg_io_t mfts_int =
   mk_mfts  "arg_io_t" [ (ArgRead, "r"); (ArgReadWrite, "rw"); (ArgWrite, "w") ]
 
 
+(*
 let formatstring_type_mfts: formatstring_type_t mfts_int  =
   mk_mfts
     "formatstring_type_t"
     [ (NoFormat, "n"); (PrintFormat, "p"); (ScanFormat, "s") ]
-
+ *)
 
 let eflag_mfts: eflag_t mfts_int =
   mk_mfts
@@ -251,6 +252,27 @@ object
 end
 
 let register_mcts: register_t mfts_int = new register_mcts_t
+
+
+class formatstring_type_mcts_t: [formatstring_type_t] mfts_int =
+  object
+
+    inherit [formatstring_type_t] mcts_t "formatstring_type"
+
+    method !ts (f: formatstring_type_t) =
+      match f with
+      | ScanFormat -> "s"
+      | PrintFormat -> "p"
+      | NoFormat -> "n"
+      | RestrictedPrintFormat _ -> "rp"
+
+    method !tags = ["n"; "p"; "rp"; "s"]
+
+  end
+
+let formatstring_type_mcts: formatstring_type_t mfts_int =
+new formatstring_type_mcts_t
+
 
 class pld_position_mcts_t: [pld_position_t] mfts_int =
 object

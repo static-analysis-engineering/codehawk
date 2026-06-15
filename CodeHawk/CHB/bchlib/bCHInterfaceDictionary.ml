@@ -69,6 +69,7 @@ let raise_tag_error (name:string) (tag:string) (accepted:string list) =
 class interface_dictionary_t:interface_dictionary_int =
 object (self)
 
+  val formatstring_type_table = mk_index_table "formatstring-type-table"
   val pld_position_table = mk_index_table "pld-position-table"
   val pld_position_list_table = mk_index_table "pld-position-table-list"
   val parameter_location_detail_table =
@@ -102,6 +103,7 @@ object (self)
 
   initializer
     tables <- [
+      formatstring_type_table;
       pld_position_table;
       pld_position_list_table;
       parameter_location_detail_table;
@@ -133,6 +135,25 @@ object (self)
     begin
       List.iter (fun t -> t#reset) tables
     end
+
+  method index_formatstring_type (f: formatstring_type_t) =
+    let tags = [formatstring_type_mcts#ts f] in
+    let key =
+      match f with
+      | NoFormat | PrintFormat | ScanFormat -> (tags, [])
+      | RestrictedPrintFormat sl -> (tags @ sl, []) in
+    formatstring_type_table#add key
+
+  method get_formatstring_type (index: int): formatstring_type_t =
+    let name = "formatstring_type" in
+    let (tags, _) = formatstring_type_table#retrieve index in
+    let t = t name tags in
+    match (t 0) with
+    | "n" -> NoFormat
+    | "p" -> PrintFormat
+    | "s" -> ScanFormat
+    | "rp" -> RestrictedPrintFormat (List.tl tags)
+    | s -> raise_tag_error name s formatstring_type_mcts#tags
 
   method index_pld_position (p: pld_position_t) =
     let tags = [pld_position_mcts#ts p] in
@@ -266,9 +287,7 @@ object (self)
 
   method index_fts_parameter (p:fts_parameter_t) =
     let iopt (i: int option) = match i with Some i -> i | _ -> (-1) in
-    let tags = [
-        arg_io_mfts#ts p.apar_io;
-        formatstring_type_mfts#ts p.apar_fmt] in
+    let tags = [arg_io_mfts#ts p.apar_io] in
     let args = [
         iopt p.apar_index;
         bd#index_string p.apar_name;
@@ -277,7 +296,8 @@ object (self)
         self#index_roles p.apar_roles;
         p.apar_size;
         self#index_parameter_location_list p.apar_location;
-        self#index_parameter_destination_list p.apar_destinations
+        self#index_parameter_destination_list p.apar_destinations;
+        self#index_formatstring_type p.apar_fmt;
       ] in
     fts_parameter_table#add (tags, args)
 
@@ -292,7 +312,7 @@ object (self)
       apar_desc = bd#get_string (a 3);
       apar_roles = self#get_roles (a 4);
       apar_io = arg_io_mfts#fs (t 0);
-      apar_fmt = formatstring_type_mfts#fs (t 1);
+      apar_fmt = self#get_formatstring_type (a 8);
       apar_size = a 5;
       apar_location = self#get_parameter_location_list (a 6);
       apar_destinations = self#get_parameter_destination_list (a 7)

@@ -2127,6 +2127,7 @@ type formatstring_type_t =
   | NoFormat
   | PrintFormat
   | ScanFormat
+  | RestrictedPrintFormat of string list
 
 
 (** Function type signature parameter.
@@ -2792,6 +2793,9 @@ class type interface_dictionary_int =
     method reset: unit
 
     (** {1 Parameter location}*)
+
+    method index_formatstring_type: formatstring_type_t -> int
+    method get_formatstring_type: int -> formatstring_type_t
 
     method index_pld_position: pld_position_t -> int
     method get_pld_position: int -> pld_position_t

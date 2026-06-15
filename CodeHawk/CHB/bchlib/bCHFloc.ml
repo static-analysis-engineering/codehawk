@@ -767,14 +767,80 @@ object (self)
                None)
            None
            (numerical_to_doubleword n)
-      | _ ->
+      | Some (XVar v) when self#f#env#is_initial_register_value v ->
+         let bterm_o =
+           (new arm_expression_externalizer_t self#f)#xpr_to_bterm
+             t_charptr (XVar v) in
+         (match bterm_o with
+          | Some (ArgValue ftspar) ->
+             (match ftspar.apar_fmt with
+              | RestrictedPrintFormat sl when sl <> [] ->
+                 let fmtstring =
+                   String.concat " " (List.map (fun s -> "%" ^ s) sl) in
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:("update-arm-varargs:restricted format specifiers "
+                           ^ "from enclosing function")
+                     ~msg:self#cia
+                     __FILE__ __LINE__
+                     ["using restricted format specifiers: " ^ fmtstring] in
+                 let fmtspec = parse_formatstring fmtstring false in
+                 if fmtspec#has_arguments then
+                   let fmtargs = fmtspec#get_arguments in
+                   let newfintf = add_format_spec_parameters fintf false fmtargs in
+                   Some (newfintf, sem)
+                 else
+                   None
+              | _ ->
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"update_arm_varargs:no format arg info available"
+                     ~msg:self#cia
+                     __FILE__ __LINE__
+                     ["argxpr: " ^ (x2s argxpr)] in
+                 None)
+          | _ ->
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update_arm_varargs:unable to externalize argument"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["argxpr: " ^ (x2s argxpr)];
+               None)
+      | Some argxpr ->
          let _ =
            log_diagnostics_result
-             ~tag:"update-arm-varargs"
+             ~tag:"update_arm_varargs"
              ~msg:self#cia
              __FILE__ __LINE__
-             ["format string address is not a constant"] in
+             ["argxpr: " ^ (x2s argxpr)] in
          None
+      | _ ->
+         (match lastpar.apar_fmt with
+          | RestrictedPrintFormat sl when sl <> [] ->
+             let fmtstring =
+               String.concat " " (List.map (fun s -> "%" ^ s) sl) in
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-arm-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["using restricted format specifiers: " ^ fmtstring] in
+             let fmtspec = parse_formatstring fmtstring false in
+             if fmtspec#has_arguments then
+               let fmtargs = fmtspec#get_arguments in
+               let newfintf = add_format_spec_parameters fintf false fmtargs in
+               Some (newfintf, sem)
+             else
+               None
+          | _ ->
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-arm-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["format string address is not a constant"] in
+             None)
 
   method private update_mips_varargs
         (fintf: function_interface_t)
@@ -861,13 +927,31 @@ object (self)
            None
            (numerical_to_doubleword n)
       | _ ->
-         let _ =
-           log_diagnostics_result
-             ~tag:"update-mips-varargs"
-             ~msg:self#cia
-             __FILE__ __LINE__
-             ["format string address is not a constant"] in
-         None
+         (match lastpar.apar_fmt with
+          | RestrictedPrintFormat sl when sl <> [] ->
+             let fmtstring =
+               String.concat " " (List.map (fun s -> "%" ^ s) sl) in
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-mips-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["using restricted format specifiers: " ^ fmtstring] in
+             let fmtspec = parse_formatstring fmtstring false in
+             if fmtspec#has_arguments then
+               let fmtargs = fmtspec#get_arguments in
+               let newfintf = add_format_spec_parameters fintf false fmtargs in
+               Some (newfintf, sem)
+             else
+               None
+          | _ ->
+             let _ =
+               log_diagnostics_result
+                 ~tag:"update-mips-varargs"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["format string address is not a constant"] in
+             None)
 
   method private update_varargs
         (fintf: function_interface_t)

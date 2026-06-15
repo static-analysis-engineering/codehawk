@@ -91,6 +91,7 @@ let formatstring_type_to_string (t:formatstring_type_t) =
   | NoFormat -> "no"
   | PrintFormat -> "print"
   | ScanFormat -> "scan"
+  | RestrictedPrintFormat sl -> "print(" ^ (String.concat "," sl) ^ ")"
 
 
 let pld_position_to_string (p: pld_position_t) =
@@ -273,7 +274,11 @@ let read_xml_formatstring_type (s:string): formatstring_type_t traceresult =
   | "no" -> Ok NoFormat
   | "print" -> Ok PrintFormat
   | "scan" -> Ok ScanFormat
-  | _ -> Error ["Formatstring type: " ^ s ^ " not recognized"]
+  | _ ->
+     Error [
+         "Formatstring type: "
+         ^ s
+         ^ " not recognized (note: RestrictedPrintFormat is not supported in xml)"]
 
 
 let read_xml_roles (node:xml_element_int) =
