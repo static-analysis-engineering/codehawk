@@ -315,22 +315,25 @@ and create_po_binop
             ^ " " ^ (p2s (current_loc_to_pretty loc))]
     end
 
-  | Div ->
+  (* C99 $6.5.5:
+     When integers are divided, the result of the / operator is the algebraic
+     quotient with any fractional part discarded.105) If the quotient a/b is
+     representable, the expression (a/b)*b + a%b shall equal a;
+
+     C11 $6.5.5 adds the following:
+     otherwise, the behavior of both a/b and a%b is undefined.*)
+  | Div | Mod ->
      begin
        match fenv#get_type_unrolled t with
        | TInt (ik, _) when is_signed_type ik ->
 	  begin
-	    add (PIntUnderflow (binop, e1, e2, ik));
 	    add (PIntOverflow (binop, e1, e2, ik));
 	    addxop (PNotZero e2) 2
 	  end
-       | TInt (ik,_) ->
-	  begin
-	    add (PUIntUnderflow (binop, e1, e2, ik));
-	    add (PUIntOverflow (binop, e1, e2, ik));
-	    addxop (PNotZero e2) 2
-	  end
-       | TFloat _ -> add (PNotZero e2)
+       | TInt _ ->
+          addxop (PNotZero e2) 2
+       | TFloat _ ->
+          add (PNotZero e2)
        | _ ->
          log_error_result
            ~tag:"create_po_binop"
@@ -343,8 +346,6 @@ and create_po_binop
             ^ ": " ^ (p2s (typ_to_pretty t))
             ^ " " ^ (p2s (current_loc_to_pretty loc))]
      end
-
-  | Mod -> addxop (PNotZero e2) 2
 
   | PlusPI | IndexPI | MinusPI ->
      let tgttyp =

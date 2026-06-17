@@ -1214,6 +1214,14 @@ object
 end
 
 
+  (* C99 $6.5.5:
+     When integers are divided, the result of the / operator is the algebraic
+     quotient with any fractional part discarded.105) If the quotient a/b is
+     representable, the expression (a/b)*b + a%b shall equal a;
+
+     C11 $6.5.5 adds the following:
+     otherwise, the behavior of both a/b and a%b is undefined.*)
+
 let check_int_overflow
       ?(unsigned=false)
       (poq:po_query_int)
