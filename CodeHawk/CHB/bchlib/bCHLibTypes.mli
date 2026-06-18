@@ -37,6 +37,7 @@ open CHNumericalConstraints
 open CHPretty
 
 (* chutil *)
+open CHFormatStringParser
 open CHTraceResult
 open CHXmlDocument
 
@@ -2800,6 +2801,9 @@ class type interface_dictionary_int =
 
     method index_formatstring_type: formatstring_type_t -> int
     method get_formatstring_type: int -> formatstring_type_t
+
+    method index_formatarg_spec: argspec_int -> int
+    method index_formatstring_spec: formatstring_spec_int -> int
 
     method index_pld_position: pld_position_t -> int
     method get_pld_position: int -> pld_position_t
@@ -6141,6 +6145,8 @@ object
   (** Returns the call targets registered in this function, coupled with
       the address of the associated call instruction.*)
   method get_callees_located: (ctxt_iaddress_t * call_target_info_int) list
+
+  method add_format_string: ctxt_iaddress_t -> string -> bool -> unit
 
   (** {1 Save and restore}*)
 

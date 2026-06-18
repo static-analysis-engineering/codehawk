@@ -126,3 +126,8 @@ class type formatstring_parser_int =
 val conversion_table: (int,conversion_t) Hashtbl.t
 val invconversion_table: (conversion_t,int) Hashtbl.t
 val parse_formatstring: string -> bool -> formatstring_spec_int
+
+val specifier_of_conversion: conversion_t -> string
+val specifier_of_lengthmodifier: lengthmodifier_t -> string
+val specifier_of_fieldwidth: fieldwidth_t -> string
+val specifier_of_precision: precision_t -> string
