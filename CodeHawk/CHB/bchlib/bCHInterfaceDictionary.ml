@@ -33,6 +33,7 @@ open CHNumerical
 open CHPretty
 
 (* chutil *)
+open CHFormatStringParser
 open CHLogger
 open CHIndexTable
 open CHXmlDocument
@@ -70,6 +71,8 @@ class interface_dictionary_t:interface_dictionary_int =
 object (self)
 
   val formatstring_type_table = mk_index_table "formatstring-type-table"
+  val formatarg_spec_table = mk_index_table "formatarg-spec-table"
+  val formatstring_spec_table = mk_index_table "formatstring-spec-table"
   val pld_position_table = mk_index_table "pld-position-table"
   val pld_position_list_table = mk_index_table "pld-position-table-list"
   val parameter_location_detail_table =
@@ -104,6 +107,8 @@ object (self)
   initializer
     tables <- [
       formatstring_type_table;
+      formatarg_spec_table;
+      formatstring_spec_table;
       pld_position_table;
       pld_position_list_table;
       parameter_location_detail_table;
@@ -154,6 +159,20 @@ object (self)
     | "s" -> ScanFormat
     | "rp" -> RestrictedPrintFormat (List.tl tags)
     | s -> raise_tag_error name s formatstring_type_mcts#tags
+
+  method index_formatarg_spec (a: argspec_int) =
+    let tags = [
+        specifier_of_fieldwidth a#get_fieldwidth;
+        specifier_of_precision a#get_precision;
+        specifier_of_lengthmodifier a#get_lengthmodifier;
+        specifier_of_conversion a#get_conversion] in
+    let key = (tags, a#get_flags) in
+    formatarg_spec_table#add key
+
+  method index_formatstring_spec (f: formatstring_spec_int) =
+    let args =
+      f#get_literal_length :: (List.map self#index_formatarg_spec f#get_arguments) in
+    formatstring_spec_table#add ([], args)
 
   method index_pld_position (p: pld_position_t) =
     let tags = [pld_position_mcts#ts p] in

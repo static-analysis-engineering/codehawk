@@ -727,6 +727,7 @@ object (self)
                    ["fmt-string: \"" ^ fmtstring ^ "\"";
                     "isinput: " ^ (if isinput then "yes" else "no")] in
                let fmtspec = parse_formatstring fmtstring isinput in
+               let _ = self#f#add_format_string self#cia fmtstring isinput in
                let _ =
                  log_diagnostics_result
                    ~tag:"update-arm-varargs"

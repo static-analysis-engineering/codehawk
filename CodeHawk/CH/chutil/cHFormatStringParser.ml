@@ -399,29 +399,11 @@ object (self)
 
   method get_flags = List.rev flags
 
-  method get_fieldwidth =
-    if self#has_fieldwidth then
-      fieldwidth
-    else
-      raise
-        (CHFailure
-           (LBLOCK [STR "Format argument spec does not have a field width"]))
+  method get_fieldwidth = fieldwidth
 
-  method get_precision =
-    if self#has_precision then
-      precision
-    else
-      raise
-        (CHFailure
-           (LBLOCK [STR "Format argument spec does not have a precision"]))
+  method get_precision = precision
 
-  method get_lengthmodifier =
-    if self#has_lengthmodifier then
-      lengthmodifier
-    else
-      raise
-        (CHFailure
-           (LBLOCK [STR "Argument spec does not have a length modifier"]))
+  method get_lengthmodifier = lengthmodifier
 
   method get_conversion = conversion
 
@@ -894,3 +876,48 @@ let parse_formatstring (s:string) (isinput:bool) =
   let result = parser#get_result in
   let _ = result#set_literal_length parser#get_literal_length in
   result
+
+
+let specifier_of_conversion (c: conversion_t): string =
+  match c with
+  | StringConverter -> "s"
+  | IntConverter | DecimalConverter -> "d"
+  | UnsignedDecimalConverter -> "u"
+  | UnsignedOctalConverter -> "o"
+  | UnsignedHexConverter false -> "x"
+  | UnsignedHexConverter true -> "X"
+  | FixedDoubleConverter false -> "f"
+  | FixedDoubleConverter true -> "F"
+  | ExpDoubleConverter false -> "e"
+  | ExpDoubleConverter true -> "E"
+  | FlexDoubleConverter false -> "g"
+  | FlexDoubleConverter true -> "G"
+  | HexDoubleConverter false -> "a"
+  | HexDoubleConverter true -> "A"
+  | UnsignedCharConverter -> "c"
+  | PointerConverter -> "p"
+  | OutputArgument -> "n"
+
+
+let specifier_of_lengthmodifier (lm: lengthmodifier_t): string =
+  match lm with
+  | NoModifier -> "none"
+  | _ ->
+     if H.mem invlengthmodifier_table lm then
+       H.find invlengthmodifier_table lm
+     else
+       raise (CHFailure (LBLOCK [STR "Error in specifier_of_lengthmodifier"]))
+
+
+let specifier_of_fieldwidth (fw: fieldwidth_t): string =
+  match fw with
+  | NoFieldwidth -> "nfw"
+  | FieldwidthArgument -> "fwa"
+  | FieldwidthConstant i -> "fwc:" ^ (string_of_int i)
+
+
+let specifier_of_precision (p: precision_t): string =
+  match p with
+  | NoPrecision -> "np"
+  | PrecisionArgument -> "pa"
+  | PrecisionConstant i -> "pc:" ^ (string_of_int i)

@@ -106,6 +106,7 @@ module DoublewordCollections = CHCollections.Make
    end)
 
 
+let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
 
 let memmap = BCHGlobalMemoryMap.global_memory_map
@@ -1657,6 +1658,7 @@ object (self)
   val env = new function_environment_t faddr fndata varmgr
   val constant_table = new VariableCollections.table_t          (* constants *)
   val calltargets = H.create 5                               (* call-targets *)
+  val formatstrings = H.create 5                           (* format strings *)
 
   val base_pointers = new VariableCollections.set_t         (* base-pointers *)
   val mutable stack_adjustment = None                    (* stack-adjustment *)
@@ -2191,6 +2193,12 @@ object (self)
         if ctinfo#is_call_category cat then acc+1 else acc)
       calltargets 0
 
+  method add_format_string (iaddr: ctxt_iaddress_t) (s: string) (isinput: bool) =
+    if H.mem formatstrings iaddr then
+      ()
+    else
+      H.add formatstrings iaddr (s, isinput)
+
 
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    * base pointers                                                             *
@@ -2407,6 +2415,22 @@ object (self)
         let ctinfo = read_xml_call_target_info cnode in
         H.add calltargets a ctinfo) (node#getTaggedChildren "ctinfo")
 
+  method private write_xml_format_strings (node: xml_element_int) =
+    let iformatstrings = H.fold (fun k v a -> (k, v) :: a) formatstrings [] in
+    node#appendChildren
+      (List.map
+         (fun (iaddr, (s, isinput)) ->
+           let fsnode = xmlElement "fs" in
+           let fmtspec = CHFormatStringParser.parse_formatstring s isinput in
+           begin
+             fsnode#setAttribute "a" iaddr;
+             (fsnode#setAttribute "kind"
+                (if isinput then "scanf" else "printf"));
+             fsnode#setIntAttribute "ixs" (bd#index_string s);
+             fsnode#setIntAttribute "ixc" (id#index_formatstring_spec fmtspec);
+             fsnode
+           end) iformatstrings)
+
   method private write_xml_constants (node:xml_element_int) =
     let var_to_xml (v,n) =
       let varNode = xmlElement "var" in
@@ -2530,6 +2554,7 @@ object (self)
     let teNode = xmlElement "test-expressions" in
     let jtNode = xmlElement "jump-targets" in
     let ctNode = xmlElement "call-targets" in
+    let fsNode = xmlElement "format-strings" in
     let bpNode = xmlElement "base-pointers" in
     let vvNode = xmlElement "variable-names" in
     let srNode = xmlElement "saved-registers" in
@@ -2543,6 +2568,7 @@ object (self)
       self#write_xml_test_variables tvNode;
       (* self#write_xml_jump_targets jtNode ; *)
       self#write_xml_call_targets ctNode;
+      self#write_xml_format_strings fsNode;
       self#write_xml_base_pointers bpNode;
       self#write_xml_variable_names vvNode;
       self#write_xml_saved_registers srNode;
@@ -2556,6 +2582,7 @@ object (self)
           teNode;
           cNode;
 	  ctNode;
+          fsNode;
           jtNode;
           bpNode;
           vvNode;
