@@ -2431,6 +2431,14 @@ object (self)
              fsnode
            end) iformatstrings)
 
+  method private read_xml_format_strings (node: xml_element_int) =
+    List.iter (fun fsnode ->
+        let a = fsnode#getAttribute "a" in
+        let fmtstring = bd#get_string (fsnode#getIntAttribute "ixs") in
+        let isinput = (fsnode#getAttribute "kind") = "scanf" in
+        H.add formatstrings a (fmtstring, isinput))
+      (node#getTaggedChildren "fs")
+
   method private write_xml_constants (node:xml_element_int) =
     let var_to_xml (v,n) =
       let varNode = xmlElement "var" in
@@ -2596,18 +2604,20 @@ object (self)
     try
       let getc = node#getTaggedChild in
       begin
-	self#read_xml_constants (getc "constants") ;
+	self#read_xml_constants (getc "constants");
         (if hasc "call-targets" then
-           self#read_xml_call_targets (getc "call-targets")) ;
-	(if hasc "cc-users" then self#read_xml_cc_users (getc "cc-users")) ;
+           self#read_xml_call_targets (getc "call-targets"));
+	(if hasc "cc-users" then self#read_xml_cc_users (getc "cc-users"));
 	(if hasc "test-variables" then
-	    self#read_xml_test_variables (getc "test-variables")) ;
+	    self#read_xml_test_variables (getc "test-variables"));
 	(if hasc "test-expressions" then
-	    self#read_xml_test_expressions (getc "test-expressions")) ;
+	   self#read_xml_test_expressions (getc "test-expressions"));
+        (if hasc "format-strings" then
+           self#read_xml_format_strings (getc "format-strings"));
 	(if hasc "base-pointers" then
-	   self#read_xml_base_pointers (getc "base-pointers")) ;
+	   self#read_xml_base_pointers (getc "base-pointers"));
         (if hasc "variable-names" then
-           self#read_xml_variable_names (getc "variable-names")) ;
+           self#read_xml_variable_names (getc "variable-names"));
         (if hasc "stack-adjustment" then
            let espNode = getc "stack-adjustment" in
            if espNode#hasNamedAttribute "adj" then
