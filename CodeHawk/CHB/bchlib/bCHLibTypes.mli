@@ -1507,7 +1507,8 @@ type regvar_intro_t = {
     rvi_iaddr: doubleword_int;
     rvi_name: string;
     rvi_vartype: btype_t option;
-    rvi_cast: bool
+    rvi_cast: bool;
+    rvi_freeze: bool
   }
 
 (** Local stack variable introduced via userdata.
@@ -1619,6 +1620,7 @@ class type function_data_int =
     method has_regvar_type_annotation: doubleword_int -> bool
     method get_regvar_type_annotation: doubleword_int -> btype_t traceresult
     method has_regvar_type_cast: doubleword_int -> bool
+    method has_regvar_freeze: doubleword_int -> bool
     method get_regvar_intro: doubleword_int -> regvar_intro_t option
 
     (** {2 Stack-variable introductions} *)
@@ -3756,6 +3758,13 @@ and constant_value_variable_t =
   that is used as a predicate for a conditional jump instruction (or other
   condition instruction) at address [j_iaddr]*)
 
+  | FrozenValue of variable_t * ctxt_iaddress_t
+  (** [FrozenValue (var, iaddr): frozen value of variable var at address iaddr.
+      The difference with a frozen test value is that this value is created
+      on demand to preserve a value to be used in invariants; the corresponding
+      variable does not get abstracted, as is the case with frozen test
+      variables.*)
+
   | FunctionReturnValue  of ctxt_iaddress_t
   (** [FunctionReturnValue iaddr]: return value from call at instruction
       address [iaddr]*)
@@ -4107,6 +4116,9 @@ object
            -> ctxt_iaddress_t
            -> ctxt_iaddress_t
            -> assembly_variable_int
+
+  method make_frozen_value:
+           variable_t -> ctxt_iaddress_t -> assembly_variable_int
 
   (** [make_bridge_value addr argix] returns a bridge value for the
       variable [var] that is the stack argument with index [argix] (1-based)
@@ -5205,6 +5217,7 @@ class type function_environment_int =
 
     method mk_frozen_test_value:
              variable_t -> ctxt_iaddress_t -> ctxt_iaddress_t -> variable_t
+    method mk_frozen_value: variable_t -> ctxt_iaddress_t -> variable_t
     method mk_special_variable: string -> variable_t
     method mk_runtime_constant: string -> variable_t
     method mk_return_value: ctxt_iaddress_t -> variable_t

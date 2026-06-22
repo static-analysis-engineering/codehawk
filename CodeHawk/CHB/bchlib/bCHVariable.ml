@@ -107,7 +107,9 @@ object (self:'a)
 	  (if level = 0 then "" else "_" ^ (string_of_int level))
 	| InitialMemoryValue v -> v#getName#getBaseName ^ "_in"
 	| FrozenTestValue (fv,taddr,jaddr) ->
-	  fv#getName#getBaseName ^ "_val_" ^ taddr ^ "_amp_" ^ jaddr
+	   fv#getName#getBaseName ^ "_val_" ^ taddr ^ "_amp_" ^ jaddr
+        | FrozenValue (fv, iaddr) ->
+           fv#getName#getBaseName ^ "_val_" ^ iaddr
 	| FunctionPointer (fname,cname,address) ->
 	  "fp_" ^ fname ^ "_" ^ cname ^ "_" ^ address
 	| FunctionReturnValue address -> "rtn_" ^ address
@@ -196,6 +198,7 @@ object (self:'a)
          | InitialRegisterValue _ -> None
          | InitialMemoryValue _ -> None
          | FrozenTestValue _ -> None
+         | FrozenValue _ -> None
          | FunctionPointer _ -> None
          | FunctionReturnValue _ -> None
          | TypeCastValue (_, _, ty, _) -> Some ty
@@ -327,6 +330,7 @@ object (self:'a)
 	  | InitialMemoryValue _
 	  | FunctionReturnValue _
           | TypeCastValue _
+          | FrozenValue _
 	  | CallTargetValue _
 	  | SideEffectValue _
 	  | FieldValue _
@@ -697,6 +701,10 @@ object (self)
            (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     self#mk_variable (AuxiliaryVariable (FrozenTestValue (var, taddr, jaddr)))
 
+  method make_frozen_value
+           (var: variable_t) (iaddr: ctxt_iaddress_t): assembly_variable_int =
+    self#mk_variable (AuxiliaryVariable (FrozenValue (var, iaddr)))
+
   method make_bridge_value (address:ctxt_iaddress_t) (argnr:int) =
     self#mk_variable (AuxiliaryVariable (BridgeVariable (address, argnr)))
 
@@ -882,6 +890,11 @@ object (self)
     | (TypeCastValue _, TypeCastValue _) -> Stdlib.compare ix1 ix2
     | (TypeCastValue _, _) -> -1
     | (_, TypeCastValue _) -> 1
+
+    | (FrozenValue (_, iaddr1), FrozenValue (_, iaddr2)) ->
+       Stdlib.compare iaddr1 iaddr2
+    | (FrozenValue _, _) -> -1
+    | (_, FrozenValue _) -> 1
 
     | (FunctionReturnValue _, FunctionReturnValue _) -> Stdlib.compare ix1 ix2
     | (FunctionReturnValue _, _) -> -1

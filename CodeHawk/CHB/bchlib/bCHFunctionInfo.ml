@@ -996,6 +996,10 @@ object (self)
     (var:variable_t) (taddr:ctxt_iaddress_t) (jaddr:ctxt_iaddress_t) =
     self#mk_variable (varmgr#make_frozen_test_value var taddr jaddr)
 
+  method mk_frozen_value
+           (var: variable_t) (iaddr: ctxt_iaddress_t): variable_t =
+    self#mk_variable (varmgr#make_frozen_value var iaddr)
+
   method mk_special_variable (name:string) =
     self#mk_variable (varmgr#make_special_variable name)
 

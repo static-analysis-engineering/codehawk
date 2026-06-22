@@ -799,6 +799,7 @@ object
     | InitialRegisterValue _ -> "ir"
     | InitialMemoryValue _ -> "iv"
     | FrozenTestValue _ -> "ft"
+    | FrozenValue _ -> "frv"
     | FunctionReturnValue _ -> "fr"
     | TypeCastValue _ -> "tc"
     | SyscallErrorReturnValue _ -> "ev"
@@ -814,7 +815,7 @@ object
     | ChifTemp -> "chiftemp"
 
   method !tags = [
-      "bv"; "chiftemp"; "ct"; "ev"; "fr"; "fp"; "ft"; "fv"; "ir";
+      "bv"; "chiftemp"; "ct"; "ev"; "fp"; "fr"; "frv"; "ft"; "fv"; "ir";
       "iv"; "rt"; "se" ; "sp"; "sv"; "ssv"; "tc"]
 
 end
