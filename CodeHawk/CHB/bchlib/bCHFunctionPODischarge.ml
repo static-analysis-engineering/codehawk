@@ -147,7 +147,8 @@ let buffer_writer_callsite
              ~msg:(p2s loc#toPretty)
              __FILE__ __LINE__
              ["xpr: " ^ (x2s xpr);
-              "memvar: " ^ (p2s memvar#toPretty)];
+              "memvar: " ^ (p2s memvar#toPretty);
+              "stackslot: " ^ (slot#name ^ "@" ^ (string_of_int slot#offset))];
            None
          end
       | _ ->
@@ -373,7 +374,8 @@ let discharge_trusted_os_cmd_fmt_string
          ~tag:"discharge_trusted_os_cmd_fmt_string"
          ~msg:(p2s loc#toPretty)
          __FILE__ __LINE__
-         ["x: " ^ (x2s x)];
+         ["x: " ^ (x2s x);
+          "fmtarg count: " ^ (string_of_int (List.length fmtargs))];
        status
      end
   | _ ->
@@ -400,7 +402,7 @@ let trusted_os_cmd_fmt_arg_string_return_value_postcondition
       (_quotes: quote_status_t)
       (_optlen: int option): po_status_t =
   match x with
-  | XVar v when finfo#env#is_return_value v ->
+  | XVar v when finfo#env#is_return_value v || finfo#env#is_sideeffect_value v ->
      TR.tfold
        ~ok:(fun callsite ->
          let ctinfo = finfo#get_call_target callsite in
@@ -425,12 +427,31 @@ let trusted_os_cmd_fmt_arg_string_return_value_postcondition
 
 
 let trusted_os_cmd_fmt_arg_string_delegate_local
-      (_finfo: function_info_int)
-      (_loc: location_int)
-      (_x: xpr_t)
-      (_quotes: quote_status_t)
-      (_optlen: int option): po_status_t =
-  Open
+      (finfo: function_info_int)
+      (loc: location_int)
+      (xpr: xpr_t)
+      (quotes: quote_status_t)
+      (optlen: int option): po_status_t =
+  match buffer_writer_callsite finfo loc xpr with
+  | None ->
+     begin
+       log_diagnostics_result
+         ~tag:"trusted_os_cmd_fmt_arg_string_delegate_local:open"
+         ~msg:(p2s loc#toPretty)
+         __FILE__ __LINE__
+         ["finfo: " ^ finfo#get_name; "xpr: " ^ (x2s xpr)];
+       Open
+     end
+  | Some defloc ->
+     let deffloc = BCHFloc.get_finfo_floc finfo defloc in
+     if call_writes_to_buffer deffloc xpr then
+       begin
+         let new_xpo = XPOTrustedOsCmdFmtArgString (xpr, quotes, optlen) in
+         finfo#proofobligations#add_proofobligation defloc#ci new_xpo Open;
+         DelegatedLocal (defloc#ci, new_xpo)
+       end
+     else
+       Open
 
 
 let discharge_trusted_os_cmd_fmt_arg_string
