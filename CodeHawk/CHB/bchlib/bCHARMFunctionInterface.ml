@@ -27,6 +27,7 @@
 
 (* chutil *)
 open CHFormatStringParser
+open CHLogger
 open CHTraceResult
 open CHUtil
 
@@ -584,7 +585,15 @@ let arm_vfp_params
       (funargs: bfunarg_t list): fts_parameter_t list =
   let fmt (index: int) =
     match BCHBCAttributesUtil.get_format_archetype attrs index with
-    | Some fmtstringtype -> fmtstringtype
+    | Some fmtstringtype ->
+       let _ =
+         log_diagnostics_result
+           ~tag:"arm_vfp_parameters"
+           __FILE__ __LINE__
+           ["fmtstringtype: "
+            ^ (BCHFtsParameter.formatstring_type_to_string fmtstringtype);
+            "attr count: "  ^ (string_of_int (List.length attrs))] in
+       fmtstringtype
     | _ -> NoFormat in
   let (_, _, params) =
     List.fold_left

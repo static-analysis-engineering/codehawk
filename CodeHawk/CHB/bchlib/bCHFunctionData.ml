@@ -293,6 +293,13 @@ object (self)
          (fun rvi -> rvi.rvi_iaddr#equal iaddr && rvi.rvi_cast) a.regvarintros
     | _ -> false
 
+  method has_regvar_freeze (iaddr: doubleword_int): bool =
+    match self#get_function_annotation with
+    | Some a ->
+       List.exists
+         (fun rvi -> rvi.rvi_iaddr#equal iaddr && rvi.rvi_freeze) a.regvarintros
+    | _ -> false
+
   method has_stackvar_type_cast (offset: int): bool =
     match self#get_function_annotation with
     | Some a ->
@@ -683,6 +690,7 @@ let read_xml_regvar_intro (node: xml_element_int): regvar_intro_t traceresult =
       (fun dw ->
         let rvi_iaddr = dw in
         let rvi_name = get "name" in
+        let rvi_freeze = (has "freeze") && ((get "freeze") = "yes") in
         let (rvi_vartype, rvi_cast) =
           if has "typename" then
             let iscast = (has "cast") && ((get "cast") = "yes") in
@@ -704,6 +712,7 @@ let read_xml_regvar_intro (node: xml_element_int): regvar_intro_t traceresult =
         Ok {rvi_iaddr = rvi_iaddr;
             rvi_name = rvi_name;
             rvi_cast = rvi_cast;
+            rvi_freeze = rvi_freeze;
             rvi_vartype = rvi_vartype})
       (string_to_doubleword (get "iaddr"))
 

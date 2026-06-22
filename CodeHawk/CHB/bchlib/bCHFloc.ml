@@ -378,6 +378,9 @@ object (self)
        | Some xpr ->
           match xpr with
           | XConst (IntConst n) ->
+             (* The callee is a variadic function. Retrieve the actual format
+                string and parse it to determine the number of variadic arguments
+                in the call.*)
              let dw = BCHDoubleword.numerical_mod_to_doubleword n in
              if BCHStrings.string_table#has_string dw then
                let fmtstring = BCHStrings.string_table#get_string dw in
@@ -417,6 +420,82 @@ object (self)
                    ["No constant format string found in string table"];
                  None
                end
+          | XVar v when self#finfo#env#is_initial_register_value v ->
+             (* There is no constant format string. Instead the format string
+                argument is received from the caller's parameter. Retrieve the
+                the specification of the parameter by externalizing the expression
+                to a parameter. If the parameter spec (as obtained from a
+                header file) is a retricted format string, reconstruct a minimal
+                format string from its argument spec list, and parse in the
+                same way as before.*)
+             let bterm_o =
+               (new arm_expression_externalizer_t finfo)#xpr_to_bterm
+                 t_charptr (XVar v) in
+             (match bterm_o with
+              | Some (ArgValue ftspar) ->
+                 (match ftspar.apar_fmt with
+                  | RestrictedPrintFormat sl when sl <> [] ->
+                     let fmtstring =
+                       String.concat " " (List.map (fun s -> "%" ^ s) sl) in
+                     let _ =
+                       log_diagnostics_result
+                         ~tag:"get_annotated_format_arguments:restricted_format"
+                         ~msg:finfo#get_name
+                         __FILE__ __LINE__
+                         ["restricted fmtstring: " ^ fmtstring] in
+                     let fmtspec = parse_formatstring fmtstring false in
+                     if fmtspec#has_arguments then
+                       let argspecs = fmtspec#get_arguments in
+                       let argxprs = List.map (fun (_, x) -> x) callargs in
+                       (match CHUtil.list_slice argxprs
+                                index (List.length argspecs) with
+                        | Some fmtargs ->
+                           Some
+                             (List.map2
+                                (fun argspec argxpr ->
+                                  let fw =
+                                    if argspec#has_fieldwidth then
+                                      argspec#get_fieldwidth
+                                    else
+                                      CHFormatStringParser.NoFieldwidth in
+                                  (argspec#get_conversion, fw, argxpr))
+                                argspecs fmtargs)
+                        | _ ->
+                           begin
+                             log_diagnostics_result
+                               ~tag:"get_annotated_format_arguments:no formatargs"
+                               ~msg:finfo#get_name
+                               __FILE__ __LINE__
+                               ["restricted fmtstring: no arguments: " ^ fmtstring];
+                             None
+                           end)
+                     else
+                       begin
+                         log_diagnostics_result
+                           ~tag:"get_annotated_format_arguments:restricted_format"
+                           ~msg:finfo#get_name
+                           __FILE__ __LINE__
+                           ["restricted fmtstring: no arguments: " ^ fmtstring];
+                         None
+                       end
+                  | _ ->
+                     begin
+                       log_diagnostics_result
+                         ~tag:"get_annotated_format_arguments: ftspar: no format"
+                         ~msg:finfo#get_name
+                         __FILE__ __LINE__
+                         ["param: " ^ (fts_parameter_to_string ftspar)];
+                       None
+                     end)
+              | _ ->
+                 begin
+                   log_diagnostics_result
+                     ~tag:"get_annotated_format_arguments:initial_register_value"
+                     ~msg:finfo#get_name
+                     __FILE__ __LINE__
+                     ["format string: " ^ (p2s v#toPretty)];
+                   None
+                 end)
           | _ ->
              begin
                log_diagnostics_result
@@ -3360,10 +3439,19 @@ object (self)
          [ABSTRACT_VARS [lhs]]
 
        else
+         let fndata = self#f#get_function_data in
          let rhs =
+           if fndata#has_regvar_freeze self#ia then
+             let _ =
+               log_diagnostics_result
+                 ~tag:"get_assign_commands_r:freeze"
+                 ~msg:self#cia
+                 __FILE__ __LINE__
+                 ["lhs: " ^ (p2s lhs#toPretty)] in
+             XVar (self#f#env#mk_frozen_value lhs self#cia)
            (* if rhs is a composite symbolic expression, create a new variable
             for it *)
-           if self#is_composite_symbolic_value rhs then
+           else if self#is_composite_symbolic_value rhs then
              XVar (self#env#mk_symbolic_value rhs)
            else
              rhs in
@@ -3372,7 +3460,7 @@ object (self)
          let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
          let cmds = rhscmds @ [ASSIGN_NUM (lhs, rhs_c)] in
 
-         let fndata = self#f#get_function_data in
+
          match fndata#get_regvar_intro self#ia with
          | Some rvi when rvi.rvi_cast && Option.is_some rvi.rvi_vartype ->
             TR.tfold

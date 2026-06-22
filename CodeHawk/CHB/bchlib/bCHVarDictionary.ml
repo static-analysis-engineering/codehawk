@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -253,6 +253,7 @@ object (self)
       | InitialMemoryValue v -> (tags, [xd#index_variable v])
       | FrozenTestValue (v, a1, a2) ->
          (tags @ [a1; a2], [xd#index_variable v])
+      | FrozenValue (v, a) -> (tags @ [a], [xd#index_variable v])
       | FunctionReturnValue a -> (tags @ [a], [])
       | TypeCastValue (iaddr, name, ty, reg) ->
          (tags @ [iaddr; name], [bcd#index_typ ty; bd#index_register reg])
@@ -284,6 +285,7 @@ object (self)
     | "ir" -> InitialRegisterValue (bd#get_register (a 0), a 1)
     | "iv" -> InitialMemoryValue (xd#get_variable (a 0))
     | "ft" -> FrozenTestValue (xd#get_variable (a 0), t 1, t 2)
+    | "frv" -> FrozenValue (xd#get_variable (a 0), t 1)
     | "fr" -> FunctionReturnValue (t 1)
     | "tc" -> TypeCastValue (t 1, t 2, bcd#get_typ (a 0), bd#get_register (a 1))
     | "ev" -> SyscallErrorReturnValue (t 1)
