@@ -397,12 +397,12 @@ let trusted_os_cmd_fmt_arg_string_constant_string_stmt
     postcondition on the call that produced [x] as its return value. *)
 let trusted_os_cmd_fmt_arg_string_return_value_postcondition
       (finfo: function_info_int)
-      (_loc: location_int)
+      (loc: location_int)
       (x: xpr_t)
       (_quotes: quote_status_t)
       (_optlen: int option): po_status_t =
   match x with
-  | XVar v when finfo#env#is_return_value v || finfo#env#is_sideeffect_value v ->
+  | XVar v when finfo#env#is_return_value v ->
      TR.tfold
        ~ok:(fun callsite ->
          let ctinfo = finfo#get_call_target callsite in
@@ -421,9 +421,104 @@ let trusted_os_cmd_fmt_arg_string_return_value_postcondition
            Violated ("return value of " ^ ctinfo#get_name ^ " is potentially tainted")
          else
            Open)
-       ~error:(fun _ -> Open)
+       ~error:(fun e ->
+         begin
+           log_error_result
+             ~tag:"trusted_os_cmd_fmt_arg_string_return_value_postcondition"
+             ~msg:(p2s loc#toPretty)
+             __FILE__ __LINE__
+             ["x: " ^ (x2s x); String.concat "; " e];
+           Open
+         end)
        (finfo#env#get_call_site v)
-  | _ -> Open
+  | _ ->
+     Open
+
+
+let trusted_os_cmd_fmt_arg_string_parameter_postcondition
+      (finfo: function_info_int)
+      (loc: location_int)
+      (x: xpr_t)
+      (quotes: quote_status_t)
+      (_optlen: int option): po_status_t =
+  let floc = BCHFloc.get_finfo_floc finfo loc in
+  let tag = "trusted_os_cmd_fmt_arg_string_parameter_postcondition" in
+  if not floc#has_call_target then
+    begin
+      log_diagnostics_result
+        ~tag
+        ~msg:(p2s loc#toPretty)
+        __FILE__ __LINE__
+        ["x: " ^ (x2s x); "not a call site"];
+      Open
+    end
+  else
+    let ctinfo = floc#get_call_target in
+    match floc#get_bterm_evaluator with
+    | None ->
+       begin
+         log_diagnostics_result
+           ~tag
+           ~msg:(p2s loc#toPretty)
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x); "no bterm evaluator found"];
+         Open
+       end
+    | Some btermev ->
+       let check_bterm (bterm: bterm_t): bool =
+         match btermev#bterm_xpr bterm with
+         | Some xpost ->
+            let xpost' = floc#inv#rewrite_expr xpost in
+            (match simplify_xpr (XOp (XMinus, [xpost'; x])) with
+             | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+             | _ -> false)
+         | _ -> false in
+       List.fold_left (fun status post ->
+           match status with
+           | Open ->
+              (match post with
+               | XXTrustedOsCmdString bterm
+                 | XXTrustedString bterm ->
+                  if check_bterm bterm then
+                    Discharged (
+                        "trusted-os-cmd-string postcondition from "
+                        ^ ctinfo#get_name)
+                  else
+                    begin
+                      log_diagnostics_result
+                        ~tag
+                        ~msg:(p2s loc#toPretty)
+                        __FILE__ __LINE__
+                        ["x: " ^ (x2s x); "xpr does not match term"];
+                      Open
+                    end
+               | XXTrustedOsCmdFmtArgString (bterm, q, _) when q = quotes ->
+                  if check_bterm bterm then
+                    Discharged (
+                        "trusted-os-cmd-fmt-arg-string postcondition from "
+                        ^ ctinfo#get_name)
+                  else
+                    begin
+                      log_diagnostics_result
+                        ~tag
+                        ~msg:(p2s loc#toPretty)
+                        __FILE__ __LINE__
+                        ["x: " ^ (x2s x); "xpr do not match"];
+                      Open
+                    end
+               | p ->
+                  begin
+                    log_diagnostics_result
+                      ~tag
+                      ~msg:(p2s loc#toPretty)
+                      __FILE__ __LINE__
+                      ["x: " ^ (x2s x);
+                       "pred: " ^ (p2s (xxpredicate_to_pretty p))];
+                    Open
+                  end)
+
+           | _ ->
+              status) Open ctinfo#get_postconditions
 
 
 let trusted_os_cmd_fmt_arg_string_delegate_local
@@ -471,6 +566,12 @@ let discharge_trusted_os_cmd_fmt_arg_string
   let status =
     match status with
     | Open ->
+       trusted_os_cmd_fmt_arg_string_parameter_postcondition
+         finfo loc x quotes optlen
+    | _ -> status in
+  let status =
+    match status with
+    | Open ->
        trusted_os_cmd_fmt_arg_string_delegate_local
          finfo loc x quotes optlen
     | _ -> status in
@@ -500,11 +601,22 @@ let output_format_string_delegate
        ~ok:(fun reg ->
          let _ =
            finfo#add_register_parameter_location reg BCHBCTypeUtil.t_charptr 4 in
-         let ftspar = finfo#get_summary#get_parameter_for_register reg in
-         let dst = ArgValue ftspar in
-         let xpred = XXOutputFormatString dst in
-         let _ = finfo#add_precondition xpred in
-         Delegated xpred)
+         TR.tfold
+           ~ok:(fun ftspar ->
+             let dst = ArgValue ftspar in
+             let xpred = XXOutputFormatString dst in
+             let _ = finfo#add_precondition xpred in
+             Delegated xpred)
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:"discharge_output_format_string"
+                 ~msg:(p2s loc#toPretty)
+                 __FILE__ __LINE__
+                 ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+               Open
+             end)
+           (finfo#get_summary#get_parameter_for_register reg))
        ~error:(fun e ->
          begin
            log_error_result
@@ -589,11 +701,22 @@ let restricted_output_format_string_delegate
        ~ok:(fun reg ->
          let _ =
            finfo#add_register_parameter_location reg BCHBCTypeUtil.t_charptr 4 in
-         let ftspar = finfo#get_summary#get_parameter_for_register reg in
-         let dst = ArgValue ftspar in
-         let xpred = XXRestrictedOutputFormatString (dst, sl) in
-         let _ = finfo#add_precondition xpred in
-         Delegated xpred)
+         TR.tfold
+           ~ok:(fun ftspar ->
+             let dst = ArgValue ftspar in
+             let xpred = XXRestrictedOutputFormatString (dst, sl) in
+             let _ = finfo#add_precondition xpred in
+             Delegated xpred)
+           ~error:(fun e ->
+             begin
+               log_error_result
+                 ~tag:"discharge_restricted_output_format_string"
+                 ~msg:(p2s loc#toPretty)
+                 __FILE__ __LINE__
+                 ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+               Open
+             end)
+           (finfo#get_summary#get_parameter_for_register reg))
        ~error:(fun e ->
          begin
            log_error_result
