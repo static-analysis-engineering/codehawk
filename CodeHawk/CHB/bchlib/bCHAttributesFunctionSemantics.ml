@@ -1040,63 +1040,116 @@ let get_access_sideeffect
      end
 
 
-let get_chk_post_one
+let get_chk_post_conditions
       (name: string)
       (fparams: fts_parameter_t list)
       (attrparams: b_attrparam_t list): xxpredicate_t list =
   let thisf = NamedConstant name in
   let rv = ReturnValue thisf in
   let zero = NumConstant CHNumerical.numerical_zero in
-  (* Resolve target term: bare predicate → return value; predicate + AInt → parameter *)
-  let target_result =
-    match attrparams with
-    | [ACons (pred, [])] -> Ok (pred, rv)
-    | [ACons (pred, []); AInt refindex] ->
+  let negone = NumConstant (CHNumerical.mkNumerical (-1)) in
+  let get_param (pl: b_attrparam_t list): bterm_t traceresult =
+    match pl with
+    | [] -> Ok rv
+    | [AInt 0] -> Ok rv
+    | [AInt refindex] when refindex > 0 ->
        let* par = get_par fparams refindex in
-       Ok (pred, ArgValue par)
-    | (ACons (tag, _)) :: _ ->
-       Error [(elocm __LINE__) ^ "chk_post tag not recognized: " ^ tag]
+       Ok (ArgValue par)
     | _ ->
        Error [(elocm __LINE__) ^ "chk_post params not recognized";
-              attrparams_to_string "attrparams" attrparams] in
-  TR.tfold
-    ~error:(fun e ->
-      begin
-        log_diagnostics_result
-          ~tag:"get_chk_post_one:not recognized"
-          ~msg:name
-          __FILE__ __LINE__
-          e;
-        []
-      end)
-    ~ok:(fun (pred, target) ->
-      let negone = NumConstant (CHNumerical.mkNumerical (-1)) in
-      match pred with
-      | "not_null"            -> [XXNotNull target]
-      | "null"                -> [XXNull target]
-      | "non_negative"        -> [XXNonNegative target]
-      | "not_zero"            -> [XXNotZero target]
-      | "positive"            -> [XXPositive target]
-      | "null_terminated"     -> [XXNullTerminated target]
-      | "new_memory"          -> [XXNewMemory (target, RunTimeValue)]
-      | "allocation_base"     -> [XXAllocationBase target]
-      | "trusted_string"      -> [XXTrustedString target]
-      | "trusted_os_cmd_string" -> [XXTrustedOsCmdString target]
-      | "tainted"             -> [XXTainted target]
-      | "negone"              -> [XXRelationalExpr (PEquals, target, negone)]
-      | "zero"                -> [XXRelationalExpr (PEquals, target, zero)]
-      | "negative"            -> [XXRelationalExpr (PLessThan, target, zero)]
-      | "nonpositive"         -> [XXRelationalExpr (PLessEqual, target, zero)]
-      | tag ->
-         begin
-           log_diagnostics_result
-             ~tag:"get_chk_post_one:tag not recognized"
-             ~msg:name
-             __FILE__ __LINE__
-             ["tag: " ^ tag];
-           []
-         end)
-    target_result
+              attrparams_to_string "attrparams" pl] in
+  let get_two_params (pl: b_attrparam_t list): (bterm_t * bterm_t) traceresult =
+    match pl with
+    | [AInt 0; AInt p2] ->
+       let* par = get_par fparams p2 in
+       Ok (rv, ArgValue par)
+    | [AInt p1; AInt p2] ->
+       let* par1 = get_par fparams p1 in
+       let* par2 = get_par fparams p2 in
+       Ok (ArgValue par1, ArgValue par2)
+    | _ ->
+       Error [(elocm __LINE__) ^ "chk_post params not recognized";
+              attrparams_to_string "attrparams" pl] in
+  let xpred =
+    match attrparams with
+    | (ACons ("not_null", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNotNull t]) (get_param refparams)
+    | (ACons ("null", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNull t]) (get_param refparams)
+    | (ACons ("non_negative", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNonNegative t]) (get_param refparams)
+    | (ACons ("not_zero", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNotZero t]) (get_param refparams)
+    | (ACons ("positive", [])) :: refparams ->
+       TR.tmap (fun t -> [XXPositive t]) (get_param refparams)
+    | (ACons ("null_terminated", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNullTerminated t]) (get_param refparams)
+    | (ACons ("new_memory", [])) :: ([_; _] as refparams) ->
+       TR.tmap
+         (fun (t, sizeparam) -> [XXNewMemory (t, sizeparam)])
+         (get_two_params refparams)
+    | (ACons ("new_memory", [])) :: refparams ->
+       TR.tmap (fun t -> [XXNewMemory (t, RunTimeValue)]) (get_param refparams)
+    | (ACons ("new_memory", [AInt size])) :: refparams ->
+       let asize = NumConstant (CHNumerical.mkNumerical size) in
+       TR.tmap (fun t -> [XXNewMemory (t, asize)]) (get_param refparams)
+    | (ACons ("allocation_base", [])) :: refparams ->
+       TR.tmap (fun t -> [XXAllocationBase t]) (get_param refparams)
+    | (ACons ("trusted_string", [])) :: refparams ->
+       TR.tmap (fun t -> [XXTrustedString t]) (get_param refparams)
+    | (ACons ("trusted_os_cmd_string", [])) :: refparams ->
+       TR.tmap (fun t -> [XXTrustedOsCmdString t]) (get_param refparams)
+    | (ACons ("trusted_os_cmd_fmt_arg_string", [])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXTrustedOsCmdFmtArgString (t, NO_QUOTES, None)])
+         (get_param refparams)
+    | (ACons ("trusted_os_cmd_fmt_arg_string", [ACons ("no_quotes", [])]))
+      :: refparams ->
+       TR.tmap
+         (fun t -> [XXTrustedOsCmdFmtArgString (t, NO_QUOTES, None)])
+         (get_param refparams)
+    | (ACons ("trusted_os_cmd_fmt_arg_string",
+              [ACons ("no_quotes", []); AInt size])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXTrustedOsCmdFmtArgString (t, NO_QUOTES, Some size)])
+         (get_param refparams)
+    | (ACons ("tainted", [])) :: refparams ->
+       TR.tmap (fun t -> [XXTainted t]) (get_param refparams)
+    | (ACons ("negone", [])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXRelationalExpr (PEquals, t, negone)])
+         (get_param refparams)
+    | (ACons ("zero", [])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXRelationalExpr (PEquals, t, zero)])
+         (get_param refparams)
+    | (ACons ("negative", [])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXRelationalExpr (PLessThan, t, zero)])
+         (get_param refparams)
+    | (ACons ("nonpositive", [])) :: refparams ->
+       TR.tmap
+         (fun t -> [XXRelationalExpr (PLessEqual, t, zero)])
+         (get_param refparams)
+    | (ACons (tag, _)) :: _ ->
+       Error [(elocm __LINE__)
+              ^ "chk_post tag " ^ tag ^ " not recognized in "
+              ^ (attrparams_to_string "argparams" attrparams)]
+    | _ ->
+       Error [(elocm __LINE__)
+              ^ "chk_post attrparams not recognized: "
+              ^ (attrparams_to_string "argparams" attrparams)] in
+  match xpred with
+  | Ok xl -> xl
+  | Error e ->
+     begin
+       log_error_result
+         ~tag:"get_check_post_conditions"
+         ~msg:name
+         __FILE__ __LINE__
+         [String.concat "; " e];
+       []
+     end
 
 
 let get_chk_qual_conditions
@@ -1184,11 +1237,11 @@ let convert_b_attributes_to_function_conditions
          (xpre, side @ xside, xpost, xepost, xqual)
 
       | Attr ("chk_post", attrparams) ->
-         let post = get_chk_post_one name fparameters attrparams in
+         let post = get_chk_post_conditions name fparameters attrparams in
          (xpre, xside, post @ xpost, xepost, xqual)
 
       | Attr ("chk_epost", attrparams) ->
-         let epost = get_chk_post_one name fparameters attrparams in
+         let epost = get_chk_post_conditions name fparameters attrparams in
          (xpre, xside, xpost, epost @ xepost, xqual)
 
       | Attr ("chk_qual", attrparams) ->
