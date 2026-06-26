@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ open CHPretty
 (* chutil *)
 open CHLogger
 open CHPrettyUtil
+open CHTraceResult
 open CHXmlDocument
 open CHXmlReader
 
@@ -46,6 +47,9 @@ open BCHFunctionInterface
 open BCHFunctionSemantics
 open BCHLibTypes
 
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let raise_xml_error (node:xml_element_int) (msg:pretty_t) =
   let error_msg =
@@ -137,14 +141,16 @@ object (self:'a)
 
   method get_parameters = get_fts_parameters self#get_function_interface
 
-  method get_parameter_for_register (reg: register_t): fts_parameter_t =
+  (* This operation may fail in the first few analysis rounds if the parameter
+     is a variadic parameter and the full signature has not been constructed
+     from the format string.*)
+  method get_parameter_for_register (reg: register_t): fts_parameter_t traceresult =
     let rpar = get_register_parameter_for_register self#get_function_interface reg in
     match rpar with
-    | Some p -> p
+    | Some p -> Ok p
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Internal error: get_parameter_for_register"]))
+       Error [(elocm __LINE__)
+              ^ "get_parameter_for_register: " ^ (register_to_string reg)]
 
   method has_parameter_for_register (reg: register_t): bool =
     Option.is_some

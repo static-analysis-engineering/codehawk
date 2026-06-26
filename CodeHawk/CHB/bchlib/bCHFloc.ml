@@ -188,8 +188,17 @@ object (self)
              finfo#update_summary
                (finfo#get_summary#add_register_parameter_location
                   reg btype 4) in
-           let ftspar = finfo#get_summary#get_parameter_for_register reg in
-           Some (ArgValue ftspar))
+           TR.tfold
+             ~ok:(fun ftspar -> Some (ArgValue ftspar))
+             ~error:(fun e ->
+               begin
+                 log_error_result
+                   ~tag:"xpr_to_bterm"
+                   __FILE__ __LINE__
+                   ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+                 None
+               end)
+             (finfo#get_summary#get_parameter_for_register reg))
          ~error:(fun e ->
            begin
              log_error_result
@@ -232,15 +241,23 @@ object (self)
     match xpr with
     | XConst (IntConst n) -> Some (NumConstant n)
     | XVar v when self#finfo#env#is_initial_register_value v ->
-       log_tfold
-         (log_error "xpr_to_bterm" "invalid register")
+       TR.tfold
          ~ok:(fun reg ->
            let _ =
              self#finfo#update_summary
                (self#finfo#get_summary#add_register_parameter_location
                   reg btype 4) in
-           let ftspar = self#finfo#get_summary#get_parameter_for_register reg in
-           Some (ArgValue ftspar))
+           TR.tfold
+             ~ok:(fun ftspar -> Some (ArgValue ftspar))
+             ~error:(fun e ->
+               begin
+                 log_error_result
+                   ~tag:"xpr_to_bterm"
+                   __FILE__ __LINE__
+                   ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+                 None
+               end)
+             (self#finfo#get_summary#get_parameter_for_register reg))
          ~error:(fun _ -> None)
          (self#finfo#env#get_initial_register_value_register v)
     | XVar v when self#finfo#env#is_stack_parameter_value v ->
@@ -2312,8 +2329,10 @@ object (self)
         ~msg:(eloc __LINE__)
         (fun reg ->
           if self#f#get_summary#has_parameter_for_register reg then
-            let param = self#f#get_summary#get_parameter_for_register reg in
-            Ok param.apar_type
+            TR.tbind
+              ~msg:(eloc __LINE__)
+              (fun param -> Ok param.apar_type)
+              (self#f#get_summary#get_parameter_for_register reg)
           else
             let ty = self#env#get_variable_type v in
             match ty with

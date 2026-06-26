@@ -2547,7 +2547,7 @@ object ('a)
 
   method get_parameters: fts_parameter_t list
 
-  method get_parameter_for_register: register_t -> fts_parameter_t
+  method get_parameter_for_register: register_t -> fts_parameter_t traceresult
 
   method has_parameter_for_register: register_t -> bool
 
