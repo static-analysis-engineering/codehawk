@@ -334,7 +334,7 @@ let trusted_os_cmd_fmt_string_va_list_delegate
   | _ -> Open
 
 
-let trusted_os_cmd_fmt_string_fmt_args_delegate
+let trusted_os_cmd_fmt_string_fmt_args_delegate_local
       (finfo: function_info_int)
       (loc: location_int)
       (fmtargs: annotated_format_arg_t list): po_status_t =
@@ -365,7 +365,7 @@ let discharge_trusted_os_cmd_fmt_string
         | VA_LIST ->
            trusted_os_cmd_fmt_string_va_list_delegate finfo loc x optlen
         | FMT_ARGS ->
-           trusted_os_cmd_fmt_string_fmt_args_delegate finfo loc fmtargs)
+           trusted_os_cmd_fmt_string_fmt_args_delegate_local finfo loc fmtargs)
     | _ -> status in
   match status with
   | Open ->
@@ -506,6 +506,21 @@ let trusted_os_cmd_fmt_arg_string_parameter_postcondition
                         ["x: " ^ (x2s x); "xpr do not match"];
                       Open
                     end
+               | XXTainted bterm ->
+                  if check_bterm bterm then
+                    Violated (
+                        "postcondition of "
+                        ^ ctinfo#get_name
+                        ^ " states that value written may be tainted")
+                  else
+                    begin
+                      log_diagnostics_result
+                        ~tag
+                        ~msg:(p2s loc#toPretty)
+                        __FILE__ __LINE__
+                        ["x: " ^ (x2s x); "xpr do not match"];
+                      Open
+                    end
                | p ->
                   begin
                     log_diagnostics_result
@@ -549,6 +564,25 @@ let trusted_os_cmd_fmt_arg_string_delegate_local
        Open
 
 
+let trusted_os_cmd_fmt_arg_string_delegate
+      (finfo: function_info_int)
+      (loc: location_int)
+      (xpr: xpr_t)
+      (quotes: quote_status_t)
+      (optlen: int option): po_status_t =
+  let floc = BCHFloc.get_finfo_floc finfo loc in
+  let xpxt_opt = floc#get_expression_externalizer in
+  match xpxt_opt with
+  | Some xpxt ->
+     (match xpxt#xpr_to_bterm BCHBCTypeUtil.t_charptr xpr with
+      | Some xfmtarg ->
+         let xpred = XXTrustedOsCmdFmtArgString (xfmtarg, quotes, optlen) in
+         let _ = finfo#add_precondition xpred in
+         Delegated (xpred)
+      | _ -> Open)
+  | _ -> Open
+
+
 let discharge_trusted_os_cmd_fmt_arg_string
       (finfo: function_info_int)
       (loc: location_int)
@@ -568,6 +602,11 @@ let discharge_trusted_os_cmd_fmt_arg_string
     | Open ->
        trusted_os_cmd_fmt_arg_string_parameter_postcondition
          finfo loc x quotes optlen
+    | _ -> status in
+  let status =
+    match status with
+    | Open ->
+       trusted_os_cmd_fmt_arg_string_delegate finfo loc x quotes optlen
     | _ -> status in
   let status =
     match status with
