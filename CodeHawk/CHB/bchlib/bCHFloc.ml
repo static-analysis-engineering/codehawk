@@ -835,12 +835,12 @@ object (self)
                  let fmtargs = fmtspec#get_arguments in
                  let orig_npar = List.length (get_fts_parameters fintf) in
                  let newfintf = add_format_spec_parameters fintf isinput fmtargs in
+                 let new_pars =
+                   List.filteri
+                     (fun i _ -> i >= orig_npar)
+                     (get_fts_parameters newfintf) in
                  let new_sem =
                    if isinput then
-                     let new_pars =
-                       List.filteri
-                         (fun i _ -> i >= orig_npar)
-                         (get_fts_parameters newfintf) in
                      let new_ses =
                        List.map (fun p ->
                            match p.apar_type with
@@ -856,7 +856,20 @@ object (self)
                      {sem with
                        fsem_sideeffects = sem.fsem_sideeffects @ new_ses}
                    else
-                     sem in
+                     let new_preconditions =
+                       List.fold_left (fun acc p ->
+                           if is_char_pointer p.apar_type then
+                             let argval = ArgValue p in
+                             let ntp = ArgNullTerminatorPos argval in
+                             let newpres =
+                               [XXBuffer (t_char, argval, ntp);
+                                XXInitializedRange (t_char, argval, ntp);
+                                XXNullTerminated argval;
+                                XXNotNull argval] in
+                             newpres @ acc
+                           else
+                             acc) [] new_pars in
+                     {sem with fsem_pre = sem.fsem_pre @ new_preconditions} in
                  Some (newfintf, new_sem)
                else
                  None
