@@ -785,7 +785,7 @@ object (self)
                 tfold
                   ~ok:(fun numoffset ->
                     let four = mkNumerical 4 in
-                    if numoffset#gt numerical_zero
+                    if numoffset#geq numerical_zero
                        && (numoffset#modulo four)#equal numerical_zero then
                       Some ((numoffset#div four)#toInt)
                     else
