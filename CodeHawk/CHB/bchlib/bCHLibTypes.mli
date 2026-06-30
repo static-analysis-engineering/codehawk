@@ -2551,7 +2551,7 @@ object ('a)
 
   method has_parameter_for_register: register_t -> bool
 
-  method get_parameter_at_stack_offset: int -> fts_parameter_t
+  method get_parameter_at_stack_offset: int -> fts_parameter_t traceresult
 
   method get_returntype: btype_t
 

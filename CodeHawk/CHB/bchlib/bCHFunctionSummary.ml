@@ -156,14 +156,13 @@ object (self:'a)
     Option.is_some
       (get_register_parameter_for_register self#get_function_interface reg)
 
-  method get_parameter_at_stack_offset (offset: int): fts_parameter_t =
+  method get_parameter_at_stack_offset (offset: int): fts_parameter_t traceresult =
     let spar = get_stack_parameter_at_offset self#get_function_interface offset in
     match spar with
-    | Some p -> p
+    | Some p -> Ok p
     | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK [STR "Internal error: get_parameter_at_stack_offset"]))
+       Error [(elocm __LINE__) ^ "get_parameter_at_stack_offset";
+              "offset: " ^ (string_of_int offset)]
 
   method get_returntype = get_fts_returntype self#get_function_interface
 

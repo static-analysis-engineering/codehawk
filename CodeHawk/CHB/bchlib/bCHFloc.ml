@@ -208,6 +208,35 @@ object (self)
              None
            end)
          (finfo#env#get_initial_register_value_register v)
+    | XVar v when finfo#env#is_stack_parameter_value v ->
+       let indexopt = finfo#env#get_stack_parameter_index v in
+       (match indexopt with
+        | Some index ->
+           let _ =
+             finfo#update_summary
+               (finfo#get_summary#add_stack_parameter_location
+                  (4 * index) btype 4) in
+           TR.tfold
+             ~ok:(fun ftspar -> Some (ArgValue ftspar))
+             ~error:(fun e ->
+               begin
+                 log_error_result
+                   ~tag:"xpr_to_bterm"
+                   __FILE__ __LINE__
+                   ["v: " ^ (p2s v#toPretty);
+                    "index: " ^ (string_of_int index);
+                    String.concat ", " e];
+                 None
+               end)
+             (finfo#get_summary#get_parameter_at_stack_offset (4 * index))
+        | _ ->
+           begin
+             log_diagnostics_result
+               ~tag:"xpr_to_bterm:stack-parameter"
+               __FILE__ __LINE__
+               ["xpr: " ^ (x2s xpr)];
+             None
+           end)
     | XOp ((Xf "indexsize"), [xx]) ->
        let optt = self#xpr_to_bterm t_int xx in
        (match optt with
@@ -268,9 +297,15 @@ object (self)
             self#finfo#update_summary
               (self#finfo#get_summary#add_stack_parameter_location
                  (4 * index) btype 4) in
-          let ftspar =
-            self#finfo#get_summary#get_parameter_at_stack_offset (4 * index) in
-          Some (ArgValue ftspar)
+          TR.tfold
+            ~ok:(fun ftspar -> Some (ArgValue ftspar))
+            ~error:(fun e ->
+              log_error_result
+                ~tag:"xpr_to_bterm"
+                __FILE__ __LINE__
+                ["v: " ^ (p2s v#toPretty); String.concat ", " e];
+              None)
+            (self#finfo#get_summary#get_parameter_at_stack_offset (4 * index))
        | _ -> None)
     | XOp ((Xf "indexsize"), [xx]) ->
        let optt = self#xpr_to_bterm t_int xx in

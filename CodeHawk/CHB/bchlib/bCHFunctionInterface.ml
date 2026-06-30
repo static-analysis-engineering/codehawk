@@ -960,13 +960,13 @@ let add_function_stack_parameter_location
          loc :: fintf.fintf_parameter_locations in
      {fintf with fintf_parameter_locations = newlocations}
   | Some bctype ->
-     let _ =
-       chlog#add
-         "add-function-stack-parameter-location"
-         (LBLOCK [
-              STR "Location not added; bctype is fixed: ";
-              STR (btype_to_string bctype)]) in
-     fintf
+     begin
+       log_diagnostics_result
+         ~tag:"add_function_stack_parameter_location: not added"
+         __FILE__ __LINE__
+         ["fixed function type: " ^ (btype_to_string bctype)];
+       fintf
+     end
 
 
 let add_function_global_parameter_location
