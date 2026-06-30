@@ -592,7 +592,8 @@ let arm_vfp_params
            __FILE__ __LINE__
            ["fmtstringtype: "
             ^ (BCHFtsParameter.formatstring_type_to_string fmtstringtype);
-            "attr count: "  ^ (string_of_int (List.length attrs))] in
+            "attr count: "  ^ (string_of_int (List.length attrs));
+            "varargs: " ^ (if varargs then "yes" else "no")] in
        fmtstringtype
     | _ -> NoFormat in
   let (_, _, params) =
@@ -611,11 +612,7 @@ let arm_vfp_params
         | Ok btype, Ok tysize ->
            (* assume no packing at the argument top level *)
            let size = if tysize < 4 then 4 else tysize in
-           let fmt =
-             if varargs then
-               fmt index
-             else
-               NoFormat in
+           let fmt = fmt index in
            let (param, new_state) =
              if (is_int btype || is_pointer btype || is_enum btype) && size = 4 then
                get_arm_int_param_next_state ~fmt size name btype aa_state index
