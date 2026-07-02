@@ -1302,7 +1302,8 @@ let translate_arm_instruction
    * BranchWritePC(targetAddress);
    * ------------------------------------------------------------------------ *)
   | BranchLink (c, tgt)
-    | BranchLinkExchange (c, tgt) when tgt#is_absolute_address ->
+    | BranchLinkExchange (c, tgt)
+       when tgt#is_absolute_address || floc#has_call_target ->
      if instr#is_inlined_call then
        default []
      else
@@ -2510,6 +2511,7 @@ let translate_arm_instruction
                 xr0_r
          else
            [] in
+       let _ = if rl#includes_pc then floc#add_return in
        let popdefcmds =
          floc#get_vardef_commands
            ~defs:[splhs]
