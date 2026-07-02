@@ -1700,6 +1700,7 @@ object (self)
   val stackframe = mk_function_stackframe fndata varmgr
   val proofobligations =
     mk_proofobligations faddr (mk_xpodictionary varmgr#vard#xd)
+  val mutable returnlocations = []
 
   (* ------------------------------------------------------------------------- *)
 
@@ -1713,6 +1714,12 @@ object (self)
     log_error_result ~msg:self#a#to_hex_string __FILE__ line e
 
   method stackframe = stackframe
+
+  method add_return (iaddr: ctxt_iaddress_t) =
+    if not (List.mem iaddr returnlocations) then
+      returnlocations <- iaddr :: returnlocations
+
+  method return_locations = returnlocations
 
   method xpod = self#proofobligations#xpod
 

@@ -5807,6 +5807,12 @@ object
   (** Returns the object containing all active proof obligations.*)
   method proofobligations: proofobligations_int
 
+  (** Add the given address to the list of return locations.*)
+  method add_return: ctxt_iaddress_t -> unit
+
+  (** Return instruction addresses in this function declared as return address.*)
+  method return_locations: ctxt_iaddress_t list
+
 
   (** {1 Function invariants} *)
 
@@ -6376,6 +6382,9 @@ class type floc_int =
 
     (** Returns the bytes of the instruction as a hexstring *)
     method get_instruction_bytes: string
+
+    (** Declares the current instruction to be a a return instruction *)
+    method add_return: unit
 
     (** {1 Variables} *)
 

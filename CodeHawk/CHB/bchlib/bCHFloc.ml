@@ -734,6 +734,8 @@ object (self)
 
   method memrecorder = mk_memory_recorder self#f self#cia
 
+  method add_return = self#f#add_return self#cia
+
   (* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *
    *                                                            call targets *
    * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ *)
@@ -942,7 +944,10 @@ object (self)
                      ~tag:"update_arm_varargs:no format arg info available"
                      ~msg:self#cia
                      __FILE__ __LINE__
-                     ["argxpr: " ^ (x2s (XVar v))] in
+                     ["argxpr: " ^ (x2s (XVar v));
+                      "par_name: " ^ ftspar.apar_name;
+                      "formatstring_type: "
+                      ^ (formatstring_type_to_string ftspar.apar_fmt)] in
                  None)
           | _ ->
              let _ =
