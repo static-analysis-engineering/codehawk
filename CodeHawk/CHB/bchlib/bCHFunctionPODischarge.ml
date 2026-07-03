@@ -31,6 +31,7 @@ open CHLanguage
 (* chutil *)
 open CHFormatStringParser
 open CHLogger
+open CHTraceResult
 
 (* xprlib *)
 open XprTypes
@@ -38,6 +39,7 @@ open Xsimplify
 
 (* bchlib *)
 open BCHBCTypes
+open BCHBTerm
 open BCHExternalPredicate
 open BCHGlobalState
 open BCHLibTypes
@@ -45,6 +47,10 @@ open BCHXPOPredicate
 
 module TR = CHTraceResult
 
+let (let*) x f = CHTraceResult.tbind f x
+
+let eloc (line: int): string = __FILE__ ^ ":" ^ (string_of_int line)
+let elocm (line: int): string = (eloc line) ^ ": "
 
 let p2s = CHPrettyUtil.pretty_to_string
 let x2p = XprToPretty.xpr_formatter#pr_expr
@@ -171,6 +177,58 @@ let buffer_writer_callsite
        None
      end
 
+
+let external_buffer_writer_callsite
+      (finfo: function_info_int)
+      (loc: location_int)
+      (memvar: variable_t): location_int option =
+  let varinv = finfo#ivarinv loc#ci in
+  let rdfacts = List.filter (fun f -> f#is_reaching_def) varinv#get_facts in
+  let _ =
+    log_diagnostics_result
+      ~tag:"external_buffer_writer_callsite"
+      ~msg:loc#ci
+      __FILE__ __LINE__
+      [String.concat ", " (List.map (fun f -> p2s f#toPretty) rdfacts)] in
+  let symvar = finfo#env#mk_symbolic_variable memvar in
+  let vinvs = varinv#get_var_reaching_defs symvar in
+  let defsites =
+    List.concat_map (fun vinv ->
+        List.filter_map (fun sym ->
+            let defcia = sym#getBaseName in
+            if defcia = "init" then
+              None
+            else if finfo#has_call_target defcia then
+              Some (BCHLocation.ctxt_string_to_location finfo#a defcia)
+            else
+              None)
+          vinv#get_reaching_defs)
+      vinvs in
+  (match defsites with
+   | [defloc] -> Some defloc
+   | [] ->
+      begin
+        log_diagnostics_result
+          ~tag:"buffer_writer_callsite:no defining locations"
+          ~msg:(p2s loc#toPretty)
+          __FILE__ __LINE__
+          ["memvar: " ^ (p2s memvar#toPretty)];
+        None
+      end
+   | _ ->
+      begin
+        log_diagnostics_result
+          ~tag:"buffer_writer_callsite:multiple defining locations"
+          ~msg:(p2s loc#toPretty)
+          __FILE__ __LINE__
+          ["memvar: " ^ (p2s memvar#toPretty);
+           "defsites: "
+           ^ (String.concat ", " (List.map (fun l -> p2s l#toPretty) defsites))];
+        None
+      end)
+
+
+
 (* =========================================================================
    Discharge strategies per PO type
    ========================================================================= *)
@@ -274,11 +332,100 @@ let trusted_os_cmd_string_delegate_local
        Open
 
 
+let trusted_os_cmd_string_parameter_postcondition
+      (finfo: function_info_int)
+      (loc: location_int)
+      (x: xpr_t): po_status_t =
+  let floc = BCHFloc.get_finfo_floc finfo loc in
+  let tag = "trusted_os_cmd_string_parameter_postcondition" in
+  if not floc#has_call_target then
+    begin
+      log_diagnostics_result
+        ~tag
+        ~msg:(p2s loc#toPretty)
+        __FILE__ __LINE__
+        ["x: " ^ (x2s x); "not a call site"];
+      Open
+    end
+  else
+    let ctinfo = floc#get_call_target in
+    match floc#get_bterm_evaluator with
+    | None ->
+       begin
+         log_diagnostics_result
+           ~tag
+           ~msg:(p2s loc#toPretty)
+           __FILE__ __LINE__
+           ["x: " ^ (x2s x); "no bterm evaluator found"];
+         Open
+       end
+    | Some btermev ->
+       let check_bterm (bterm: bterm_t): bool =
+         match btermev#bterm_xpr bterm with
+         | Some xpost ->
+            let xpost' = floc#inv#rewrite_expr xpost in
+            (match simplify_xpr (XOp (XMinus, [xpost'; x])) with
+             | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
+             | _ -> false)
+         | _ -> false in
+       List.fold_left (fun status post ->
+           match status with
+           | Open ->
+              (match post with
+               | XXTrustedOsCmdString bterm
+                 | XXTrustedString bterm ->
+                  if check_bterm bterm then
+                    Discharged (
+                        "trusted-os-cmd-string postcondition from "
+                        ^ ctinfo#get_name)
+                  else
+                    begin
+                      log_diagnostics_result
+                        ~tag
+                        ~msg:(p2s loc#toPretty)
+                        __FILE__ __LINE__
+                        ["x: " ^ (x2s x); "xpr does not match term"];
+                      Open
+                    end
+               | XXTainted bterm ->
+                  if check_bterm bterm then
+                    Violated (
+                        "postcondition of "
+                        ^ ctinfo#get_name
+                        ^ " states that value written may be tainted")
+                  else
+                    begin
+                      log_diagnostics_result
+                        ~tag
+                        ~msg:(p2s loc#toPretty)
+                        __FILE__ __LINE__
+                        ["x: " ^ (x2s x); "xpr do not match"];
+                      Open
+                    end
+               | p ->
+                  begin
+                    log_diagnostics_result
+                      ~tag
+                      ~msg:(p2s loc#toPretty)
+                      __FILE__ __LINE__
+                      ["x: " ^ (x2s x);
+                       "pred: " ^ (p2s (xxpredicate_to_pretty p))];
+                    Open
+                  end)
+
+           | _ ->
+              status) Open ctinfo#get_postconditions
+
+
 let discharge_trusted_os_cmd_string
       (finfo: function_info_int)
       (loc: location_int)
       (x: xpr_t): po_status_t =
   let status = trusted_os_cmd_string_constant_string_stmt loc x in
+  let status =
+    match status with
+    | Open -> trusted_os_cmd_string_parameter_postcondition finfo loc x
+    | _ -> status in
   let status =
     match status with
     | Open -> trusted_os_cmd_string_delegate_local_instr finfo loc x
@@ -465,13 +612,23 @@ let trusted_os_cmd_fmt_arg_string_parameter_postcondition
          Open
        end
     | Some btermev ->
-       let check_bterm (bterm: bterm_t): bool =
+       let check_bterm (p: xxpredicate_t) (bterm: bterm_t): bool =
          match btermev#bterm_xpr bterm with
          | Some xpost ->
             let xpost' = floc#inv#rewrite_expr xpost in
             (match simplify_xpr (XOp (XMinus, [xpost'; x])) with
              | XConst (IntConst n) -> n#equal CHNumerical.numerical_zero
-             | _ -> false)
+             | _ ->
+                begin
+                  log_diagnostics_result
+                    ~tag:(tag ^ ": bterm mismatch")
+                    ~msg:(p2s loc#toPretty)
+                    __FILE__ __LINE__
+                    ["xpred: " ^ (p2s (xxpredicate_to_pretty p));
+                     "xpost': " ^ (x2s xpost');
+                     "x: " ^ (x2s x)];
+                  false
+                end)
          | _ -> false in
        List.fold_left (fun status post ->
            match status with
@@ -479,48 +636,30 @@ let trusted_os_cmd_fmt_arg_string_parameter_postcondition
               (match post with
                | XXTrustedOsCmdString bterm
                  | XXTrustedString bterm ->
-                  if check_bterm bterm then
+                  if check_bterm post bterm then
                     Discharged (
                         "trusted-os-cmd-string postcondition from "
                         ^ ctinfo#get_name)
                   else
-                    begin
-                      log_diagnostics_result
-                        ~tag
-                        ~msg:(p2s loc#toPretty)
-                        __FILE__ __LINE__
-                        ["x: " ^ (x2s x); "xpr does not match term"];
-                      Open
-                    end
+                    Open
+
                | XXTrustedOsCmdFmtArgString (bterm, q, _) when q = quotes ->
-                  if check_bterm bterm then
+                  if check_bterm post bterm then
                     Discharged (
                         "trusted-os-cmd-fmt-arg-string postcondition from "
                         ^ ctinfo#get_name)
                   else
-                    begin
-                      log_diagnostics_result
-                        ~tag
-                        ~msg:(p2s loc#toPretty)
-                        __FILE__ __LINE__
-                        ["x: " ^ (x2s x); "xpr do not match"];
-                      Open
-                    end
+                    Open
+
                | XXTainted bterm ->
-                  if check_bterm bterm then
+                  if check_bterm post bterm then
                     Violated (
                         "postcondition of "
                         ^ ctinfo#get_name
                         ^ " states that value written may be tainted")
                   else
-                    begin
-                      log_diagnostics_result
-                        ~tag
-                        ~msg:(p2s loc#toPretty)
-                        __FILE__ __LINE__
-                        ["x: " ^ (x2s x); "xpr do not match"];
-                      Open
-                    end
+                    Open
+
                | p ->
                   begin
                     log_diagnostics_result
@@ -1386,6 +1525,103 @@ let discharge_pass
     0 openpos
 
 
+(* ==========================================================================
+   Impose postconditions
+   ========================================================================== *)
+
+let bterm_to_variable
+      (finfo: function_info_int) (bterm: bterm_t): variable_t traceresult =
+  match bterm with
+  | ArgValue par ->
+     (match par.apar_location with
+      | [RegisterParameter (reg, _, _)] ->
+         Ok (finfo#env#mk_initial_register_value reg)
+      | [StackParameter (offset, _, _)] ->
+         let memref = finfo#env#mk_local_stack_reference in
+         let memvar =
+           finfo#env#mk_memory_variable memref (CHNumerical.mkNumerical offset) in
+         finfo#env#mk_initial_memory_value memvar
+      | _ ->
+         Error ["Unable to convert bterm to xpr: " ^ (bterm_to_string bterm)])
+  | _ ->
+     Error ["Unable to convert bterm to xpr: " ^ (bterm_to_string bterm)]
+
+
+let impose_trusted_os_cmd_string_pc
+      (finfo: function_info_int)
+      (bterm: bterm_t)
+      (returnlocs: ctxt_iaddress_t list):unit traceresult =
+  let* paramvar = bterm_to_variable finfo bterm in
+  let* memvar = finfo#env#mk_basevar_memory_variable paramvar NoOffset in
+  let errors =
+    List.fold_left (fun errors rcia ->
+        let loc = BCHLocation.ctxt_string_to_location finfo#get_address rcia in
+        match external_buffer_writer_callsite finfo loc memvar with
+        | Some defloc ->
+           let deffloc = BCHFloc.get_finfo_floc finfo defloc in
+           if call_writes_to_buffer deffloc (XVar paramvar) then
+             let xpo = XPOTrustedOsCmdString (XVar paramvar) in
+             begin
+               finfo#proofobligations#add_proofobligation defloc#ci xpo Open;
+               (log_diagnostics_result
+                  ~tag:"impose_trusted_os_cmd_string_pc"
+                  ~msg:(p2s defloc#toPretty)
+                  __FILE__ __LINE__
+                  ["returnloc: " ^ rcia;
+                   "xpo: " ^ (p2s (xpo_predicate_to_pretty xpo))]);
+               errors
+             end
+           else
+             [(elocm __LINE__) ^ "impose_trusted_os_cmd_string_pc";
+              "no buffer write";
+              "returnloc: " ^ rcia;
+              "deffloc: " ^ (p2s deffloc#l#toPretty);
+              "memvar: " ^ (p2s memvar#toPretty)] @ errors
+        | _ ->
+           [(elocm __LINE__) ^ "impose_trusted_os_cmd_string_pc";
+            "no defloc";
+            "returnloc: " ^ rcia;
+            "memvar: " ^ (p2s memvar#toPretty)] @ errors)
+      [] returnlocs in
+  match errors with
+  | [] -> Ok ()
+  | e -> Error e
+
+
+let impose_postconditions (finfo: function_info_int) =
+  let postconditions = finfo#get_summary#get_postconditions in
+  let returnlocs = finfo#return_locations in
+  let _ =
+    log_diagnostics_result
+      ~tag:"impose_postconditions"
+      ~msg:finfo#get_name
+      __FILE__ __LINE__
+      ["postconditions: "
+       ^ (String.concat "; "
+            (List.map
+               (fun p -> (p2s (xxpredicate_to_pretty p)))
+               postconditions));
+       "return locations: " ^ (String.concat ", " returnlocs)] in
+  let errors =
+    List.fold_left (fun errors pc ->
+        match pc with
+        | XXTrustedOsCmdString bterm ->
+           (match impose_trusted_os_cmd_string_pc finfo bterm returnlocs with
+           | Ok _ -> errors
+           | Error e -> e @ errors)
+        | _ -> errors) [] postconditions in
+  let _ =
+    match errors with
+    | [] -> ()
+    | _ ->
+       log_error_result
+         ~tag:"impose_postconditions"
+         ~msg:finfo#get_name
+         __FILE__ __LINE__
+         errors in
+  ()
+
+
 (* =========================================================================
    Entry point
    ========================================================================= *)
@@ -1405,6 +1641,7 @@ let discharge_pass
 let discharge_function_proofobligations
       ?(max_passes = 8)
       (finfo: function_info_int): unit =
+  let _ = impose_postconditions finfo in
   let rec loop n =
     if n = 0 then
       ()
