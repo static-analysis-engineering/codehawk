@@ -3739,16 +3739,48 @@ object (self)
 
    method private evaluate_fts_address_argument
                     (p: fts_parameter_t):variable_t option =
-     let resolve_stack_address xpr tag =
+     let tag = "evaluate_fts_address_argument" in
+     let resolve_address_xpr (xpr: xpr_t): variable_t option =
        match xpr with
-       | XOp (XMinus, [XVar _v; XConst (IntConst n)]) when n#geq numerical_zero ->
+       (* xpr is an argument passed in to the caller via a register *)
+       | XVar v when self#f#env#is_initial_register_value v ->
+          TR.tfold
+            ~ok:(fun memvar ->
+              begin
+                log_diagnostics_result
+                  ~tag:(tag ^ ":resolve_address_xpr:function parameter value")
+                  ~msg:(p2s self#l#toPretty)
+                  __FILE__ __LINE__
+                  ["parameter: " ^ (fts_parameter_to_string p);
+                   "xpr: " ^ (x2s xpr);
+                   "memvar: " ^ (p2s memvar#toPretty)];
+                Some memvar
+              end)
+            ~error:(fun e ->
+              begin
+                log_error_result
+                  ~tag:(tag ^ ":resolve_address_xpr:function paramval: error")
+                  ~msg:(p2s self#l#toPretty)
+                  __FILE__ __LINE__
+                  ["parameter: " ^ (fts_parameter_to_string p);
+                   "xpr: " ^ (x2s xpr);
+                   String.concat ", " e];
+                None
+              end)
+            (self#f#env#mk_basevar_memory_variable v NoOffset)
+
+       (* xpr is a stack address *)
+       | XOp (XMinus, [XVar v; XConst (IntConst n)])
+            when self#f#env#is_initial_stackpointer_value v
+                 && n#geq numerical_zero ->
           let spoffset = n#neg in
           (match self#f#stackframe#containing_stackslot spoffset#toInt with
            | Some stackslot ->
-              let stackvar = self#f#env#mk_stackslot_variable stackslot NoOffset in
+              let stackvar =
+                self#f#env#mk_stackslot_variable stackslot NoOffset in
               let _ =
                 log_diagnostics_result
-                  ~tag:"evaluate_fts_address_argument:resolve_stack_address"
+                  ~tag:(tag ^ ":resolve_address_xpr:stack")
                   ~msg:(p2s self#l#toPretty)
                   __FILE__ __LINE__
                   ["parameter: " ^ (fts_parameter_to_string p);
@@ -3781,21 +3813,26 @@ object (self)
      | [RegisterParameter (r, _, _)] ->
         let argvar = self#env#mk_register_variable r in
         let xpr = self#rewrite_variable_to_external argvar in
-        resolve_stack_address xpr "evaluate_fts_address_argument"
+        resolve_address_xpr xpr
      | [StackParameter (offset, _, _)] ->
         let memref = self#f#env#mk_local_stack_reference in
         let p_offset = mkNumerical offset in
-        log_tfold_default
-          (mk_tracelog_spec
-             ~tag:"evaluate_fts_address_argument"
-             (self#cia ^ ": stack parameter at offset " ^ (string_of_int offset)))
-          (fun s_offset ->
+        TR.tfold
+          ~ok:(fun s_offset ->
             let svar =
               self#f#env#mk_memory_variable memref (s_offset#add p_offset) in
             let xpr = self#inv#rewrite_expr (XVar svar) in
-            resolve_stack_address xpr "evaluate_fts_address_argument")
-          None
-          self#get_singleton_stackpointer_offset
+            resolve_address_xpr xpr)
+          ~error:(fun e ->
+            begin
+              log_error_result
+                ~tag:"evaluate_fts_address_argument"
+                ~msg:self#cia
+                __FILE__ __LINE__
+                ["offset: " ^ (string_of_int offset); String.concat ", " e];
+              None
+            end)
+          (self#get_singleton_stackpointer_offset)
      | _ ->
         begin
           log_diagnostics_result
