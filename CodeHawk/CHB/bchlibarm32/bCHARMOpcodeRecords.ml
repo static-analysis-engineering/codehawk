@@ -115,6 +115,7 @@ type 'a opcode_record_t = {
     operands: arm_operand_int list;
     ccode: arm_opcode_cc_t option;
     flags_set: arm_cc_flag_t list;
+    flags_used: arm_cc_flag_t list;
     ida_asm: 'a opcode_formatter_int -> 'a
   }
 
@@ -125,6 +126,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ADD";
       operands = [rd;rn;rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADD" c [rd; rn; rm])
     }
@@ -132,6 +134,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ADC";
       operands = [rd;rn;rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+      flags_used = [APSR_C];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ADC" c [rd; rn; rm])
     }
@@ -139,6 +142,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ADR";
       operands = [ rd; addr ];
       flags_set = [];
+      flags_used = [];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "ADR" cc [rd; addr ])
     }
@@ -146,6 +150,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "AESIMC";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "AESIMC" c [vd; vm])
     }
@@ -153,6 +158,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "AESMC";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "AESMC" c [vd; vm])
     }
@@ -160,6 +166,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "AESD";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "AESD" c [vd; vm])
     }
@@ -167,6 +174,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "AESE";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "AESE" c [vd; vm])
     }
@@ -174,6 +182,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ASR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "ASR" ~writeback:s c [rd; rn; rm])
     }
@@ -182,6 +191,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = "BFC";
        operands = [rd];
        flags_set = [];
+      flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~postops "BFC" c [rd])
      }
@@ -190,6 +200,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = "BFI";
        operands = [rd; rn];
        flags_set = [];
+      flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~postops "BFI" c [rd; rn])
      }
@@ -197,6 +208,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "AND";
       operands = [ rd; rn; imm ];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "AND" ~writeback:s c [rd; rn; imm])
     }
@@ -204,6 +216,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "BIC";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "BIC" c [rd;rn;rm])
     }
@@ -211,6 +224,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "EOR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "EOR" c [rd;rn;rm])
     }
@@ -218,6 +232,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MVN";
       operands = [rd; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "MVN" c [rd;rm])
     }
@@ -225,6 +240,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ORR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ORR" c [rd; rn; rm])
     }
@@ -232,6 +248,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ORN";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "ORN" ~writeback:s c [rd; rn; rm])
     }
@@ -239,6 +256,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "B";
       operands = [addr];
       flags_set = [];
+      flags_used = [];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "B" cc [ addr ])
     }
@@ -246,6 +264,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "BX";
       operands = [ addr ];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "BX" c [addr])
     }
@@ -253,6 +272,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "BL";
       operands = [addr];
       flags_set = [];
+      flags_used = [];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "BL" cc [addr])
     }
@@ -260,6 +280,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "BLX";
       operands = [addr];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "BLX" c [ addr ])
     }
@@ -267,6 +288,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "BKPT";
       operands = [op];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#ops "BKPT" [op])
     }
@@ -274,6 +296,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "REV";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "REV" c [rd; rm])
     }
@@ -281,6 +304,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "REV16";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "REV16" c [rd; rm])
     }
@@ -288,6 +312,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CPS";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f ->
         let s_effect = effect#toString in
@@ -301,6 +326,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CMP";
       operands = [rn; rm];
       flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "CMP" c [rn; rm])
     }
@@ -308,6 +334,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CBNZ";
       operands = [op1; op2];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#ops "CBNZ" [op1; op2])
     }
@@ -315,6 +342,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CBZ";
       operands = [op1; op2];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#ops "CBZ" [op1; op2])
     }
@@ -322,6 +350,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CMN";
       operands = [op1; op2];
       flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];
+      flags_used = [];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "CMN" cc [op1; op2])
     }
@@ -329,6 +358,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "CLZ";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "CLZ" c [rd;rm])
     }
@@ -336,6 +366,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "DMB";
       operands = [option];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "DMB" c [option])
     }
@@ -344,6 +375,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = mnemonic;
        operands = [];
        flags_set = [];
+      flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#ops mnemonic [])
      }
@@ -351,6 +383,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "FLDMIAX";
       operands = [rn; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "FLDMIAX" c [rn; rl])
     }
@@ -358,6 +391,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "FSTMIAX";
       operands = [rn; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "FSTMIAX" c [rn; rl])
     }
@@ -374,6 +408,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = mnemonic;
        operands = [src];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops mnemonic c [src]);
      }
@@ -381,6 +416,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDMDA";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMDA" c [ rn; rl ])
     }
@@ -388,6 +424,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDMDB";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMDB" c [rn; rl])
     }
@@ -395,6 +432,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDM";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDM" c [ rn; rl ])
     }
@@ -402,6 +440,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDMIB";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDMIB" c [rn; rl])
     }
@@ -409,6 +448,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDR";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDR" c [rt; mem])
     }
@@ -416,6 +456,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRB";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRB" c [rt; mem])
     }
@@ -423,6 +464,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRD";
       operands = [rt; rt2; rn; rm; mem; mem2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDRD" c [rt; rt2; mem])
     }
@@ -430,6 +472,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDREX";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "LDREX" c [rt; mem])
     }
@@ -437,6 +480,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRH";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRH" c [rt; mem])
     }
@@ -444,6 +488,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRSB";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRSB" c [rt; mem])
     }
@@ -451,6 +496,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LDRSH";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "LDRSH" c [rt; mem])
     }
@@ -458,6 +504,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LSL";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "LSL" c [rd; rn; rm])
     }
@@ -465,6 +512,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "LSR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "LSR" c [rd; rn; rm])
     }
@@ -474,13 +522,15 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = mnem;
        operands = [rd; rm];
        flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s mnem c [rd;rm])
-    }
+     }
   | MoveFromSpecialRegister (c, rd, src, _) -> {
       mnemonic = "MRS";
       operands = [rd; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MRS" c [rd; src])
     }
@@ -498,6 +548,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MRC";
       operands = [rt];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~preops ~postops "MRC" c [rt]);
      }
@@ -515,6 +566,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = "MCR";
        operands = [rt];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops ~postops "MCR" c [rt]);
      }
@@ -522,6 +574,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MOVT";
       operands = [rd; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MOVT" c [rd; imm])
     }
@@ -529,6 +582,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MSR";
       operands = [spr; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MSR" c [spr; imm])
     }
@@ -540,6 +594,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = "MRRC";
        operands = [rt; rt2];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops ~postops "MRRC" c [rt; rt2])
      }
@@ -547,6 +602,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MUL";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MUL" c [rd; rn; rm])
     }
@@ -554,6 +610,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MLA";
       operands = [rd; rn; rm; ra];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MLA" c [rd; rn; rm; ra])
     }
@@ -561,6 +618,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "MLS";
       operands = [rd; rn; rm; ra];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "MLS" c [rd; rn; rm; ra])
     }
@@ -568,6 +626,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "POP";
       operands = [sp; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "POP" c [rl])
     }
@@ -577,6 +636,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = mnemonic;
        operands = [base; mem];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc mnemonic c [mem])
      }
@@ -584,6 +644,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "PUSH";
       operands = [sp; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "PUSH" c [rl])
     }
@@ -591,6 +652,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "RBIT";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RBIT" c [rd; rm])
     }
@@ -598,6 +660,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "RSB";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "RSB" c [rd; rn; rm])
     }
@@ -605,6 +668,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "RSC";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+      flags_used = [APSR_C];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~writeback:s "RSC" c [rd; rn; rm])
     }
@@ -612,6 +676,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "ROR";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "ROR" c [rd; rn; rm])
     }
@@ -619,6 +684,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "RRX";
       operands = [rd; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "RRX" c [rd; rm])
     }
@@ -626,6 +692,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "QADD";
       operands = [rd; rm; rn];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "QADD" c [rd; rm; rn])
     }
@@ -633,6 +700,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "QDADD";
       operands = [rd; rm; rn];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "QDADD" c [rd; rm; rn])
     }
@@ -640,6 +708,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "QDSUB";
       operands = [rd; rm; rn];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "QDSUB" c [rd; rm; rn])
     }
@@ -647,6 +716,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "QSUB";
       operands = [rd; rm; rn];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "QSUB" c [rd; rm; rn])
     }
@@ -654,6 +724,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SEL";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SEL" c [rd; rn; rm])
     }
@@ -661,6 +732,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1H";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1H" c [vd; vm])
     }
@@ -668,6 +740,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1C";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1C" c [vd; vn; vm])
     }
@@ -675,6 +748,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1M";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1M" c [vd; vn; vm])
     }
@@ -682,6 +756,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1P";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1P" c [vd; vn; vm])
     }
@@ -689,6 +764,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1SU0";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1SU0" c [vd; vn; vm])
     }
@@ -696,6 +772,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA1SU1";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA1SU1" c [vd; vm])
     }
@@ -703,6 +780,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA256H";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA256H" c [vd; vn; vm])
     }
@@ -710,6 +788,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA256H2";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA256H2" c [vd; vn; vm])
     }
@@ -717,6 +796,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA256SU0";
       operands = [vd; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA256SU0" c [vd; vm])
     }
@@ -724,6 +804,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SHA256SU1";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "SHA256SU1" c [vd; vn; vm])
     }
@@ -731,6 +812,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SDIV";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SDIV" c [rd; rn; rm])
     }
@@ -738,6 +820,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SBFX";
       operands = [rd; rn];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SBFX" c [rd; rn])
     }
@@ -745,6 +828,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SXTB";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "SXTB" c [rd; rm])
     }
@@ -752,6 +836,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SXTH";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "SXTH" c [rd; rm])
     }
@@ -760,6 +845,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = mnemonic;
        operands = [rd; rm; rn];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc mnemonic c [rd; rm; rn])
      }
@@ -768,6 +854,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = mnemonic;
        operands = [rd; rm; rn; ra];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc mnemonic c [rd; rm; rn; ra])
      }
@@ -775,6 +862,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLABB";
       operands = [rd; rn; rm; ra];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLABB" c [rd; rn; rm; ra])
     }
@@ -782,6 +870,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLABT";
       operands = [rd; rn; rm; ra];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLABT" c [rd; rn; rm; ra])
     }
@@ -789,6 +878,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLATB";
       operands = [rd; rn; rm; ra];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLATB" c [rd; rn; rm; ra])
     }
@@ -796,6 +886,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLATT";
       operands = [rd; rn; rm; ra];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLATT" c [rd; rn; rm; ra])
     }
@@ -803,6 +894,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLAL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLAL" ~writeback:s c [rdlo; rdhi; rn; rm])
     }
@@ -810,6 +902,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLAWB";
       operands = [rd; rn; rm; ra];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLAWB" c [rd; rn; rm; ra])
     }
@@ -817,6 +910,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMLAWT";
       operands = [rd; rn; rm; ra];
       flags_set = [APSR_Q];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMLAWT" c [rd; rn; rm; ra])
     }
@@ -824,6 +918,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULBB";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULBB" c [rd; rn; rm])
     }
@@ -831,6 +926,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULBT";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULBT" c [rd; rn; rm])
     }
@@ -838,6 +934,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULTB";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULTB" c [rd; rn; rm])
     }
@@ -845,6 +942,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULTT";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULTT" c [rd; rn; rm])
     }
@@ -852,6 +950,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULL" c [rdlo; rdhi; rn; rm])
     }
@@ -859,6 +958,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULWB";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULWB" c [rd; rn; rm])
     }
@@ -866,6 +966,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SMULWT";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SMULWT" c [rd; rn; rm])
     }
@@ -882,6 +983,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = mnemonic;
        operands = [dst];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~preops mnemonic c [dst])
      }
@@ -889,6 +991,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STMDA";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMDA" c [rn; rl])
     }
@@ -896,6 +999,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STMDB";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMDB" c [rn; rl])
     }
@@ -903,6 +1007,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STM";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STM" c [rn; rl])
     }
@@ -910,6 +1015,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STMIB";
       operands = [rn; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STMIB" c [rn; rl])
     }
@@ -917,6 +1023,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STR";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STR" c [rt; mem])
     }
@@ -924,6 +1031,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STRB";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STRB" c [rt; mem])
     }
@@ -931,6 +1039,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STRD";
       operands = [rt; rt2; rn; rm; mem; mem2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STRD" c [rt; rt2; mem])
     }
@@ -938,6 +1047,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STREX";
       operands = [rd; rt; rn; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "STREX" c [rd; rt; mem])
     }
@@ -945,6 +1055,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "STRH";
       operands = [rt; rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "STRH" c [rt; mem])
     }
@@ -954,13 +1065,15 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
        mnemonic = mnemonic;
        operands = [rd; rn; rm];
        flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s mnemonic c [rd; rn; rm])
-    }
+     }
   | SubtractCarry (s, c, rd, rn, rm, tw) -> {
       mnemonic = "SBC";
       operands = [rd; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z; APSR_C; APSR_V] else [];
+      flags_used = [APSR_C];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "SBC" c [rd; rn; rm])
     }
@@ -968,6 +1081,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SVC";
       operands = [imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some cc;
       ida_asm = (fun f -> f#opscc "SVC" cc [ imm ])
     }
@@ -975,6 +1089,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SWP";
       operands = [rt; rt2; rn; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SWP" c [rt; rt2; mem])
     }
@@ -982,6 +1097,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "SWPB";
       operands = [rt; rt2; rn; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "SWPB" c [rt; rt2; mem])
     }
@@ -989,6 +1105,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "TBB";
       operands = [rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "TBB" c [mem])
     }
@@ -996,6 +1113,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "TBH";
       operands = [rn; rm; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "TBH" c [mem])
     }
@@ -1004,6 +1122,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rn; rm];
       flags_set = [APSR_N; APSR_Z; APSR_C];
       ccode = Some c;
+      flags_used = [];
       ida_asm = (fun f -> f#opscc ~thumbw:tw "TST" c [rn; rm])
     }
   | TestEquivalence (c, rn, rm) -> {
@@ -1011,12 +1130,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       operands = [rn; rm];
       flags_set = [APSR_N; APSR_Z; APSR_C];
       ccode = Some c;
+      flags_used = [];
       ida_asm = (fun f -> f#opscc "TEQ" c [rn; rm])
     }
   | UnsignedAdd8 (c, rd, rn, rm) -> {
       mnemonic = "UADD8";
       operands = [rd; rn; rm];
       flags_set = [];  (* Note: Armv7 has GE bits for parallel add *)
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UADD8" c [rd; rn; rm])
     }
@@ -1024,6 +1145,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UBFX";
       operands = [rd; rn];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UBFX" c [rd; rn])
     }
@@ -1031,6 +1153,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UDIV";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UDIV" c [rd; rn; rm])
     }
@@ -1038,6 +1161,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UXTAB";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UXTAB" c [rd; rn; rm])
     }
@@ -1045,6 +1169,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UXTAH";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UXTAH" c [rd; rn; rm])
     }
@@ -1052,6 +1177,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UXTB";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "UXTB" c [rd; rm])
     }
@@ -1059,6 +1185,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UXTH";
       operands = [rd; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~thumbw:tw "UXTH" c [rd; rm])
     }
@@ -1066,6 +1193,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UMLAL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~writeback:s "UMLAL" c [rdlo; rdhi; rn; rm])
     }
@@ -1073,6 +1201,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UMULL";
       operands = [rdlo; rdhi; rn; rm];
       flags_set = if s then [APSR_N; APSR_Z] else [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~writeback:s "UMULL" c [rdlo; rdhi; rn; rm])
     }
@@ -1080,6 +1209,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "USAT";
       operands = [rd; imm; rn];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "USAT" c [rd; imm; rn])
     }
@@ -1087,6 +1217,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UQSUB8";
       operands = [rd; rn; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UQSUB8" c [rd; rn; rm])
     }
@@ -1094,6 +1225,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VABS";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VABS" c [dst; src])
     }
@@ -1101,6 +1233,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VADD";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VADD" c [dst; src1; src2])
     }
@@ -1108,6 +1241,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VADDL";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VADDL" c [dst; src1; src2])
     }
@@ -1115,6 +1249,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VADDW";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VADDW" c [dst; src1; src2])
     }
@@ -1122,6 +1257,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VAND";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VAND" c [dst; src1; src2])
     }
@@ -1129,6 +1265,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VBIC";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm =
         match dt with
@@ -1139,6 +1276,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VEOR";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VEOR" c [dst; src1; src2])
     }
@@ -1146,6 +1284,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMVN";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMVN" c [dst; src])
     }
@@ -1153,6 +1292,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VORR";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VORR" c [dst; src1; src2])
     }
@@ -1160,6 +1300,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VORN";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VORN" c [vd; vn; vm])
     }
@@ -1167,6 +1308,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VBSL";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VBSL" c [vd; vn; vm])
     }
@@ -1179,6 +1321,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
           via VMRS *)
        flags_set = [APSR_N; APSR_Z; APSR_C; APSR_V];
        (* flags_set = [];  floating point status word not yet supported *)
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc ~dt mnemonic c [op1; op2])
      }
@@ -1188,6 +1331,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = mnemonic;
        operands = if fixed then [dst; src; fbits] else [dst; src];
        flags_set = [];
+       flags_used = [];
        ccode = Some c;
        ida_asm =
          (fun f ->
@@ -1202,6 +1346,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VDIV";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VDIV" c [dst; src1; src2])
     }
@@ -1209,6 +1354,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VDUP";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm =
         (fun f -> f#opscc ~dt "VDUP" c [dst; src])
@@ -1217,6 +1363,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VEXT";
       operands = [dst; src1; src2; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VEXT" c [dst; src1; src2; imm])
     }
@@ -1224,6 +1371,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VFMA";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VFMA" c [dst; src1; src2])
     }
@@ -1231,6 +1379,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VLD4";
       operands = [rl; rn; mem; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VLD4" c [rl; mem])
     }
@@ -1238,6 +1387,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VLDM";
       operands = [rn; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VLDM" c [rn; rl])
     }
@@ -1245,6 +1395,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VLD1";
       operands = [rl; rn; mem; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VLD1" c [rl; mem])
     }
@@ -1252,6 +1403,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VLDR";
       operands = [dst; base; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VLDR" c [dst; mem])
     }
@@ -1259,6 +1411,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOV";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst; src])
     }
@@ -1266,6 +1419,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOV";
       operands = [dst1; dst2; ddst; src1; src2; ssrc];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst1; dst2; src1; src2])
     }
@@ -1273,6 +1427,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOV";
       operands = [dst; src1; src2; ssrc];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst; src1; src2])
     }
@@ -1280,6 +1435,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOV";
       operands = [dst1; dst2; ddst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOV" c [dst1; dst2; src])
     }
@@ -1287,6 +1443,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOVL";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOVL" c [dst; src])
     }
@@ -1294,6 +1451,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMOVN";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMOVN" c [dst; src])
     }
@@ -1307,6 +1465,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
      { mnemonic = "VMRS";
        operands = [dst; src];
        flags_set = flags_set;
+       flags_used = [];
        ccode = Some c;
        ida_asm = (fun f -> f#opscc "VMRS" c [dst; src])
      }
@@ -1314,6 +1473,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMSR";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode =Some c;
       ida_asm = (fun f -> f#opscc "VMSR" c [dst; src])
     }
@@ -1321,6 +1481,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMUL";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMUL" c [dst; src1; src2])
     }
@@ -1328,6 +1489,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMLA";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMLA" c [dst; src1; src2])
     }
@@ -1335,6 +1497,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMLAL";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMLAL" c [dst; src1; src2])
     }
@@ -1342,6 +1505,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMULL";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMULL" c [dst; src1; src2])
     }
@@ -1349,6 +1513,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VMLS";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VMLS" c [dst; src1; src2])
     }
@@ -1356,6 +1521,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VNEG";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNEG" c [dst; src])
     }
@@ -1363,6 +1529,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VNMUL";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNMUL" c [dst; src1; src2])
     }
@@ -1370,6 +1537,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VNMLA";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNMLA" c [dst; src1; src2])
     }
@@ -1377,6 +1545,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VNMLS";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VNMLS" c [dst; src1; src2])
     }
@@ -1384,6 +1553,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VPOP";
       operands = [sp; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VPOP" c [rl])
     }
@@ -1391,6 +1561,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VPUSH";
       operands = [sp; rl; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VPUSH" c [rl])
     }
@@ -1398,6 +1569,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VREV64";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VREV64" c [dst; src])
     }
@@ -1405,6 +1577,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VREV16";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VREV16" c [dst; src])
     }
@@ -1412,6 +1585,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VREV32";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VREV32" c [dst; src])
     }
@@ -1419,6 +1593,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VRHADD";
       operands = [vd; vn; vm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VRHADD" c [vd; vn; vm])
     }
@@ -1426,6 +1601,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VRSRA";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VRSRA" c [dst; src; imm])
     }
@@ -1433,6 +1609,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSHL";
       operands = [dst; src; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSHL" c [dst; src; src2])
     }
@@ -1440,6 +1617,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSLI";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSLI" c [dst; src; imm])
     }
@@ -1447,6 +1625,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSHR";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSHR" c [dst; src; imm])
     }
@@ -1454,6 +1633,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSRI";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSRI" c [dst; src; imm])
     }
@@ -1461,6 +1641,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSRA";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSRA" c [dst; src; imm])
     }
@@ -1468,6 +1649,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSHRN";
       operands = [dst; src; imm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSHRN" c [dst; src; imm])
     }
@@ -1475,6 +1657,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSTR";
       operands = [src; base; mem];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTR" c [src; mem])
     }
@@ -1482,6 +1665,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSTMDB";
       operands = [rn; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTMDB" c [rn; rl])
     }
@@ -1489,6 +1673,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSTM";
       operands = [rn; rl];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "VSTM" c [rn; rl])
     }
@@ -1496,6 +1681,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VST4";
       operands = [rl; rn; mem; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VST4" c [rl; mem])
     }
@@ -1503,6 +1689,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VST1";
       operands = [rl; rn; mem; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VST1" c [rl; mem])
     }
@@ -1510,6 +1697,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VST2";
       operands = [rl; rn; mem; rm];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VST2" c [rl; mem])
     }
@@ -1517,6 +1705,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VSUB";
       operands = [dst; src1; src2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSUB" c [dst; src1; src2])
     }
@@ -1524,6 +1713,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VTBL";
       operands = [dst; table; index];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VTBL" c [dst; table; index])
     }
@@ -1531,6 +1721,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VTRN";
       operands = [dst; src];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VTRN" c [dst; src])
     }
@@ -1538,6 +1729,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "VZIP";
       operands = [op1; op2];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VZIP" c [op1; op2])
     }
@@ -1545,6 +1737,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "NOP";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "NOP" c [])
     }
@@ -1552,6 +1745,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UDF";
       operands = [op];
       flags_set = [];
+      flags_used = [];
       ccode = Some c;
       ida_asm = (fun f -> f#opscc "UDF" c [op])
     }
@@ -1559,6 +1753,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "invalid";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops "invalid")
     }
@@ -1566,6 +1761,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UNDEFINED";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops ("UNDEFINED: " ^ s))
     }
@@ -1573,6 +1769,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "UNPREDICTABLE";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops ("UNPREDICTABLE: " ^ s))
     }
@@ -1580,6 +1777,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       mnemonic = "unknown";
       operands = [];
       flags_set = [];
+      flags_used = [];
       ccode = None;
       ida_asm = (fun f -> f#no_ops ("unknown " ^ name ^ ": " ^ dw#to_hex_string))
     }
@@ -1647,9 +1845,12 @@ let get_arm_flags_set (opc: arm_opcode_t): arm_cc_flag_t list =
 
 
 let get_arm_flags_used (opc: arm_opcode_t): arm_cc_flag_t list =
-  match (get_record opc).ccode with
-  | Some c -> get_cond_flags_used c
-  | _ -> []
+  let flags_used = (get_record opc).flags_used in
+  let cc_flags_used =
+    match (get_record opc).ccode with
+    | Some c -> get_cond_flags_used c
+    | _ -> [] in
+  flags_used @ cc_flags_used
 
 
 let get_arm_opcode_condition (opc: arm_opcode_t): arm_opcode_cc_t option =
