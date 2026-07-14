@@ -440,7 +440,11 @@ let arm_conditional_expr
     match get_arm_opcode_condition condopc with
     | Some c when is_cond_conditional c ->
        cc_expr v vu testfloc testopc c
-    | _ -> (false, None, []) in
+    | _ ->
+       match condopc with
+       | SubtractCarry _ ->
+          cc_expr v vu testfloc testopc ACCCarrySet
+       | _ -> (false, None, []) in
 
   if found then
     match optxpr with

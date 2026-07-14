@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs LLC
+   Copyright (c) 2021-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -3266,8 +3266,50 @@ object (self)
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
+         let xcarry =
+           match get_associated_test_instr floc#f floc#l#ci with
+           | Some (testloc, testinstr) ->
+              let (_, optpredicate, _) =
+                arm_conditional_expr
+                  ~condopc:instr#get_opcode
+                  ~testopc:testinstr#get_opcode
+                  ~condloc:floc#l
+                  ~testloc in
+              (match optpredicate with
+               | Some p ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"SubtractCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      [x2s p];
+                    p
+                  end
+               | _ ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"SubtractCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      ["no predicate"];
+                    random_constant_expr
+                  end)
+           | _ ->
+              begin
+                log_diagnostics_result
+                  ~tag:"SubtractCarry"
+                  ~msg:floc#l#ci
+                  __FILE__ __LINE__
+                  ["no associated setter"];
+                random_constant_expr
+              end in
          let result_r =
-           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
+           TR.tmap2
+             (fun xrn xrm ->
+               XOp (XPlus,
+                    [XOp (XMinus,
+                          [XOp (XMinus, [xrn; xrm]); int_constant_expr 1]);
+                     xcarry])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
