@@ -209,6 +209,16 @@ let cc_expr
     | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
        (XOp (XNe, [XOp (XBAnd, [vu x; vu y]); zero_constant_expr]), [x; y])
 
+    (* --------------------------------------------------------------- Or --- *)
+
+    | (BitwiseOr (true, ACCAlways, _, x, y, _), ACCEqual) ->
+       (XOp (XLAnd, [XOp (XEq, [v x; zero_constant_expr]);
+                     XOp (XEq, [v y; zero_constant_expr])]), [x; y])
+
+    | (BitwiseOr (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
+       (XOp (XLOr, [XOp (XNe, [v x; zero_constant_expr]);
+                    XOp (XNe, [v y; zero_constant_expr])]), [x; y])
+
     (* ---------------------------------------------------------- Compare --- *)
 
     | (Compare (_, x, y, _), ACCEqual) ->
@@ -346,8 +356,14 @@ let cc_expr
 
     (* ------------------------------------------------- Reverse Subtract --- *)
 
+    | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCEqual) ->
+       (XOp (XEq, [XOp (XMinus, [v y; v x]); zero_constant_expr]), [x; y])
+
     | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCNonNegative) ->
        (XOp (XGe, [XOp (XMinus, [v y; v x]); zero_constant_expr]), [x; y])
+
+    | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCCarryClear) ->
+       (XOp (XLt, [XOp (XMinus, [vu y; vu x]); zero_constant_expr]), [x; y])
 
     (* --------------------------------------------------------- Subtract --- *)
 
