@@ -201,6 +201,9 @@ let cc_expr
     | (Add (true, ACCAlways, _, x, y, _), ACCNotEqual) ->
        (XOp (XNe, [XOp (XPlus, [v x; v y]); zero_constant_expr]), [x; y])
 
+    | (Add (true, ACCAlways, _, x, y, _), ACCCarrySet) ->
+       (XOp (XGe, [XOp (XPlus, [vu x; vu y]); max32_constant_expr]), [x; y])
+
     (* -------------------------------------------------------------- And --- *)
 
     | (BitwiseAnd (true, ACCAlways, _, x, y, _), ACCEqual) ->
@@ -365,6 +368,9 @@ let cc_expr
     | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCCarryClear) ->
        (XOp (XLt, [XOp (XMinus, [vu y; vu x]); zero_constant_expr]), [x; y])
 
+    | (ReverseSubtract (true, ACCAlways, _, x, y, _), ACCCarrySet) ->
+       (XOp (XGe, [XOp (XMinus, [vu y; vu x]); zero_constant_expr]), [x; y])
+
     (* --------------------------------------------------------- Subtract --- *)
 
     | (Subtract (true, ACCAlways, _, x, y, _, _), ACCEqual) ->
@@ -442,7 +448,9 @@ let arm_conditional_expr
        cc_expr v vu testfloc testopc c
     | _ ->
        match condopc with
-       | SubtractCarry _ ->
+       | SubtractCarry _
+         | AddCarry _
+         | ReverseSubtractCarry _ ->
           cc_expr v vu testfloc testopc ACCCarrySet
        | _ -> (false, None, []) in
 

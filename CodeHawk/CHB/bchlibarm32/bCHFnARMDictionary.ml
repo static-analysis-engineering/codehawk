@@ -858,8 +858,45 @@ object (self)
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
+         let xcarry =
+           match get_associated_test_instr floc#f floc#l#ci with
+           | Some (testloc, testinstr) ->
+              let (_, optpredicate, _) =
+                arm_conditional_expr
+                  ~condopc:instr#get_opcode
+                  ~testopc:testinstr#get_opcode
+                  ~condloc:floc#l
+                  ~testloc in
+              (match optpredicate with
+               | Some p ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"AddCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      [x2s p];
+                    p
+                  end
+               | _ ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"AddCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      ["no predicate"];
+                    random_constant_expr
+                  end)
+           | _ -> begin
+               log_diagnostics_result
+                 ~tag:"AddCarry"
+                 ~msg:floc#l#ci
+                 __FILE__ __LINE__
+                 ["no associated setter"];
+               random_constant_expr
+             end in
          let result_r =
-           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
+           TR.tmap2 (fun xrn xrm ->
+               XOp (XPlus, [XOp (XPlus, [xrn; xrm]); xcarry])) xrn_r xrm_r in
          let xxrn_r = TR.tmap rewrite_expr xrn_r in
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
@@ -2512,6 +2549,70 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xrn_r xrm_r in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
+         let rdefs =
+           [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let vars_r = [vrd_r] in
+         let xprs_r = [xrn_r; xrm_r; result_r; rresult_r; xxrn_r; xxrm_r] in
+         let cxprs_r = [cresult_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | ReverseSubtractCarry (_, c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xrm_r = rm#to_expr floc in
+         let xcarry =
+           match get_associated_test_instr floc#f floc#l#ci with
+           | Some (testloc, testinstr) ->
+              let (_, optpredicate, _) =
+                arm_conditional_expr
+                  ~condopc:instr#get_opcode
+                  ~testopc:testinstr#get_opcode
+                  ~condloc:floc#l
+                  ~testloc in
+              (match optpredicate with
+               | Some p ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"ReverseSubtractCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      [x2s p];
+                    p
+                  end
+               | _ ->
+                  begin
+                    log_diagnostics_result
+                      ~tag:"ReverseSubtractCarry"
+                      ~msg:floc#l#ci
+                      __FILE__ __LINE__
+                      ["no predicate"];
+                    random_constant_expr
+                  end)
+           | _ ->
+              begin
+                log_diagnostics_result
+                  ~tag:"ReverseSubtractCarry"
+                  ~msg:floc#l#ci
+                  __FILE__ __LINE__
+                  ["no associated setter"];
+                random_constant_expr
+              end in
+         let result_r =
+           TR.tmap2 (fun xrn xrm ->
+               XOp (XPlus,
+                    [XOp (XMinus,
+                          [XOp (XMinus, [xrm; xrn]); int_constant_expr 1]);
+                    xcarry])) xrn_r xrm_r in
          let xxrn_r = TR.tmap rewrite_expr xrn_r in
          let xxrm_r = TR.tmap rewrite_expr xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in

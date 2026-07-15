@@ -1023,9 +1023,25 @@ let translate_arm_instruction
      let lhs_r = TR.tmap (fun (v, _) -> v) (rd#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let xrm_r = rm#to_expr floc in
+     let xcarry =
+       match get_associated_test_instr finfo ctxtiaddr with
+       | Some (testloc, testinstr) ->
+          let (_, optpredicate, _) =
+            make_conditional_predicate
+              ~condinstr:instr
+              ~testinstr
+              ~condloc:loc
+              ~testloc in
+          (match optpredicate with
+           | Some p -> p
+           | _ -> random_constant_expr)
+       | _ -> random_constant_expr in
+     let rhs_r =
+       TR.tmap2 (fun xrn xrm ->
+           XOp (XPlus, [XOp (XPlus, [xrn; xrm]); xcarry])) xrn_r xrm_r in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
-     let cmds = floc#get_abstract_commands_r lhs_r in
+     let cmds = floc#get_assign_commands_r lhs_r rhs_r in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrd]
@@ -2722,7 +2738,25 @@ let translate_arm_instruction
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let xrm_r = rm#to_expr floc in
-     let rhs_r = TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xrn_r xrm_r in
+     let xcarry =
+       match get_associated_test_instr finfo ctxtiaddr with
+       | Some (testloc, testinstr) ->
+          let (_, optpredicate, _) =
+            make_conditional_predicate
+              ~condinstr:instr
+              ~testinstr
+              ~condloc:loc
+              ~testloc in
+          (match optpredicate with
+           | Some p -> p
+           | _ -> random_constant_expr)
+       | _ -> random_constant_expr in
+     let rhs_r =
+       TR.tmap2 (fun xrn xrm ->
+           XOp (XPlus,
+                [XOp (XMinus,
+                      [XOp (XMinus, [xrm; xrn]); int_constant_expr 1]);
+                 xcarry])) xrn_r xrm_r in
      let cmds = floc#get_assign_commands_r lhs_r rhs_r in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
