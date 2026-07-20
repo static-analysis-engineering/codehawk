@@ -43,6 +43,7 @@ open BCHARMAssemblyInstructions
 open BCHARMDisassemblyUtils
 open BCHARMJumptable
 open BCHARMTypes
+open BCHARMWideOpSequence
 open BCHDisassembleARMInstruction
 open BCHLoadStoreMultipleSequence
 open BCHThumbITSequence
@@ -75,6 +76,9 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
      ^ op1#toString
      ^ " : "
      ^ op2#toString
+  | ARMWideAdd wop -> "Wide Add " ^ wop#toString
+  | ARMWideSubtract wop -> "Wide Subtract " ^ wop#toString
+  | ARMWideReverseSubtract wop -> "Wide Reverse Subtract " ^ wop#toString
   | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
@@ -154,6 +158,26 @@ object (self)
     | ARMTernaryAssignment _ -> true
     | _ -> false
 
+  method is_arm_wide_operation =
+    match self#kind with
+    | ARMWideAdd _ | ARMWideReverseSubtract _ | ARMWideSubtract _ -> true
+    | _ -> false
+
+  method is_arm_wide_add =
+    match self#kind with
+    | ARMWideAdd _ -> true
+    | _ -> false
+
+  method is_arm_wide_subtract =
+    match self#kind with
+    | ARMWideSubtract _ -> true
+    | _ -> false
+
+  method is_arm_wide_reverse_subtract =
+    match self#kind with
+    | ARMWideReverseSubtract _ -> true
+    | _ -> false
+
   method write_xml (_node: xml_element_int) = ()
 
   method toCHIF (_faddr: doubleword_int) = []
@@ -222,6 +246,27 @@ let make_ldm_stm_sequence_aggregate
     ~entry:(List.hd ldmstmseq#instrs)
     ~exitinstr:(List.hd (List.tl ldmstmseq#instrs))
     ~anchor:(List.hd (List.tl ldmstmseq#instrs))
+
+
+let make_arm_wide_op_sequence_aggregate
+      (wop: arm_wide_op_sequence_int): arm_instruction_aggregate_int =
+  let anchor = List.hd (List.tl wop#instrs) in
+  let kind =
+    match anchor#get_opcode with
+    | AddCarry _ -> ARMWideAdd wop
+    | SubtractCarry _ -> ARMWideSubtract wop
+    | ReverseSubtractCarry _ -> ARMWideReverseSubtract wop
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK
+               [STR "Unexpected instruction in make_arm_wide_op_sequence"])) in
+  make_arm_instruction_aggregate
+    ~kind
+    ~instrs:wop#instrs
+    ~entry:(List.hd wop#instrs)
+    ~exitinstr:anchor
+    ~anchor
 
 
 let make_bx_call_aggregate
@@ -661,5 +706,13 @@ let identify_arm_aggregate
        match identify_ternary_assignment ch instr with
        | Some (mov1, mov2, dstop, n1, n2) ->
           Some (make_ternassign_aggregate mov1 mov2 dstop n1 n2)
+       | _ -> None in
+  let result =
+    match result with
+    | Some _ -> result
+    | _ ->
+       match create_arm_wide_op_sequence ch instr with
+       | Some wop ->
+          Some (make_arm_wide_op_sequence_aggregate wop)
        | _ -> None in
   result

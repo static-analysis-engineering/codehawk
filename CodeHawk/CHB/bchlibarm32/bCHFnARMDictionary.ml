@@ -157,6 +157,25 @@ object (self)
         log_error_result ~msg:(p2s floc#l#toPretty) file line e
       else
         () in
+
+    let is_part_of_wide_op_instr () =
+      match instr#is_in_aggregate with
+      | Some dw ->
+         let agg = get_aggregate dw in
+         agg#is_arm_wide_operation
+      | _ -> false in
+
+    let make_wide_op_r hi_r lo_r =
+      let e32 = num_constant_expr numerical_e32 in
+      TR.tmap2 (fun hi lo ->
+          XOp (XPlus, [XOp (XMult, [hi; e32]); lo])) hi_r lo_r in
+
+    let extract_wide_hi x_r =
+      TR.tmap (fun x -> XOp (XAsr, [x; int_constant_expr 32])) x_r in
+
+    let extract_wide_lo x_r =
+      TR.tmap (fun x -> XOp (XMod, [x; num_constant_expr numerical_e32])) x_r in
+
     let rewrite_expr ?(restrict:int option) (x: xpr_t): xpr_t =
       try
         let xpr = floc#inv#rewrite_expr ~loopcounter:true x in
@@ -821,6 +840,13 @@ object (self)
                 (LBLOCK [
                      STR "Aggregate for Add not recognized at "; iaddr#toPretty]))
 
+      | Add _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | Add (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
@@ -853,6 +879,55 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let tags = add_optional_subsumption tags in
          (tags, args)
+
+      | AddCarry _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideAdd wop ->
+             let vrdlo_r = wop#rdlo#to_variable floc in
+             let vrdhi_r = wop#rdhi#to_variable floc in
+             let xrnlo_r = wop#rnlo#to_expr floc in
+             let xrnhi_r = wop#rnhi#to_expr floc in
+             let xrmlo_r = wop#rmlo#to_expr floc in
+             let xrmhi_r = wop#rmhi#to_expr floc in
+             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
+             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
+             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
+             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
+             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
+             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
+             let rresult_r =
+               TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xxrn_r xxrm_r in
+             let rresultlo_r = extract_wide_lo rresult_r in
+             let rresulthi_r = extract_wide_hi rresult_r in
+             let cresult_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
+             let cresultlo_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
+             let cresulthi_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
+             let rdefs =
+               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
+             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
+             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
+             let vars_r = [vrdlo_r; vrdhi_r] in
+             let xprs_r =
+               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
+                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
+             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
+             let (tagstring, args) =
+               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+             ([tagstring; "agg:wideadd"], args)
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"AddCarry"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
 
       | AddCarry (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
@@ -2543,6 +2618,13 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | ReverseSubtract _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | ReverseSubtract (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
@@ -2565,6 +2647,55 @@ object (self)
            mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+
+      | ReverseSubtractCarry _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideReverseSubtract wop ->
+             let vrdlo_r = wop#rdlo#to_variable floc in
+             let vrdhi_r = wop#rdhi#to_variable floc in
+             let xrnlo_r = wop#rnlo#to_expr floc in
+             let xrnhi_r = wop#rnhi#to_expr floc in
+             let xrmlo_r = wop#rmlo#to_expr floc in
+             let xrmhi_r = wop#rmhi#to_expr floc in
+             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
+             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
+             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
+             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
+             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
+             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
+             let rresult_r =
+               TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xxrn_r xxrm_r in
+             let rresultlo_r = extract_wide_lo rresult_r in
+             let rresulthi_r = extract_wide_hi rresult_r in
+             let cresult_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
+             let cresultlo_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
+             let cresulthi_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
+             let rdefs =
+               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
+             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
+             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
+             let vars_r = [vrdlo_r; vrdhi_r] in
+             let xprs_r =
+               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
+                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
+             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
+             let (tagstring, args) =
+               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+             ([tagstring; "agg:widereversesubtract"], args)
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"ReverseSubtractCarry"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
 
       | ReverseSubtractCarry (_, c, rd, rn, rm) ->
          let vrd_r = rd#to_variable floc in
@@ -3339,6 +3470,13 @@ object (self)
              (tags, args) in
          (tags, args)
 
+      | Subtract _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | Subtract (_, c, rd, rn, rm, _, _) ->
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
@@ -3362,6 +3500,55 @@ object (self)
              (fun r -> ignore (get_string_reference floc r)) () rresult_r  in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+
+      | SubtractCarry _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideSubtract wop ->
+             let vrdlo_r = wop#rdlo#to_variable floc in
+             let vrdhi_r = wop#rdhi#to_variable floc in
+             let xrnlo_r = wop#rnlo#to_expr floc in
+             let xrnhi_r = wop#rnhi#to_expr floc in
+             let xrmlo_r = wop#rmlo#to_expr floc in
+             let xrmhi_r = wop#rmhi#to_expr floc in
+             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
+             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
+             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
+             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
+             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
+             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
+             let rresult_r =
+               TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xxrn_r xxrm_r in
+             let rresultlo_r = extract_wide_lo rresult_r in
+             let rresulthi_r = extract_wide_hi rresult_r in
+             let cresult_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
+             let cresultlo_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
+             let cresulthi_r =
+               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
+             let rdefs =
+               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
+             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
+             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
+             let vars_r = [vrdlo_r; vrdhi_r] in
+             let xprs_r =
+               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
+                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
+             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
+             let (tagstring, args) =
+               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+             ([tagstring; "agg:widesubtract"], args)
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"SubtractCarry"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
 
       | SubtractCarry (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in

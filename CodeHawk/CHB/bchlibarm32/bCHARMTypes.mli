@@ -1536,6 +1536,24 @@ class type ldm_stm_sequence_int =
   end
 
 
+class type arm_wide_op_sequence_int =
+  object
+
+    method rdhi: arm_operand_int
+    method rdlo: arm_operand_int
+    method rnhi: arm_operand_int
+    method rnlo: arm_operand_int
+    method rmhi: arm_operand_int
+    method rmlo: arm_operand_int
+
+    method instrs: arm_assembly_instruction_int list
+    method anchor: doubleword_int
+
+    method toString: string
+    method toPretty: pretty_t
+  end
+
+
 type arm_aggregate_kind_t =
   | ARMJumptable of arm_jumptable_int
   | ThumbITSequence of thumb_it_sequence_int
@@ -1550,6 +1568,9 @@ type arm_aggregate_kind_t =
       * arm_assembly_instruction_int
   | ARMPredicateAssignment of bool * arm_operand_int
   | ARMTernaryAssignment of arm_operand_int * numerical_t * numerical_t
+  | ARMWideAdd of arm_wide_op_sequence_int
+  | ARMWideSubtract of arm_wide_op_sequence_int
+  | ARMWideReverseSubtract of arm_wide_op_sequence_int
   | BXCall of arm_assembly_instruction_int * arm_assembly_instruction_int
 
 
@@ -1577,6 +1598,10 @@ class type arm_instruction_aggregate_int =
     method is_pseudo_ldrsb: bool
     method is_predicate_assign: bool
     method is_ternary_assign: bool
+    method is_arm_wide_operation: bool
+    method is_arm_wide_add: bool
+    method is_arm_wide_subtract: bool
+    method is_arm_wide_reverse_subtract: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit

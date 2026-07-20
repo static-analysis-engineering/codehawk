@@ -696,6 +696,24 @@ let translate_arm_instruction
        agg#is_pseudo_ldrsh || agg#is_pseudo_ldrsb
     | _ -> false in
 
+  let is_part_of_wide_op_instr () =
+    match instr#is_in_aggregate with
+    | Some dw ->
+       let agg = get_aggregate dw in
+       agg#is_arm_wide_operation
+    | _ -> false in
+
+  let make_wide_op_r hi_r lo_r =
+    let e32 = num_constant_expr numerical_e32 in
+    TR.tmap2 (fun hi lo ->
+        XOp (XPlus, [XOp (XMult, [hi; e32]); lo])) hi_r lo_r in
+
+  let extract_wide_hi x_r =
+    TR.tmap (fun x -> XOp (XAsr, [x; int_constant_expr 32])) x_r in
+
+  let extract_wide_lo x_r =
+    TR.tmap (fun x -> XOp (XMod, [x; num_constant_expr numerical_e32])) x_r in
+
   let calltgt_cmds (_tgt: arm_operand_int): cmd_t list =
     let callargs = floc#get_call_arguments in
     let fintf = floc#get_call_target#get_function_interface in
@@ -973,6 +991,10 @@ let translate_arm_instruction
    *       APSR.C = carry;
    *       APSR.V = overflow;
    *------------------------------------------------------------------------- *)
+  | Add _ when is_part_of_wide_op_instr () ->
+     (* full semantics of wide add is in the accompanying AddCarry *)
+     default []
+
   | Add (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -1018,6 +1040,47 @@ let translate_arm_instruction
    *       APSR.C = carry;
    *       APSR.V = overflow;
    * ------------------------------------------------------------------------ *)
+  | AddCarry _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideAdd wop ->
+         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
+         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
+         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
+         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
+         let xrnlo_r = wop#rnlo#to_expr floc in
+         let xrnhi_r = wop#rnhi#to_expr floc in
+         let xrmlo_r = wop#rmlo#to_expr floc in
+         let xrmhi_r = wop#rmhi#to_expr floc in
+         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
+         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
+         let rhs_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
+         let rhslo_r = extract_wide_lo rhs_r in
+         let rhshi_r = extract_wide_hi rhs_r in
+         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
+         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+         let cmds =
+           (floc#get_assign_commands_r lhslo_r rhslo_r)
+           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
+         let defcmds =
+           floc#get_vardef_commands
+             ~defs:[vrdlo; vrdhi]
+             ~use:usevars
+             ~usehigh
+             ctxtiaddr in
+         let cmds = defcmds @ cmds in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"AddCarry:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
+
   | AddCarry (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap (fun (v, _) -> v) (rd#to_lhs floc) in
@@ -2712,6 +2775,11 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | ReverseSubtract _ when is_part_of_wide_op_instr () ->
+     (* full semantics of wide reverse subtract is in the accompanying
+        ReverseSubtractCarry. *)
+     default []
+
   | ReverseSubtract (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -2732,6 +2800,48 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
+
+  | ReverseSubtractCarry _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideReverseSubtract wop ->
+         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
+         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
+         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
+         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
+         let xrnlo_r = wop#rnlo#to_expr floc in
+         let xrnhi_r = wop#rnhi#to_expr floc in
+         let xrmlo_r = wop#rmlo#to_expr floc in
+         let xrmhi_r = wop#rmhi#to_expr floc in
+         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
+         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
+         let rhs_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xrn_r xrm_r in
+         let rhslo_r = extract_wide_lo rhs_r in
+         let rhshi_r = extract_wide_hi rhs_r in
+         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
+         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+         let cmds =
+           (floc#get_assign_commands_r lhslo_r rhslo_r)
+           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
+         let defcmds =
+           floc#get_vardef_commands
+             ~defs:[vrdlo; vrdhi]
+             ~use:usevars
+             ~usehigh
+             ctxtiaddr in
+         let cmds = defcmds @ cmds in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"ReverseSubtractCarry:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
+
 
   | ReverseSubtractCarry(_, c, rd, rn, rm) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
@@ -3530,6 +3640,10 @@ let translate_arm_instruction
    *     APSR.C = carry;
    *     APSR.V = overflow
    * ------------------------------------------------------------------------- *)
+  | Subtract _ when is_part_of_wide_op_instr () ->
+  (* full semantics of wide subtract is in the accompanying SubtractCarry *)
+     default []
+
   | Subtract (_, c, rd, rn, rm, _, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -3549,6 +3663,47 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
+
+  | SubtractCarry _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideSubtract wop ->
+         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
+         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
+         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
+         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
+         let xrnlo_r = wop#rnlo#to_expr floc in
+         let xrnhi_r = wop#rnhi#to_expr floc in
+         let xrmlo_r = wop#rmlo#to_expr floc in
+         let xrmhi_r = wop#rmhi#to_expr floc in
+         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
+         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
+         let rhs_r =
+           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
+         let rhslo_r = extract_wide_lo rhs_r in
+         let rhshi_r = extract_wide_hi rhs_r in
+         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
+         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+         let cmds =
+           (floc#get_assign_commands_r lhslo_r rhslo_r)
+           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
+         let defcmds =
+           floc#get_vardef_commands
+             ~defs:[vrdlo; vrdhi]
+             ~use:usevars
+             ~usehigh
+             ctxtiaddr in
+         let cmds = defcmds @ cmds in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"SubtractCarry:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
 
   | SubtractCarry(_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
