@@ -1701,6 +1701,7 @@ object (self)
   val proofobligations =
     mk_proofobligations faddr (mk_xpodictionary varmgr#vard#xd)
   val mutable returnlocations = []
+  val mutable active_register_pairs: (register_t * register_t) list = []
 
   (* ------------------------------------------------------------------------- *)
 
@@ -1727,6 +1728,18 @@ object (self)
 
   method set_instruction_bytes (ia:ctxt_iaddress_t) (b:string) =
     H.add instrbytes ia b
+
+  method set_active_register_pairs (l: (register_t * register_t) list) =
+    active_register_pairs <-
+      List.fold_left (fun acc (r1, r2) ->
+          if List.exists (fun (r1', r2') ->
+                 ((register_compare r1 r1') = 0) && ((register_compare r2 r2') = 0))
+               acc then
+            acc
+          else
+            (r1, r2) :: acc) [] l
+
+  method active_register_pairs = active_register_pairs
 
   method get_instruction_bytes (ia:ctxt_iaddress_t) =
     if H.mem instrbytes ia then
@@ -2564,6 +2577,16 @@ object (self)
       make_function_summary ~fintf ~sem ~doc:default_function_documentation in
     appsummary <- summary
 
+  method private write_xml_active_register_pairs (node: xml_element_int) =
+    node#appendChildren
+      (List.map (fun (r1, r2) ->
+           let n = xmlElement "rp" in
+           begin
+             n#setAttribute "r1" (register_to_string r1);
+             n#setAttribute "r2" (register_to_string r2);
+             n
+           end) active_register_pairs)
+
   method write_xml (node:xml_element_int) =
     let append = node#appendChildren in
     let sumNode = xmlElement "summary" in
@@ -2579,6 +2602,7 @@ object (self)
     let srNode = xmlElement "saved-registers" in
     let sfNode = xmlElement "stackframe" in
     let espNode = xmlElement "stack-adjustment" in
+    let regpairsNode = xmlElement "active-register-pairs" in
     begin
       self#write_xml_app_summary sumNode;
       self#write_xml_constants cNode;
@@ -2591,6 +2615,7 @@ object (self)
       self#write_xml_base_pointers bpNode;
       self#write_xml_variable_names vvNode;
       self#write_xml_saved_registers srNode;
+      self#write_xml_active_register_pairs regpairsNode;
       self#stackframe#write_xml sfNode;
       (match stack_adjustment with
        | Some i -> espNode#setIntAttribute "adj" i | _ -> ());
@@ -2607,7 +2632,8 @@ object (self)
           vvNode;
           srNode;
           sfNode;
-          espNode]
+          espNode;
+          regpairsNode]
     end
 
   method read_xml (node:xml_element_int) =

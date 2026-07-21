@@ -81,8 +81,14 @@ val register_of_mips_floating_point_register_index: int -> register_t
 (** Converts a regular ARM register to a generic register.*)
 val register_of_arm_register: arm_reg_t -> register_t
 
+(** Converts a generic register to a regular ARM register if possible.*)
+val register_to_arm_register: register_t -> arm_reg_t option
+
 (** Converts a combination of two ARM registers to a generic register.*)
 val register_of_arm_double_register: arm_reg_t -> arm_reg_t -> register_t
+
+(** Converts a generic register to a combination of ARM registers, if possible.*)
+val register_to_arm_double_register: register_t -> (arm_reg_t * arm_reg_t) option
 
 (** Converts an ARM special register to a generic register.*)
 val register_of_arm_special_register: arm_special_reg_t -> register_t

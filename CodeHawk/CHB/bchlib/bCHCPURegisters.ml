@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -462,8 +462,20 @@ let register_of_mips_floating_point_register_index (index: int): register_t =
 let register_of_arm_register (r: arm_reg_t): register_t = ARMRegister r
 
 
+let register_to_arm_register (r: register_t): arm_reg_t option =
+  match r with
+  | ARMRegister a -> Some a
+  | _ -> None
+
+
 let register_of_arm_double_register (r1: arm_reg_t) (r2: arm_reg_t): register_t =
   ARMDoubleRegister (r1, r2)
+
+
+let register_to_arm_double_register (r: register_t): (arm_reg_t * arm_reg_t) option =
+  match r with
+  | ARMDoubleRegister (a1, a2) -> Some (a1, a2)
+  | _ -> None
 
 
 let register_of_arm_special_register (r: arm_special_reg_t): register_t =

@@ -3671,10 +3671,57 @@ object (self)
      let assigns = [ASSIGN_NUM (regvar, rhs_chif)] in
      (regvar, rhscmds @ assigns)
 
+   method private get_doubles_clobbered
+                    (defs: variable_t list)
+                    (defdoubles: variable_t list): variable_t list =
+     let is_covered (r: register_t) =
+       if system_settings#is_arm then
+         match r with
+         | ARMRegister a ->
+            List.exists (fun dd ->
+                if self#f#env#is_register_variable dd then
+                  let dr = self#f#env#get_register dd in
+                  match TR.tget_ok dr with
+                  | ARMDoubleRegister (a1, a2) -> a = a1 || a = a2
+                  | _ -> false
+                else
+                  false) defdoubles
+         | _ -> false
+       else
+         false in
+     let get_active (r: register_t) =
+       if system_settings#is_arm then
+         match r with
+         | ARMRegister a ->
+            List.fold_left (fun acc (r1, r2) ->
+                match (r1, r2) with
+                | (ARMRegister a1, ARMRegister a2) ->
+                   if a = a1 || a = a2 then
+                     (self#f#env#mk_arm_double_register_variable a1 a2) :: acc
+                   else
+                     acc
+                | _ -> acc) [] self#f#active_register_pairs
+         | _ -> []
+       else
+         [] in
+     let regdefs =
+       List.fold_left (fun acc v ->
+           if self#f#env#is_register_variable v then
+             (TR.tget_ok (self#f#env#get_register v)) :: acc
+           else
+             acc) [] defs in
+     List.fold_left (fun acc r ->
+         if is_covered r then
+           acc
+         else
+           (get_active r) @ acc) [] regdefs
+
    method get_vardef_commands
             ?(defs: variable_t list = [])
+            ?(defdoubles: variable_t list = [])
             ?(clobbers: variable_t list = [])
             ?(use: variable_t list = [])
+            ?(usedoubles: variable_t list = [])
             ?(usehigh: variable_t list = [])
             ?(flagdefs: variable_t list = [])
             (iaddr: string): cmd_t list =
@@ -3690,9 +3737,17 @@ object (self)
            let op = {op_name = opname; op_args = [("dst", symv, WRITE)]} in
            OPERATION op) vars in
      let defdoms = ["reachingdefs"; "defuse"; "defusehigh"] in
-     let defops = mk_ops defdoms def_op_name defs in
+     let defops = mk_ops defdoms def_op_name (defs @ defdoubles) in
      let clobberops = mk_ops defdoms clobber_op_name clobbers in
-     let useops = mk_ops ["defuse"] use_op_name use in
+     let doublesclobbered = self#get_doubles_clobbered defs defdoubles in
+     let _ =
+       if (List.length doublesclobbered) > 0 then
+         log_diagnostics_result
+           ~tag:"get_vardef_commands:doubles clobbered"
+           ~msg:(p2s self#l#toPretty)
+           __FILE__ __LINE__
+           [String.concat ", " (List.map (fun v -> p2s v#toPretty) doublesclobbered)] in
+     let useops = mk_ops ["defuse"] use_op_name (use @ usedoubles) in
      let usehighops = mk_ops ["defusehigh"] usehigh_op_name usehigh in
      let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
      let _ = List.iter (fun v -> self#f#add_use_loc v iaddr) use in

@@ -5306,9 +5306,9 @@ class type function_environment_int =
         numerical value. *)
     method has_constant_offset: variable_t -> bool
 
-
     method add_memory_offset:
              variable_t -> memory_offset_t -> variable_t traceresult
+
 
     (** {2 Register variables} *)
 
@@ -5893,6 +5893,12 @@ object
 
   (** Declares that this function is non-returning.*)
   method set_nonreturning: unit
+
+  (** Registers a set of register pairs that are being tracked in combination
+      and must be killed in propagation if part of them gets modified.*)
+  method set_active_register_pairs: (register_t * register_t) list -> unit
+
+  method active_register_pairs: (register_t * register_t) list
 
 
   (* method set_dynlib_stub: call_target_t -> unit *)
@@ -6760,8 +6766,10 @@ class type floc_int =
     (* returns the CHIF code to set definition/use instruction addresses *)
     method get_vardef_commands:
              ?defs:variable_t list
+             -> ?defdoubles:variable_t list
              -> ?clobbers:variable_t list
              -> ?use:variable_t list
+             -> ?usedoubles:variable_t list
              -> ?usehigh:variable_t list
              -> ?flagdefs:variable_t list
              -> string
