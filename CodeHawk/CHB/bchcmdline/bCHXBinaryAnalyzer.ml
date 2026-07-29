@@ -163,6 +163,8 @@ let speclist =
     ("-arm_extension_registers",
      Arg.Unit (fun () -> system_settings#set_arm_extension_registers),
      "include arm floating point registers in analysis");
+    ("-float-abi", Arg.String system_settings#set_float_abi,
+     "indication of the presence of VPP/NEON instructons in arm architecture");
     ("-thumb", Arg.Unit (fun () -> system_settings#set_thumb),
      "arm executable includes thumb instructions");
     ("-mips", Arg.Unit (fun () -> system_settings#set_architecture "mips"),

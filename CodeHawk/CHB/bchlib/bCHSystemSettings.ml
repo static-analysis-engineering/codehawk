@@ -160,6 +160,7 @@ object (self)
   val mutable lineq_instr_cutoff = 0
   val mutable lineq_block_cutoff = 0
   val mutable thumb = false
+  val mutable float_abi = None
   val mutable arm_extension_registers = false
   val mutable jni_enabled = false
   val mutable set_vftables_enabled = false
@@ -197,6 +198,16 @@ object (self)
       raise
         (BCH_failure
            (LBLOCK [STR "Architecture "; STR name; STR " not recognized"]))
+
+  method set_float_abi (name: string) =
+    let _ = log_result~tag:"set_float_abi"__FILE__ __LINE__ [name] in
+    float_abi <- Some name
+
+  method is_hard_float =
+    match float_abi with Some s -> s = "hardfloat" | _ -> true
+
+  method is_soft_float =
+    match float_abi with Some s -> s = "softfloat" | _ -> false
 
   method set_fileformat (name: string) =
     if List.mem name ["elf"; "pe"] then
