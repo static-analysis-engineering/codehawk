@@ -3527,6 +3527,12 @@ object (self)
              XVar (self#env#mk_symbolic_value rhs)
            else
              rhs in
+         let _ =
+           log_diagnostics_result
+             ~tag:"get_assign_commands_r"
+             ~msg:self#cia
+             __FILE__ __LINE__
+             ["lhs: " ^ (p2s lhs#toPretty); "rhs: " ^ (x2s rhs)] in
          let reqN () = self#env#mk_num_temp in
          let reqC = self#env#request_num_constant in
          let (rhscmds, rhs_c) = xpr_to_numexpr reqN reqC rhs in
@@ -3738,7 +3744,6 @@ object (self)
            OPERATION op) vars in
      let defdoms = ["reachingdefs"; "defuse"; "defusehigh"] in
      let defops = mk_ops defdoms def_op_name (defs @ defdoubles) in
-     let clobberops = mk_ops defdoms clobber_op_name clobbers in
      let doublesclobbered = self#get_doubles_clobbered defs defdoubles in
      let _ =
        if (List.length doublesclobbered) > 0 then
@@ -3746,7 +3751,10 @@ object (self)
            ~tag:"get_vardef_commands:doubles clobbered"
            ~msg:(p2s self#l#toPretty)
            __FILE__ __LINE__
-           [String.concat ", " (List.map (fun v -> p2s v#toPretty) doublesclobbered)] in
+           [String.concat
+              ", " (List.map (fun v -> p2s v#toPretty) doublesclobbered)] in
+     let clobberops =
+       mk_ops defdoms clobber_op_name (clobbers @ doublesclobbered) in
      let useops = mk_ops ["defuse"] use_op_name (use @ usedoubles) in
      let usehighops = mk_ops ["defusehigh"] usehigh_op_name usehigh in
      let flagdefops = mk_ops ["flagreachingdefs"] flagdef_op_name flagdefs in
@@ -4432,7 +4440,7 @@ object (self)
       ABSTRACT_VARS (v1::abstrRegs)]
      @ [returnassign]
 
-   method get_arm_call_commands =
+   method get_arm_call_commands (returnpieces: (register_t * xpr_t) list): cmd_t list =
      let parargs = self#get_call_arguments in
      let ctinfo = self#get_call_target in
      let termev = new arm_bterm_evaluator_t self#f parargs in
@@ -4440,15 +4448,20 @@ object (self)
      let semrecorder =
        mk_callsemantics_recorder self#l self#f termev xprxt ctinfo in
      let _ = semrecorder#record_callsemantics in
-     let r0 = self#env#mk_arm_register_variable AR0 in
      let opname = new symbol_t ~atts:["CALL"] ctinfo#get_name in
-     let returnassign =
-       let rvar = self#env#mk_return_value self#cia in
-       let _ =
-         if ctinfo#is_signature_valid then
-           let name = ctinfo#get_name ^ "_rtn_" ^ self#cia in
-           self#env#set_variable_name rvar name in
-       ASSIGN_NUM (r0, NUM_VAR rvar) in
+     let returnassigns =
+       List.concat
+         (List.map (fun (reg, rhs) ->
+              let lhs = self#f#env#mk_register_variable reg in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"get_arm_call_commands:return-assign"
+                  ~msg:self#cia
+                  __FILE__ __LINE__
+                  ["calltarget: " ^ ctinfo#get_name;
+                   "lhs: " ^ (p2s lhs#toPretty);
+                   "rhs: " ^ (x2s rhs)] in
+              self#get_assign_commands_r (Ok lhs) (Ok rhs)) returnpieces) in
      let bridgeVars = self#env#get_bridge_values_at self#cia in
      let abstractglobals =
        let globals =
@@ -4473,7 +4486,7 @@ object (self)
      @ (match abstrRegs with
         | [] -> []
         | _ -> [ABSTRACT_VARS abstrRegs])
-     @ [returnassign]
+     @ returnassigns
      @ sideeffect_assigns
      @ abstractglobals
      @ (match bridgeVars with
