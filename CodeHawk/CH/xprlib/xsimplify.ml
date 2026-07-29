@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -117,6 +117,9 @@ let pwr2 (num: numerical_t): xpr_t =
 
 
 let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
+  (* the first three match expressions are patterns created during wide
+     operations, where the high word and low word are combined; often the
+     original 64-bit word can be recovered.*)
   match e with
   | XOp (XPlus,
          [XOp (XMult,
@@ -126,6 +129,24 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
                    && (syntactically_equal x y) ->
      let (_, s) = sim_expr m x in
      (true, XOp ((Xf "sign_extend_64"), [s]))
+  | XOp (XPlus,
+         [XOp (XMult, [XOp (XAsr, [x; XConst (IntConst n)]); XConst (IntConst k)]);
+          XOp (XMod, [y; XConst (IntConst l)])])
+       when (n#equal (mkNumerical 32))
+            && (k#equal numerical_e32)
+            && (l#equal numerical_e32)
+            && (syntactically_equal x y) ->
+     let (_, s) = sim_expr m x in
+     (true, s)
+  | XOp (XPlus,
+         [XOp (XMult, [XConst (IntConst k); XOp (XAsr, [x; XConst (IntConst n)])]);
+          XOp (XMod, [y; XConst (IntConst l)])])
+       when (n#equal (mkNumerical 32))
+            && (k#equal numerical_e32)
+            && (l#equal numerical_e32)
+            && (syntactically_equal x y) ->
+     let (_, s) = sim_expr m x in
+     (true, s)
   | XOp (XNeg, [e1]) ->
      let (m, s) = sim_expr m e1 in reduce_neg m s
   | XOp (XBNot, [e1]) ->
@@ -600,7 +621,7 @@ and reduce_mod (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
        (true, ne result)
 
     (* x % b -> [0; (b-1)] *)
-    | (_, SConst b) when b#geq numerical_zero ->
+    | (_, SConst b) when b#gt numerical_zero && b#lt (mkNumerical 100)->
        let ub = b#sub numerical_one in
        (true, XOp (XNumRange, [zero_constant_expr; num_constant_expr ub]))
 
