@@ -288,27 +288,68 @@ let get_float_param_next_state
                        STR "Inconsistent arm-argument-state: ";
                        STR "both next sp-reg and offset are None"]))))
   | TFloat (FDouble, _, _) ->
-     (match aa_state.aas_next_dp_reg with
-      | Some reg ->
-         let register = register_of_arm_extension_register reg in
-         let par: fts_parameter_t =
-           mk_indexed_register_parameter ~btype ~name ~size register index in
-         let naas = get_next_dp_reg_naas aa_state in
-         (par, naas)
-      | _ ->
-         (match aa_state.aas_next_offset with
-          | Some offset ->
-             let par: fts_parameter_t =
-               mk_indexed_stack_parameter ~btype ~name offset index in
-             let naas =
-               {aa_state with aas_next_offset = Some (offset + size)} in
-             (par, naas)
-          | _ ->
-             raise
-               (BCH_failure
-                  (LBLOCK [
-                       STR "Inconsistent arm-argument-state: ";
-                       STR "both next sp-reg and offset are None"]))))
+     if BCHSystemSettings.system_settings#is_hard_float then
+       (match aa_state.aas_next_dp_reg with
+        | Some reg ->
+           let register = register_of_arm_extension_register reg in
+           let par: fts_parameter_t =
+             mk_indexed_register_parameter ~btype ~name ~size register index in
+           let naas = get_next_dp_reg_naas aa_state in
+           (par, naas)
+        | _ ->
+           (match aa_state.aas_next_offset with
+            | Some offset ->
+               let par: fts_parameter_t =
+                 mk_indexed_stack_parameter ~btype ~name offset index in
+               let naas =
+                 {aa_state with aas_next_offset = Some (offset + size)} in
+               (par, naas)
+            | _ ->
+               raise
+                 (BCH_failure
+                    (LBLOCK [
+                         STR "Inconsistent arm-argument-state: ";
+                         STR "both next sp-reg and offset are None"]))))
+     else
+       (match aa_state.aas_next_core_reg with
+        | Some AR0 ->
+           let register = register_of_arm_double_register AR0 AR1 in
+           let par: fts_parameter_t =
+             mk_indexed_register_parameter ~btype ~name ~size register index in
+           let naas = {aa_state with aas_next_core_reg = Some AR2} in
+           (par, naas)
+        | Some (AR1 | AR2) ->
+           let register = register_of_arm_double_register AR2 AR3 in
+           let par: fts_parameter_t =
+             mk_indexed_register_parameter ~btype ~name ~size register index in
+           let naas =
+             {aa_state with aas_next_core_reg = None; aas_next_offset = Some 0} in
+           (par, naas)
+        | Some AR3 ->
+           let par: fts_parameter_t =
+             mk_indexed_stack_parameter ~btype ~name 0 index in
+           let naas =
+             {aa_state with aas_next_core_reg = None; aas_next_offset = Some size} in
+           (par, naas)
+        | Some _ ->
+           raise
+             (BCH_failure
+                (LBLOCK [STR "Inconsistent state in get_long_int_param_next_state"]))
+        | _ ->
+           match aa_state.aas_next_offset with
+           | Some offset ->
+              let par: fts_parameter_t =
+                mk_indexed_stack_parameter ~btype ~name offset index in
+              let naas =
+                {aa_state with aas_next_offset = Some (offset + size)} in
+              (par, naas)
+           | _ ->
+              raise
+                (BCH_failure
+                   (LBLOCK [
+                        STR "Inconsistent arm-argument-state: ";
+                        STR "both next register and offset are None"])))
+
   | _ ->
      raise
        (BCH_failure

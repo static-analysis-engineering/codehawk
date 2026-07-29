@@ -1252,7 +1252,7 @@ let mips_params (funargs: bfunarg_t list): fts_parameter_t list =
 (* Note: CIL attaches some attributes to the TFun type and some attributes to
    the varinfo representing the function definition. In particular, the 'format'
    attribute is attached to the TFun type, but any codehawk-specific name (e.g.,
-   chk_format would be attached to the varinfo. 
+   chk_format would be attached to the varinfo.
 
    Given that the current api expects it to be attached to the TFun, only the
    format form can be used to indicate that an argument is a format string.*)

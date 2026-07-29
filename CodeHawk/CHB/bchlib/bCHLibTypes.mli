@@ -1401,6 +1401,7 @@ class type system_settings_int =
 object
   (* setters *)
   method set_architecture: string -> unit
+  method set_float_abi: string -> unit
   method set_fileformat: string -> unit
   method set_summary_jar: string -> unit
   method add_so_library: string -> unit    (* name of so-library *)
@@ -1445,6 +1446,8 @@ object
   method is_x86: bool
   method is_elf: bool
   method is_pe: bool
+  method is_hard_float: bool
+  method is_soft_float: bool
   method is_verbose: bool
   method is_typing_rule_enabled: string -> bool
   method is_debug_excluded: bool
@@ -6667,7 +6670,7 @@ class type floc_int =
     method get_mips_syscall_commands: cmd_t list
 
     (** returns the CHIF code associated with the call instruction (arm) *)
-    method get_arm_call_commands: cmd_t list
+    method get_arm_call_commands: (register_t * xpr_t) list -> cmd_t list
 
     (** returns the CHIF code associated with the call instruction (power32) *)
     method get_pwr_call_commands: cmd_t list
@@ -6985,6 +6988,9 @@ object
       from thumb to arm at address [addr], returns ['T'] if the architecture
       switches from arm to thumb at address [addr], or None otherwise.*)
   method get_arm_thumb_switch: doubleword_int -> string option
+
+  method get_aggregate: doubleword_int -> string list option
+  method get_instruction_annotation: doubleword_int -> string list option
 
   method get_argument_constraints:
            (* name, offset, lower bound, upper bound *)
