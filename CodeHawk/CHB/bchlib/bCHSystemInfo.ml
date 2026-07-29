@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -142,6 +142,12 @@ object (self)
   (* fa,ia of jmp* instr -> (base address,lb option, ub option) *)
   val jumptabletargets = H.create 13
 
+  (* anchor -> [name] *)
+  val aggregates = H.create 3
+
+  (* iaddr -> [kind] *)
+  val instruction_annotations = H.create 3
+
   val indirect_jump_targets = H.create 13  (* fa,ia -> target list *)
 
   val nonreturning_calls = new DoublewordCollections.table_t
@@ -268,6 +274,18 @@ object (self)
                fd#set_ida_provided) (node#getTaggedChildren "fe")
        end
     | _ -> ()
+
+  method get_aggregate (anchor: doubleword_int): string list option =
+    if H.mem aggregates anchor#index then
+      Some (H.find aggregates anchor#index)
+    else
+      None
+
+  method get_instruction_annotation (iaddr: doubleword_int): string list option =
+    if H.mem instruction_annotations iaddr#index then
+      Some (H.find instruction_annotations iaddr#index)
+    else
+      None
 
   method get_initialized_memory_strings =
     H.fold
@@ -779,6 +797,12 @@ object (self)
            self#read_xml_jump_table_targets jnode
          end);
 
+      (if hasc "aggregates" then
+         self#read_xml_aggregates (getc "aggregates"));
+
+      (if hasc "instruction-annotations" then
+         self#read_xml_instruction_annotations (getc "instruction-annotations"));
+
       (if hasc "indirect-jumps" then
          self#read_xml_indirect_jumps (getc "indirect-jumps"));
 
@@ -897,6 +921,24 @@ object (self)
                               STR name ])))
 	(getc "enable")
     end
+
+  method private read_xml_aggregates (node: xml_element_int) =
+    let getc = node#getTaggedChildren in
+    List.iter (fun n ->
+        let geta tag = geta_fail "read_xml_aggregates" n tag in
+        let anchor = geta "anchor" in
+        let name = n#getAttribute "name" in
+        H.add aggregates anchor#index [name])
+      (getc "agg")
+
+  method private read_xml_instruction_annotations (node: xml_element_int) =
+    let getc = node#getTaggedChildren in
+    List.iter (fun n ->
+        let geta tag = geta_fail "read_xml_instruction_annotations" n tag in
+        let iaddr = geta "iaddr" in
+        let kind = n#getAttribute "kind" in
+        H.add instruction_annotations iaddr#index [kind])
+      (getc "iann")
 
   method private read_xml_indirect_jumps (node:xml_element_int) =
     let getc = node#getTaggedChildren in
