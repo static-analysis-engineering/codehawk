@@ -118,6 +118,13 @@ type arm_simd_list_element_t =
   | SIMDRegRepElement of arm_extension_register_replicated_element_t
 
 
+(** Pair of registers used in wide (64-bit) operations, to represent
+    a 64-bit storage location, with the low part of the 64-bit value
+    in the first register and the high part of the 64-bit value in the
+    second register.*)
+type arm_lo_hi_register_pair_t = arm_reg_t * arm_reg_t
+
+
 type arm_operand_kind_t =
   | ARMDMBOption of dmb_option_t
   | ARMCPSEffect of cps_effect_t
@@ -225,6 +232,12 @@ class type arm_operand_int =
     method toString: string
     method toPretty: pretty_t
   end
+
+
+(* Pair of operands that participate in a wide (64-bit) operation,
+   with the first operand representing the lower 32 bits and the
+   second operand representing the higher 32 bits. *)
+type arm_lo_hi_operand_pair_t = arm_operand_int * arm_operand_int
 
 
 (** {1 Assembly opcodes}*)
@@ -1417,6 +1430,8 @@ class type arm_assembly_instruction_int =
     method set_aggregate_exit: unit
     method set_aggregate_anchor: unit
     method set_in_aggregate: doubleword_int -> unit
+    method set_lo_hi_registers_defined: arm_lo_hi_register_pair_t list -> unit
+    method set_lo_hi_registers_used: arm_lo_hi_register_pair_t list -> unit
 
     (* accessors *)
     method get_address: doubleword_int
@@ -1426,6 +1441,8 @@ class type arm_assembly_instruction_int =
     method get_non_code_block: not_code_t
     method get_opcode_condition: arm_opcode_cc_t option
     method condition_covered_by: doubleword_int
+    method lo_hi_registers_used: arm_lo_hi_register_pair_t list
+    method lo_hi_registers_defined: arm_lo_hi_register_pair_t list
 
     (* predicates *)
     method is_arm32: bool
@@ -1441,6 +1458,7 @@ class type arm_assembly_instruction_int =
     method is_aggregate_exit: bool
     method is_aggregate_anchor: bool
     method has_opcode_condition: bool
+    method is_wide_op_instruction: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -1539,12 +1557,11 @@ class type ldm_stm_sequence_int =
 class type arm_wide_op_sequence_int =
   object
 
-    method rdhi: arm_operand_int
-    method rdlo: arm_operand_int
-    method rnhi: arm_operand_int
-    method rnlo: arm_operand_int
-    method rmhi: arm_operand_int
-    method rmlo: arm_operand_int
+    method lo_hi_operand_pairs_defined: arm_lo_hi_operand_pair_t list
+    method lo_hi_operand_pairs_used: arm_lo_hi_operand_pair_t list
+
+    method lo_hi_register_pairs_defined: arm_lo_hi_register_pair_t list
+    method lo_hi_register_pairs_used: arm_lo_hi_register_pair_t list
 
     method instrs: arm_assembly_instruction_int list
     method anchor: doubleword_int
@@ -1553,6 +1570,16 @@ class type arm_wide_op_sequence_int =
     method toPretty: pretty_t
   end
 
+
+type arm_wide_op_kind_t =
+  | WideAdd                   (* ADDS-ADC *)
+  | WideSubtract              (* SUBS-SBC *)
+  | WideReverseSubtract       (* RSBS-RSC *)
+  | WideMove                  (* MOV-MOV *)
+  | WideMoveNot               (* MVN-MVN *)
+  | WideAnd                   (* AND-AND *)
+  | WideOr                    (* ORR-ORR *)
+  | WideXOr                   (* EOR-EOR *)
 
 type arm_aggregate_kind_t =
   | ARMJumptable of arm_jumptable_int
@@ -1568,9 +1595,7 @@ type arm_aggregate_kind_t =
       * arm_assembly_instruction_int
   | ARMPredicateAssignment of bool * arm_operand_int
   | ARMTernaryAssignment of arm_operand_int * numerical_t * numerical_t
-  | ARMWideAdd of arm_wide_op_sequence_int
-  | ARMWideSubtract of arm_wide_op_sequence_int
-  | ARMWideReverseSubtract of arm_wide_op_sequence_int
+  | ARMWideOp of arm_wide_op_kind_t * arm_wide_op_sequence_int
   | BXCall of arm_assembly_instruction_int * arm_assembly_instruction_int
 
 
@@ -1585,6 +1610,7 @@ class type arm_instruction_aggregate_int =
     method jumptable: arm_jumptable_int
     method it_sequence: thumb_it_sequence_int
     method ldm_stm_sequence: ldm_stm_sequence_int
+    method wide_op_sequence: arm_wide_op_sequence_int
 
     (* translation *)
     method toCHIF: doubleword_int -> cmd_t list
@@ -1602,6 +1628,11 @@ class type arm_instruction_aggregate_int =
     method is_arm_wide_add: bool
     method is_arm_wide_subtract: bool
     method is_arm_wide_reverse_subtract: bool
+    method is_arm_wide_move: bool
+    method is_arm_wide_move_not: bool
+    method is_arm_wide_and: bool
+    method is_arm_wide_or: bool
+    method is_arm_wide_xor: bool
 
     (* i/o *)
     method write_xml: xml_element_int -> unit
@@ -1875,6 +1906,8 @@ class type arm_assembly_function_int =
     method get_jumptable_count: int
     method get_not_valid_instr_count: int
     method get_true_conditional_return: arm_assembly_block_int option
+    method lo_hi_registers_used: arm_lo_hi_register_pair_t list
+    method lo_hi_registers_defined: arm_lo_hi_register_pair_t list
 
     (* iterators *)
     method iter: (arm_assembly_block_int -> unit) -> unit

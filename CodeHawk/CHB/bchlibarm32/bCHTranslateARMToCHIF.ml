@@ -623,6 +623,20 @@ let translate_arm_instruction
              (floc#env#mk_arm_register_variable r) :: acc
           | _ -> acc) [] ops in
 
+  let get_double_register_vars (ops: (arm_operand_int * arm_operand_int) list) =
+    let get_register (op: arm_operand_int): arm_reg_t option =
+      if op#is_register then
+        Some op#get_register
+      else
+        match op#get_kind with
+        | ARMShiftedReg (r, ARMImmSRT _) -> Some r
+        | _ -> None in
+    List.fold_left (fun acc (op1, op2) ->
+        let regvars = List.map get_register [op1; op2] in
+        match regvars with
+        | [Some r1; Some r2] -> (floc#env#mk_arm_double_register_variable r1 r2) :: acc
+        | _ -> acc) [] ops in
+
   let get_use_high_vars ?(is_pop=false) (xprs: xpr_t list): variable_t list =
     let inv = floc#inv in
     List.fold_left (fun acc x ->
@@ -703,7 +717,43 @@ let translate_arm_instruction
        agg#is_arm_wide_operation
     | _ -> false in
 
-  let make_wide_op_r hi_r lo_r =
+  let get_wide_op_destination_operand (wop: arm_wide_op_sequence_int) =
+    match wop#lo_hi_operand_pairs_defined with
+    | [p] -> p
+    | [] ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "No operands defined in wide-op operation"]))
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too many operands defined in wide-op operation"])) in
+
+  let get_unary_wide_op_source_operand (wop: arm_wide_op_sequence_int) =
+    match wop#lo_hi_operand_pairs_used with
+    | [p] -> p
+    | [] ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too few operands used in wide-op operation"]))
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too many operands used in wide-op operation"])) in
+
+  let get_binary_wide_op_source_operands (wop: arm_wide_op_sequence_int) =
+    match wop#lo_hi_operand_pairs_used with
+    | [p1; p2] -> (p1, p2)
+    | [] | [_] ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too few operands used in wide-op operation"]))
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too many operands used in wide-op operation"])) in
+
+  let make_wide_op_r lo_r hi_r =
     let e32 = num_constant_expr numerical_e32 in
     TR.tmap2 (fun hi lo ->
         XOp (XPlus, [XOp (XMult, [hi; e32]); lo])) hi_r lo_r in
@@ -714,12 +764,85 @@ let translate_arm_instruction
   let extract_wide_lo x_r =
     TR.tmap (fun x -> XOp (XMod, [x; num_constant_expr numerical_e32])) x_r in
 
-  let calltgt_cmds (_tgt: arm_operand_int): cmd_t list =
-    let callargs = floc#get_call_arguments in
-    let fintf = floc#get_call_target#get_function_interface in
-    let rtype = get_fts_returntype fintf in
-    let returnreg =
-      if is_float rtype then
+  let unary_wop_cmds (f: xpr_t -> xpr_t) (wop: arm_wide_op_sequence_int): cmd_t list =
+    let (rdlo, rdhi) = get_wide_op_destination_operand wop in
+    let (rnlo, rnhi) = get_unary_wide_op_source_operand wop in
+    let vrdlo = floc#env#mk_register_variable rdlo#to_register in
+    let vrdhi = floc#env#mk_register_variable rdhi#to_register in
+    let regrdlo = rdlo#get_register in
+    let regrdhi = rdhi#get_register in
+    let vrdlohi = floc#env#mk_arm_double_register_variable regrdlo regrdhi in
+    let lhslo_r = TR.tmap (fun (v, _) -> v) (rdlo#to_lhs floc) in
+    let lhshi_r = TR.tmap (fun (v, _) -> v) (rdhi#to_lhs floc) in
+    let xrnlo_r = rnlo#to_expr floc in
+    let xrnhi_r = rnhi#to_expr floc in
+    let xrn_r = make_wide_op_r xrnlo_r xrnhi_r in
+    let rhs_r = TR.tmap f xrn_r in
+    let rhslo_r = extract_wide_lo rhs_r in
+    let rhshi_r = extract_wide_hi rhs_r in
+    let usevars = get_register_vars [rnlo; rnhi] in
+    let usedoubles = get_double_register_vars [(rnlo, rnhi)] in
+    let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r] in
+    let cmds =
+      (floc#get_assign_commands_r lhslo_r rhslo_r)
+      @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
+    let defcmds =
+      floc#get_vardef_commands
+        ~defs:[vrdlo; vrdhi]
+        ~defdoubles:[vrdlohi]
+        ~use:usevars
+        ~usedoubles
+        ~usehigh
+        ctxtiaddr in
+    defcmds @ cmds in
+
+  let binary_wop_cmds
+        (f: xpr_t -> xpr_t -> xpr_t) (wop: arm_wide_op_sequence_int):cmd_t list =
+    let (rdlo, rdhi) = get_wide_op_destination_operand wop in
+    let ((rnlo, rnhi), (rmlo, rmhi)) =
+      get_binary_wide_op_source_operands wop in
+    let vrdlo = floc#env#mk_register_variable rdlo#to_register in
+    let vrdhi = floc#env#mk_register_variable rdhi#to_register in
+    let regrdlo = rdlo#get_register in
+    let regrdhi = rdhi#get_register in
+    let vrdlohi = floc#env#mk_arm_double_register_variable regrdlo regrdhi in
+    let lhslo_r = TR.tmap (fun (v, _) -> v) (rdlo#to_lhs floc) in
+    let lhshi_r = TR.tmap (fun (v, _) -> v) (rdhi#to_lhs floc) in
+    let xrnlo_r = rnlo#to_expr floc in
+    let xrnhi_r = rnhi#to_expr floc in
+    let xrmlo_r = rmlo#to_expr floc in
+    let xrmhi_r = rmhi#to_expr floc in
+    let xrn_r = make_wide_op_r xrnlo_r xrnhi_r in
+    let xrm_r = make_wide_op_r xrmlo_r xrmhi_r in
+    let rhs_r = TR.tmap2 f xrn_r xrm_r in
+    let rhslo_r = extract_wide_lo rhs_r in
+    let rhshi_r = extract_wide_hi rhs_r in
+    let usevars = get_register_vars [rnlo; rnhi; rmlo; rmhi] in
+    let usedoubles = get_double_register_vars [(rnlo, rnhi); (rmlo, rmhi)] in
+    let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+    let cmds =
+      (floc#get_assign_commands_r lhslo_r rhslo_r)
+      @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
+    let defcmds =
+      floc#get_vardef_commands
+        ~defs:[vrdlo; vrdhi]
+        ~defdoubles:[vrdlohi]
+        ~use:usevars
+        ~usedoubles
+        ~usehigh
+        ctxtiaddr in
+    defcmds @ cmds in
+
+  (* returns: (returnvar -> returnval), defs, defdoubles, clobbers *)
+  let return_pieces (rtype: btype_t) (rvar: variable_t):
+        ((register_t * xpr_t) list * variable_t list * variable_t list * variable_t list) =
+    let vr0 = floc#f#env#mk_arm_register_variable AR0 in
+    let vr1 = floc#f#env#mk_arm_register_variable AR1 in
+    let vr2 = floc#f#env#mk_arm_register_variable AR2 in
+    let vr3 = floc#f#env#mk_arm_register_variable AR3 in
+    let mk_reg = floc#f#env#mk_register_variable in
+    if is_float rtype then
+      if BCHSystemSettings.system_settings#is_hard_float then
         let regtype =
           if is_float_float rtype then
             XSingle
@@ -727,17 +850,72 @@ let translate_arm_instruction
             XDouble
           else
             XQuad in
-        register_of_arm_extension_register
-          ({armxr_type = regtype; armxr_index = 0})
+        let reg =
+          register_of_arm_extension_register
+            {armxr_type = regtype; armxr_index = 0} in
+        ([(reg, XVar rvar)], [mk_reg reg], [], [vr0; vr1; vr2; vr3])
       else
-        register_of_arm_register AR0 in
-    let returnvar = floc#f#env#mk_register_variable returnreg in
-    let (usecmds, use, usehigh) =
+        if is_float_float rtype then
+          ([(register_of_arm_register AR0, XVar rvar)], [vr0], [], [vr1; vr2; vr3])
+        else if is_float_double rtype then
+          let vlohi = floc#f#env#mk_arm_double_register_variable AR0 AR1 in
+          ([(register_of_arm_register AR0,
+             TR.tvalue (extract_wide_lo (Ok (XVar rvar))) ~default:(XVar rvar));
+           (register_of_arm_register AR1,
+            TR.tvalue (extract_wide_hi (Ok (XVar rvar))) ~default:(XVar rvar))],
+           [vr0; vr1],
+           [vlohi],
+           [vr2; vr3])
+        else
+          let _ =
+            log_error_result
+              ~tag:"return_pieces:complex double"
+              ~msg:(p2s floc#l#toPretty)
+              __FILE__ __LINE__
+              ["No representation yet for "
+               ^ "FLongDouble/FComplexDouble/FComplexLongDouble"] in
+          ([(register_of_arm_register AR0, XVar rvar)], [vr0], [], [vr1; vr2; vr3])
+    else match rtype with
+         | TInt (ik, _) ->
+            let isize = size_of_int_ikind ik in
+            if isize <= 4 then
+              ([(register_of_arm_register AR0, XVar rvar)], [vr0], [], [vr1; vr2; vr3])
+            else if isize <= 8 then
+              let vlohi = floc#f#env#mk_arm_double_register_variable AR0 AR1 in
+              ([(register_of_arm_register AR0,
+                 TR.tvalue (extract_wide_lo (Ok (XVar rvar))) ~default:(XVar rvar));
+                (register_of_arm_register AR1,
+                 TR.tvalue (extract_wide_hi (Ok (XVar rvar))) ~default:(XVar rvar))],
+               [vr0; vr1],
+               [vlohi],
+               [vr2; vr3])
+            else
+              let _ =
+                log_error_result
+                  ~tag:"return_pieces:IInt128"
+                  ~msg:(p2s floc#l#toPretty)
+                  __FILE__ __LINE__
+                  ["No representation yet for IInt128"] in
+              ([(register_of_arm_register AR0, XVar rvar)], [vr0], [], [vr1; vr2; vr3])
+         | _ ->
+            ([(register_of_arm_register AR0, XVar rvar)], [vr0], [], [vr1; vr2; vr3]) in
+
+  let calltgt_cmds (_tgt: arm_operand_int): cmd_t list =
+    let callargs = floc#get_call_arguments in
+    let fintf = floc#get_call_target#get_function_interface in
+    let rvar = floc#f#env#mk_return_value ctxtiaddr in
+    let _ =
+      if floc#get_call_target#is_signature_valid then
+        let name = floc#get_call_target#get_name ^ "_rtn_" ^ ctxtiaddr in
+        floc#f#env#set_variable_name rvar name in
+    let rtype = get_fts_returntype fintf in
+    let (returnpieces, rvardefs, defdoubles, clobbers) = return_pieces rtype rvar in
+    let (usecmds, use, usedoubles, usehigh) =
       (* This doesn't seem quite right, because the variable may be either
          written or read. Here the assumption is made that the variable
          is just read (i.e., it is used) rather than written, which would
          require a def.*)
-      List.fold_left (fun (acccmds, accuse, accusehigh) (p, x) ->
+      List.fold_left (fun (acccmds, accuse, accusedoubles, accusehigh) (p, x) ->
           let ptype = get_parameter_type p in
           let addressedvars =
             if is_pointer ptype && (not (is_char_pointer ptype)) then
@@ -769,9 +947,17 @@ let translate_arm_instruction
               [] in
           if is_register_parameter p then
             let regarg = TR.tget_ok (get_register_parameter_register p) in
-            let pvar = floc#f#env#mk_register_variable regarg in
+            let (use, usedoubles) =
+              match regarg with
+              | ARMRegister _ -> ([floc#f#env#mk_register_variable regarg], [])
+              | ARMDoubleRegister (ar1, ar2) ->
+                 ([floc#f#env#mk_arm_register_variable ar1;
+                   floc#f#env#mk_arm_register_variable ar2],
+                  [floc#f#env#mk_register_variable regarg])
+              | _ -> ([], []) in
             (acccmds,
-             pvar :: (addressedvars @ accuse),
+             use @ (addressedvars @ accuse),
+             usedoubles @ accusedoubles,
              addressedvars @ accusehigh)
 
           else if is_stack_parameter p then
@@ -781,11 +967,12 @@ let translate_arm_instruction
               ~ok:(fun (stacklhs, stacklhscmds) ->
                 (stacklhscmds @ acccmds,
                  stacklhs :: (addressedvars @ accuse),
+                 [],
                  addressedvars @ accusehigh))
               ~error:(fun e ->
                 begin
                   log_error_result __FILE__ __LINE__ e;
-                  (acccmds, accuse, accusehigh)
+                  (acccmds, accuse, [], accusehigh)
                 end)
               (stackop#to_lhs floc)
           else
@@ -794,7 +981,7 @@ let translate_arm_instruction
                  (LBLOCK [
                       floc#l#toPretty;
                       STR "  Parameter type not recognized in call translation"])))
-        ([], [], []) callargs in
+        ([], [], [], []) callargs in
 
     (* Add uses for buffer reads, as expressed in the callee's preconditions *)
     let (xpuse, xpusehigh) =
@@ -850,15 +1037,14 @@ let translate_arm_instruction
 
     let usehigh = xpusehigh @ (get_use_high_vars (List.map snd callargs)) in
     let use = xpuse in
-    let vr1 = floc#f#env#mk_arm_register_variable AR1 in
-    let vr2 = floc#f#env#mk_arm_register_variable AR2 in
-    let vr3 = floc#f#env#mk_arm_register_variable AR3 in
-    let callcmds = floc#get_arm_call_commands in
+    let callcmds = floc#get_arm_call_commands returnpieces in
     let defcmds =
       floc#get_vardef_commands
-        ~defs:(returnvar :: xprdefs)
-        ~clobbers:[vr1; vr2; vr3]
+        ~defs:(rvardefs @ xprdefs)
+        ~defdoubles
+        ~clobbers
         ~use
+        ~usedoubles
         ~usehigh
         ctxtiaddr in
     usecmds @ defcmds @ callcmds in
@@ -1043,33 +1229,8 @@ let translate_arm_instruction
   | AddCarry _ when instr#is_aggregate_anchor ->
      let agg = get_aggregate loc#i in
      (match agg#kind with
-      | ARMWideAdd wop ->
-         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
-         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
-         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
-         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
-         let xrnlo_r = wop#rnlo#to_expr floc in
-         let xrnhi_r = wop#rnhi#to_expr floc in
-         let xrmlo_r = wop#rmlo#to_expr floc in
-         let xrmhi_r = wop#rmhi#to_expr floc in
-         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
-         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
-         let rhs_r =
-           TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xrn_r xrm_r in
-         let rhslo_r = extract_wide_lo rhs_r in
-         let rhshi_r = extract_wide_hi rhs_r in
-         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
-         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-         let cmds =
-           (floc#get_assign_commands_r lhslo_r rhslo_r)
-           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
-         let defcmds =
-           floc#get_vardef_commands
-             ~defs:[vrdlo; vrdhi]
-             ~use:usevars
-             ~usehigh
-             ctxtiaddr in
-         let cmds = defcmds @ cmds in
+      | ARMWideOp (WideAdd, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XPlus, [x; y])) wop in
          default cmds
       | _ ->
          begin
@@ -1195,6 +1356,25 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | BitwiseAnd _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideOp (WideAnd, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XBAnd, [x; y])) wop in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"BitwiseAnd:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
+
+  | BitwiseAnd _ when is_part_of_wide_op_instr () ->
+     default []
+
   | BitwiseAnd (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -1241,6 +1421,25 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | BitwiseExclusiveOr _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideOp (WideXOr, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XBXor, [x; y])) wop in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"BitwiseExclusiveOr:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
+
+  | BitwiseExclusiveOr _ when is_part_of_wide_op_instr () ->
+     default []
+
   | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in
@@ -1276,6 +1475,25 @@ let translate_arm_instruction
    *     APSR.Z = IsZeroBit(result);
    *     APSR.C = carry;
    * ------------------------------------------------------------------------ *)
+  | BitwiseNot _ when instr#is_aggregate_anchor && (is_part_of_wide_op_instr ()) ->
+     let mvnagg = get_aggregate loc#i in
+     (match mvnagg#kind with
+      | ARMWideOp (WideMoveNot, wop) ->
+         let cmds = unary_wop_cmds (fun x -> XOp (XBNot, [x])) wop in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"MoveNot:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s mvnagg#toPretty)];
+           default []
+         end)
+
+  | BitwiseNot _ when is_part_of_wide_op_instr () ->
+     default []
+
   | BitwiseNot _ when Option.is_some instr#is_in_aggregate ->
      (* may be part of a ternary assignment.
         TODO: add code for the case where MVN is the anchor instruction.*)
@@ -1329,6 +1547,25 @@ let translate_arm_instruction
      (match c with
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
+
+  | BitwiseOr _ when instr#is_aggregate_anchor ->
+     let agg = get_aggregate loc#i in
+     (match agg#kind with
+      | ARMWideOp (WideOr, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XBOr, [x; y])) wop in
+         default cmds
+      | _ ->
+         begin
+           log_error_result
+             ~tag:"BitwiseOr:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s agg#toPretty)];
+           default []
+         end)
+
+  | BitwiseOr _ when is_part_of_wide_op_instr () ->
+     default []
 
   | BitwiseOr (_, c, rd, rn, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
@@ -1400,7 +1637,9 @@ let translate_arm_instruction
      let (defs, use, usehigh) =
        let use = [vr0; vr1; vr2; vr3] in
        ([vr0], use, use) in
-     let cmds = floc#get_arm_call_commands in
+     let rvar = floc#f#env#mk_return_value floc#cia in
+     let r0 = register_of_arm_register AR0 in
+     let cmds = floc#get_arm_call_commands [(r0, XVar rvar)] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:defs
@@ -1955,9 +2194,17 @@ let translate_arm_instruction
      let usevars =
        TR.tfold_default (fun memvar2 -> memvar2 :: usevars) usevars memvar2_r in
      let usehigh = get_use_high_vars_r [rhs1_r; rhs2_r] in
+     let defdoubles =
+       if instr#is_wide_op_instruction then
+         let reglo = rt#get_register in
+         let reghi = rt2#get_register in
+         [floc#env#mk_arm_double_register_variable reglo reghi]
+       else
+         [] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vrd1; vrd2]
+         ~defdoubles
          ~use:usevars
          ~usehigh:usehigh
          ctxtiaddr in
@@ -2214,102 +2461,116 @@ let translate_arm_instruction
    *    APSR.Z = IsZeroBit(result);
    * ------------------------------------------------------------------------ *)
   | Move (_, _, rd, _, _, _) when instr#is_aggregate_anchor ->
-     (match get_associated_test_instr finfo ctxtiaddr with
-      | Some (testloc, testinstr) ->
-         let movagg = get_aggregate loc#i in
-         (match movagg#kind with
-          | ARMPredicateAssignment (inverse, dstop) ->
-             let (_, optpredicate, _) =
-               make_conditional_predicate
-                 ~condinstr:instr ~testinstr ~condloc:loc ~testloc in
-             let cmds =
-               let lhs_r = TR.tmap fst (dstop#to_lhs floc) in
-               let vrd = floc#env#mk_register_variable dstop#to_register in
-               match optpredicate with
-               | Some p ->
-                  let p = if inverse then XOp (XLNot, [p]) else p in
-                  let cmds = floc#get_assign_commands_r lhs_r (Ok p) in
-                  let usevars = vars_in_expr_list [p] in
-                  let usehigh = get_use_high_vars [p] in
-                  let defcmds =
-                    floc#get_vardef_commands
-                      ~defs:[vrd]
-                      ~use:usevars
-                      ~usehigh
-                      ~flagdefs
-                      ctxtiaddr in
-                  defcmds @ cmds
-               | _ ->
-                  let _ =
-                    chlog#add
-                      "predicate assignment:no predicate"
-                      (LBLOCK [floc#l#toPretty]) in
-                  let cmds = floc#get_abstract_commands_r lhs_r in
-                  let defcmds =
-                    floc#get_vardef_commands ~defs:[vrd] ~flagdefs ctxtiaddr in
-                  defcmds @ cmds in
-             default cmds
-          | ARMTernaryAssignment (dstop, n1, n2) ->
-             let (_, optpredicate, _) =
-               make_conditional_predicate
-                 ~condinstr:instr ~testinstr ~condloc:loc ~testloc in
-             let (_, tests) =
-               make_instr_local_tests
-                 ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
-             let cmds =
-               let lhs_r = TR.tmap fst (dstop#to_lhs floc) in
-               let vrd = floc#env#mk_register_variable dstop#to_register in
-               match optpredicate with
-               | Some p ->
-                  let x1 = XConst (IntConst n1) in
-                  let x2 = XConst (IntConst n2) in
-                  let cmd1 = floc#get_assign_commands_r lhs_r (Ok x1) in
-                  let cmd2 = floc#get_assign_commands_r lhs_r (Ok x2) in
-                  let usevars = vars_in_expr_list [p] in
-                  let usehigh = get_use_high_vars [p] in
-                  let defcmds =
-                    floc#get_vardef_commands
-                      ~defs:[vrd]
-                      ~use:usevars
-                      ~usehigh
-                      ~flagdefs
-                      ctxtiaddr in
-                  let brcmd =
-                    match tests with
-                    | Some (thentest, elsetest) ->
-                       BRANCH [LF.mkCode (thentest @ cmd1);
-                               LF.mkCode (elsetest @ cmd2)]
-                    | _ ->
-                       BRANCH [LF.mkCode cmd1; LF.mkCode cmd2] in
-                  defcmds @ [brcmd]
-               | _ ->
-                  let _ =
-                    chlog#add
-                      "ternary assignment:no predicate"
-                      (LBLOCK [floc#l#toPretty]) in
-                  let cmds = floc#get_abstract_commands_r lhs_r in
-                  let defcmds =
-                    floc#get_vardef_commands ~defs:[vrd] ~flagdefs ctxtiaddr in
-                  defcmds @ cmds in
-             default cmds
+     let movagg = get_aggregate loc#i in
+     (match movagg#kind with
+      | ARMPredicateAssignment _ | ARMTernaryAssignment _ ->
+         (match get_associated_test_instr finfo ctxtiaddr with
+          | Some (testloc, testinstr) ->
+             (match movagg#kind with
+              | ARMPredicateAssignment (inverse, dstop) ->
+                 let (_, optpredicate, _) =
+                   make_conditional_predicate
+                     ~condinstr:instr ~testinstr ~condloc:loc ~testloc in
+                 let cmds =
+                   let lhs_r = TR.tmap fst (dstop#to_lhs floc) in
+                   let vrd = floc#env#mk_register_variable dstop#to_register in
+                   match optpredicate with
+                   | Some p ->
+                      let p = if inverse then XOp (XLNot, [p]) else p in
+                      let cmds = floc#get_assign_commands_r lhs_r (Ok p) in
+                      let usevars = vars_in_expr_list [p] in
+                      let usehigh = get_use_high_vars [p] in
+                      let defcmds =
+                        floc#get_vardef_commands
+                          ~defs:[vrd]
+                          ~use:usevars
+                          ~usehigh
+                          ~flagdefs
+                          ctxtiaddr in
+                      defcmds @ cmds
+                   | _ ->
+                      let _ =
+                        chlog#add
+                          "predicate assignment:no predicate"
+                          (LBLOCK [floc#l#toPretty]) in
+                      let cmds = floc#get_abstract_commands_r lhs_r in
+                      let defcmds =
+                        floc#get_vardef_commands ~defs:[vrd] ~flagdefs ctxtiaddr in
+                      defcmds @ cmds in
+                 default cmds
+              | ARMTernaryAssignment (dstop, n1, n2) ->
+                 let (_, optpredicate, _) =
+                   make_conditional_predicate
+                     ~condinstr:instr ~testinstr ~condloc:loc ~testloc in
+                 let (_, tests) =
+                   make_instr_local_tests
+                     ~condloc:loc ~testloc ~condinstr:instr ~testinstr in
+                 let cmds =
+                   let lhs_r = TR.tmap fst (dstop#to_lhs floc) in
+                   let vrd = floc#env#mk_register_variable dstop#to_register in
+                   match optpredicate with
+                   | Some p ->
+                      let x1 = XConst (IntConst n1) in
+                      let x2 = XConst (IntConst n2) in
+                      let cmd1 = floc#get_assign_commands_r lhs_r (Ok x1) in
+                      let cmd2 = floc#get_assign_commands_r lhs_r (Ok x2) in
+                      let usevars = vars_in_expr_list [p] in
+                      let usehigh = get_use_high_vars [p] in
+                      let defcmds =
+                        floc#get_vardef_commands
+                          ~defs:[vrd]
+                          ~use:usevars
+                          ~usehigh
+                          ~flagdefs
+                          ctxtiaddr in
+                      let brcmd =
+                        match tests with
+                        | Some (thentest, elsetest) ->
+                           BRANCH [LF.mkCode (thentest @ cmd1);
+                                   LF.mkCode (elsetest @ cmd2)]
+                        | _ ->
+                           BRANCH [LF.mkCode cmd1; LF.mkCode cmd2] in
+                      defcmds @ [brcmd]
+                   | _ ->
+                      let _ =
+                        chlog#add
+                          "ternary assignment:no predicate"
+                          (LBLOCK [floc#l#toPretty]) in
+                      let cmds = floc#get_abstract_commands_r lhs_r in
+                      let defcmds =
+                        floc#get_vardef_commands ~defs:[vrd] ~flagdefs ctxtiaddr in
+                      defcmds @ cmds in
+                 default cmds
 
+              | _ ->
+                 (* should not be reachable *)
+                 raise
+                   (BCH_failure
+                      (LBLOCK [floc#l#toPretty; STR ": Unknown MOV aggregate kind"])))
           | _ ->
-             (* should not be reachable *)
-             raise
-               (BCH_failure
-                  (LBLOCK [floc#l#toPretty; STR ": Unknown MOV aggregate kind"])))
+             (* no predicate found *)
+             let vrd = floc#env#mk_register_variable rd#to_register in
+             let lhs_r = TR.tmap fst (rd#to_lhs floc) in
+             let cmds = floc#get_abstract_commands_r lhs_r in
+             let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
+             let cmds = defcmds @ cmds in
+             let _ =
+               chlog#add
+                 "predicate assignment aggregate without predicate"
+                 (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
+             default cmds)
+      | ARMWideOp (WideMove, wop) ->
+         let cmds = unary_wop_cmds (fun x -> x) wop in
+         default cmds
       | _ ->
-         (* no predicate found *)
-         let vrd = floc#env#mk_register_variable rd#to_register in
-         let lhs_r = TR.tmap fst (rd#to_lhs floc) in
-         let cmds = floc#get_abstract_commands_r lhs_r in
-         let defcmds = floc#get_vardef_commands ~defs:[vrd] ctxtiaddr in
-         let cmds = defcmds @ cmds in
-         let _ =
-           chlog#add
-             "predicate assignment aggregate without predicate"
-             (LBLOCK [loc#toPretty; STR ": "; instr#toPretty]) in
-         default cmds)
+         begin
+           log_error_result
+             ~tag:"Move:aggregate"
+             ~msg:ctxtiaddr
+             __FILE__ __LINE__
+             ["Not recognized: " ^ (p2s movagg#toPretty)];
+           default []
+         end)
 
   | Move _ when Option.is_some instr#is_in_aggregate ->
      default []
@@ -2804,33 +3065,8 @@ let translate_arm_instruction
   | ReverseSubtractCarry _ when instr#is_aggregate_anchor ->
      let agg = get_aggregate loc#i in
      (match agg#kind with
-      | ARMWideReverseSubtract wop ->
-         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
-         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
-         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
-         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
-         let xrnlo_r = wop#rnlo#to_expr floc in
-         let xrnhi_r = wop#rnhi#to_expr floc in
-         let xrmlo_r = wop#rmlo#to_expr floc in
-         let xrmhi_r = wop#rmhi#to_expr floc in
-         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
-         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
-         let rhs_r =
-           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xrn_r xrm_r in
-         let rhslo_r = extract_wide_lo rhs_r in
-         let rhshi_r = extract_wide_hi rhs_r in
-         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
-         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-         let cmds =
-           (floc#get_assign_commands_r lhslo_r rhslo_r)
-           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
-         let defcmds =
-           floc#get_vardef_commands
-             ~defs:[vrdlo; vrdhi]
-             ~use:usevars
-             ~usehigh
-             ctxtiaddr in
-         let cmds = defcmds @ cmds in
+      | ARMWideOp (WideReverseSubtract, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XMinus, [y; x])) wop in
          default cmds
       | _ ->
          begin
@@ -2841,7 +3077,6 @@ let translate_arm_instruction
              ["Not recognized: " ^ (p2s agg#toPretty)];
            default []
          end)
-
 
   | ReverseSubtractCarry(_, c, rd, rn, rm) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
@@ -3056,17 +3291,24 @@ let translate_arm_instruction
   | SignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
      let vlo = floc#env#mk_register_variable rdlo#to_register in
      let vhi = floc#env#mk_register_variable rdhi#to_register in
+     let rlo = rdlo#get_register in
+     let rhi = rdhi#get_register in
+     let vlohi = floc#env#mk_arm_double_register_variable rlo rhi in
      let lhslo_r = TR.tmap fst (rdlo#to_lhs floc) in
      let lhshi_r = TR.tmap fst (rdhi#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let xrm_r = rm#to_expr floc in
-     let cmdslo = floc#get_abstract_commands_r lhslo_r in
-     let cmdshi = floc#get_abstract_commands_r lhshi_r in
+     let rhs = TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
+     let rhslo_r = extract_wide_lo rhs in
+     let rhshi_r = extract_wide_hi rhs in
+     let cmdslo = floc#get_assign_commands_r lhslo_r rhslo_r in
+     let cmdshi = floc#get_assign_commands_r lhshi_r rhshi_r in
      let usevars = get_register_vars [rn; rm] in
      let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
      let defcmds =
        floc#get_vardef_commands
          ~defs:[vlo; vhi]
+         ~defdoubles:[vlohi]
          ~use:usevars
          ~usehigh
          ctxtiaddr in
@@ -3505,7 +3747,16 @@ let translate_arm_instruction
      let xrt2_r = rt2#to_expr floc in
      let usevars = get_register_vars [rt; rt2; rn; rm] in
      let usehigh = get_use_high_vars_r [xrt_r; xrt2_r] in
-     let rdefcmds = floc#get_vardef_commands ~use:usevars ~usehigh ctxtiaddr in
+     let usedoubles =
+       if instr#is_wide_op_instruction then
+         let rtreg = rt#get_register in
+         let rt2reg = rt2#get_register in
+         let rtcombined = floc#env#mk_arm_double_register_variable rtreg rt2reg in
+         [rtcombined]
+       else
+         [] in
+     let rdefcmds =
+       floc#get_vardef_commands ~usedoubles ~use:usevars ~usehigh ctxtiaddr in
      let cmds1 =
        TR.tfold
          ~ok:(fun (memlhs, memcmds) ->
@@ -3667,33 +3918,8 @@ let translate_arm_instruction
   | SubtractCarry _ when instr#is_aggregate_anchor ->
      let agg = get_aggregate loc#i in
      (match agg#kind with
-      | ARMWideSubtract wop ->
-         let vrdlo = floc#env#mk_register_variable wop#rdlo#to_register in
-         let vrdhi = floc#env#mk_register_variable wop#rdhi#to_register in
-         let lhslo_r = TR.tmap (fun (v, _) -> v) (wop#rdlo#to_lhs floc) in
-         let lhshi_r = TR.tmap (fun (v, _) -> v) (wop#rdhi#to_lhs floc) in
-         let xrnlo_r = wop#rnlo#to_expr floc in
-         let xrnhi_r = wop#rnhi#to_expr floc in
-         let xrmlo_r = wop#rmlo#to_expr floc in
-         let xrmhi_r = wop#rmhi#to_expr floc in
-         let xrn_r = make_wide_op_r xrnhi_r xrnlo_r in
-         let xrm_r = make_wide_op_r xrmhi_r xrmlo_r in
-         let rhs_r =
-           TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xrn_r xrm_r in
-         let rhslo_r = extract_wide_lo rhs_r in
-         let rhshi_r = extract_wide_hi rhs_r in
-         let usevars = get_register_vars [wop#rnlo; wop#rnhi; wop#rmlo; wop#rmhi] in
-         let usehigh = get_use_high_vars_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-         let cmds =
-           (floc#get_assign_commands_r lhslo_r rhslo_r)
-           @ (floc#get_assign_commands_r lhshi_r rhshi_r) in
-         let defcmds =
-           floc#get_vardef_commands
-             ~defs:[vrdlo; vrdhi]
-             ~use:usevars
-             ~usehigh
-             ctxtiaddr in
-         let cmds = defcmds @ cmds in
+      | ARMWideOp (WideSubtract, wop) ->
+         let cmds = binary_wop_cmds (fun x y -> XOp (XMinus, [x; y])) wop in
          default cmds
       | _ ->
          begin
@@ -3959,6 +4185,9 @@ let translate_arm_instruction
   | UnsignedMultiplyAccumulateLong (_, c, rdlo, rdhi, rn, rm) ->
      let vrlo = floc#env#mk_register_variable rdlo#to_register in
      let vrhi = floc#env#mk_register_variable rdhi#to_register in
+     let rlo = rdlo#get_register in
+     let rhi = rdhi#get_register in
+     let vlohi = floc#env#mk_arm_double_register_variable rlo rhi in
      let lhslo_r = TR.tmap fst (rdlo#to_lhs floc) in
      let lhshi_r = TR.tmap fst (rdhi#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
@@ -3968,10 +4197,16 @@ let translate_arm_instruction
      let cmdslo = floc#get_abstract_commands_r lhslo_r in
      let cmdshi = floc#get_abstract_commands_r lhshi_r in
      let usevars = get_register_vars [rn; rm; rdlo; rdhi] in
+     let usedoubles = get_double_register_vars [(rdlo, rdhi)] in
      let usehigh = get_use_high_vars_r [xrn_r; xrm_r; xrdlo_r; xrdhi_r] in
      let defcmds =
        floc#get_vardef_commands
-         ~defs:[vrlo; vrhi] ~use:usevars ~usehigh ctxtiaddr in
+         ~defs:[vrlo; vrhi]
+         ~defdoubles:[vlohi]
+         ~use:usevars
+         ~usedoubles
+         ~usehigh
+         ctxtiaddr in
      let cmds = defcmds @ cmdslo @ cmdshi in
      (match c with
       | ACCAlways -> default cmds
@@ -3980,6 +4215,9 @@ let translate_arm_instruction
   | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
      let vrlo = floc#env#mk_register_variable rdlo#to_register in
      let vrhi = floc#env#mk_register_variable rdhi#to_register in
+     let rlo = rdlo#get_register in
+     let rhi = rdhi#get_register in
+     let vlohi = floc#env#mk_arm_double_register_variable rlo rhi in
      let lhslo_r = TR.tmap fst (rdlo#to_lhs floc) in
      let lhshi_r = TR.tmap fst (rdhi#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
@@ -3990,7 +4228,11 @@ let translate_arm_instruction
      let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
      let defcmds =
        floc#get_vardef_commands
-         ~defs:[vrlo; vrhi] ~use:usevars ~usehigh ctxtiaddr in
+         ~defs:[vrlo; vrhi]
+         ~defdoubles:[vlohi]
+         ~use:usevars
+         ~usehigh
+         ctxtiaddr in
      let cmds = defcmds @ cmdslo @ cmdshi in
      (match c with
       | ACCAlways -> default cmds
@@ -4977,6 +5219,12 @@ object (self)
 
   method translate =
     let faddr = f#get_address in
+    let finfo = get_function_info faddr in
+    let _ =
+      finfo#set_active_register_pairs
+        (List.map (fun (lo, hi) ->
+             (register_of_arm_register lo, register_of_arm_register hi))
+           (f#lo_hi_registers_defined @ f#lo_hi_registers_used)) in
     let firstInstrLabel = make_code_label funloc#ci in
     let entryLabel = make_code_label ~modifier:"entry" funloc#ci in
     let exitLabel = make_code_label ~modifier:"exit" funloc#ci in

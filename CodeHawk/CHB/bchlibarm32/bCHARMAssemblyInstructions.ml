@@ -349,6 +349,14 @@ object (self)
       agg#entry#set_aggregate_entry;
       agg#exitinstr#set_aggregate_exit;
       List.iter (fun instr -> instr#set_in_aggregate va) agg#instrs;
+      (if agg#is_arm_wide_operation then
+         let instr = agg#anchor in
+         begin
+           instr#set_lo_hi_registers_defined
+             agg#wide_op_sequence#lo_hi_register_pairs_defined;
+           instr#set_lo_hi_registers_used
+             agg#wide_op_sequence#lo_hi_register_pairs_used
+         end);
       (match agg#kind with
        | ARMJumptable jt -> self#set_jumptable jt#to_jumptable
        | _ -> ())

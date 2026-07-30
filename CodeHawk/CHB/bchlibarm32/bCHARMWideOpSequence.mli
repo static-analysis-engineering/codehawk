@@ -34,8 +34,11 @@ open BCHARMTypes
 
 (** Data structure to support idiomatic constructs for 64-bit operations.*)
 
+val arm_lo_hi_operand_pair_to_string: arm_lo_hi_operand_pair_t -> string
+
+val arm_lo_hi_register_pair_to_string: arm_lo_hi_register_pair_t -> string
 
 val create_arm_wide_op_sequence:
   pushback_stream_int
   -> arm_assembly_instruction_int
-  -> arm_wide_op_sequence_int option
+  -> (arm_wide_op_kind_t * arm_wide_op_sequence_int) option

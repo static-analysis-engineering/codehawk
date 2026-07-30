@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2026  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ open CHLogger
 (* bchlib *)
 open BCHBasicTypes
 open BCHByteUtilities
+open BCHCPURegisters
 open BCHLibTypes
 open BCHLocation
 
@@ -43,6 +44,10 @@ open BCHARMAssemblyInstructions
 open BCHARMTypes
 
 module H = Hashtbl
+
+
+let armreg_compare r1 r2 =
+  Stdlib.compare (armreg_to_string r1) (armreg_to_string r2)
 
 
 class arm_assembly_function_t
@@ -136,6 +141,35 @@ object (self)
                 | _ -> ())
             | _ -> ()) in
     !result
+
+  method lo_hi_registers_defined: arm_lo_hi_register_pair_t list =
+    let result = ref [] in
+    let _ =
+      self#iteri (fun _ _ instr ->
+          let pairs_defined = instr#lo_hi_registers_defined in
+          List.iter (fun (lo, hi) ->
+              if List.exists (fun (lo', hi') ->
+                     (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
+                   !result then
+                ()
+              else
+                result := (lo, hi) :: !result) pairs_defined) in
+    !result
+
+  method lo_hi_registers_used: arm_lo_hi_register_pair_t list =
+    let result = ref [] in
+    let _ =
+      self#iteri (fun _ _ instr ->
+          let pairs_used = instr#lo_hi_registers_used in
+          List.iter (fun (lo, hi) ->
+              if List.exists (fun (lo', hi') ->
+                     (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
+                   !result then
+                ()
+              else
+                result := (lo, hi) :: !result) pairs_used) in
+    !result
+
 
   method iter (f:arm_assembly_block_int -> unit) =
     List.iter (fun b -> f b) self#get_blocks

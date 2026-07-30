@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025  Aarno Labs, LLC
+   Copyright (c) 2021-2026  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ open BCHBasicTypes
 open BCHByteUtilities
 open BCHFunctionData
 open BCHLibTypes
+open BCHSystemInfo
 
 (* bchlibarm32 *)
 open BCHARMDictionary
@@ -59,6 +60,8 @@ object (self)
   val mutable aggregate_anchor = false
   val mutable blockcondition = false
   val mutable conditioncoveredby = None  (* refers to IT instruction *)
+  val mutable lo_hi_registers_defined = []
+  val mutable lo_hi_registers_used = []
 
   method set_block_entry = block_entry <- true
 
@@ -86,6 +89,44 @@ object (self)
   method is_aggregate_anchor = aggregate_anchor
 
   method is_in_aggregate = in_aggregate
+
+  method set_lo_hi_registers_defined l = lo_hi_registers_defined <- l
+
+  method set_lo_hi_registers_used l = lo_hi_registers_used <- l
+
+  method is_wide_op_instruction =
+    match system_info#get_instruction_annotation vaddr with
+    | Some ["wop"] -> true
+    | _ -> false
+
+  method lo_hi_registers_defined =
+    if self#is_aggregate_anchor then
+      lo_hi_registers_defined
+    else
+      match self#get_opcode with
+      | SignedMultiplyAccumulateLong (_, _, rdlo, rdhi, _, _)          (* SMLAL *)
+        | SignedMultiplyLong (_, _, rdlo, rdhi, _, _)                  (* SMULL *)
+        | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, _, _)      (* UMLAL *)
+        | UnsignedMultiplyLong (_, _, rdlo, rdhi, _, _) ->             (* UMULL *)
+         [(rdlo#get_register, rdhi#get_register)]
+      | LoadRegisterDual (_, rdlo, rdhi, _, _, _, _)
+           when self#is_wide_op_instruction ->
+         [(rdlo#get_register, rdhi#get_register)]
+      | _ -> []
+
+  method lo_hi_registers_used =
+    if self#is_aggregate_anchor then
+      lo_hi_registers_used
+    else
+      match self#get_opcode with
+      | SignedMultiplyAccumulateLong (_, _, rdlo, rdhi, _, _)          (* SMLAL *)
+        | UnsignedMultiplyAccumulateLong (_, _, rdlo, rdhi, _, _) ->   (* UMLAL *)
+         [(rdlo#get_register, rdhi#get_register)]
+      | StoreRegisterDual (_, rdlo, rdhi, _, _, _, _)
+           when self#is_wide_op_instruction ->
+         [(rdlo#get_register, rdhi#get_register)]
+      | _ ->
+         []
 
   method has_opcode_condition =
     BCHARMOpcodeRecords.is_opcode_conditional opcode

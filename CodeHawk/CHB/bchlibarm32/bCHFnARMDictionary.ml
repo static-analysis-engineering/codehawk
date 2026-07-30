@@ -158,6 +158,42 @@ object (self)
       else
         () in
 
+    let get_wide_op_destination_operand (wop: arm_wide_op_sequence_int) =
+      match wop#lo_hi_operand_pairs_defined with
+      | [p] -> p
+      | [] ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "No operands defined in wide-op operation"]))
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Too many operands defined in wide-op operation"])) in
+
+    let get_unary_wide_op_source_operand (wop: arm_wide_op_sequence_int) =
+    match wop#lo_hi_operand_pairs_used with
+    | [p] -> p
+    | [] ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too few operands used in wide-op operation"]))
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [STR "Too many operands used in wide-op operation"])) in
+
+    let get_binary_wide_op_source_operands (wop: arm_wide_op_sequence_int) =
+      match wop#lo_hi_operand_pairs_used with
+      | [p1; p2] -> (p1, p2)
+      | [] | [_] ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Too few operands used in wide-op operation"]))
+      | _ ->
+         raise
+           (BCH_failure
+              (LBLOCK [STR "Too many operands used in wide-op operation"])) in
+
     let is_part_of_wide_op_instr () =
       match instr#is_in_aggregate with
       | Some dw ->
@@ -316,6 +352,51 @@ object (self)
     let get_rdef_r (x_r: xpr_t traceresult): int =
       TR.tfold_default get_rdef (-1) x_r in
 
+    let get_rdefdouble_r ((xlo_r, xhi_r): (xpr_t traceresult * xpr_t traceresult)): int =
+      TR.tfold_default
+        (fun xlo ->
+          TR.tfold_default
+            (fun xhi ->
+              match (xlo, xhi) with
+              | (XVar vlo, XVar vhi)
+                   when floc#f#env#is_register_variable vlo
+                        && floc#f#env#is_register_variable vhi ->
+                 let reglo = TR.tget_ok (floc#f#env#get_register vlo) in
+                 let reghi = TR.tget_ok (floc#f#env#get_register vhi) in
+                 (match (reglo, reghi) with
+                  | (ARMRegister areglo, ARMRegister areghi) ->
+                     let vlohi = floc#f#env#mk_arm_double_register_variable areglo areghi in
+                     let symvar = floc#f#env#mk_symbolic_variable vlohi in
+                     let varinvs = varinv#get_var_reaching_defs symvar in
+                     (match varinvs with
+                      | [vinv] -> vinv#index
+                      | _ ->
+                         let _ =
+                           log_diagnostics_result
+                             ~tag:"get_rdefdouble"
+                             ~msg:floc#cia
+                             __FILE__ __LINE__
+                             ["Unable to find rdef for " ^ (p2s vlohi#toPretty)] in
+                         (-1))
+                  | _ ->
+                     let _ =
+                       log_diagnostics_result
+                         ~tag:"get_rdefdouble"
+                         ~msg:floc#cia
+                         __FILE__ __LINE__
+                         ["Not two registers: " ^ (register_to_string reglo)] in
+                     (-1))
+              | _ ->
+                 let _ =
+                   log_diagnostics_result
+                     ~tag:"get_rdefdouble"
+                     ~msg:floc#cia
+                     __FILE__ __LINE__
+                     ["Not a variable: (" ^ (x2s xlo) ^ ", " ^ (x2s xhi) ^ ")"] in
+                 (-1)
+            ) (-1) xhi_r)
+        (-1) xlo_r in
+
     let get_all_rdefs (xpr: xpr_t): int list =
       let vars = floc#env#variables_in_expr ~include_addressof:false xpr in
       List.fold_left (fun acc v ->
@@ -440,6 +521,7 @@ object (self)
           ?(types: btype_t list = [])
           ?(xprs: xpr_t list = [])
           ?(rdefs: int list = [])
+          ?(rdefdoubles: int list = [])
           ?(uses: int list = [])
           ?(useshigh: int list = [])
           ?(integers: int list = [])
@@ -452,6 +534,7 @@ object (self)
       let varcount = List.length vars in
       let xprcount = List.length xprs in
       let rdefcount = List.length rdefs in
+      let rdefdoublescount = List.length rdefdoubles in
       let defusecount = List.length uses in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
@@ -460,6 +543,7 @@ object (self)
       let typestring = string_repeat "t" varcount in
       let xprstring = string_repeat "x" xprcount in
       let rdefstring = string_repeat "r" rdefcount in
+      let rdefdoublestring = string_repeat "m" rdefdoublescount in
       let defusestring = string_repeat "d" defusecount in
       let defusehighstring = string_repeat "h" defusehighcount in
       let flagrdefstring = string_repeat "f" flagrdefcount in
@@ -470,6 +554,7 @@ object (self)
         ^ typestring
         ^ xprstring
         ^ rdefstring
+        ^ rdefdoublestring
         ^ defusestring
         ^ defusehighstring
         ^ flagrdefstring
@@ -488,6 +573,7 @@ object (self)
        @ typeargs
        @ xprargs
        @ rdefs
+       @ rdefdoubles
        @ uses
        @ useshigh
        @ flagrdefs
@@ -500,7 +586,9 @@ object (self)
           ?(xprs_r: xpr_t traceresult list = [])
           ?(cxprs_r: xpr_t traceresult list = [])
           ?(rdefs: int list = [])
+          ?(rdefdoubles: int list = [])
           ?(uses: int list = [])
+          ?(usedoubles: int list = [])
           ?(useshigh: int list = [])
           ?(integers: int list = [])
           () =
@@ -512,7 +600,9 @@ object (self)
       let xprcount = List.length xprs_r in
       let cxprcount = List.length cxprs_r in
       let rdefcount = List.length rdefs in
+      let rdefdoublescount = List.length rdefdoubles in
       let defusecount = List.length uses in
+      let defusedoublescount = List.length usedoubles in
       let defusehighcount = List.length useshigh in
       let flagrdefcount = List.length flagrdefs in
       let integercount = List.length integers in
@@ -522,7 +612,9 @@ object (self)
       let xprstring = string_repeat "x" xprcount in
       let cxprstring = string_repeat "c" cxprcount in
       let rdefstring = string_repeat "r" rdefcount in
+      let rdefdoublestring = string_repeat "m" rdefdoublescount in
       let defusestring = string_repeat "d" defusecount in
+      let defusedoublestring = string_repeat "n" defusedoublescount in
       let defusehighstring = string_repeat "h" defusehighcount in
       let flagrdefstring = string_repeat "f" flagrdefcount in
       let integerstring = string_repeat "l" integercount in
@@ -534,7 +626,9 @@ object (self)
         ^ xprstring
         ^ cxprstring
         ^ rdefstring
+        ^ rdefdoublestring
         ^ defusestring
+        ^ defusedoublestring
         ^ defusehighstring
         ^ flagrdefstring
         ^ integerstring in
@@ -556,7 +650,9 @@ object (self)
        @ xprargs
        @ cxprargs
        @ rdefs
+       @ rdefdoubles
        @ uses
+       @ usedoubles
        @ useshigh
        @ flagrdefs
        @ integers) in
@@ -673,25 +769,248 @@ object (self)
           else
             ()) callargs in
 
+    let unary_wop_xdata
+          (f: xpr_t -> xpr_t)
+          (agg: arm_instruction_aggregate_int)
+          (wop: arm_wide_op_sequence_int)
+          (name: string) =
+      let (rdlo, rdhi) = get_wide_op_destination_operand wop in
+      let (rnlo, rnhi) = get_unary_wide_op_source_operand wop in
+      let vrdlo_r = rdlo#to_variable floc in
+      let vrdhi_r = rdhi#to_variable floc in
+      let vrdlohi =
+        floc#f#env#mk_arm_double_register_variable
+          rdlo#get_register rdhi#get_register in
+      let xrnlo_r = rnlo#to_expr floc in
+      let xrnhi_r = rnhi#to_expr floc in
+      let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
+      let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
+      let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
+      let rresult_r = TR.tmap f xxrn_r in
+      let rresultlo_r = extract_wide_lo rresult_r in
+      let rresulthi_r = extract_wide_hi rresult_r in
+      let cresultlo_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
+      let cresulthi_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
+      let cresult_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
+      (* Only use rdefs if the rdefdouble is not valid *)
+      let (rdefs, rdefdoubles) =
+        List.fold_left (fun (rdefs, rdefdoubles) (lo, hi) ->
+            let d = get_rdefdouble_r (lo, hi) in
+            if d = (-1) then
+              let r = List.map get_rdef_r [lo; hi] in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"unary_wop_xdata"
+                  ~msg:(p2s floc#l#toPretty)
+                  __FILE__ __LINE__
+                  ["Include rdefs for " ^ (x_r2s lo) ^ " and  " ^ (x_r2s hi)] in
+              (rdefs @ r, rdefdoubles)
+            else
+              (rdefs, rdefdoubles @ [d])) ([], []) [(xrnlo_r, xrnhi_r)] in
+      let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
+      let usedoubles = [get_def_use_r (Ok vrdlohi)] in
+      let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
+      let vars_r = [Ok vrdlohi; vrdlo_r; vrdhi_r] in
+      let xprs_r =
+        [xrnlo_r; xrnhi_r; rresult_r; rresultlo_r; rresulthi_r;
+         xxrnlo_r; xxrnhi_r; xxrn_r] in
+      let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
+      let (tagstring, args) =
+        mk_instrx_data_r
+          ~vars_r
+          ~xprs_r
+          ~cxprs_r
+          ~rdefs
+          ~rdefdoubles
+          ~uses
+          ~usedoubles
+          ~useshigh () in
+      let dependents =
+        List.map (fun d ->
+            (make_i_location floc#l d#get_address)#ci) agg#instrs in
+      ([tagstring; ("agg:" ^ name)] @ ["subsumes"] @ dependents, args) in
+
+    let binary_wop_xdata
+          (f: xpr_t -> xpr_t -> xpr_t)
+          (agg: arm_instruction_aggregate_int)
+          (wop: arm_wide_op_sequence_int)
+          (name: string) =
+      let (rdlo, rdhi) = get_wide_op_destination_operand wop in
+      let ((rnlo, rnhi), (rmlo, rmhi)) =
+        get_binary_wide_op_source_operands wop in
+      let vrdlo_r = rdlo#to_variable floc in
+      let vrdhi_r = rdhi#to_variable floc in
+      let vrdlohi =
+        floc#f#env#mk_arm_double_register_variable
+          rdlo#get_register rdhi#get_register in
+      let xrnlo_r = rnlo#to_expr floc in
+      let xrnhi_r = rnhi#to_expr floc in
+      let xrmlo_r = rmlo#to_expr floc in
+      let xrmhi_r = rmhi#to_expr floc in
+      let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
+      let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
+      let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
+      let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
+      let xxrnw_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
+      let xxrmw_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
+      let rresultw_r = TR.tmap2 f xxrnw_r xxrmw_r in
+      let rresultlo_r = extract_wide_lo rresultw_r in
+      let rresulthi_r = extract_wide_hi rresultw_r in
+      let cresultw_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresultw_r in
+      let cresultlo_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
+      let cresulthi_r =
+        TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
+      let _rdefs =
+        List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
+      (* Only use rdefs if the rdefdouble is not valid *)
+      let (rdefs, rdefdoubles) =
+        List.fold_left (fun (rdefs, rdefdoubles) (lo, hi) ->
+            let d = get_rdefdouble_r (lo, hi) in
+            if d = (-1) then
+              let r = List.map get_rdef_r [lo; hi] in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"binary_wop_xdata"
+                  ~msg:(p2s floc#l#toPretty)
+                  __FILE__ __LINE__
+                  ["Include rdefs for " ^ (x_r2s lo) ^ " and  " ^ (x_r2s hi)] in
+              (rdefs @ r, rdefdoubles)
+            else
+              (rdefs, rdefdoubles @ [d]))
+          ([], []) [(xrnlo_r, xrnhi_r); (xrmlo_r, xrmhi_r)] in
+      let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
+      let usedoubles = [get_def_use_r (Ok vrdlohi)] in
+      let useshigh = [get_def_use_r (Ok vrdlohi)] in
+      let vars_r = [Ok vrdlohi; vrdlo_r; vrdhi_r] in
+      let xprs_r =
+        [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresultw_r; rresultlo_r; rresulthi_r;
+         xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrnw_r; xxrmw_r] in
+      let cxprs_r = [cresultw_r; cresultlo_r; cresulthi_r] in
+      let (tagstring, args) =
+        mk_instrx_data_r
+          ~vars_r
+          ~xprs_r
+          ~cxprs_r
+          ~rdefs
+          ~rdefdoubles
+          ~uses
+          ~usedoubles
+          ~useshigh
+          () in
+      let dependents =
+        List.map (fun d ->
+            (make_i_location floc#l d#get_address)#ci) agg#instrs in
+      ([tagstring; ("agg:" ^ name)] @ ["subsumes"] @ dependents, args) in
+
+    let callinstr_callarg_data
+          (p: fts_parameter_t) (x: xpr_t) (index: int):
+          (xpr_t traceresult * xpr_t * xpr_t traceresult * int list * int list) =
+      let (xvar_r, rdefs_p, rdefdoubles_p) =
+        if is_register_parameter p then
+          let regarg = TR.tget_ok (get_register_parameter_register p) in
+          let pvar = floc#f#env#mk_register_variable regarg in
+          let xvar_r = Ok (XVar pvar) in
+          match regarg with
+          | ARMRegister _ ->
+             let rdefs = [get_rdef_r xvar_r] in
+             (xvar_r, rdefs, [])
+          | ARMDoubleRegister (ar1, ar2) ->
+             let pvarlo = floc#f#env#mk_arm_register_variable ar1 in
+             let pvarhi = floc#f#env#mk_arm_register_variable ar2 in
+             let _xvarlo_r = Ok (XVar pvarlo) in
+             let _xvarhi_r = Ok (XVar pvarhi) in
+             let rdefs_p = [] (* List.map get_rdef_r [xvarlo_r; xvarhi_r] *) in
+             let rdefdoubles_p = [get_rdef_r xvar_r] in
+             (xvar_r, rdefs_p, rdefdoubles_p)
+          | _ ->
+             let rdefs = [get_rdef_r xvar_r] in
+             (xvar_r, rdefs, [])
+        else if is_stack_parameter p then
+          let p_offset_r = get_stack_parameter_offset p in
+          let sp_r = (sp_r RD)#to_expr floc in
+          let xvar_r =
+            TR.tmap2 (fun p_offset sp ->
+                XOp (XPlus, [sp; int_constant_expr p_offset]))
+              p_offset_r sp_r in
+          (xvar_r, [get_rdef_r xvar_r], [])
+        else
+          (Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                   ^ "Parameter type not recognized in call instruction"],
+           [], []) in
+      let xx = rewrite_expr ?restrict:(Some 4) x in
+      let ptype = get_parameter_type p in
+      let xx =
+        if is_pointer ptype (* && (not (is_char_pointer ptype)) *) then
+          let _ = floc#memrecorder#record_argument xx index in
+          match get_string_reference floc xx with
+          | Some _ -> xx
+          | _ ->
+             match xx with
+             | XVar _ -> xx
+             | _ ->
+                TR.tfold
+                  ~ok:(fun v ->
+                    let _ =
+                      log_diagnostics_result
+                        ~msg:(p2s floc#l#toPretty)
+                        ~tag:"callinstr-key:get-var-at-address"
+                        __FILE__ __LINE__
+                        ["xx: " ^ (x2s xx); "v: " ^ (p2s v#toPretty)] in
+                    XOp ((Xf "addressofvar"), [(XVar v)]))
+                  ~error:(fun e ->
+                    let _ = log_dc_error_result __FILE__ __LINE__ e in
+                    xx)
+                  (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
+        else
+          xx in
+      let cx_r = floc#xpr_to_cxpr ~xtype:(Some ptype) xx in
+      (xvar_r, xx, cx_r, rdefs_p, rdefdoubles_p) in
+
     let callinstr_key (): (string list * int list) =
       let callargs = floc#get_call_arguments in
       let _ = check_for_functionptr_args callargs in
-      let (xprs, cxprs_r, xvars, rdefs, _) =
-        List.fold_left (fun (xprs, cxprs_r, xvars, rdefs, index) (p, x) ->
-            let xvar_r =
+      let (xprs, cxprs_r, xvars, rdefs, rdefdoubles, _) =
+        List.fold_left (fun (xprs, cxprs_r, xvars, rdefs, rdefdoubles, index) (p, x) ->
+            let (xvar_r, xx, cx_r, rdefs_p, rdefdoubles_p) =
+              callinstr_callarg_data p x index in
+            (*
+            let (xvar_r, rdefs_p, rdefdoubles_p) =
               if is_register_parameter p then
                 let regarg = TR.tget_ok (get_register_parameter_register p) in
                 let pvar = floc#f#env#mk_register_variable regarg in
-                Ok (XVar pvar)
+                let xvar_r = Ok (XVar pvar) in
+                match regarg with
+                | ARMRegister _ ->
+                   let rdefs = [get_rdef_r xvar_r] in
+                   (xvar_r, rdefs, [])
+                | ARMDoubleRegister (ar1, ar2) ->
+                   let pvarlo = floc#f#env#mk_arm_register_variable ar1 in
+                   let pvarhi = floc#f#env#mk_arm_register_variable ar2 in
+                   let xvarlo_r = Ok (XVar pvarlo) in
+                   let xvarhi_r = Ok (XVar pvarhi) in
+                   let rdefs_p = List.map get_rdef_r [xvarlo_r; xvarhi_r] in
+                   let rdefdoubles_p = [get_rdef_r xvar_r] in
+                   (xvar_r, rdefs_p, rdefdoubles_p)
+                | _ ->
+                   let rdefs = [get_rdef_r xvar_r] in
+                   (xvar_r, rdefs, [])
               else if is_stack_parameter p then
                 let p_offset_r = get_stack_parameter_offset p in
                 let sp_r = (sp_r RD)#to_expr floc in
-                TR.tmap2 (fun p_offset sp ->
-                    XOp (XPlus, [sp; int_constant_expr p_offset]))
-                  p_offset_r sp_r
+                let xvar_r =
+                  TR.tmap2 (fun p_offset sp ->
+                      XOp (XPlus, [sp; int_constant_expr p_offset]))
+                    p_offset_r sp_r in
+                ([xvar_r], [get_rdef_r xvar_r], [])
               else
-                Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
-                       ^ "Parameter type not recognized in call instruction"] in
+                ([Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                         ^ "Parameter type not recognized in call instruction"]],
+                 [], []) in
             let xx = rewrite_expr ?restrict:(Some 4) x in
             let ptype = get_parameter_type p in
             let xx =
@@ -718,32 +1037,81 @@ object (self)
                         (floc#get_var_at_address ~btype:(ptr_deref ptype) xx)
               else
                 xx in
-            let cx_r = floc#xpr_to_cxpr ~xtype:(Some ptype) xx in
-            let rdef = get_rdef_r xvar_r in
+            let cx_r = floc#xpr_to_cxpr ~xtype:(Some ptype) xx in *)
+            (* let rdef = get_rdef_r xvar_r in *)
             (xx :: xprs,
              cx_r :: cxprs_r,
              xvar_r :: xvars,
-             rdef :: rdefs,
+             rdefs_p @ rdefs,
+             rdefdoubles_p @ rdefdoubles,
              index + 1))
-          ([], [], [], [], 1) callargs in
-      let (vrd, rtype) =
-        let fintf = floc#get_call_target#get_function_interface in
-        let rtype = get_fts_returntype fintf in
-        let rtype = if is_void_pointer rtype then t_ptrto t_uchar else rtype in
-        let reg =
-          if is_float rtype then
-            let regtype =
-              if is_float_float rtype then
-                XSingle
-              else if is_float_double rtype then
-                XDouble
-              else
-                XQuad in
-            register_of_arm_extension_register
-              ({armxr_type = regtype; armxr_index = 0})
+          ([], [], [], [], [], 1) callargs in
+      let fintf = floc#get_call_target#get_function_interface in
+      let rtype = get_fts_returntype fintf in
+      let rtype = if is_void_pointer rtype then t_ptrto t_uchar else rtype in
+      let (vars_r, uses, usedoubles, useshigh) =
+        if is_float rtype then
+          if BCHSystemSettings.system_settings#is_hard_float then
+            let reg =
+              let regtype =
+                if is_float_float rtype then
+                  XSingle
+                else if is_float_double rtype then
+                  XDouble
+                else
+                  XQuad in
+              register_of_arm_extension_register
+                ({armxr_type = regtype; armxr_index = 0}) in
+            let var_r = Ok (floc#f#env#mk_register_variable reg) in
+            let uses = [get_def_use_r var_r] in
+            let useshigh = [get_def_use_high_r var_r] in
+            ([var_r], uses, [], useshigh)
           else
-            register_of_arm_register AR0 in
-        (floc#f#env#mk_register_variable reg, rtype) in
+            if is_float_float rtype then
+              let var_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let uses = [get_def_use_r var_r] in
+              let useshigh = [get_def_use_high_r var_r] in
+              ([var_r], uses, [], useshigh)
+            else if is_float_double rtype then
+              let varlo_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let varhi_r = Ok (floc#f#env#mk_arm_register_variable AR1) in
+              let uses = [get_def_use_r varlo_r; get_def_use_r varhi_r] in
+              let useshigh = [get_def_use_high_r varlo_r; get_def_use_high_r varhi_r] in
+              let vlohi = Ok (floc#f#env#mk_arm_double_register_variable AR0 AR1) in
+              let usedoubles = [get_def_use_r vlohi] in
+              ([vlohi], uses, usedoubles, useshigh)
+            else
+              let var_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let uses = [get_def_use_r var_r] in
+              let useshigh = [get_def_use_high_r var_r] in
+              ([var_r], uses, [], useshigh)
+        else
+          match rtype with
+          | TInt (ik, _) ->
+             let isize = size_of_int_ikind ik in
+             if isize <= 4 then
+              let var_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let uses = [get_def_use_r var_r] in
+              let useshigh = [get_def_use_high_r var_r] in
+              ([var_r], uses, [], useshigh)
+             else if isize <= 8 then
+              let varlo_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let varhi_r = Ok (floc#f#env#mk_arm_register_variable AR1) in
+              let uses = [get_def_use_r varlo_r; get_def_use_r varhi_r] in
+              let useshigh = [get_def_use_high_r varlo_r; get_def_use_high_r varhi_r] in
+              let vlohi = Ok (floc#f#env#mk_arm_double_register_variable AR0 AR1) in
+              let usedoubles = [get_def_use_r vlohi] in
+              ([vlohi], uses, usedoubles, useshigh)
+             else
+              let var_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let uses = [get_def_use_r var_r] in
+              let useshigh = [get_def_use_high_r var_r] in
+              ([var_r], uses, [], useshigh)
+          | _ ->
+              let var_r = Ok (floc#f#env#mk_arm_register_variable AR0) in
+              let uses = [get_def_use_r var_r] in
+              let useshigh = [get_def_use_high_r var_r] in
+              ([var_r], uses, [], useshigh) in
       let _ =
         log_diagnostics_result
           ~tag:"callinstr_key"
@@ -784,16 +1152,16 @@ object (self)
            "xrdefs: " ^ (String.concat ", " (List.map string_of_int xrdefs));
            "deref-rdefs: "
            ^ (String.concat ", " (List.map string_of_int derefrdefs))] in
-      let vars_r = [Ok vrd] in
+      (* let vars_r = [Ok vrd] in *)
       let xprs_r = (List.rev (List.map (fun x -> Ok x) xprs)) @ (List.rev xvars) in
       let cxprs_r = List.rev cxprs_r in
       let types = [rtype] in
       let rdefs = (List.rev rdefs) @ xrdefs @ derefrdefs in
-      let uses = [get_def_use vrd] @ (List.map get_def_use derefuses) in
-      let useshigh = [get_def_use_high vrd] @ (List.map get_def_use derefuses) in
+      (* let uses = [get_def_use vrd] @ (List.map get_def_use derefuses) in *)
+      (* let useshigh = [get_def_use_high vrd] @ (List.map get_def_use derefuses) in *)
       let (tagstring, args) =
         mk_instrx_data_r
-          ~vars_r ~types ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
+          ~vars_r ~types ~xprs_r ~cxprs_r ~rdefs ~rdefdoubles ~uses ~usedoubles ~useshigh () in
       let tags =
         if instr#is_inlined_call then
           tagstring :: ["call"; "inlined"]
@@ -883,42 +1251,8 @@ object (self)
       | AddCarry _ when instr#is_aggregate_anchor ->
          let agg = get_aggregate floc#ia in
          (match agg#kind with
-          | ARMWideAdd wop ->
-             let vrdlo_r = wop#rdlo#to_variable floc in
-             let vrdhi_r = wop#rdhi#to_variable floc in
-             let xrnlo_r = wop#rnlo#to_expr floc in
-             let xrnhi_r = wop#rnhi#to_expr floc in
-             let xrmlo_r = wop#rmlo#to_expr floc in
-             let xrmhi_r = wop#rmhi#to_expr floc in
-             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
-             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
-             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
-             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
-             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
-             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
-             let rresult_r =
-               TR.tmap2 (fun xrn xrm -> XOp (XPlus, [xrn; xrm])) xxrn_r xxrm_r in
-             let rresultlo_r = extract_wide_lo rresult_r in
-             let rresulthi_r = extract_wide_hi rresult_r in
-             let cresult_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
-             let cresultlo_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
-             let cresulthi_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
-             let rdefs =
-               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
-             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
-             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
-             let vars_r = [vrdlo_r; vrdhi_r] in
-             let xprs_r =
-               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
-                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
-             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
-             let (tagstring, args) =
-               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
-             ([tagstring; "agg:wideadd"], args)
+          | ARMWideOp (WideAdd, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XPlus, [x; y])) agg wop "wideadd"
           | _ ->
              begin
                log_error_result
@@ -1074,6 +1408,28 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | BitwiseAnd _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideOp (WideAnd, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XBAnd, [x; y])) agg wop "wideand"
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"BitwiseAnd:aggregate"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
+
+      | BitwiseAnd _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | BitwiseAnd (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
@@ -1119,6 +1475,28 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | BitwiseExclusiveOr _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideOp (WideXOr, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XBXor, [x; y])) agg wop "widexor"
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"BitwiseExclusiveOr:aggregate"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
+
+      | BitwiseExclusiveOr _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
+
       | BitwiseExclusiveOr (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
          let xrn_r = rn#to_expr floc in
@@ -1139,6 +1517,29 @@ object (self)
            mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+
+      | BitwiseNot _
+           when instr#is_aggregate_anchor && (is_part_of_wide_op_instr ()) ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideOp (WideMoveNot, wop) ->
+             unary_wop_xdata (fun x -> XOp (XBNot, [x])) agg wop "widemovenot"
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"BitwiseNot:aggregate"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+              ([], [])
+             end)
+
+      | BitwiseNot _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
 
       | BitwiseNot _ when (Option.is_some instr#is_in_aggregate) ->
          (* TODO: add output for the case where BitwiseNot is the anchor *)
@@ -1166,6 +1567,28 @@ object (self)
              ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
+
+      | BitwiseOr _ when instr#is_aggregate_anchor ->
+         let agg = get_aggregate floc#ia in
+         (match agg#kind with
+          | ARMWideOp (WideOr, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XBOr, [x; y])) agg wop "wideor"
+          | _ ->
+             begin
+               log_error_result
+                 ~tag:"BitwiseOr:aggregate"
+                 ~msg:floc#cia
+                 __FILE__ __LINE__
+                 ["Not recognized: " ^ (p2s agg#toPretty)];
+               ([], [])
+             end)
+
+      | BitwiseOr _ when is_part_of_wide_op_instr () ->
+         (match instr#is_in_aggregate with
+          | Some va ->
+             let ctxtva = (make_i_location floc#l va)#ci in
+             ("a:" :: ["subsumed"; ctxtva], [])
+          | _ -> (["a:"], []))
 
       | BitwiseOr (_, c, rd, rn, rm, _) ->
          let vrd_r = rd#to_variable floc in
@@ -1938,19 +2361,27 @@ object (self)
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let vmem_r = mem#to_variable floc in
-         let vmem2_r = mem#to_variable floc in
+         let vmem2_r = mem2#to_variable floc in
          let xmem_r = mem#to_expr floc in
          let xrmem_r = TR.tmap rewrite_expr xmem_r in
          let xmem2_r = mem2#to_expr floc in
          let xrmem2_r = TR.tmap rewrite_expr xmem2_r in
          let xaddr1_r = mem#to_address floc in
-         let xaddr2_r = mem#to_address floc in
+         let xaddr2_r = mem2#to_address floc in
          let rdefs = [
              get_rdef_r xrn_r;
              get_rdef_r xrm_r;
              get_rdef_memvar_r vmem_r;
              get_rdef_memvar_r vmem2_r] in
          let uses = [get_def_use_r vrt_r; get_def_use_r vrt2_r] in
+         let usedoubles =
+           if instr#is_wide_op_instruction then
+             let vrdlohi =
+               floc#env#mk_arm_double_register_variable
+                 rt#get_register rt2#get_register in
+             [get_def_use_r (Ok vrdlohi)]
+           else
+             [] in
          let useshigh = [get_def_use_high_r vrt_r; get_def_use_high_r vrt2_r] in
          let _ =
            floc#memrecorder#record_load_r
@@ -1973,6 +2404,7 @@ object (self)
                       xrmem2_r; xaddr1_r; xaddr2_r]
              ~rdefs
              ~uses
+             ~usedoubles
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
@@ -1988,6 +2420,11 @@ object (self)
                    (tags, args)
                  end)
                (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
+         let (tags, args) =
+           if instr#is_wide_op_instruction then
+             (tags @ ["wop"], args)
            else
              (tags, args) in
          (tags, args)
@@ -2341,6 +2778,8 @@ object (self)
                      | ARMTernaryAssignment _ -> [tagstring; "agg:ternassign:nd"]
                      | _ -> [tagstring] in
                    (tags, args))
+            | ARMWideOp (WideMove, wop) ->
+               unary_wop_xdata (fun x -> x) agg wop "widemove"
             | _ ->
                raise
                  (BCH_failure
@@ -2348,11 +2787,14 @@ object (self)
                          STR __FILE__; STR ":"; INT __LINE__; STR ": ";
                          floc#l#toPretty;
                          STR ": unknown MOV aggregate"]))) in
-         let dependents =
-           List.map (fun d ->
-               (make_i_location floc#l d#get_address)#ci) agg#instrs in
-         let tags = tags @ ["subsumes"] @ dependents in
-         (tags, args)
+         if List.mem "subsumes" tags then
+           (tags, args)
+         else
+           let dependents =
+             List.map (fun d ->
+                 (make_i_location floc#l d#get_address)#ci) agg#instrs in
+           let tags = tags @ ["subsumes"] @ dependents in
+           (tags, args)
 
       | Move _ when (Option.is_some instr#is_in_aggregate) ->
          (match instr#is_in_aggregate with
@@ -2556,12 +2998,27 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if rl#includes_pc then
-             let r0_op = arm_register_op AR0 RD in
-             let xr0_r = r0_op#to_expr floc in
-             let xxr0_r = TR.tmap rewrite_expr xr0_r in
-             let xxr0_r = TR.tmap (rewrite_in_cc_context floc c) xxr0_r in
-             let cxr0_r = TR.tbind floc#xpr_to_cxpr xxr0_r in
-             add_return_value tags args xr0_r xxr0_r cxr0_r
+             let fsig = floc#f#get_summary#get_function_signature in
+             let rtype = fsig.fts_returntype in
+             if is_wide_type rtype then
+               let r0_op = arm_register_op AR0 RD in
+               let r1_op = arm_register_op AR1 RD in
+               let xr0_r = r0_op#to_expr floc in
+               let xr1_r = r1_op#to_expr floc in
+               let xxr0_r = TR.tmap rewrite_expr xr0_r in
+               let xxr1_r = TR.tmap rewrite_expr xr1_r in
+               let xxrw_r = make_wide_op_r xxr1_r xxr0_r in
+               let xxrw_r = TR.tmap (rewrite_in_cc_context floc c) xxrw_r in
+               let xxrw_r = TR.tmap rewrite_expr xxrw_r in
+               let cxrw = TR.tbind floc#xpr_to_cxpr xxrw_r in
+               add_return_value tags args xxrw_r  xxrw_r cxrw
+             else
+               let r0_op = arm_register_op AR0 RD in
+               let xr0_r = r0_op#to_expr floc in
+               let xxr0_r = TR.tmap rewrite_expr xr0_r in
+               let xxr0_r = TR.tmap (rewrite_in_cc_context floc c) xxr0_r in
+               let cxr0_r = TR.tbind floc#xpr_to_cxpr xxr0_r in
+               add_return_value tags args xr0_r xxr0_r cxr0_r
            else
              (tags, args) in
          (tags, args)
@@ -2651,42 +3108,8 @@ object (self)
       | ReverseSubtractCarry _ when instr#is_aggregate_anchor ->
          let agg = get_aggregate floc#ia in
          (match agg#kind with
-          | ARMWideReverseSubtract wop ->
-             let vrdlo_r = wop#rdlo#to_variable floc in
-             let vrdhi_r = wop#rdhi#to_variable floc in
-             let xrnlo_r = wop#rnlo#to_expr floc in
-             let xrnhi_r = wop#rnhi#to_expr floc in
-             let xrmlo_r = wop#rmlo#to_expr floc in
-             let xrmhi_r = wop#rmhi#to_expr floc in
-             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
-             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
-             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
-             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
-             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
-             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
-             let rresult_r =
-               TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrm; xrn])) xxrn_r xxrm_r in
-             let rresultlo_r = extract_wide_lo rresult_r in
-             let rresulthi_r = extract_wide_hi rresult_r in
-             let cresult_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
-             let cresultlo_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
-             let cresulthi_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
-             let rdefs =
-               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
-             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
-             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
-             let vars_r = [vrdlo_r; vrdhi_r] in
-             let xprs_r =
-               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
-                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
-             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
-             let (tagstring, args) =
-               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
-             ([tagstring; "agg:widereversesubtract"], args)
+          | ARMWideOp (WideReverseSubtract, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XMinus, [y; x])) agg wop "widereversesubtract"
           | _ ->
              begin
                log_error_result
@@ -2912,27 +3335,32 @@ object (self)
       | SignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
          let vlo_r = rdlo#to_variable floc in
          let vhi_r = rdhi#to_variable floc in
+         let rlo = rdlo#get_register in
+         let rhi = rdhi#get_register in
+         let vlohi = floc#env#mk_arm_double_register_variable rlo rhi in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
          let result_r = TR.tmap rewrite_expr result_r in
-         let loresult_r = TR.tmap (fun r -> XOp (XMod, [r; e32_c])) result_r in
-         let hiresult_r = TR.tmap (fun r -> XOp (XDiv, [r; e32_c])) result_r in
+         let loresult_r = extract_wide_lo result_r in
+         let hiresult_r = extract_wide_hi result_r in
          let loresultr_r = TR.tmap rewrite_expr loresult_r in
          let hiresultr_r = TR.tmap rewrite_expr hiresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r result_r) in
          let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
          let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
+         let usedoubles = [get_def_use_r (Ok vlohi)] in
          let xprs_r =
-           [xrn_r; xrm_r; loresult_r; hiresult_r; loresultr_r; hiresultr_r] in
+           [xrn_r; xrm_r; result_r; loresult_r; hiresult_r; loresultr_r; hiresultr_r] in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vlo_r; vhi_r]
+             ~vars_r:[Ok vlohi; vlo_r; vhi_r]
              ~xprs_r
              ~rdefs
              ~uses
+             ~usedoubles
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
@@ -3348,6 +3776,14 @@ object (self)
          let xrm_r = rm#to_expr floc in
          let xprs_r =
            [xrn_r; xrm_r; xrt_r; xxrt_r; xrt2_r; xxrt2_r; xaddr1_r; xaddr2_r] in
+         let cxprs_r =
+           if instr#is_wide_op_instruction then
+             let xxrt_combined =
+               TR.tmap rewrite_expr (make_wide_op_r xxrt_r xxrt2_r) in
+             let cxxrt_r = TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) xxrt_combined in
+             [cxxrt_r]
+           else
+             [] in
          let vars_r = [vmem_r; vmem2_r] in
          let uses = [get_def_use_r vmem_r; get_def_use_r vmem2_r] in
          let useshigh = [get_def_use_high_r vmem_r; get_def_use_high_r vmem2_r] in
@@ -3372,8 +3808,20 @@ object (self)
              get_rdef_r xxrt_r;
              get_rdef_r xrt2_r;
              get_rdef_r xxrt2_r] in
+         let rdefdoubles =
+           if instr#is_wide_op_instruction then
+             List.map get_rdefdouble_r [(xrt_r, xrt2_r)]
+           else
+             [] in
          let (tagstring, args) =
-           mk_instrx_data_r ~vars_r ~xprs_r ~rdefs ~uses ~useshigh () in
+           mk_instrx_data_r
+             ~vars_r
+             ~xprs_r
+             ~cxprs_r
+             ~rdefs
+             ~rdefdoubles
+             ~uses
+             ~useshigh () in
          let (tags, args) = add_optional_instr_condition tagstring args c in
          let (tags, args) =
            if mem#is_offset_address_writeback then
@@ -3387,6 +3835,11 @@ object (self)
                    (tags, args)
                  end)
                (mem#to_updated_offset_address floc)
+           else
+             (tags, args) in
+         let (tags, args) =
+           if instr#is_wide_op_instruction then
+             (tags @ ["wop"], args)
            else
              (tags, args) in
          (tags, args)
@@ -3504,42 +3957,8 @@ object (self)
       | SubtractCarry _ when instr#is_aggregate_anchor ->
          let agg = get_aggregate floc#ia in
          (match agg#kind with
-          | ARMWideSubtract wop ->
-             let vrdlo_r = wop#rdlo#to_variable floc in
-             let vrdhi_r = wop#rdhi#to_variable floc in
-             let xrnlo_r = wop#rnlo#to_expr floc in
-             let xrnhi_r = wop#rnhi#to_expr floc in
-             let xrmlo_r = wop#rmlo#to_expr floc in
-             let xrmhi_r = wop#rmhi#to_expr floc in
-             let xxrnlo_r = TR.tmap rewrite_expr xrnlo_r in
-             let xxrnhi_r = TR.tmap rewrite_expr xrnhi_r in
-             let xxrmlo_r = TR.tmap rewrite_expr xrmlo_r in
-             let xxrmhi_r = TR.tmap rewrite_expr xrmhi_r in
-             let xxrn_r = TR.tmap rewrite_expr (make_wide_op_r xxrnhi_r xxrnlo_r) in
-             let xxrm_r = TR.tmap rewrite_expr (make_wide_op_r xxrmhi_r xxrmlo_r) in
-             let rresult_r =
-               TR.tmap2 (fun xrn xrm -> XOp (XMinus, [xrn; xrm])) xxrn_r xxrm_r in
-             let rresultlo_r = extract_wide_lo rresult_r in
-             let rresulthi_r = extract_wide_hi rresult_r in
-             let cresult_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
-             let cresultlo_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresultlo_r in
-             let cresulthi_r =
-               TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresulthi_r in
-             let rdefs =
-               List.map get_rdef_r [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r] in
-             let rdefs = rdefs @ (get_all_rdefs_r rresult_r) in
-             let uses = [get_def_use_r vrdlo_r; get_def_use_r vrdhi_r] in
-             let useshigh = [get_def_use_high_r vrdlo_r; get_def_use_high_r vrdhi_r] in
-             let vars_r = [vrdlo_r; vrdhi_r] in
-             let xprs_r =
-               [xrnlo_r; xrnhi_r; xrmlo_r; xrmhi_r; rresult_r; rresultlo_r; rresulthi_r;
-                xxrnlo_r; xxrnhi_r; xxrmlo_r; xxrmhi_r; xxrn_r; xxrm_r] in
-             let cxprs_r = [cresult_r; cresultlo_r; cresulthi_r] in
-             let (tagstring, args) =
-               mk_instrx_data_r ~vars_r ~xprs_r ~cxprs_r ~rdefs ~uses ~useshigh () in
-             ([tagstring; "agg:widesubtract"], args)
+          | ARMWideOp (WideSubtract, wop) ->
+             binary_wop_xdata (fun x y -> XOp (XMinus, [x; y])) agg wop "widesubtract"
           | _ ->
              begin
                log_error_result
@@ -3870,6 +4289,7 @@ object (self)
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r; get_rdef_r xlo_r; get_rdef_r xhi_r]
            @ (get_all_rdefs_r rresult_r) in
+         let rdefdoubles = List.map get_rdefdouble_r [(xlo_r, xhi_r)] in
          let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
          let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
          let (tagstring, args) =
@@ -3877,6 +4297,7 @@ object (self)
              ~vars_r:[vlo_r; vhi_r]
              ~xprs_r:[xrn_r; xrm_r; xlo_r; xhi_r; result_r; rresult_r]
              ~rdefs
+             ~rdefdoubles
              ~uses
              ~useshigh
              () in

@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2025  Aarno Labs, LLC
+   Copyright (c) 2022-2026  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,18 @@ module TR = CHTraceResult
 let p2s = CHPrettyUtil.pretty_to_string
 
 
+let arm_wide_op_kind_to_string (wopkind: arm_wide_op_kind_t): string =
+  match wopkind with
+  | WideAdd -> "wide-add"
+  | WideSubtract -> "wide-subtract"
+  | WideReverseSubtract -> "wide-reverse-subtract"
+  | WideMove -> "wide-move"
+  | WideMoveNot -> "wide-move-not"
+  | WideAnd -> "wide-and"
+  | WideOr -> "wide-or"
+  | WideXOr -> "wide-xor"
+
+
 let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
   match k with
   | ARMJumptable jt ->
@@ -76,9 +88,8 @@ let arm_aggregate_kind_to_string (k: arm_aggregate_kind_t) =
      ^ op1#toString
      ^ " : "
      ^ op2#toString
-  | ARMWideAdd wop -> "Wide Add " ^ wop#toString
-  | ARMWideSubtract wop -> "Wide Subtract " ^ wop#toString
-  | ARMWideReverseSubtract wop -> "Wide Reverse Subtract " ^ wop#toString
+  | ARMWideOp (wopkind, wop) ->
+     (arm_wide_op_kind_to_string wopkind) ^ " " ^ wop#toString
   | BXCall (_, i2) -> "BXCall at " ^ i2#get_address#to_hex_string
 
 
@@ -117,6 +128,11 @@ object (self)
     match self#kind with
     | LDMSTMSequence s -> s
     | _ -> raise (BCH_failure (STR "Not an ldm-stm sequence"))
+
+  method wide_op_sequence =
+    match self#kind with
+    | ARMWideOp (_, s) -> s
+    | _ -> raise (BCH_failure (STR "Not a wide-op sequence"))
 
   method is_jumptable =
     match self#kind with
@@ -160,22 +176,47 @@ object (self)
 
   method is_arm_wide_operation =
     match self#kind with
-    | ARMWideAdd _ | ARMWideReverseSubtract _ | ARMWideSubtract _ -> true
+    | ARMWideOp _ -> true
     | _ -> false
 
   method is_arm_wide_add =
     match self#kind with
-    | ARMWideAdd _ -> true
+    | ARMWideOp (WideAdd, _) -> true
     | _ -> false
 
   method is_arm_wide_subtract =
     match self#kind with
-    | ARMWideSubtract _ -> true
+    | ARMWideOp (WideSubtract, _) -> true
     | _ -> false
 
   method is_arm_wide_reverse_subtract =
     match self#kind with
-    | ARMWideReverseSubtract _ -> true
+    | ARMWideOp (WideReverseSubtract, _) -> true
+    | _ -> false
+
+  method is_arm_wide_move =
+    match self#kind with
+    | ARMWideOp (WideMove, _) -> true
+    | _ -> false
+
+  method is_arm_wide_move_not =
+    match self#kind with
+    | ARMWideOp (WideMoveNot, _) -> true
+    | _ -> false
+
+  method is_arm_wide_and =
+    match self#kind with
+    | ARMWideOp (WideAnd, _) -> true
+    | _ -> false
+
+  method is_arm_wide_or =
+    match self#kind with
+    | ARMWideOp (WideOr, _) -> true
+    | _ -> false
+
+  method is_arm_wide_xor =
+    match self#kind with
+    | ARMWideOp (WideXOr, _) -> true
     | _ -> false
 
   method write_xml (_node: xml_element_int) = ()
@@ -249,18 +290,10 @@ let make_ldm_stm_sequence_aggregate
 
 
 let make_arm_wide_op_sequence_aggregate
+      (wopkind: arm_wide_op_kind_t)
       (wop: arm_wide_op_sequence_int): arm_instruction_aggregate_int =
   let anchor = List.hd (List.tl wop#instrs) in
-  let kind =
-    match anchor#get_opcode with
-    | AddCarry _ -> ARMWideAdd wop
-    | SubtractCarry _ -> ARMWideSubtract wop
-    | ReverseSubtractCarry _ -> ARMWideReverseSubtract wop
-    | _ ->
-       raise
-         (BCH_failure
-            (LBLOCK
-               [STR "Unexpected instruction in make_arm_wide_op_sequence"])) in
+  let kind = ARMWideOp (wopkind, wop) in
   make_arm_instruction_aggregate
     ~kind
     ~instrs:wop#instrs
@@ -712,7 +745,8 @@ let identify_arm_aggregate
     | Some _ -> result
     | _ ->
        match create_arm_wide_op_sequence ch instr with
-       | Some wop ->
-          Some (make_arm_wide_op_sequence_aggregate wop)
+       | Some (wopkind, wop) ->
+          Some (make_arm_wide_op_sequence_aggregate wopkind wop)
        | _ -> None in
+
   result
