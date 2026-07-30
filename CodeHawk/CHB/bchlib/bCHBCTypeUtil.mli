@@ -157,6 +157,8 @@ val is_struct_type: btype_t -> bool
 val is_array_type: btype_t -> bool
 val is_pointer_to_struct: btype_t -> bool
 
+val is_wide_type: btype_t -> bool
+
 val is_volatile: btype_t -> bool
 
 (** Returns true if [ty] is a function type with attribute [stdcall].*)

@@ -245,6 +245,13 @@ let is_array_type t = match t with TArray _ -> true | _ -> false
 let is_function_type t =
   match t with TFun _ | TPtr (TFun _,_) -> true | _ -> false
 
+let is_wide_type t =
+  match t with
+  | TFloat (FDouble, _, _)
+    | TInt (ILongLong, _)
+    | TInt (IULongLong, _) -> true
+  | _ -> false
+
 let is_unknown_type t =
   match t with
   | TUnknown _ -> true
