@@ -128,7 +128,7 @@ let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
                    && (k#equal numerical_e32)
                    && (syntactically_equal x y) ->
      let (_, s) = sim_expr m x in
-     (true, XOp ((Xf "sign_extend_64"), [s]))
+     (true, XOp ((Xf "signextend64"), [s]))
   | XOp (XPlus,
          [XOp (XMult, [XOp (XAsr, [x; XConst (IntConst n)]); XConst (IntConst k)]);
           XOp (XMod, [y; XConst (IntConst l)])])
