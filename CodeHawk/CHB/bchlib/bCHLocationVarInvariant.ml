@@ -112,6 +112,13 @@ object (self: 'a)
     | ReachingDef (_, sl) -> sl
     | _ -> []
 
+  method get_clobber_rdefs: string list =
+    List.fold_left (fun acc s ->
+        if List.mem "clobber" s#getAttributes then
+          s#getBaseName :: acc
+        else
+          acc) [] self#get_reaching_defs
+
   method get_def_uses: symbol_t list =
     match fact with
     | DefUse (_, sl) -> sl

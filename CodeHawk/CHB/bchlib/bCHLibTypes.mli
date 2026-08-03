@@ -1773,6 +1773,7 @@ class type var_invariant_int =
     method get_fact: var_invariant_fact_t
     method get_variable: variable_t
     method get_reaching_defs: symbol_t list
+    method get_clobber_rdefs: string list
     method get_def_uses: symbol_t list
 
     (* predicates *)
@@ -6893,6 +6894,8 @@ object
   method set_thread_start_address  :
     doubleword_int -> ctxt_iaddress_t -> doubleword_int -> bterm_t list -> unit
   (* creation faddr, iaddr, function start addr, arguments *)
+    method set_double_rdef_location:
+           string -> register_t -> register_t -> string -> unit
 
   method add_inlined_function: doubleword_int -> unit
   method add_exported_item_name: doubleword_int -> string -> unit
@@ -7019,6 +7022,7 @@ object
   method has_exported_item_name: doubleword_int -> bool
   method has_exported_data_spec: string -> bool
   method has_data_block: doubleword_int -> bool
+  method has_double_rdef_location: string -> bool
   method has_jumptable: doubleword_int -> bool
   method has_bound_library_function: doubleword_int -> bool
   method is_locked_instruction: doubleword_int -> bool

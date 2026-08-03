@@ -60,6 +60,7 @@ open BCHBCTypeXml
 open BCHByteUtilities
 open BCHCallbackTables
 open BCHCppClass
+open BCHCPURegisters
 open BCHCStruct
 open BCHCStructConstant
 open BCHDataBlock
@@ -98,6 +99,7 @@ module DataBlockCollections = CHCollections.Make (
   end)
 
 let file_as_string = ref ""
+let bd = BCHDictionary.bdictionary
 let id = BCHInterfaceDictionary.interface_dictionary
 
 
@@ -147,6 +149,9 @@ object (self)
 
   (* iaddr -> [kind] *)
   val instruction_annotations = H.create 3
+
+  (* def-addr -> [(lo-reg, hi-reg, use-addr)] *)
+  val double_rdef_locations = H.create 3
 
   val indirect_jump_targets = H.create 13  (* fa,ia -> target list *)
 
@@ -280,6 +285,37 @@ object (self)
       Some (H.find aggregates anchor#index)
     else
       None
+
+  method set_double_rdef_location
+           (use_addr: string)
+           (reglo: register_t)
+           (reghi: register_t)
+           (def_addr: string) =
+    let entry =
+      if H.mem double_rdef_locations def_addr then
+        H.find double_rdef_locations def_addr
+      else
+        [] in
+    let entry =
+      if List.exists (fun (lo, hi, use) ->
+             (register_compare lo reglo) = 0
+             && (register_compare hi reghi) = 0
+             && use = use_addr) entry then
+        entry
+      else
+        let _ =
+          log_diagnostics_result
+            ~tag:"set_double_rdef_location"
+            ~msg:use_addr
+            __FILE__ __LINE__
+            ["reglo: " ^ (register_to_string reglo);
+             "reghi: " ^ (register_to_string reghi);
+             "def_addr: " ^ def_addr] in
+        (reglo, reghi, use_addr) :: entry in
+    H.replace double_rdef_locations def_addr entry
+
+  method has_double_rdef_location (def_addr: string) =
+    H.mem double_rdef_locations def_addr
 
   method get_instruction_annotation (iaddr: doubleword_int): string list option =
     if H.mem instruction_annotations iaddr#index then
@@ -1570,6 +1606,8 @@ object (self)
          self#read_xml_goto_returns (getc "goto-returns"));
       (if hasc "so-imports" then
          self#read_xml_so_imports (getc "so-imports"));
+      (if hasc "double-rdef-locations" then
+         self#read_xml_double_rdef_locations (getc "double-rdef-locations"))
     end
 
   method get_userdeclared_codesections = userdeclared_codesections#listOfKeys
@@ -2136,6 +2174,43 @@ object (self)
          readset (getc "missing-summaries") missing_so_summaries)
     end
 
+  method private write_xml_double_rdef_locations (node: xml_element_int) =
+    let rdefs = H.fold (fun k v a -> (k, v) :: a) double_rdef_locations [] in
+    node#appendChildren
+      (List.map (fun (rdefaddr, uselocs) ->
+           let knode = xmlElement "rdef-addr" in
+           begin
+             knode#setAttribute "rdef" rdefaddr;
+             knode#appendChildren
+               (List.map (fun (lo, hi, use_addr) ->
+                    let unode = xmlElement "use" in
+                    begin
+                      bd#write_xml_register ~tag:"ireglo" unode lo;
+                      bd#write_xml_register ~tag:"ireghi" unode hi;
+                      unode#setAttribute "use" use_addr;
+                      unode
+                    end) uselocs);
+             knode
+           end) rdefs);
+
+  method private read_xml_double_rdef_locations (node: xml_element_int) =
+    begin
+      List.iter (fun rdefNode ->
+          let rdefaddr = rdefNode#getAttribute "rdef" in
+          let locs =
+            List.map (fun unode ->
+                let lo = bd#read_xml_register ~tag:"ireglo" unode in
+                let hi = bd#read_xml_register ~tag:"ireghi" unode in
+                let useaddr = unode#getAttribute "use" in
+                (lo, hi, useaddr)) (rdefNode#getTaggedChildren "use") in
+          H.add double_rdef_locations rdefaddr locs)
+        (node#getTaggedChildren "rdef-addr");
+      log_diagnostics_result
+        ~tag:"read_xml_double_rdef_locations"
+        __FILE__ __LINE__
+        ["number of rdefs read: " ^ (string_of_int (H.length double_rdef_locations))]
+    end
+
   method write_xml (node: xml_element_int) =
     let append = node#appendChildren in
     let fNode = xmlElement "functions-data" in
@@ -2148,6 +2223,7 @@ object (self)
     let cbNode = xmlElement "call-back-tables" in
     let stNode = xmlElement "struct-tables" in
     let soNode = xmlElement "so-imports" in
+    let rdefNode = xmlElement "double-rdef-locations" in
     begin
       functions_data#write_xml fNode;
       self#write_xml_data_blocks dNode;
@@ -2157,11 +2233,12 @@ object (self)
       self#write_xml_goto_returns gNode;
       self#write_xml_call_back_tables cbNode;
       self#write_xml_struct_tables stNode;
+      self#write_xml_double_rdef_locations rdefNode;
       string_table#write_xml sNode;
       self#write_xml_so_imports soNode;
       append [
           fNode; lNode; dNode; jNode; sNode; tNode; gNode; cbNode; stNode;
-          soNode]
+          soNode; rdefNode]
     end
 
 end
