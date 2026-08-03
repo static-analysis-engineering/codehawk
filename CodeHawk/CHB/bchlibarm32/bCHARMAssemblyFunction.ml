@@ -44,6 +44,9 @@ open BCHARMAssemblyInstructions
 open BCHARMTypes
 
 module H = Hashtbl
+module TR = CHTraceResult
+
+let id = BCHInterfaceDictionary.interface_dictionary
 
 
 let armreg_compare r1 r2 =
@@ -142,34 +145,72 @@ object (self)
             | _ -> ()) in
     !result
 
+  method private get_callee_signatures: function_signature_t list =
+    let finfo = BCHFunctionInfo.get_function_info self#get_address in
+    let sigindices = ref [] in
+    let sigs = ref [] in
+    begin
+      self#iteri (fun _ ctxtiaddr instr ->
+          match instr#get_opcode with
+          | BranchLink _
+            | BranchLinkExchange _
+            | Branch _
+            | BranchExchange _ ->
+             if finfo#has_call_target ctxtiaddr
+                && (not (finfo#get_call_target ctxtiaddr)#is_unknown) then
+               let ctinfo = finfo#get_call_target ctxtiaddr in
+               let xsig = ctinfo#get_signature in
+               let sigindex = id#index_function_signature xsig in
+               if List.mem sigindex !sigindices then
+                 ()
+               else
+                 begin
+                   sigindices := sigindex :: !sigindices;
+                   sigs := xsig :: !sigs
+                 end
+          | _ -> ());
+      !sigs
+    end
+
   method lo_hi_registers_defined: arm_lo_hi_register_pair_t list =
     let result = ref [] in
-    let _ =
-      self#iteri (fun _ _ instr ->
-          let pairs_defined = instr#lo_hi_registers_defined in
-          List.iter (fun (lo, hi) ->
-              if List.exists (fun (lo', hi') ->
-                     (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
-                   !result then
-                ()
-              else
-                result := (lo, hi) :: !result) pairs_defined) in
-    !result
+    let add (lo, hi) =
+      if List.exists (fun (lo', hi') ->
+             (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
+           !result then
+        ()
+      else
+        result := (lo, hi) :: !result in
+    begin
+      self#iteri (fun _ _ instr -> List.iter add instr#lo_hi_registers_defined);
+      List.iter (fun xsig ->
+          if BCHBCTypeUtil.is_wide_type xsig.fts_returntype then
+            add (AR0, AR1)) self#get_callee_signatures;
+        !result
+    end
 
   method lo_hi_registers_used: arm_lo_hi_register_pair_t list =
     let result = ref [] in
-    let _ =
-      self#iteri (fun _ _ instr ->
-          let pairs_used = instr#lo_hi_registers_used in
-          List.iter (fun (lo, hi) ->
-              if List.exists (fun (lo', hi') ->
-                     (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
-                   !result then
-                ()
-              else
-                result := (lo, hi) :: !result) pairs_used) in
-    !result
-
+    let add (lo, hi) =
+      if List.exists (fun (lo', hi') ->
+             (armreg_compare lo lo') = 0 && (armreg_compare hi hi') = 0)
+           !result then
+        ()
+      else
+        result := (lo, hi) :: !result in
+    begin
+      self#iteri (fun _ _ instr -> List.iter add instr#lo_hi_registers_used);
+      List.iter (fun xsig ->
+          List.iter (fun p ->
+              if BCHFtsParameter.is_register_parameter p then
+                let regarg =
+                  TR.tget_ok (BCHFtsParameter.get_register_parameter_register p) in
+                match regarg with
+                | ARMDoubleRegister (ar1, ar2) ->
+                   add (ar1, ar2)
+                | _ -> ()) xsig.fts_parameters) self#get_callee_signatures;
+      !result
+    end
 
   method iter (f:arm_assembly_block_int -> unit) =
     List.iter (fun b -> f b) self#get_blocks

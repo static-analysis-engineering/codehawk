@@ -51,6 +51,21 @@ let register_pair_to_string (p: arm_lo_hi_register_pair_t) =
   "(" ^ (armreg_to_string (fst p)) ^", " ^ (armreg_to_string (snd p)) ^ ")"
 
 
+let register_combinations =
+  ["R0_R1"; "R2_R3"; "R4_R5"; "R6_R7"; "R8_R9"; "R10_R11"]
+let rev_register_combinations =
+  ["R1_R0"; "R3_R2"; "R5_R4"; "R7_R6"; "R9_R8"; "R11_R10"]
+
+let ordered_register_combination (rd1: arm_operand_int) (rd2: arm_operand_int) =
+  let s = rd1#toString ^ "_" ^ rd2#toString in
+  if List.mem s register_combinations then
+    Some true
+  else if List.mem s rev_register_combinations then
+    Some false
+  else
+    None
+
+
 let arm_lo_hi_operand_pair_to_string = operand_pair_to_string
 let arm_lo_hi_register_pair_to_string = register_pair_to_string
 
@@ -64,16 +79,10 @@ let operand_pair_to_register_pair
     None
 
 
-let is_wide_op_flagged (addr: doubleword_int) (tags: string list): bool =
+let is_wide_op (addr: doubleword_int) (tags: string list): bool =
   match BCHSystemInfo.system_info#get_aggregate addr with
   | Some [aggkind] -> List.mem aggkind tags
-  | _ -> false
-
-
-let get_wide_op_tag (addr: doubleword_int): string option =
-  match BCHSystemInfo.system_info#get_aggregate addr with
-  | Some [aggkind] -> Some aggkind
-  | _ -> None
+  | _ -> BCHSystemInfo.system_info#has_double_rdef_location (addr#to_hex_string)
 
 
 class arm_wide_op_sequence_t
@@ -169,77 +178,103 @@ let create_arm_wide_op_sequence
           | _ -> None)
       | _ -> None)
   | Move (_, ACCAlways, rd2, rn2, _, _)
-       when is_wide_op_flagged anchoraddr ["wide-move-lo-hi"; "wide-move-hi-lo"] ->
+       when (is_wide_op anchoraddr ["wide-move"; "wide-move"]) ->
      let mov1addr = anchoraddr#add_int(-4) in
-     let tag = Option.get (get_wide_op_tag anchoraddr) in
      (match TR.to_option (get_arm_assembly_instruction mov1addr) with
       | Some mov1instr ->
          (match mov1instr#get_opcode with
           | Move (_, ACCAlways, rd1, rn1, _ , _) ->
-             let instrs = [mov1instr; anchorinstr] in
-             let (opsdefined, opsused) =
-               if tag = "wide-move-hi-lo" then
-                 ([(rd2, rd1)], [(rn2, rn1)])
-               else
-                 ([(rd1, rd2)], [(rn1, rn2)]) in
-             let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
-             Some (WideMove, wop)
+             (match ordered_register_combination rd1 rd2 with
+              | Some is_ordered ->
+                 let instrs = [mov1instr; anchorinstr] in
+                 let (opsdefined, opsused) =
+                   if is_ordered then
+                     ([(rd1, rd2)], [(rn1, rn2)])
+                   else
+                     ([(rd2, rd1)], [(rn2, rn1)]) in
+                 let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
+                 Some (WideMove, wop)
+              | _ -> None)
           | _ -> None)
       | _ -> None)
   | BitwiseNot (false, ACCAlways, rd2, rn2, _)
-       when is_wide_op_flagged anchoraddr ["wide-move-not"] ->
+       when (is_wide_op anchoraddr ["wide-move-not"]) ->
      let mvn1addr = anchoraddr#add_int(-4) in
      (match TR.to_option (get_arm_assembly_instruction mvn1addr) with
       | Some mvn1instr ->
          (match mvn1instr#get_opcode with
           | BitwiseNot (false, ACCAlways, rd1, rn1, _ ) ->
-             let instrs = [mvn1instr; anchorinstr] in
-             let opsdefined = [(rd1, rd2)] in
-             let opsused = [(rn1, rn2)] in
-             let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
-             Some (WideMoveNot, wop)
+             (match ordered_register_combination rd1 rd2 with
+              | Some is_ordered ->
+                 let instrs = [mvn1instr; anchorinstr] in
+                 let (opsdefined, opsused) =
+                   if is_ordered then
+                     ([(rd1, rd2)], [(rn1, rn2)])
+                   else
+                     ([(rd2, rd1)], [(rn2, rn1)]) in
+                 let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
+                 Some (WideMoveNot, wop)
+              | _ -> None)
           | _ -> None)
       | _ -> None)
   | BitwiseAnd (_, ACCAlways, rd2, rn2, rm2, _)
-       when is_wide_op_flagged anchoraddr ["wide-and"] ->
+       when is_wide_op anchoraddr ["wide-and"] ->
      let and1addr = anchoraddr#add_int(-4) in
      (match TR.to_option (get_arm_assembly_instruction and1addr) with
       | Some and1instr ->
          (match and1instr#get_opcode with
           | BitwiseAnd (_, ACCAlways, rd1, rn1, rm1, _) ->
-             let instrs = [and1instr; anchorinstr] in
-             let (opsdefined, opsused) =
-               ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)]) in
-             let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
-             Some (WideAnd, wop)
+             (match ordered_register_combination rd1 rd2 with
+              | Some is_ordered ->
+                 let instrs = [and1instr; anchorinstr] in
+                 let (opsdefined, opsused) =
+                   if is_ordered then
+                     ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)])
+                   else
+                     ([(rd2, rd1)], [(rn2, rn1); (rm2, rm1)]) in
+                 let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
+                 Some (WideAnd, wop)
+              | _ -> None)
           | _ -> None)
       | _ -> None)
   | BitwiseOr (_, ACCAlways, rd2, rn2, rm2, _)
-       when is_wide_op_flagged anchoraddr ["wide-or"] ->
+       when is_wide_op anchoraddr ["wide-or"] ->
      let or1addr = anchoraddr#add_int(-4) in
      (match TR.to_option (get_arm_assembly_instruction or1addr) with
       | Some or1instr ->
          (match or1instr#get_opcode with
           | BitwiseOr (_, ACCAlways, rd1, rn1, rm1, _) ->
-             let instrs = [or1instr; anchorinstr] in
-             let (opsdefined, opsused) =
-               ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)]) in
-             let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
-             Some (WideOr, wop)
+             (match ordered_register_combination rd1 rd2 with
+              | Some is_ordered ->
+                 let instrs = [or1instr; anchorinstr] in
+                 let (opsdefined, opsused) =
+                   if is_ordered then
+                     ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)])
+                   else
+                     ([(rd2, rd1)], [(rn2, rn1); (rm2, rm1)]) in
+                 let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
+                 Some (WideOr, wop)
+              | _ -> None)
           | _ -> None)
       | _ -> None)
   | BitwiseExclusiveOr (_, ACCAlways, rd2, rn2, rm2, _)
-       when is_wide_op_flagged anchoraddr ["wide-xor"] ->
+       when is_wide_op anchoraddr ["wide-xor"] ->
      let xor1addr = anchoraddr#add_int(-4) in
      (match TR.to_option (get_arm_assembly_instruction xor1addr) with
       | Some xor1instr ->
          (match xor1instr#get_opcode with
           | BitwiseExclusiveOr (_, ACCAlways, rd1, rn1, rm1, _) ->
-             let instrs = [xor1instr; anchorinstr] in
-             let (opsdefined, opsused) =
-               ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)]) in
-             let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
-             Some (WideXOr, wop)
+             (match ordered_register_combination rd1 rd2 with
+              | Some is_ordered ->
+                 let instrs = [xor1instr; anchorinstr] in
+                 let (opsdefined, opsused) =
+                   if is_ordered then
+                     ([(rd1, rd2)], [(rn1, rn2); (rm1, rm2)])
+                   else
+                     ([(rd2, rd1)], [(rn2, rn1); (rm2, rm1)]) in
+                 let wop = make_wide_op_sequence opsdefined opsused instrs anchoraddr in
+                 Some (WideXOr, wop)
+              | _ -> None)
           | _ -> None)
       | _ -> None)
 

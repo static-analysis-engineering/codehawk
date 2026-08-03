@@ -369,11 +369,26 @@ object (self)
                      let symvar = floc#f#env#mk_symbolic_variable vlohi in
                      let varinvs = varinv#get_var_reaching_defs symvar in
                      (match varinvs with
-                      | [vinv] -> vinv#index
+                      | [vinv] ->
+                         (match vinv#get_clobber_rdefs with
+                          | [] ->
+                             let _ =
+                               log_diagnostics_result
+                                 ~tag:"get_rdefdouble:found"
+                                 ~msg:floc#cia
+                                 __FILE__ __LINE__
+                                 ["vinv: " ^ (p2s vinv#toPretty)] in
+                             vinv#index
+                          | clobbers ->
+                             let _ =
+                               List.iter
+                                 (BCHSystemInfo.system_info#set_double_rdef_location
+                                    floc#cia reglo reghi) clobbers in
+                             (-1))
                       | _ ->
                          let _ =
                            log_diagnostics_result
-                             ~tag:"get_rdefdouble"
+                             ~tag:"get_rdefdouble:no or multiple"
                              ~msg:floc#cia
                              __FILE__ __LINE__
                              ["Unable to find rdef for " ^ (p2s vlohi#toPretty)] in
@@ -922,10 +937,10 @@ object (self)
           | ARMDoubleRegister (ar1, ar2) ->
              let pvarlo = floc#f#env#mk_arm_register_variable ar1 in
              let pvarhi = floc#f#env#mk_arm_register_variable ar2 in
-             let _xvarlo_r = Ok (XVar pvarlo) in
-             let _xvarhi_r = Ok (XVar pvarhi) in
+             let xvarlo_r = Ok (XVar pvarlo) in
+             let xvarhi_r = Ok (XVar pvarhi) in
              let rdefs_p = [] (* List.map get_rdef_r [xvarlo_r; xvarhi_r] *) in
-             let rdefdoubles_p = [get_rdef_r xvar_r] in
+             let rdefdoubles_p = List.map get_rdefdouble_r [(xvarlo_r, xvarhi_r)] in
              (xvar_r, rdefs_p, rdefdoubles_p)
           | _ ->
              let rdefs = [get_rdef_r xvar_r] in
@@ -2383,6 +2398,24 @@ object (self)
            else
              [] in
          let useshigh = [get_def_use_high_r vrt_r; get_def_use_high_r vrt2_r] in
+         let vars_r =
+           if instr#is_wide_op_instruction then
+             let vrdlohi =
+               floc#env#mk_arm_double_register_variable
+                 rt#get_register rt2#get_register in
+             [vrt_r; vrt2_r; vmem_r; vmem2_r; Ok vrdlohi]
+           else
+             [vrt_r; vrt2_r; vmem_r; vmem2_r] in
+         let (xprs_r, cxprs_r) =
+           if instr#is_wide_op_instruction then
+             let xrmemw = make_wide_op_r xrmem2_r xrmem_r in
+             let crxmemw = TR.tbind floc#xpr_to_cxpr xrmemw in
+             ([xrn_r; xrm_r; xmem_r; xrmem_r; xmem2_r;
+               xrmem2_r; xaddr1_r; xaddr2_r; xrmemw],
+              [crxmemw])
+           else
+             ([xrn_r; xrm_r; xmem_r; xrmem_r; xmem2_r; xrmem2_r; xaddr1_r; xaddr2_r],
+              []) in
          let _ =
            floc#memrecorder#record_load_r
              ~signed:false
@@ -2399,9 +2432,9 @@ object (self)
              ~vtype:t_unknown in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vrt_r; vrt2_r; vmem_r; vmem2_r]
-             ~xprs_r:[xrn_r; xrm_r; xmem_r; xrmem_r; xmem2_r;
-                      xrmem2_r; xaddr1_r; xaddr2_r]
+             ~vars_r
+             ~xprs_r
+             ~cxprs_r
              ~rdefs
              ~uses
              ~usedoubles
@@ -3343,6 +3376,8 @@ object (self)
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
          let result_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) result_r in
          let loresult_r = extract_wide_lo result_r in
          let hiresult_r = extract_wide_hi result_r in
          let loresultr_r = TR.tmap rewrite_expr loresult_r in
@@ -3358,6 +3393,7 @@ object (self)
            mk_instrx_data_r
              ~vars_r:[Ok vlohi; vlo_r; vhi_r]
              ~xprs_r
+             ~cxprs_r:[cresult_r]
              ~rdefs
              ~uses
              ~usedoubles
@@ -4018,6 +4054,8 @@ object (self)
                           [XOp (XMinus, [xrn; xrm]); int_constant_expr 1]);
                      xcarry])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 4)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vrd_r] in
@@ -4026,6 +4064,7 @@ object (self)
            mk_instrx_data_r
              ~vars_r:[vrd_r]
              ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~cxprs_r:[cresult_r]
              ~rdefs
              ~uses
              ~useshigh
@@ -4307,21 +4346,29 @@ object (self)
       | UnsignedMultiplyLong (_, c, rdlo, rdhi, rn, rm) ->
          let vlo_r = rdlo#to_variable floc in
          let vhi_r = rdhi#to_variable floc in
+         let rlo = rdlo#get_register in
+         let rhi = rdhi#get_register in
+         let vlohi = floc#env#mk_arm_double_register_variable rlo rhi in
          let xrn_r = rn#to_expr floc in
          let xrm_r = rm#to_expr floc in
          let result_r =
            TR.tmap2 (fun xrn xrm -> XOp (XMult, [xrn; xrm])) xrn_r xrm_r in
          let rresult_r = TR.tmap rewrite_expr result_r in
+         let cresult_r =
+           TR.tbind (floc#xpr_to_cxpr ~size:(Some 8)) rresult_r in
          let rdefs =
            [get_rdef_r xrn_r; get_rdef_r xrm_r] @ (get_all_rdefs_r rresult_r) in
          let uses = [get_def_use_r vlo_r; get_def_use_r vhi_r] in
+         let usedoubles = [get_def_use_r (Ok vlohi)] in
          let useshigh = [get_def_use_high_r vlo_r; get_def_use_high_r vhi_r] in
          let (tagstring, args) =
            mk_instrx_data_r
-             ~vars_r:[vlo_r; vhi_r]
+             ~vars_r:[Ok vlohi; vlo_r; vhi_r]
              ~xprs_r:[xrn_r; xrm_r; result_r; rresult_r]
+             ~cxprs_r:[cresult_r]
              ~rdefs
              ~uses
+             ~usedoubles
              ~useshigh
              () in
          let (tags, args) = add_optional_instr_condition tagstring args c in

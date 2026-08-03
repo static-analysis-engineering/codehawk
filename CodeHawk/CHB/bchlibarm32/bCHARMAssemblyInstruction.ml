@@ -97,7 +97,10 @@ object (self)
   method is_wide_op_instruction =
     match system_info#get_instruction_annotation vaddr with
     | Some ["wop"] -> true
-    | _ -> false
+    | _ ->
+       match self#get_opcode with
+       | LoadRegisterDual _ -> system_info#has_double_rdef_location vaddr#to_hex_string
+       | _ -> false
 
   method lo_hi_registers_defined =
     if self#is_aggregate_anchor then
