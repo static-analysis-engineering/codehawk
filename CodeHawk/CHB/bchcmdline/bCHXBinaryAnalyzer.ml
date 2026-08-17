@@ -556,14 +556,14 @@ let main () =
             && system_settings#is_elf then
       let _ = system_info#initialize in
       let t = ref (Unix.gettimeofday ()) in
-      let _ = load_elf_files () in
-      let _ = pr_timing [STR "elf files loaded"] in
       let _ =
         List.iter (fun f ->
             parse_cil_file ~removeUnused:false f) system_info#ifiles in
       let _ =
         if (List.length system_info#ifiles) > 0 then
           pr_timing [STR "c header files loaded"] in
+      let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let _ = disassemble_arm_sections () in
       let _ = pr_timing [STR "sections disassembled"] in
       let _ = disassembly_summary#record_disassembly_time
@@ -883,8 +883,6 @@ let main () =
             STR "file metrics loaded (index ";
             INT file_metrics#get_index;
             STR ")"] in
-      let _ = load_elf_files () in
-      let _ = pr_timing [STR "elf files loaded"] in
 
       (* symbolic addresses in userdata should be loaded before the header
          files are parsed. *)
@@ -899,6 +897,8 @@ let main () =
       let _ = BCHBCTypeXml.register_ch_named_struct_types () in
       (* function annotations in userdata should be loaded after the header
          files are parsed, so types in the function annotations can be resolved.*)
+      let _ = load_elf_files () in
+      let _ = pr_timing [STR "elf files loaded"] in
       let _ = system_info#initialize_function_annotations in
       let _ = pr_timing [STR "function annotations initialized"] in
 
