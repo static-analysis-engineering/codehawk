@@ -325,7 +325,8 @@ object (self)
              ~xpr:(Some (XVar sevalue))
              self#loc#ci
         | _ ->
-           match self#xprxt#xpr_to_bterm ty addr with
+           let pty = t_ptrto ty in
+           match self#xprxt#xpr_to_bterm pty addr with
            | Some t ->
               (match self#xprxt#xpr_to_bterm t_int size with
                | Some sizet ->

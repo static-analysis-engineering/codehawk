@@ -186,7 +186,9 @@ object (self:'a)
         (LBLOCK [
              STR (get_fintf_name self#get_function_interface);
              STR ": ";
-             STR (register_to_string reg)]) in
+             STR (register_to_string reg);
+             STR "; ";
+             STR (BCHBCTypePretty.btype_to_string ty)]) in
     {< finterface = add_function_register_parameter_location fintf reg ty size >}
 
   method get_registers_preserved = fts.fts_registers_preserved

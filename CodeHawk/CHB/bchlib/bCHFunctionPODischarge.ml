@@ -1016,7 +1016,7 @@ let blockwrite_delegate
        match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int bwlen with
        | Some bterm -> bterm
        | _ -> RunTimeValue in
-     (match xprxt#xpr_to_bterm ty xpr with
+     (match xprxt#xpr_to_bterm (BCHBCTypeUtil.t_ptrto ty) xpr with
       | Some (NumConstant n) when n#gt CHNumerical.numerical_zero ->
          let dw = BCHDoubleword.numerical_mod_to_doubleword n in
          let xxp = XXBlockWrite (ty, NumConstant n, xlenterm) in
@@ -1100,7 +1100,7 @@ let buffer_delegate
        Open
      end
   | Some xprxt ->
-     (match xprxt#xpr_to_bterm ty xpr with
+     (match xprxt#xpr_to_bterm (BCHBCTypeUtil.t_ptrto ty) xpr with
       | Some (NumConstant n) when n#gt CHNumerical.numerical_zero ->
          let dw = BCHDoubleword.numerical_mod_to_doubleword n in
          (match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int bwlen with
@@ -1378,7 +1378,7 @@ let initialized_range_delegate
        Open
      end
   | Some xprxt ->
-     (match xprxt#xpr_to_bterm ty xpr with
+     (match xprxt#xpr_to_bterm (BCHBCTypeUtil.t_ptrto ty) xpr with
       | Some (NumConstant n) when n#gt CHNumerical.numerical_zero ->
          let dw = BCHDoubleword.numerical_mod_to_doubleword n in
          (match xprxt#xpr_to_bterm BCHBCTypeUtil.t_int size with
