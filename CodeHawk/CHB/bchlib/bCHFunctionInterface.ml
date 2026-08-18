@@ -897,6 +897,7 @@ let add_function_register_parameter_location
        | (RegisterParameter (r1, _, _), RegisterParameter (r2, _, _)) ->
           register_equal r1 r2
        | _ -> false in
+     (* returns true if existing type is better *)
      let better (loc1: parameter_location_t) (loc2: parameter_location_t): bool =
        match (loc1, loc2) with
        | (RegisterParameter (r1, pd1, _), RegisterParameter (r2, pd2, _))
@@ -905,7 +906,19 @@ let add_function_register_parameter_location
             false
           else if is_unknown_type pd1.pld_type then
             false
+          (* In some cases an integer type has been given as a default type; if
+             the new type is different, it is not a default, so the new type
+             is better. *)
+          else if btype_equal pd1.pld_type t_int then
+            false
           else
+            let _ =
+              chlog#add
+                "reject new type"
+                (LBLOCK [STR "old type: ";
+                         btype_to_pretty pd1.pld_type;
+                         STR "; new type: ";
+                         btype_to_pretty pd2.pld_type]) in
             true
        | _ -> false in
      let newlocations =
