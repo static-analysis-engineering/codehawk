@@ -338,7 +338,7 @@ object (self)
          (match tcond with
           | XOp (XEq, [XVar vr; XConst (IntConst n)]) ->
              let subst v =
-               if v#equal vr then XConst (IntConst n) else XVar vr in
+               if v#equal vr then XConst (IntConst n) else XVar v in
              simplify_xpr (substitute_expr subst xx)
           | _ -> xx)
       | _ -> xx in
