@@ -245,18 +245,21 @@ let analyze starttime =
                (trerror_record
                   (LBLOCK [STR "analyze:faddr: "; STR faddr]))
                (string_to_doubleword faddr) in
-           let f = assembly_functions#get_function_by_address faddr in
-           let _ = count := !count + 1 in
-           try
-             analyze_x86_function faddr f !count;
-             pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
-	    with
-	    | Failure s -> functionfailure "Failure" faddr (STR s)
-	    | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	    | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	    | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-	    | CHFailure p -> functionfailure "CHFailure" faddr p
-	    | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
+           if List.mem faddr#to_hex_string fns_excluded then
+             ()
+           else
+             let f = assembly_functions#get_function_by_address faddr in
+               let _ = count := !count + 1 in
+               try
+                 analyze_x86_function faddr f !count;
+                 pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
+	        with
+	        | Failure s -> functionfailure "Failure" faddr (STR s)
+	        | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	        | Internal_error s -> functionfailure "Internal error" faddr (STR s)
+	        | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	        | CHFailure p -> functionfailure "CHFailure" faddr p
+	        | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
      else
        assembly_functions#bottom_up_itera
          (fun faddr f ->
@@ -477,18 +480,21 @@ let analyze_mips starttime =
        List.iter
          (fun faddr ->
            let faddr = TR.tget_ok (string_to_doubleword faddr) in
-           let f = mips_assembly_functions#get_function_by_address faddr in
-           let _ = count := !count + 1 in
-           try
-             analyze_mips_function faddr f !count;
-             pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
-           with
-	    | Failure s -> functionfailure "Failure" faddr (STR s)
-	    | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	    | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	    | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-	    | CHFailure p -> functionfailure "CHFailure" faddr p
-	    | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
+           if List.mem faddr#to_hex_string fns_excluded then
+             ()
+           else
+             let f = mips_assembly_functions#get_function_by_address faddr in
+             let _ = count := !count + 1 in
+             try
+               analyze_mips_function faddr f !count;
+               pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
+             with
+	      | Failure s -> functionfailure "Failure" faddr (STR s)
+	      | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	      | Internal_error s -> functionfailure "Internal error" faddr (STR s)
+	      | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	      | CHFailure p -> functionfailure "CHFailure" faddr p
+	      | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
      else
        mips_assembly_functions#bottom_up_itera
          (fun faddr f ->
@@ -638,18 +644,21 @@ let analyze_arm starttime =
                (trerror_record
                   (LBLOCK [STR "analyze_arm:faddr: "; STR faddr]))
                (string_to_doubleword faddr) in
-           let f =  arm_assembly_functions#get_function_by_address faddr in
-           let _ = count := !count + 1 in
-           try
-             analyze_arm_function faddr f !count;
-             pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
-           with
-	    | Failure s -> functionfailure "Failure" faddr (STR s)
-	    | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
-	    | Internal_error s -> functionfailure "Internal error" faddr (STR s)
-	    | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
-	    | CHFailure p -> functionfailure "CHFailure" faddr p
-	    | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
+           if List.mem faddr#to_hex_string fns_excluded then
+             ()
+           else
+             let f =  arm_assembly_functions#get_function_by_address faddr in
+             let _ = count := !count + 1 in
+             try
+               analyze_arm_function faddr f !count;
+               pr_interval_timing [STR "functions analyzed: "; INT !count] 60.0
+             with
+	      | Failure s -> functionfailure "Failure" faddr (STR s)
+	      | Invalid_argument s -> functionfailure "Invalid argument" faddr (STR s)
+	      | Internal_error s -> functionfailure "Internal error" faddr (STR s)
+	      | Invocation_error s -> functionfailure "Invocation error" faddr (STR s)
+	      | CHFailure p -> functionfailure "CHFailure" faddr p
+	      | BCH_failure p -> functionfailure "BCHFailure" faddr p) fns_included
 
      else
        arm_assembly_functions#bottom_up_itera
@@ -737,9 +746,12 @@ let analyze_pwr (starttime: float) =
                (trerror_record
                   (LBLOCK [STR "analyze_pwr:faddr: "; STR faddr]))
                (string_to_doubleword faddr) in
-           let f = pwr_assembly_functions#get_function_by_address faddr in
-           let _ = count := !count + 1 in
-           analyze_pwr_function faddr f !count) fns_included
+           if List.mem faddr#to_hex_string fns_excluded then
+             ()
+           else
+             let f = pwr_assembly_functions#get_function_by_address faddr in
+             let _ = count := !count + 1 in
+             analyze_pwr_function faddr f !count) fns_included
      else
        pwr_assembly_functions#bottom_up_itera
          (fun faddr f ->
