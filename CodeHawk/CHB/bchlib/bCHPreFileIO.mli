@@ -55,6 +55,7 @@ val get_pwr_dictionary_filename: unit -> string
 val get_pwr_assembly_instructions_filename: unit -> string
 
 val get_functions_filename: unit -> string
+val get_callgraph_filename: unit -> string
 val get_global_state_filename: unit -> string
 val get_global_memory_map_filename: unit -> string
 val get_system_info_filename: unit -> string

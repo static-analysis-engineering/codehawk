@@ -116,6 +116,7 @@ let add_print_datasection (s: string) =
     print_datasections := s :: !print_datasections
 
 let save_asm_cfg_info = ref false  (* save functions list with cfg info in xml *)
+let save_asm_callgraph = ref false (* save callgraph edges based on disassembly *)
 let set_datablocks = ref false   (* only supported for arm *)
 let construct_all_functions = ref false
 
@@ -226,6 +227,8 @@ let speclist =
      "save assembly listing in the analysis directory");
     ("-save_asm_cfg_info", Arg.Unit (fun () -> save_asm_cfg_info := true),
      "save list of functions with cfg info to xml file (may be slow)");
+    ("-save_asm_callgraph", Arg.Unit (fun () -> save_asm_callgraph := true),
+     "save list of callgraph edges based on disassembly only in xml");
     ("-print_datasection", Arg.String (fun s -> add_print_datasection s),
      "print the data sections as part of the assembly listing");
     ("-construct_all_functions",
@@ -618,7 +621,12 @@ let main () =
             (if !save_asm_cfg_info then
                begin
                  save_arm_functions_list ();
-                 pr_timing [STR "function cfg info saved"]
+                 pr_timing [STR "function cfg info saved"];
+               end);
+            (if !save_asm_callgraph then
+               begin
+                 save_arm_callgraph ();
+                 pr_timing [STR "callgraph saved"]
                end);
             save_system_info ();
             pr_timing [STR "system_info saved"];

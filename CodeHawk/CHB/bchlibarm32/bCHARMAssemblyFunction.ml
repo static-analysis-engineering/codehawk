@@ -229,8 +229,28 @@ object (self)
     List.iter (fun (b:arm_assembly_block_int) ->
         b#itera (fun iaddr instr -> f faddr iaddr instr)) self#get_blocks
 
-  method populate_callgraph (_callgraph: callgraph_int) =
-    self#iteri (fun _ _iaddr _instr -> ())
+  method populate_callgraph (callgraph: callgraph_int) =
+    let finfo = BCHFunctionInfo.get_function_info faddr in
+    self#iteri (fun _ iaddr instr ->
+        match instr#get_opcode with
+        | BranchLink _
+          | BranchLinkExchange _
+          | Branch _ ->
+           if finfo#has_call_target iaddr then
+             let rec add_call_target tgt =
+               match tgt with
+               | StubTarget (SOFunction name)
+                 | StaticStubTarget (_, SOFunction name) ->
+                  callgraph#add_so_edge faddr name iaddr []
+               | AppTarget a -> callgraph#add_app_edge faddr a iaddr []
+               | UnknownTarget ->
+                  callgraph#add_unresolved_edge faddr (-1) iaddr []
+               | IndirectTarget (_, tgts) -> List.iter add_call_target tgts
+               | _ -> () in
+             add_call_target (finfo#get_call_target iaddr)#get_target
+           else
+             ()
+        | _ -> () )
 
   method includes_instruction_address (va:doubleword_int) =
     List.exists (fun b -> b#includes_instruction_address va) blocks

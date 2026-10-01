@@ -1632,6 +1632,9 @@ object (self)
             ) rmdefs);
        end
 
+    | ReverseSubtract (_, _, rd, _, _, _) ->
+       regvar_type_introduction "RSB" rd
+
     | SignedMultiplyLong (_, _, rdlo, rdhi, rn, rm) ->
        let rdloreg = rdlo#to_register in
        let lhslotypevar = mk_reglhs_typevar rdloreg faddr iaddr in

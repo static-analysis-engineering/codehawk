@@ -328,6 +328,14 @@ let get_functions_filename () =
   let _ = create_directory fdir in
   Filename.concat fdir (exename ^ "_functions.xml")
 
+
+let get_callgraph_filename () =
+  let exename = get_filename () in
+  let fdir = get_analysis_dir () in
+  let _ = create_directory fdir in
+  Filename.concat fdir (exename ^ "_callgraph.xml")
+
+
 let get_function_filename (fname:string) (ext:string) =
   let exename = get_filename () in
   let fdir = get_analysis_dir () in
