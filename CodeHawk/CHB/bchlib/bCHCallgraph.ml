@@ -151,6 +151,7 @@ object ('a)
   method get_constraint        : xpr_t
   method get_stack_arguments   : (int * xpr_t) list
   method get_register_arguments: (variable_t * xpr_t) list
+  method write_xml             : xml_element_int -> unit
 
   (* printing *)
   method toPretty : pretty_t
@@ -223,7 +224,7 @@ class callgraph_edge_t
         (callsite:ctxt_iaddress_t)
         (_argExprs:(int * string * xpr_t) list)
       :callgraph_edge_int =
-object (_:'a)
+object (self:'a)
 
   method compare (other:'a) =
     let l0 = src#compare other#get_source in
@@ -245,6 +246,18 @@ object (_:'a)
   method get_stack_arguments = []
 
   method get_register_arguments = []
+
+  method write_xml (node: xml_element_int) =
+    let set = node#setAttribute in
+    let seta t a = set t a#to_hex_string in
+    let tgtinfo = new callgraph_node_info_t self#get_target in
+    let tgtnode = xmlElement "tgt" in
+    begin
+      seta "src" self#get_source;
+      set "cs" self#get_callsite;
+      tgtinfo#write_xml tgtnode;
+      node#appendChildren [tgtnode]
+    end
 
   method toPretty =
     LBLOCK [ src#toPretty ; STR " -> " ;
@@ -349,7 +362,14 @@ object (self)
     let eNode = xmlElement "edges" in
     let edges = ref [] in
     let _ = out_n#iter (fun _ s -> edges := s#toList @ !edges) in
-      node#appendChildren [ eNode ]
+    let _ =
+      List.iter (fun e ->
+          let edgenode = xmlElement "edge" in
+          begin
+            e#write_xml edgenode;
+            eNode#appendChildren [edgenode]
+          end) !edges in
+    node#appendChildren [eNode]
 
 end
 

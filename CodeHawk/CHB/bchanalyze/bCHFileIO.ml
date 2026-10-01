@@ -187,6 +187,19 @@ let save_arm_functions_list () =
   end
 
 
+let save_arm_callgraph () =
+  let filename = get_callgraph_filename () in
+  let doc = xmlDocument () in
+  let root = get_bch_root "callgraph" in
+  let cNode = xmlElement "callgraph" in
+  let callgraph = BCHARMAssemblyFunctions.arm_assembly_functions#get_callgraph in
+  begin
+    callgraph#write_xml cNode;
+    doc#setNode root;
+    root#appendChildren [cNode];
+    file_output#saveFile filename doc#toPretty
+  end
+
 
 let save_global_state () =
   let filename = get_global_state_filename () in

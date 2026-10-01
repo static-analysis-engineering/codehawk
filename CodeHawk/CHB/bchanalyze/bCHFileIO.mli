@@ -41,6 +41,7 @@ val save_functions_list: unit -> unit
 
 (** save function cfg info for arm functions *)
 val save_arm_functions_list: unit -> unit
+val save_arm_callgraph: unit -> unit
 
 val save_global_state: unit -> unit
 val save_global_memory_map: unit -> unit
