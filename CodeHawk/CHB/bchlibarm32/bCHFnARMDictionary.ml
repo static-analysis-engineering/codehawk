@@ -3434,6 +3434,29 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | SignedExtendAddByte (c, rd, rn, rm) ->
+         let vrd_r = rd#to_variable floc in
+         let xrn_r = rn#to_expr floc in
+         let xxrn_r = TR.tmap rewrite_expr xrn_r in
+         let xrm_r = rm#to_expr floc in
+         let xxrm_r = TR.tmap rewrite_expr xrm_r in
+         let rdefs =
+           (get_rdef_r xrn_r)
+           :: (get_rdef_r xrm_r)
+           :: ((get_all_rdefs_r xxrn_r) @ (get_all_rdefs_r xxrm_r)) in
+         let uses = [get_def_use_r vrd_r] in
+         let useshigh = [get_def_use_high_r vrd_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vrd_r]
+             ~xprs_r:[xrn_r; xrm_r; xxrn_r; xxrm_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | SignedExtendByte (c, rd, rm, _) ->
          let vrd_r = rd#to_variable floc in
          let xrm_r = rm#to_expr floc in

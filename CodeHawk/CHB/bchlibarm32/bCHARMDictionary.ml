@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2021-2024  Aarno Labs, LLC
+   Copyright (c) 2021-2026  Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -311,6 +311,7 @@ object (self)
          (ctags c, [di dt; oi vd; oi vn; oi vm])
       | SignedBitFieldExtract (c, rd, rn) -> (ctags c, [oi rd; oi rn])
       | SignedDivide (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
+      | SignedExtendAddByte (c, rd, rn, rm) -> (ctags c, [oi rd; oi rn; oi rm])
       | SignedExtendByte (c, rd, rm, tw) -> (ctags c, [oi rd; oi rm; setb tw])
       | SignedExtendHalfword (c, rd, rm, tw) ->
          (ctags c, [oi rd; oi rm; setb tw])

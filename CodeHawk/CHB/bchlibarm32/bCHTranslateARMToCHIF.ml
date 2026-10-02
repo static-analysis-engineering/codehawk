@@ -2808,6 +2808,25 @@ let translate_arm_instruction
       | ACCAlways -> default cmds
       | _ -> make_conditional_commands c cmds)
 
+  | SignedExtendAddByte (c, rd, rn, rm) ->
+     let vrd = floc#env#mk_register_variable rd#to_register in
+     let lhs_r = TR.tmap fst (rd#to_lhs floc) in
+     let xrn_r = rn#to_expr floc in
+     let xrm_r = rm#to_expr floc in
+     let cmds = floc#get_abstract_commands_r lhs_r in
+     let usevars = get_register_vars [rn; rm] in
+     let usehigh = get_use_high_vars_r [xrn_r; xrm_r] in
+     let defcmds =
+       floc#get_vardef_commands
+         ~defs:[vrd]
+         ~use:usevars
+         ~usehigh
+         ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
   | SignedExtendByte (c, rd, rm, _) ->
      let vrd = floc#env#mk_register_variable rd#to_register in
      let lhs_r = TR.tmap fst (rd#to_lhs floc) in

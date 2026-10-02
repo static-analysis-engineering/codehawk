@@ -1342,6 +1342,15 @@ let parse_media_type (instrbytes: doubleword_int) (cond: int) =
      (* SXTB<c> <Rd>, <Rm>{, <rotation>} *)
      SignedExtendByte (c, rd, rm, false)
 
+  (* <cc><3>< 10><rn><rd>ro000111<rm> *)   (* SXTAB - A1 *)
+  | 10 when (b 9 5) = 3 && (b 9 8) = 0 ->
+     let rd = arm_register_op (get_arm_reg ry) WR in
+     let rn = arm_register_op (get_arm_reg rx) RD in
+     let rotation = (b 11 10) lsl 3 in
+     let rm = mk_arm_rotated_register_op (get_arm_reg rz) rotation RD in
+     (* SXTAB <Rd>, <Rn>, <Rm>{, <rotation>} *)
+     SignedExtendAddByte (c, rd, rn, rm)
+
   (* <cc><3>< 11><15><rd><15>0011<rm> *)   (* REV - A1 *)
   | 11 when (rx = 15) && (b 11 8) = 15 && (b 7 5) = 1 ->
      let rd = arm_register_op (get_arm_reg ry) WR in

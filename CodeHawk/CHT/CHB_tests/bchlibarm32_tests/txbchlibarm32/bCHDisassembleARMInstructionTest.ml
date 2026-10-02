@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -141,6 +141,8 @@ let arm_basic () =
       ("STRH",   "b007cde1", "STRH           R0, [SP,#0x70]");
       ("SUB",    "45df4de2", "SUB            SP, SP, #0x114");
       ("SUBS",   "062052e0", "SUBS           R2, R2, R6");
+      ("SXTAB",  "7330a2e6", "SXTAB          R3, R2, R3");
+      ("SXTB",   "7430afe6", "SXTB           R3, R4");
       ("TST",    "020c12e3", "TST            R2, #0x200");
       ("UBFX",   "50ede2e7", "UBFX           LR, R0, #26, #3");
       ("UDF",    "fedeffe7", "UDF            #0xfdee");
