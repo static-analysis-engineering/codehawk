@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2021-2025 Aarno Labs, LLC
+   Copyright (c) 2021-2026 Aarno Labs, LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -735,6 +735,11 @@ type arm_opcode_t =
       * arm_operand_int  (* rd: destination *)
       * arm_operand_int  (* rm: dividend *)
       * arm_operand_int  (* rn: divisor *)
+  | SignedExtendAddByte of
+      arm_opcode_cc_t    (* condition *)
+      * arm_operand_int  (* rd: destination *)
+      * arm_operand_int  (* rn: first operand *)
+      * arm_operand_int  (* rm: second operand *)
   | SignedExtendByte of
       arm_opcode_cc_t    (* condition *)
       * arm_operand_int  (* rd: destination *)
