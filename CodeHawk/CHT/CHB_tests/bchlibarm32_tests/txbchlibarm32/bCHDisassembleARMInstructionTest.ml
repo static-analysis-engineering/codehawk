@@ -210,6 +210,8 @@ let arm_vector () =
       ("VDUP.32-scalar",              "622cfcf3", "VDUP.32        Q9, D18[1]");
       ("VEOR-Q",                      "746106f3", "VEOR           Q3, Q3, Q10");
       ("VEXT",                        "462cf0f2", "VEXT.8         Q9, Q0, Q3, #0xc");
+      ("VFMA.F64",                    "007ba8ee", "VFMA.F64       D7, D8, D0");
+      ("VFMS.F64",                    "e20be1ee", "VFMS.F64       D16, D17, D18");
       ("VLD1.8",                      "0d0760f4", "VLD1.8         {D16}, [R0]!");
       ("VLD1.32",                     "8f2a23f4", "VLD1.32        {D2,D3}, [R3]");
       ("VMOV.I8",                     "584ec0f2", "VMOV.I8        Q10, #8");

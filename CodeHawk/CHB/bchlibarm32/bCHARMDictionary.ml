@@ -429,6 +429,8 @@ object (self)
          (ctags c, [di dt; oi dst; oi src1; oi src2; oi imm])
       | VectorFusedMultiplyAccumulate (c, dt, dst, src1, src2) ->
          (ctags c, [di dt; oi dst; oi src1; oi src2])
+      | VectorFusedMultiplySubtract (c, dt, dst, src1, src2) ->
+         (ctags c, [di dt; oi dst; oi src1; oi src2])
       | VectorLoadMultipleIncrementAfter (wb, c, rn, rl, mem) ->
          (ctags c, [setb wb; oi rn; oi rl; oi mem])
       | VectorLoadFour (wb, c, sz, rl, rn, mem, rm) ->

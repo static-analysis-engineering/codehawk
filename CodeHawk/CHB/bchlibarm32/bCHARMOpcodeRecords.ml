@@ -1383,6 +1383,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VFMA" c [dst; src1; src2])
     }
+  | VectorFusedMultiplySubtract (c, dt, dst, src1, src2) -> {
+      mnemonic = "VFMS";
+      operands = [dst; src1; src2];
+      flags_set = [];
+      flags_used = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VFMS" c [dst; src1; src2])
+    }
   | VectorLoadFour (_wb, c, dt, rl, rn, mem, rm) -> {
       mnemonic = "VLD4";
       operands = [rl; rn; mem; rm];
