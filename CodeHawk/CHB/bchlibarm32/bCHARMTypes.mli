@@ -1119,6 +1119,12 @@ type arm_opcode_t =
       * arm_operand_int  (* destination *)
       * arm_operand_int  (* source 1 *)
       * arm_operand_int  (* source 2 *)
+  | VectorFusedMultiplySubtract of
+      arm_opcode_cc_t    (* condition *)
+      * vfp_datatype_t   (* data type *)
+      * arm_operand_int  (* destination *)
+      * arm_operand_int  (* source 1 *)
+      * arm_operand_int  (* source 2 *)
   | VectorLoadMultipleIncrementAfter of
       bool    (* writeback *)
       * arm_opcode_cc_t  (* condition *)

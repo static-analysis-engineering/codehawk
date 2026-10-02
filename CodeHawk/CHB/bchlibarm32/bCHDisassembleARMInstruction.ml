@@ -2343,6 +2343,30 @@ let parse_misc_7_type
        (* VDUP<c>.<size> <Dd>, <Rt> *)
        VectorDuplicate (c, VfpSize esize, 1, elements, d WR, rt RD)
 
+  (* <cc><7>01D10<vn><vd>101sN0M0<vm> *) (* VFMA - A2 *)
+  | (1, 2, 0, 0) when (b 11 9) = 5 ->
+     let sz = bv 8 in
+     let dp = sz = 1 in
+     let dbit = bv 22 in
+     let nbit = bv 7 in
+     let mbit = bv 5 in
+     let vn = b 19 16 in
+     let vd = b 15 12 in
+     let vm = b 3 0 in
+     let (dreg, nreg, mreg) =
+       if dp then
+         (prefix_bit dbit vd, prefix_bit nbit vn, prefix_bit mbit vm)
+       else
+         (postfix_bit dbit vd, postfix_bit nbit vn, postfix_bit mbit vm) in
+     let (dt, xtype) =
+       if dp then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
+     let vd = arm_extension_register_op xtype dreg in
+     let vn = arm_extension_register_op xtype nreg in
+     let vm = arm_extension_register_op xtype mreg in
+     (* VFMA<c>.F64 <Dd>, <Dn>, <Dm> *)
+     (* VFMA<c>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorFusedMultiplyAccumulate (c, dt, vd WR, vn RD, vm RD)
+
   (* <cc><14><14>< 1><rt><10>< 1>< 0> *) (* VMSR - A1 *)
   | (1, 2, 0, 1) when
          (bv 22) = 1
@@ -2354,6 +2378,30 @@ let parse_misc_7_type
      let dst = arm_special_register_op FPSCR in
      (* VMSR<c> FPSCR, <Rt> *)
      VMoveToSystemRegister (c, dst WR, rt RD)
+
+  (* <cc><7>01D10<vn><vd>101sN1M0<vm> *) (* VFMS - A2 *)
+  | (1, 2, 1, 0) when (b 11 9) = 5 ->
+     let sz = bv 8 in
+     let dp = sz = 1 in
+     let dbit = bv 22 in
+     let nbit = bv 7 in
+     let mbit = bv 5 in
+     let vn = b 19 16 in
+     let vd = b 15 12 in
+     let vm = b 3 0 in
+     let (dreg, nreg, mreg) =
+       if dp then
+         (prefix_bit dbit vd, prefix_bit nbit vn, prefix_bit mbit vm)
+       else
+         (postfix_bit dbit vd, postfix_bit nbit vn, postfix_bit mbit vm) in
+     let (dt, xtype) =
+       if dp then (VfpFloat 64, XDouble) else (VfpFloat 32, XSingle) in
+     let vd = arm_extension_register_op xtype dreg in
+     let vn = arm_extension_register_op xtype nreg in
+     let vm = arm_extension_register_op xtype mreg in
+     (* VFMS<c>.F64 <Dd>, <Dn>, <Dm> *)
+     (* VFMS<c>.F32 <Sd>, <Sn>, <Sm> *)
+     VectorFusedMultiplySubtract (c, dt, vd WR, vn RD, vm RD)
 
   (* <cc><14>1D11<4H><vd>101s< 0><4L> *)    (* VMOV (immediate) - A2 *)
   | (1, 3, 0, 0) when (b 11 9) = 5 && (b 7 4) = 0 ->
