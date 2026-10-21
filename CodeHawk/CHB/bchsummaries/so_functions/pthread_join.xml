@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-10-19 21:39:07"/>
+  <libfun lib="so_functions" name="pthread_join">
+    <documentation>
+      <desc>wait for thread termination</desc>
+      <apidoc>
+        <pt>
+          <ll>int pthread_join(</ll>
+          <ld>pthread_t thread</ld>
+          <ld>void **value_ptr</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="thread">target thread to wait for</par>
+        <par name="value_ptr">location to hold the exit value</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">non-zero</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pthread_join">
+      <par loc="stack" name="thread" nr="1">
+        <type>ch__pthread_t</type>
+      </par>
+      <par loc="stack" name="value_ptr" nr="2">
+        <type><ptr><ptr>void</ptr></ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <zero-nonzero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>
