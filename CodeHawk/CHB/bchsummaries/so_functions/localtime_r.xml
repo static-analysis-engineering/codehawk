@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-10-19 22:08:40"/>
+  <libfun lib="so_functions" name="localtime_r">
+    <documentation>
+      <desc>convert a time value to a broken-down local time</desc>
+      <apidoc>
+        <pt>
+          <ll>struct tm *localtime_r(</ll>
+          <ld>const time_t *restrict timer</ld>
+          <ld>struct tm *restrict result</ld>
+          <ll>)</ll>
+        </pt>
+        <par name="timer">time in seconds pointed to</par>
+        <par name="result">result structure</par>
+        <return>
+          <rc cond="success">pointer to broken down time structure</rc>
+          <rc cond="failure">NULL</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="localtime_r">
+      <par loc="stack" name="timer" nr="1">
+        <type><ptr>time_t</ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <par loc="stack" name="result" nr="2">
+        <type><ptr><ptr>ch__tm</ptr></ptr></type>
+      </par>
+      <returntype><ptr>ch__tm</ptr></returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <notnull-null/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

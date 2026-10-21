@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<codehawk-binary-analyzer>
+  <reference href="http://pubs.opengroup.org/onlinepubs/000095399/"/>
+  <header date="2026-10-19 21:22:47"/>
+  <libfun lib="so_functions" name="pthread_attr_destroy">
+    <documentation>
+      <desc>destroy the thread attributes object</desc>
+      <apidoc>
+        <pt>int pthread_attr_destroy (pthread_attr_t *attr)</pt>
+        <par name="attr">thread attributes object to be destroyed</par>
+        <return>
+          <rc cond="success">zero</rc>
+          <rc cond="failure">error-number</rc>
+        </return>
+      </apidoc>
+    </documentation>
+    <api adj="0" cc="cdecl" name="pthread_attr_destroy">
+      <par loc="stack" name="attr" nr="1">
+        <type><ptr>ch__pthread_attr_t</ptr></type>
+        <pre><deref-read/></pre>
+      </par>
+      <returntype>int</returntype>
+    </api>
+    <semantics>
+      <io-actions/>
+      <preconditions/>
+      <postconditions>
+        <zero-nonzero/>
+      </postconditions>
+      <sideeffects/>
+    </semantics>
+  </libfun>
+  <copyright-notice>Copyright 2012-2026, Henny Sipma, Palo Alto, CA 94304</copyright-notice>
+</codehawk-binary-analyzer>

@@ -78,6 +78,8 @@ let ch_named_struct_types = [
     "ch__pthread_cond_t";
     "ch__pthread_mutex_t";
     "ch__pthread_mutexattr_t";
+    "ch__pthread_rwlock_t";
+    "ch__pthread_rwlockattr_t";
     "ch__pthread_start_routine";
     "ch__pthread_t";
     "ch__rlimit";    (* used in getrlimit *)
