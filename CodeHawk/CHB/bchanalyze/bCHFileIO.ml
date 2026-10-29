@@ -78,21 +78,6 @@ let xml_error (filename: string) (line: int) (column: int) (p: pretty_t) =
       p]
 
 
-let get_bch_root (info:string):xml_element_int =
-  let exename = system_info#get_filename in
-  let root = xmlElement "codehawk-binary-analysis" in
-  let hNode = xmlElement "header" in
-  let aNode = xmlElement "application" in
-  begin
-    aNode#setAttribute "name" exename ;
-    aNode#setAttribute "info" info ;
-    aNode#setAttribute "time" (current_time_to_string ()) ;
-    root#appendChildren [ hNode ] ;
-    hNode#appendChildren [ aNode ] ;
-    root
-  end
-
-
 (* applies to x86 only *)
 let save_functions_list () =
   let filename = get_functions_filename () in
