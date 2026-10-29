@@ -261,7 +261,6 @@ let save_disassembly_status () =
   let root = get_bch_root "disassembly-status" in
   let fnode = xmlElement "disassembly-status" in
   begin
-    disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) ;
     disassembly_summary#write_xml fnode ;
     doc#setNode root ;
     root#appendChildren [ fnode ] ;
