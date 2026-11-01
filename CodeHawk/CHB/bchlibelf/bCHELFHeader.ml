@@ -906,6 +906,25 @@ object(self)
                  a#toPretty;
                  STR " is not included in a program section"]))
 
+  method get_program_value64 (a:doubleword_int) =
+    let section =
+      H.fold (fun k _ result ->
+          match result with
+          | Some _ -> result
+          | _ ->
+             match self#get_section k with
+             | ElfProgramSection s when s#includes_VA a -> Some s
+             | _ -> None) section_header_table None in
+    match section with
+    | Some s -> s#get_value64 a
+    | _ ->
+       raise
+         (BCH_failure
+            (LBLOCK [
+                 STR "Address ";
+                 a#toPretty;
+                 STR " is not included in a program section"]))
+
   method is_program_address (a:doubleword_int) =
     H.fold (fun k _ result ->
         result
