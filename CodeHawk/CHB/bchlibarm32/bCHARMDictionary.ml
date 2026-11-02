@@ -147,7 +147,7 @@ object (self)
       | ARMRegBitSequence (r, lsb, widthm1) ->
          (tags @ [ arm_reg_mfts#ts r ],[ lsb; widthm1 ])
       | ARMAbsolute addr -> (tags, [bd#index_address addr])
-      | ARMLiteralAddress addr -> (tags, [bd#index_address addr])
+      | ARMLiteralAddress (addr, size) -> (tags, [bd#index_address addr; size])
       | ARMMemMultiple (r, align, n, size) ->
          (tags @ [ arm_reg_mfts#ts r ],[align; n; size])
       | ARMOffsetAddress (r, align, offset, isadd, iswback, isindex, size) ->

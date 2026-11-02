@@ -146,7 +146,7 @@ type arm_operand_kind_t =
   | ARMImmediate of immediate_int
   | ARMFPConstant of float
   | ARMAbsolute of doubleword_int
-  | ARMLiteralAddress of doubleword_int
+  | ARMLiteralAddress of doubleword_int * int (* size in bytes *)
   | ARMMemMultiple of
       arm_reg_t  (* register that holds the memory address *)
       * int   (* alignment, default is 0 *)

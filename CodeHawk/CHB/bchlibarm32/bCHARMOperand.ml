@@ -284,7 +284,7 @@ object (self:'a)
 
   method get_literal_address =
     match kind with
-    | ARMLiteralAddress dw -> dw
+    | ARMLiteralAddress (dw, _) -> dw
     | _ ->
        raise
          (BCH_failure
@@ -428,7 +428,7 @@ object (self:'a)
          (fun xoffset -> simplify_xpr (XOp (XPlus, [rvarx; xoffset])))
          xoffset_r
 
-    | ARMLiteralAddress dw -> Ok (num_constant_expr dw#to_numerical)
+    | ARMLiteralAddress (dw, _) -> Ok (num_constant_expr dw#to_numerical)
     | _ ->
        Error [(elocm __LINE__)
               ^ (p2s floc#l#toPretty) ^ "; "
@@ -482,7 +482,7 @@ object (self:'a)
        Ok (env#mk_arm_special_register_variable r)
 
     (* Memory address calculated from the PC value and an immediate offset *)
-    | ARMLiteralAddress dw ->
+    | ARMLiteralAddress (dw, _) ->
        TR.tprop
          (floc#env#mk_global_variable floc#l dw#to_numerical)
          (eloc __LINE__)
@@ -666,9 +666,16 @@ object (self:'a)
        TR.tmap (fun v -> XVar v) (self#to_variable floc)
     | ARMAbsolute a when elf_header#is_program_address a ->
        Ok (num_constant_expr a#to_numerical)
-    | ARMLiteralAddress a ->
+    | ARMLiteralAddress (a, size) ->
        if elf_header#is_readonly_address a then
-         Ok (num_constant_expr (elf_header#get_program_value a)#to_numerical)
+         if size = 4 then
+           Ok (num_constant_expr (elf_header#get_program_value a)#to_numerical)
+         else if size = 8 then
+           Ok (num_constant_expr (elf_header#get_program_value64 a))
+         else
+           Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
+                  ^ "Literal with size " ^ (string_of_int size)
+                  ^ " not supported"]
        else
          Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                 ^ "Literal (read-only) address not found: "
@@ -926,7 +933,7 @@ object (self:'a)
       | ARMImmediate imm -> "#" ^ imm#to_string
       | ARMFPConstant x -> "#" ^ (Printf.sprintf "%.1f" x)
       | ARMAbsolute addr -> addr#to_hex_string
-      | ARMLiteralAddress addr -> addr#to_hex_string
+      | ARMLiteralAddress (addr, _) -> addr#to_hex_string
       | ARMMemMultiple (r, align, n, _size) ->
          let alignment = if align = 0 then "" else ":" ^ (string_of_int align) in
          (armreg_to_string r) ^ "<" ^ (string_of_int n) ^ ">" ^ alignment
@@ -1182,14 +1189,14 @@ let arm_absolute_op (addr:doubleword_int) (mode:arm_operand_mode_t) =
    *)
 
 let arm_literal_op
-      ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
+      ?(size=4) ?(align=4) ?(is_add=true) (pcaddr: doubleword_int) (imm: int) =
   let pcaddr = align_dw pcaddr align in
   let addr =
     if is_add then
       pcaddr#add_int imm
     else
       pcaddr#add_int (-imm) in
-  new arm_operand_t (ARMLiteralAddress addr) RD
+  new arm_operand_t (ARMLiteralAddress (addr, size)) RD
 
 
 let mk_arm_absolute_target_op
