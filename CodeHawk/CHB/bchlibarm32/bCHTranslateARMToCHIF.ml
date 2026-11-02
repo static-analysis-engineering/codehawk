@@ -4174,7 +4174,7 @@ let translate_arm_instruction
      let lhs_r = TR.tmap fst (rt#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let rhs_r = mem#to_expr floc in
-     let cmds = floc#get_assign_commands_r  lhs_r rhs_r in
+     let cmds = floc#get_assign_commands_r ~size:rt#get_size lhs_r rhs_r in
      let usevars = get_register_vars [rn] in
      let usehigh =
        TR.tfold

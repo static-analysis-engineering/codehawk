@@ -1054,8 +1054,13 @@ object (self)
           (Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                    ^ "Parameter type not recognized in call instruction"],
            [], []) in
-      let xx = rewrite_expr ?restrict:(Some 4) x in
       let ptype = get_parameter_type p in
+      let size =
+        match size_of_btype ptype with
+        | Ok size -> size
+        | _ -> 4 in
+      let xx = rewrite_expr ?restrict:(Some size) x in
+
       let xx =
         if is_pointer ptype (* && (not (is_char_pointer ptype)) *) then
           let _ = floc#memrecorder#record_argument xx index in
