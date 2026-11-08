@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2024  Aarno Labs LLC
+   Copyright (c) 2022-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ let inlined_thumb_it_predicates () =
        "0xdd2e",
        [1; 2; 3],
        "00f001f87047401a18bf0120704700",
-       "subsumes,F:0xdd26_0xdd2e,F:0xdd26_0xdd30");
+       "agg:predassign,subsumes,F:0xdd26_0xdd2e");
       ("sub-it-ne-subsumed",
        "0xdd26",
        "0xdd2c",
