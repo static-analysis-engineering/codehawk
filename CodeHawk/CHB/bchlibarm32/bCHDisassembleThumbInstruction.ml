@@ -1077,7 +1077,7 @@ let parse_thumb32_29_2
        let rnreg = get_arm_reg (b 19 16) in
        let rnop = arm_register_op rnreg RD in
        let imm32 = 4 * (b 7 0) in
-       let addrop = arm_literal_op ~is_add:false (iaddr#add_int 8) imm32 in
+       let addrop = arm_literal_op ~is_add:false (iaddr#add_int 4) imm32 in
        (* VLDR<c> <Sd>, <label> *)
        VLoadRegister (cc, vd WR, rnop, addrop)
 
@@ -1101,7 +1101,7 @@ let parse_thumb32_29_2
        let rnreg = get_arm_reg (b 19 16) in
        let rnop = arm_register_op rnreg RD in
        let imm32 = 4 * (b 7 0) in
-       let addrop = arm_literal_op ~is_add:true (iaddr#add_int 8) imm32 in
+       let addrop = arm_literal_op ~is_add:true (iaddr#add_int 4) imm32 in
        (* VLDR<c> <Sd>, <label> *)
        VLoadRegister (cc, vd WR, rnop, addrop)
 
@@ -1159,11 +1159,10 @@ let parse_thumb32_29_2
        let vd = arm_extension_register_op XDouble d in
        let rnreg = get_arm_reg (b 19 16) in
        let rnop = arm_register_op rnreg RD in
-       let align = if rnop#is_pc_register then 4 else 2 in
        let offset = ARMImmOffset (4 * (b 7 0)) in
        let mem =
          mk_arm_offset_address_op
-           rnreg offset ~isadd:true ~align ~size:8 ~isindex:true ~iswback:false in
+           rnreg offset ~isadd:true ~size:8 ~isindex:true ~iswback:false in
        (* VLDR<c> <Dd>, [<Rn>{, #+/-<imm>}] *)
        VLoadRegister (cc, vd WR, rnop, mem RD)
 
