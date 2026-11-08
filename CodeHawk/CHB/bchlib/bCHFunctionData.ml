@@ -152,8 +152,8 @@ object (self)
   val mutable functiontype = t_unknown
   val mutable callsites = 0
   val mutable pathcontexts = []  (* (ctxt_iaddress_t, ctxt_iaddress_t list) list *)
-  val mutable reglhstypes = []  (* (register_t * iaddr * btype_t option) list *)
-  val mutable stacklhstypes = [] (* (offset * btype_t option) list *)
+  val mutable reglhstypes = []  (* (register_t * iaddr * lhs_type_result_t) list *)
+  val mutable stacklhstypes = [] (* (offset * lhs_type_result_t) list *)
 
   method set_function_type (ty: btype_t) = functiontype <- ty
 
@@ -194,29 +194,30 @@ object (self)
 
   method has_callsites = callsites > 0
 
-  method set_reglhs_types (regtypes: (register_t * string * btype_t option) list) =
+  method set_reglhs_types
+           (regtypes: (register_t * string * lhs_type_result_t) list) =
     reglhstypes <- regtypes
 
   method get_reglhs_types = reglhstypes
 
-  method get_reglhs_type (reg: register_t) (iaddr: string): btype_t option =
+  method get_reglhs_type (reg: register_t) (iaddr: string): lhs_type_result_t =
     List.fold_left (fun acc (r, i, t) ->
         match acc with
-        | Some _ -> acc
+        | LhsResolved _ | LhsConflict _ -> acc
         | _ ->
            if BCHCPURegisters.register_equal reg r && i = iaddr then t else acc)
-      None reglhstypes
+      LhsNoEvidence reglhstypes
 
-  method set_stack_offset_types (stacktypes: (int * btype_t option) list) =
+  method set_stack_offset_types (stacktypes: (int * lhs_type_result_t) list) =
     stacklhstypes <- stacktypes
 
   method get_stack_offset_types = stacklhstypes
 
-  method get_stack_offset_type (offset: int): btype_t option =
+  method get_stack_offset_type (offset: int): lhs_type_result_t =
     List.fold_left (fun acc (o, t) ->
         match acc with
-        | Some _ -> acc
-        | _ -> if offset == o then t else acc) None stacklhstypes
+        | LhsResolved _ | LhsConflict _ -> acc
+        | _ -> if offset == o then t else acc) LhsNoEvidence stacklhstypes
 
   method add_name (s:string) =
     let s = sanitize_function_name s in

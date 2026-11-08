@@ -2464,7 +2464,7 @@ object (self)
          TR.tfold
            ~ok:(fun optty ->
              match optty with
-             | Some ty -> Ok ty
+             | LhsResolved ty -> Ok ty
              | _ ->
                 Error [
                     (elocm __LINE__);

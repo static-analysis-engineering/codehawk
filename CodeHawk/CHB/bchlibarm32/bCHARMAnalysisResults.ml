@@ -31,7 +31,6 @@ open CHXmlDocument
 
 (* bchlib *)
 open BCHBasicTypes
-open BCHBCTypes
 open BCHByteUtilities
 open BCHFloc
 open BCHFunctionInfo
@@ -248,23 +247,42 @@ object (self)
 
   method write_xml_register_types
            (node: xml_element_int)
-           (regtypes: (register_t * string * btype_t option) list) =
+           (regtypes: (register_t * string * lhs_type_result_t) list) =
     let regnode = xmlElement "register-lhs-types" in
     begin
-      List.iter (fun (reg, iaddr, optty) ->
+      List.iter (fun (reg, iaddr, lhs_type_result) ->
           let inode = xmlElement "reglhs" in
           begin
             bd#write_xml_register inode reg;
             inode#setAttribute "iaddr" iaddr;
-            (match optty with
-             | Some ty ->
+            (match lhs_type_result with
+             | LhsResolved ty ->
                 begin
                   log_result __FILE__ __LINE__
                     ["reglhs: " ^ iaddr ^ ": " ^
                        (BCHBCTypePretty.btype_to_string ty)];
                   bcd#write_xml_typ inode ty
                 end
-             | _ -> ());
+             | LhsNoEvidence ->
+                begin
+                  log_diagnostics_result __FILE__ __LINE__
+                    ["reglhs: " ^ iaddr ^ ": no evidence"];
+                  inode#setAttribute "reason" "no-evidence"
+                end
+             | LhsConflict tylist ->
+                begin
+                  log_diagnostics_result __FILE__ __LINE__
+                    ["reglhs: " ^ iaddr ^ ": type conflict: "
+                     ^ (String.concat
+                          ", " (List.map BCHBCTypePretty.btype_to_string tylist))];
+                  inode#setAttribute "reason" "conflict";
+                  List.iter (fun cty ->
+                      let tynode = xmlElement "cty" in
+                      begin
+                        bcd#write_xml_typ tynode cty;
+                        inode#appendChildren [tynode]
+                      end) tylist
+                end);
             regnode#appendChildren [inode]
           end) regtypes;
       node#appendChildren [regnode]
@@ -272,16 +290,35 @@ object (self)
 
   method write_xml_stack_types
            (node: xml_element_int)
-           (stacktypes: (int * btype_t option) list) =
+           (stacktypes: (int * lhs_type_result_t) list) =
     let stacknode = xmlElement "stack-variable-types" in
     begin
-      List.iter (fun (offset, optty) ->
+      List.iter (fun (offset, lhs_type_result) ->
           let inode = xmlElement "offset" in
           begin
             inode#setIntAttribute "off" offset;
-            (match optty with
-             | Some ty -> bcd#write_xml_typ inode ty
-             | _ -> ());
+            (match lhs_type_result with
+             | LhsResolved ty -> bcd#write_xml_typ inode ty
+             | LhsNoEvidence ->
+                begin
+                  log_diagnostics_result __FILE__ __LINE__
+                    ["stacklhs: " ^ (string_of_int offset) ^ ": no evidence"];
+                  inode#setAttribute "reason" "no-evidence"
+                end
+             | LhsConflict tylist ->
+                begin
+                  log_diagnostics_result __FILE__ __LINE__
+                    ["stacklhs: " ^ (string_of_int offset) ^ ": conflict: "
+                     ^ (String.concat
+                          ", " (List.map BCHBCTypePretty.btype_to_string tylist))];
+                  inode#setAttribute "reason" "conflict";
+                  List.iter (fun cty ->
+                      let tynode = xmlElement "cty" in
+                      begin
+                        bcd#write_xml_typ tynode cty;
+                        inode#appendChildren [tynode]
+                      end) tylist
+                  end);
             stacknode#appendChildren [inode]
           end) stacktypes;
       node#appendChildren [stacknode]

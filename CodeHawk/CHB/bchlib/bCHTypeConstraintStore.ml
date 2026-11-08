@@ -765,7 +765,7 @@ object (self)
     (result, !returnresult, varargs)
 
   method resolve_reglhs_type
-           (reg: register_t) (faddr: string) (iaddr: string): btype_t option =
+           (reg: register_t) (faddr: string) (iaddr: string): lhs_type_result_t =
     let evaluation = self#evaluate_reglhs_type reg faddr iaddr in
     let log_evaluation () =
       log_diagnostics_result
@@ -825,26 +825,26 @@ object (self)
       if result#isEmpty then
         begin
           log_evaluation ();
-          None
+          LhsNoEvidence
         end
       else
         match result#singleton with
-        | Some ixty -> Some (bcd#get_typ ixty)
+        | Some ixty -> LhsResolved (bcd#get_typ ixty)
         | _ ->
            match result#toList with
            | [ixty1; ixty2] ->
               (match (bcd#get_typ ixty1), (bcd#get_typ ixty2) with
                | TPtr (TVoid _, _), TPtr _ ->
-                  Some (bcd#get_typ ixty2)
+                  LhsResolved (bcd#get_typ ixty2)
                | TPtr _, TPtr (TVoid _, _) ->
-                  Some (bcd#get_typ ixty1)
+                  LhsResolved (bcd#get_typ ixty1)
                | TPtr (tty1, _), TPtr (tty2, _)
                     when is_struct_type tty1 && is_scalar tty2 ->
-                  Some (bcd#get_typ ixty1)
+                  LhsResolved (bcd#get_typ ixty1)
                | TPtr (tty1, _), TPtr (tty2, _)
                     when is_struct_type tty2 && is_scalar tty1 ->
-                  Some (bcd#get_typ ixty2)
-               | _ ->
+                  LhsResolved (bcd#get_typ ixty2)
+               | (t1, t2) ->
                   begin
                     log_evaluation ();
                     log_diagnostics_result
@@ -855,7 +855,7 @@ object (self)
                                  (List.map bcd#get_typ result#toList)
                                  (fun ty -> STR (btype_to_string ty))
                                  "[" "; " "]"))];
-                    None
+                    LhsConflict [t1; t2]
                   end)
            | _ ->
               begin
@@ -868,13 +868,13 @@ object (self)
                              (List.map bcd#get_typ result#toList)
                              (fun ty -> STR (btype_to_string ty))
                              "[" "; " "]"))];
-                None
+                LhsConflict (List.map bcd#get_typ result#toList)
               end
 
     end
 
   method resolve_stack_lhs_type
-           (offset: int) (faddr: string): btype_t option =
+           (offset: int) (faddr: string): lhs_type_result_t =
     let evaluation = self#evaluate_stack_lhs_type offset faddr in
     let log_evaluation () =
       log_diagnostics_result
@@ -992,10 +992,10 @@ object (self)
                   | _ -> ()) consts) vars) evaluation;
       let btypes = result#fold (fun acc tix -> (bcd#get_typ tix) :: acc) [] in
       match join_integer_btypes btypes with
-      | Some ty -> Some ty
+      | Some ty -> LhsResolved ty
       | _ ->
          match first_field_struct result with
-         | Some ty -> Some ty
+         | Some ty -> LhsResolved ty
          | _ ->
             begin
               log_evaluation ();
@@ -1006,12 +1006,15 @@ object (self)
                  ^ (p2s (pretty_print_list
                            (List.map bcd#get_typ result#toList)
                            (fun ty -> STR (btype_to_string ty)) "[" "; " "]"))];
-              None
+              (if result#isEmpty then
+                 LhsNoEvidence
+               else
+                 LhsConflict (List.map bcd#get_typ result#toList))
             end
     end
 
   method resolve_reglhs_types (faddr: string):
-           (register_t * string * btype_t option) list =
+           (register_t * string * lhs_type_result_t) list =
     let result = ref [] in
     let _ =
       if H.mem reglhss faddr then
@@ -1026,7 +1029,7 @@ object (self)
     !result
 
   method resolve_local_stack_lhs_types (faddr: string):
-           (int * btype_t option) list =
+           (int * lhs_type_result_t) list =
     let result = ref [] in
     let _ =
       if H.mem stacklhss faddr then

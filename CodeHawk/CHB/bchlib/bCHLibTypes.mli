@@ -1555,6 +1555,13 @@ type function_annotation_t = {
     constglobalvars: string list
   }
 
+
+type lhs_type_result_t =
+    | LhsResolved of btype_t
+    | LhsNoEvidence
+    | LhsConflict of btype_t list
+
+
 class type function_data_int =
   object
 
@@ -1613,9 +1620,10 @@ class type function_data_int =
         returns the number of remaining call sites.*)
     method remove_callsite: int
 
-    method set_reglhs_types: ((register_t * string * btype_t option) list) -> unit
+    method set_reglhs_types:
+             ((register_t * string * lhs_type_result_t) list) -> unit
 
-    method set_stack_offset_types: ((int * btype_t option) list) -> unit
+    method set_stack_offset_types: ((int * lhs_type_result_t) list) -> unit
 
     (** {1 Function annotations} *)
 
@@ -1643,10 +1651,10 @@ class type function_data_int =
 
     method get_inlined_blocks: doubleword_int list
     method get_path_contexts: (string * string list) list
-    method get_reglhs_types: (register_t * string * btype_t option) list
-    method get_reglhs_type: register_t -> string -> btype_t option
-    method get_stack_offset_types: (int * btype_t option) list
-    method get_stack_offset_type: int -> btype_t option
+    method get_reglhs_types: (register_t * string * lhs_type_result_t) list
+    method get_reglhs_type: register_t -> string -> lhs_type_result_t
+    method get_stack_offset_types: (int * lhs_type_result_t) list
+    method get_stack_offset_type: int -> lhs_type_result_t
 
     (* predicates *)
 
@@ -3526,14 +3534,14 @@ class type type_constraint_store_int =
                  format-string parameter, implying the function is variadic. *)
 
     method resolve_reglhs_type:
-             register_t -> string -> string -> btype_t option
+             register_t -> string -> string -> lhs_type_result_t
 
-    method resolve_stack_lhs_type: int -> string -> btype_t option
+    method resolve_stack_lhs_type: int -> string -> lhs_type_result_t
 
     method resolve_reglhs_types:
-             string -> (register_t * string * btype_t option) list
+             string -> (register_t * string * lhs_type_result_t) list
 
-    method resolve_local_stack_lhs_types: string -> (int * btype_t option) list
+    method resolve_local_stack_lhs_types: string -> (int * lhs_type_result_t) list
 
     method write_xml: xml_element_int -> unit
 
