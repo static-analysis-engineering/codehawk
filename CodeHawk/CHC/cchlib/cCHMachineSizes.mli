@@ -39,6 +39,10 @@ val linux_32_machine_sizes: machine_sizes_t
 
 val linux_16_machine_sizes: machine_sizes_t
 
+(** [machine_sizes_of_wordsize w] returns the concrete machine model for
+    word size [w] (16, 32, or 64), or None for any other value. *)
+val machine_sizes_of_wordsize: int -> machine_sizes_t option
+
 val max_sizes: max_sizes_t
 
 val get_type_range: int -> bool -> type_range_int

@@ -254,12 +254,13 @@ object (self)
                  pretty_print_list
                    comp.cfields (fun f -> STR f.fname) "[" "," "]"]))
 
+  (* Object sizes: without a word size, sizes stay symbolic, which is sound
+     (no size is assumed). *)
   method get_machine_sizes =
     if system_settings#has_wordsize then
-      match system_settings#get_wordsize with
-      | 32 -> linux_32_machine_sizes
-      | 64 -> linux_64_machine_sizes
-      | _ -> symbolic_sizes
+      match machine_sizes_of_wordsize system_settings#get_wordsize with
+      | Some ms -> ms
+      | None -> symbolic_sizes
     else
       symbolic_sizes
 

@@ -510,17 +510,69 @@ let rec is_not_zero (x:exp) =
   | _ -> false
 
 
+(* Concrete machine model for type ranges.
+
+   Type ranges are used in two directions: as facts (e.g., the range of a
+   cast expression or of a tainted value in get_num_range and the call
+   translator), where a range that is too narrow is unsound, and as safety
+   bounds (overflow and cast proof obligations), where a range that is too
+   wide is unsound. No fallback model is sound for both, so a missing word
+   size is an error. *)
+let get_target_machine_sizes (): machine_sizes_t =
+  if system_settings#has_wordsize then
+    match machine_sizes_of_wordsize system_settings#get_wordsize with
+    | Some ms -> ms
+    | None ->
+       raise
+         (CCHFailure
+            (LBLOCK [
+                 STR "No machine model for wordsize ";
+                 INT system_settings#get_wordsize]))
+  else
+    raise
+      (CCHFailure
+         (STR "No wordsize specified: type ranges depend on the target machine model"))
+
+
+(* Check that the machine model used by the parser (CIL) agrees with the
+   analyzer's word size: sizeof values folded and struct layouts computed by
+   CIL must match the sizes and type ranges used in the analysis. *)
+let check_parse_machine_model
+      ~(filename: string) ~(sizeof_long: int) ~(sizeof_ptr: int): unit =
+  let ms = get_target_machine_sizes () in
+  let size (name: string) (x: xpr_t) =
+    match get_const x with
+    | Some n -> n#toInt
+    | None ->
+       raise
+         (CCHFailure
+            (LBLOCK [STR "Machine model has no concrete size for "; STR name])) in
+  let a_long = size "long" ms.sizeof_long in
+  let a_ptr = size "pointer" ms.sizeof_ptr in
+  if sizeof_long = a_long && sizeof_ptr = a_ptr then
+    ()
+  else
+    raise
+      (CCHFailure
+         (LBLOCK [
+              STR filename;
+              STR " was parsed with sizeof(long) = ";
+              INT sizeof_long;
+              STR ", sizeof(void * ) = ";
+              INT sizeof_ptr;
+              STR ", but the analysis uses wordsize ";
+              INT system_settings#get_wordsize;
+              STR " (sizeof(long) = ";
+              INT a_long;
+              STR ", sizeof(void * ) = ";
+              INT a_ptr;
+              STR "); reparse for the intended target platform"]))
+
+
 let get_safe_upperbound (kind:ikind) =
   try
     let md k =
-      let ms =
-        if system_settings#has_wordsize then
-          match system_settings#get_wordsize with
-          | 32 -> linux_32_machine_sizes
-          | 64 -> linux_64_machine_sizes
-          | _ -> linux_16_machine_sizes
-        else
-          linux_16_machine_sizes in
+      let ms = get_target_machine_sizes () in
       let mn v = match get_const v with
         | Some num -> num#toInt * 8          (* machine sizes are in bytes *)
         | _ ->
@@ -547,7 +599,18 @@ let get_safe_upperbound (kind:ikind) =
     | IUChar -> maxval 8 false
     | _ -> md kind
   with
-    _ ->
+  | CCHFailure p ->
+    begin
+      ch_error_log#add "safe-upperbound" (STR (ikind_mfts#ts kind));
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Error in get_safe_upperbound: ";
+                STR (ikind_mfts#ts kind);
+                STR ": ";
+                p]))
+    end
+  | _ ->
     begin
       ch_error_log#add "safe-upperbound" (STR (ikind_mfts#ts kind));
       raise
@@ -560,14 +623,7 @@ let get_safe_upperbound (kind:ikind) =
 let get_safe_lowerbound (kind:ikind) =
   try
     let md k =
-      let ms =
-        if system_settings#has_wordsize then
-          match system_settings#get_wordsize with
-          | 32 -> linux_32_machine_sizes
-          | 64 -> linux_64_machine_sizes
-          | _ -> linux_16_machine_sizes
-        else
-          linux_16_machine_sizes in
+      let ms = get_target_machine_sizes () in
       let mn v = match get_const v with
         | Some num -> num#toInt * 8        (* machine sizes are in bytes *)
         | _ ->
@@ -616,14 +672,7 @@ let float_fits_kind (f:float) (_target_f:fkind) =
 
 
 let get_safe_bit_width (kind:ikind) =
-  let ms =
-    if system_settings#has_wordsize then
-      match system_settings#get_wordsize with
-      | 32 -> linux_32_machine_sizes
-      | 64 -> linux_64_machine_sizes
-      | _ -> linux_16_machine_sizes
-    else
-      linux_16_machine_sizes in
+  let ms = get_target_machine_sizes () in
   let mn v = match get_const v with
     | Some num -> num#toInt * 8          (* machine sizes are in bytes *)
     | _ ->
