@@ -224,7 +224,7 @@ let check_proof_obligations
       (fApi:function_api_int)
       (invIO:invariant_io_int)
       (proofObligations:proof_obligation_int list) =
-  List.iter (fun p ->
+  List.iter (fun (p: proof_obligation_int) ->
       let msg s =
         LBLOCK [
             STR "Failure ";
@@ -234,6 +234,16 @@ let check_proof_obligations
             INT p#index;
             STR ": ";
             po_predicate_to_pretty p#get_predicate] in
+      let po_check_failure (m: pretty_t) =
+        let txt = CHPrettyUtil.pretty_to_string m in
+        begin
+          log_error_result
+            ~tag:"check_proof_obligations"
+            ~msg:env#get_functionname
+            __FILE__ __LINE__
+            [txt];
+          p#add_diagnostic_msg ("check failure: " ^ txt)
+        end in
       let default () =
         (* check for statement validity *)
         try
@@ -245,8 +255,11 @@ let check_proof_obligations
               ()
           end
         with
-        | CCHFailure s -> raise (CCHFailure (msg s))
-        | Failure s -> raise (CCHFailure (msg (STR s))) in
+        (* A failure while checking one proof obligation leaves that proof
+           obligation open (which is sound) instead of aborting the analysis
+           of the function. *)
+        | CCHFailure s -> po_check_failure (msg s)
+        | Failure s -> po_check_failure (msg (STR s)) in
 
       match is_unreachable
               (invIO#get_location_invariant
