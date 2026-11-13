@@ -735,7 +735,7 @@ and get_arg
                  INT (List.length args)]))
 
   | NumConstant i ->
-     ([], Const (CInt (Int64.of_string i#toString, IInt, None)), [])
+     ([], make_constant_exp i, [])
 
   | NamedConstant s -> ([], CnApp (s,[], TInt (IInt,[])), [])
 
@@ -1441,7 +1441,7 @@ args
               BinOp
                 (Div,
                  len,
-                 Const (CInt (Int64.of_string n#toString, IUInt, None)),
+                 Const (make_constant ~ik:IUInt n),
                  TInt (IUInt, [])) in
             (addx i1 p1)
             @ (addx i2 p2)

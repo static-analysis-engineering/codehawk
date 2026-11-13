@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -121,7 +121,8 @@ let float_type_to_string (k:fkind) =
 let cil_constant_to_string (c:constant) =
   match c with
   | CInt (_,_,Some t) -> t
-  | CInt (i64,_,_) -> Int64.to_string i64
+  | CInt (i64, ik, _) ->
+     (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))#toString
   | CStr s ->
      let (_,_,len) = mk_constantstring s in
      (string_of_int len) ^ "-char-string-literal"
