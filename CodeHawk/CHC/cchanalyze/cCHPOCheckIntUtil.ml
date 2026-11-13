@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -68,10 +68,16 @@ let get_existential_min_values
   match inv#expr with
   | Some x -> xpr_existential_min_values poq inv#index x
   | _ ->
+     (* A bound alternative is not attained in general: only a tainted
+        value (which can be chosen) is a witness, not a constant bound. *)
      match inv#lower_bound_xpr_alternatives with
      | Some l ->
         List.concat
-          (List.map (xpr_existential_min_values poq inv#index) l)
+          (List.map
+             (fun x ->
+               match x with
+               | XConst _ -> []
+               | _ -> xpr_existential_min_values poq inv#index x) l)
      | _ -> []
 
 
@@ -103,8 +109,13 @@ let get_existential_max_values
   match inv#expr with
   | Some x -> xpr_existential_max_values poq inv#index x
   | _ ->
+     (* See get_existential_min_values. *)
      match inv#upper_bound_xpr_alternatives with
      | Some l ->
         List.concat
-          (List.map (xpr_existential_max_values poq inv#index) l)
+          (List.map
+             (fun x ->
+               match x with
+               | XConst _ -> []
+               | _ -> xpr_existential_max_values poq inv#index x) l)
      | _ -> []

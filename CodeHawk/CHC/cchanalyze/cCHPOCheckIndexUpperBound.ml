@@ -205,14 +205,14 @@ object (self)
        self#var1_implies_existential_violation invindices v xincr
     | _ -> None
 
+  (* xl are upper-bound alternatives of the index: an upper bound that
+     violates the constraint is not a violation by itself (it need not be
+     attained, issue 22); a violation requires a witness. *)
   method private xprlist_implies_existential_violation invindices xl x2 =
     List.fold_left (fun acc x1 ->
         match acc with
         | Some _ -> acc
-        | _ ->
-           match self#xpr_implies_universal_violation invindices x1 x2 with
-           | Some r -> Some r
-           | _ -> self#xpr1_implies_existential_violation invindices x1 x2) None xl
+        | _ -> self#xpr1_implies_existential_violation invindices x1 x2) None xl
 
   method private inv_implies_violation inv1 inv2 =
     let invindices = [inv1#index; inv2#index] in
