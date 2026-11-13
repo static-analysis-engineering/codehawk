@@ -85,6 +85,13 @@ val is_not_zero: exp -> bool
 
 val is_safe_int_cast: ikind -> ikind -> bool
 
+(** [check_parse_machine_model ~filename ~sizeof_long ~sizeof_ptr] raises
+    CCHFailure if the sizes recorded by the parser for [filename] differ from
+    the machine model for the word size in system_settings (or if no word size
+    is set). *)
+val check_parse_machine_model:
+  filename:string -> sizeof_long:int -> sizeof_ptr:int -> unit
+
 val get_safe_upperbound: ikind -> numerical_t
 
 val get_safe_lowerbound: ikind -> numerical_t

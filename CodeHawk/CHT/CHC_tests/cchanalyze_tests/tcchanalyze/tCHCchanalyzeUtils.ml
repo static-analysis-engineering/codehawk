@@ -59,10 +59,17 @@ let unpack_tar_gz (predicate: string) (filename: string) =
   ()
 
 
+(* The test inputs were parsed with the default platform (-m64); the
+   analyzer requires the matching word size. *)
 let analysis_setup
-      ?(domains=default_domains) ?(summaries_jar=None) (predicate: string) (filename: string) =
+      ?(domains=default_domains)
+      ?(summaries_jar=None)
+      ?(wordsize=64)
+      (predicate: string)
+      (filename: string) =
   begin
     unpack_tar_gz predicate filename;
+    system_settings#set_wordsize wordsize;
     system_settings#set_projectname filename;
     system_settings#set_cfilename filename;
     begin match summaries_jar with

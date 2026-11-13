@@ -71,13 +71,20 @@
       ["testinputs"/predicate//filename.cch.tar.gz] into the directory
       [filename.cch]
     - set the project name and filename in system_settings to [filename]
+    - set the word size in system_settings to [wordsize] (default 64, the
+      platform the test inputs were parsed for)
     - create primary proof obligations for the analysis set in system_settings
     - reset the proof scaffolding
     - generate invariants and run the proof obligation checkers for the proof
       obligation present.
  *)
 val analysis_setup:
-  ?domains:string list -> ?summaries_jar:string option -> string -> string -> unit CHTraceResult.traceresult
+  ?domains:string list
+  -> ?summaries_jar:string option
+  -> ?wordsize:int
+  -> string
+  -> string
+  -> unit CHTraceResult.traceresult
 
 
 (** [analysis_take_down filename] removes the directory [filename.cch] from

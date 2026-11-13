@@ -283,6 +283,14 @@ let linux_16_machine_sizes = {
   }
 
 
+let machine_sizes_of_wordsize (w: int): machine_sizes_t option =
+  match w with
+  | 16 -> Some linux_16_machine_sizes
+  | 32 -> Some linux_32_machine_sizes
+  | 64 -> Some linux_64_machine_sizes
+  | _ -> None
+
+
 let max_sizes = {        (* sizes in bytes *)
   sizeof_int   = 64;
   sizeof_float = 64;

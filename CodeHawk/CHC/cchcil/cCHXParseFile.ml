@@ -54,6 +54,7 @@ let targetdirectory = ref ""
 let filename = ref ""
 let keep_system_includes = ref false
 let keepUnused = ref false
+let wordsize = ref 0     (* 0: CIL's default (host) machine model *)
 
 let version = "CP1.1"
 
@@ -75,7 +76,33 @@ let speclist = [
     ("-loglevel", Arg.String set_log_level,
      "set level for logging (default: WARNING)");
     ("-keepUnused",
-     Arg.Set keepUnused, "keep unused type and function definitions")]
+     Arg.Set keepUnused, "keep unused type and function definitions");
+    ("-wordsize", Arg.Set_int wordsize,
+     "target word size (32 or 64); selects the CIL machine model, which must "
+     ^ "match the platform the source was preprocessed for (-m32/-m64)")]
+
+
+(* Select the CIL machine model (sizeof, alignment, layout) for the target
+   word size. Without it CIL uses the host model, which is inconsistent with
+   source preprocessed with -m32 on a 64-bit host. Must be called before
+   Frontc.parse (CIL initializes its machine model on first use). *)
+let select_machine () =
+  match !wordsize with
+  | 0 -> ()
+  | 32 | 64 ->
+     let mach = if !wordsize = 32 then Machdep.gcc32 else Machdep.gcc64 in
+     (match mach with
+      | Some m -> Cil.envMachine := Some m
+      | None ->
+         raise
+           (CHFailure
+              (LBLOCK [
+                   STR "No CIL machine model available for wordsize ";
+                   INT !wordsize])))
+  | w ->
+     raise
+       (CHFailure
+          (LBLOCK [STR "Invalid wordsize: "; INT w; STR " (expected 32 or 64)"]))
 
 
 let usage_msg =
@@ -104,6 +131,9 @@ let get_cch_root (filename:string):xml_element_int =
     cNode#setAttribute "file" filename;
     cNode#setAttribute "version" version;
     cNode#setAttribute "time" (current_time_to_string ());
+    (* machine model used by CIL; checked by the analyzer against -wordsize *)
+    cNode#setIntAttribute "sizeof-long" !Machdep.theMachine.Machdep.sizeof_long;
+    cNode#setIntAttribute "sizeof-ptr" !Machdep.theMachine.Machdep.sizeof_ptr;
     root#appendChildren [hNode];
     hNode#appendChildren [cNode];
     root
@@ -265,6 +295,7 @@ let save_xml_file f =
 let main () =
   try
     let _ = read_args () in
+    let _ = select_machine () in
     let _ = cildeclarations#set_filename !filename in
     let cilfile = Frontc.parse !filename () in
     let _ = log_info "Parsed %s [%s:%d]" !filename __FILE__ __LINE__ in
