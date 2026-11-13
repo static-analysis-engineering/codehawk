@@ -47,6 +47,12 @@ open CCHLibTypes
 val zero: exp
 val one: exp
 
+(** [make_constant ~ik n] returns the integer constant with value [n]
+    (see {!CCHBasicUtil.big_to_cint} for the representation of values
+    [>= 2^63]); raises [CCHFailure] if [n] is outside [[-2^63, 2^64 - 1]]. *)
+val make_constant: ?ik:ikind -> numerical_t -> constant
+
+(** [make_constant_exp n] is [Const (make_constant n)]. *)
 val make_constant_exp: numerical_t -> exp
 
 val binop_to_xop: binop -> xop_t

@@ -1486,9 +1486,9 @@ object (self)
                    let arg = List.nth args (n-1) in
                    begin
                      match arg with
-                     | Const (CInt (i64,_,_))
-                       | CastE (_, Const (CInt (i64, _, _))) ->
-                        Some (mkNumericalFromString (Int64.to_string i64))
+                     | Const (CInt (i64, ik, _))
+                       | CastE (_, Const (CInt (i64, ik, _))) ->
+                        Some (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
                      | _ -> None
                    end
                 | NumConstant n -> Some n

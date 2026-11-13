@@ -1,0 +1,5 @@
+(tests
+  (names
+        cCHTypesUtilTest
+        )
+  (libraries chlib chutil cchlib tchlib))

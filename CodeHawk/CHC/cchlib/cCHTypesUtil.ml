@@ -94,8 +94,8 @@ let binop_to_xop (op:binop):xop_t =
 let rec exp_to_xpr (exp:exp):xpr_t option =
   try
     match exp with
-    | Const (CInt (i64, _, _)) ->
-       Some (num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64)))
+    | Const (CInt (i64, ik, _)) ->
+       Some (num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik)))
     | BinOp (op, e1, e2, _)  ->
        begin
          match (exp_to_xpr e1, exp_to_xpr e2) with
@@ -125,8 +125,20 @@ let reverse_relational_operator (op:binop) =
 let zero = Const (CInt (Int64.of_int 0,IInt,None))
 let one  = Const (CInt (Int64.of_int 1,IInt,None))
 
-let make_constant_exp (n:numerical_t) =
-  Const (CInt (Int64.of_string n#toString,IInt,None))
+(* Integer constants are represented as CInt (int64, ikind); see
+   CCHBasicUtil.big_to_cint for the representation of values >= 2^63. *)
+let make_constant ?(ik=IInt) (n: numerical_t): constant =
+  match CCHBasicUtil.big_to_cint ~ik n#getNum with
+  | Some (i64, ik') -> CInt (i64, ik', None)
+  | None ->
+     raise
+       (CCHFailure
+          (LBLOCK [
+               STR "Integer constant outside the representable range ";
+               STR "[-2^63, 2^64 - 1]: ";
+               STR n#toString]))
+
+let make_constant_exp (n:numerical_t) = Const (make_constant n)
 
 let void_type   = TVoid([])
 let int_type    = TInt(IInt, [])
@@ -182,8 +194,7 @@ let minval w =
 
 
 let mk_constant_index_offset (n: numerical_t): offset =
-  let i64 = Int64.of_string n#toString in
-  Index (Const (CInt (i64, IInt, None)), NoOffset)
+  Index (Const (make_constant n), NoOffset)
 
 
 let rec is_field_offset offset =
@@ -891,8 +902,8 @@ let rec get_scalar_struct_offsets (t: typ): offset list =
 
 let constant_value (c:constant) =
   match c with
-  | CInt (i64, _, _) ->
-     num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
+  | CInt (i64, ik, _) ->
+     num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
   | _ -> random_constant_expr
 
 

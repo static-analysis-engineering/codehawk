@@ -91,8 +91,8 @@ object (self)
   method private translate_const_expr (c:constant) (t:typ):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt (i64,_,_) ->
-      num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
+    | CInt (i64, ik, _) ->
+      num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | CStr s -> XVar (env#mk_string_address s NoOffset t)
     | _ -> begin logmsg ();  random_constant_expr end
@@ -567,8 +567,8 @@ object (self)
   method private translate_lhs_const_expr (c:constant) (t:typ):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt (i64, _, _) ->
-      num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
+    | CInt (i64, ik, _) ->
+      num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | CStr s -> XVar (env#mk_string_address s NoOffset t)
     | _ ->
@@ -951,8 +951,8 @@ object (self)
   method private translate_const_expr (c:constant):xpr_t =
     let logmsg () = () in
     match c with
-    | CInt (i64, _, _) ->
-       num_constant_expr (mkNumerical_big (B.big_int_of_int64 i64))
+    | CInt (i64, ik, _) ->
+       num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
     | CChr c -> num_constant_expr (mkNumerical_big (char_const_to_big c))
     | _ ->
        begin
