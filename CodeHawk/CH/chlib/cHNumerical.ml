@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -256,10 +256,10 @@ object (self: 'a)
 
   method ceiling:numerical_t =
     let truncated = Q.of_bigint (Q.to_bigint num) in
-    if Q.gt truncated num then
-      new numerical_t (Q.to_bigint truncated)
-    else
+    if Q.lt truncated num then
       new numerical_t (Q.to_bigint (Q.add truncated Q.one))
+    else
+      new numerical_t (Q.to_bigint truncated)
    (* match Q.ceiling num with
       | Q.Big_int n -> new numerical_t n
       | Q.Int n -> new numerical_t (big_int_of_int n)
