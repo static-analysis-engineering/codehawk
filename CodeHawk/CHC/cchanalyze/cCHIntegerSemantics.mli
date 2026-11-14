@@ -47,6 +47,9 @@
 open CHLanguage
 open CHNumerical
 
+(* xprlib *)
+open XprTypes
+
 (* cchlib *)
 open CCHBasicTypes
 open CCHLibTypes
@@ -84,11 +87,53 @@ val get_correction:
   c_environment_int -> program_context_int -> exp -> correction_t option
 
 
+(** [unsigned_ikind ty] returns the integer kind of [ty] if it is an
+    unsigned integer type other than [_Bool]; otherwise [None]. *)
+val unsigned_ikind: typ -> ikind option
+
+
 (** [unsigned_shift_factor e2 ty] returns [2^k] if [ty] is an unsigned
     integer type of width [N] and [e2] is an integer constant [k] with
     [0 <= k < N], so that the mathematical value of [e1 << e2] (of type [ty])
     is [e1 * 2^k]; otherwise [None]. *)
 val unsigned_shift_factor: exp -> typ -> numerical_t option
+
+
+(** [shift_factor k ty] returns [2^k] if [ty] is an integer type of width
+    [N] and [0 <= k < N]; otherwise [None] (C11 6.5.7p3: a shift by a
+    negative amount or by at least [N] is undefined). *)
+val shift_factor: numerical_t -> typ -> numerical_t option
+
+
+(** [shiftright_code env v x p ty] returns commands that assign to [v] the
+    value of [e1 >> k], where [x] is the value of [e1], [p = 2^k] with
+    [0 <= k < N], and [ty] is the (promoted) type of [e1]. The value is
+    [floor (x / 2^k)]:
+    - C11 6.5.7p5: for [x >= 0], the integral part of [x / 2^k];
+    - for negative signed [x] the result is implementation-defined; GCC's
+      documented behavior (sign extension, an arithmetic shift) is used,
+      which gives [floor (x / 2^k)], as for the conversions above.
+    With [DIV] the C division (truncation toward zero) this is [x DIV p] for
+    [x >= 0], and [(x - (p - 1)) DIV p] for [x < 0] (signed [ty] only; a
+    case split on the sign of [x]). The interval abstraction of [DIV]
+    rounds the lower bound down and the upper bound up, so for [x] in
+    [[lo, hi]], [lo >= 0], the result is in
+    [[floor (lo / p), ceiling (hi / p)]]. *)
+val shiftright_code:
+  c_environment_int -> variable_t -> xpr_t -> numerical_t -> typ -> c_cmd_t list
+
+
+(** [remainder_code env v x m ty] returns commands that constrain [v] to the
+    value of [e1 % e2], where [x] is the value of [e1], [e2] is a constant
+    [b] with [m = |b| - 1 > 0], and [ty] is the type of the operation.
+    C11 6.5.5p6: [/] truncates toward zero and [(e1/e2)*e2 + e1%e2 == e1],
+    so the remainder has the sign of [e1] and [|e1 % e2| <= min(|e1|, m)]:
+    - [x >= 0]: [0 <= v <= m] and [v <= x];
+    - [x < 0] (signed [ty] only, case split on the sign of [x]):
+      [-m <= v <= 0] and [v >= x].
+    (Unlike [XMod], the Euclidean remainder, which is in [[0, m]].) *)
+val remainder_code:
+  c_environment_int -> variable_t -> xpr_t -> numerical_t -> typ -> c_cmd_t list
 
 
 (** [fold_constant c n] is the C value of the site whose mathematical value
