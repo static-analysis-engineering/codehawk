@@ -96,6 +96,13 @@ let rec exp_to_xpr (exp:exp):xpr_t option =
     match exp with
     | Const (CInt (i64, ik, _)) ->
        Some (num_constant_expr (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik)))
+    (* XMod is the Euclidean remainder; C % (C11 6.5.5p6) has the sign of
+       the dividend: they coincide only for unsigned operands *)
+    | BinOp (Mod, _, _, ty)
+         when (match fenv#get_type_unrolled ty with
+               | TInt ((IUChar | IUInt | IUShort | IULong | IULongLong), _) ->
+                  false
+               | _ -> true) -> None
     | BinOp (op, e1, e2, _)  ->
        begin
          match (exp_to_xpr e1, exp_to_xpr e2) with

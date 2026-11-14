@@ -92,6 +92,8 @@ let rec s_term_to_xpr
   | ArgValue (ParFormal i, ArgNoOffset) -> get_formal_parameter env i
   | ArgValue (ParGlobal s, ArgNoOffset) -> get_global_variable env s
   | NumConstant i -> Some (num_constant_expr i)
+  | ArithmeticExpr (Mod, _, _) ->
+     None   (* C %, not the Euclidean XMod; the operand types are unknown *)
   | ArithmeticExpr (op, t1, t2) ->
      begin
        match (s_term_to_xpr env t1, s_term_to_xpr env t2) with
