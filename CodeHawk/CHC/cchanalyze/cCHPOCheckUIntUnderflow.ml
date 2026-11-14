@@ -284,8 +284,10 @@ object (self)
 
   (* ----------------------- violation ------------------------------------- *)
 
+  (* e1 <= ub1 and e2 >= lb2 on every execution: ub1 - lb2 < 0 implies that
+     e1 - e2 < 0 on every execution *)
   method private universal_violation (inv1: invariant_int) (inv2: invariant_int) =
-    match (inv1#upper_bound_xpr, inv2#upper_bound_xpr) with
+    match (inv1#upper_bound_xpr, inv2#lower_bound_xpr) with
     | (Some x1, Some x2) ->
        let safeconstraint = self#mk_safe_constraint x1 x2 in
        let violationconstraint = self#mk_violation_constraint x1 x2 in
@@ -293,7 +295,7 @@ object (self)
        if is_true simconstraint then
          let deps = DLocal [inv1#index; inv2#index] in
          let msg =
-           "UB on result of subtraction violates condition "
+           "UB(e1) - LB(e2) violates condition "
            ^ (x2s safeconstraint) in
          Some (deps, msg)
        else
