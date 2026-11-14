@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +103,28 @@ object (self)
              | _ -> false) false invs
 
   (* ----------------------- violation -------------------------------------- *)
-  method check_violation = false
+  (* universal: the upper bound is negative, so the value is negative on
+     every execution that reaches this point *)
+  method private inv_implies_violation (inv: invariant_int) =
+    match inv#upper_bound_xpr with
+    | Some (XConst (IntConst n)) when n#lt CHNumerical.numerical_zero ->
+       let deps = DLocal [inv#index] in
+       let msg =
+         Printf.sprintf
+           "upper bound on %s is negative: %s" (e2s e) n#toString in
+       Some (deps, msg)
+    | _ -> None
+
+  method check_violation =
+    List.fold_left (fun acc inv ->
+        acc ||
+          match self#inv_implies_violation inv with
+          | Some (deps, msg) ->
+             begin
+               poq#record_violation_result deps msg;
+               true
+             end
+          | _ -> false) false invs
   (* ----------------------- delegation ------------------------------------- *)
 
   method private xpr_implies_delegation (invindex: int) (x: xpr_t) =
