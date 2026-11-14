@@ -1282,6 +1282,37 @@ let check_ppo_validity
 		upperbound#toPretty])
        end
 
+  (* signed E1 << E2 (C11 6.5.7p4); E1 < 0, E2 < 0 and E2 >= width are
+     covered by separate proof obligations *)
+  | PIntOverflow (Shiftlt, Const (CInt (i64, ik1, _)), Const (CInt (j64, ik2, _)), k) ->
+     let a = mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik1) in
+     let b = mkNumerical_big (CCHBasicUtil.cint_to_big j64 ik2) in
+     let upperbound = get_safe_upperbound k in
+     if a#leq numerical_zero then
+       make
+         ("left operand (" ^ a#toString ^ ") is non-positive: the shifted "
+          ^ "value cannot exceed the safe upperbound; a negative left operand "
+          ^ "is undefined behavior and is reported by non-negative("
+          ^ a#toString ^ ")")
+     else if b#geq numerical_zero && b#lt (mkNumerical 128) then
+       let result = a#mult (power_of_two b#toInt) in
+       if result#leq upperbound then
+         make
+           ("shifted constant ("
+            ^ result#toString
+            ^ ") is less than or equal to safe upperbound ("
+            ^ upperbound#toString
+            ^ ")")
+       else
+         make_violation
+           ("shifted constant ("
+            ^ result#toString
+            ^ ") exceeds safe upperbound ("
+            ^ upperbound#toString
+            ^ ")")
+     else
+       ()
+
   | PIntOverflow (MinusA, _, e, _)
     | PUIntOverflow (MinusA, _, e, _) ->
      begin

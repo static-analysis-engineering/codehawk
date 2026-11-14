@@ -294,7 +294,15 @@ and create_po_binop
            match ty with
            | TInt (ikp,_) ->
 	      addxop (PNonNegative e2) 2;
-	      addxop (PWidthOverflow (e2, ikp)) 2
+	      addxop (PWidthOverflow (e2, ikp)) 2;
+              (* C11 6.5.7p4: if E1 has a signed type, E1 << E2 is defined
+                 only if E1 is non-negative and E1 * 2^E2 is representable
+                 in the result type (the promoted type of E1). *)
+              if binop = Shiftlt && is_signed_type ikp then
+                begin
+                  addxop (PNonNegative e1) 1;
+                  add (PIntOverflow (Shiftlt, e1, e2, ikp))
+                end
            | _ ->
               raise
                 (CCHFailure

@@ -1184,6 +1184,208 @@ object (self)
 end
 
 
+(* ========================================================================== *)
+(* ===================================== Shiftlt ============================ *)
+(* ========================================================================== *)
+
+(* Signed E1 << E2 (C11 6.5.7p4): the result is defined only if E1 >= 0 and
+   E1 * 2^E2 is representable in the result type k. E1 < 0, E2 < 0 and
+   E2 >= width(k) are the subject of separate proof obligations
+   (non-negative(E1), non-negative(E2), width-overflow(E2, k)); this checker
+   checks E1 * 2^E2 <= MAX(k). *)
+class shiftlt_checker
+        (poq:po_query_int)
+        (e1:exp)
+        (e2:exp)
+        (invs1:invariant_int list)
+        (invs2:invariant_int list)
+        (k:ikind): int_overflow_checker_int =
+object (self)
+
+  val safeub = get_safe_upperbound k
+
+  (* shift amounts beyond this limit are not evaluated (2^k is not computed) *)
+  val maxshift = mkNumerical 128
+
+  method private get_predicate (e1: exp) (e2: exp): po_predicate_t =
+    PIntOverflow (Shiftlt, e1, e2, k)
+
+  method private const_bound (x: xpr_t option): numerical_t option =
+    match x with
+    | Some (XConst (IntConst n)) -> Some n
+    | _ -> None
+
+  (* (value, deps, msg) for the bounds of the shift amount *)
+  method private shift_bounds
+                   (f: invariant_int -> xpr_t option)
+                 : (numerical_t * dependencies_t * string) list =
+    match e2 with
+    | Const (CInt (i64, ik, _)) ->
+       [(mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik), DLocal [],
+         "shift amount " ^ (e2s e2))]
+    | _ ->
+       List.fold_left (fun acc inv ->
+           match self#const_bound (f inv) with
+           | Some n ->
+              (n, DLocal [inv#index], "shift amount " ^ n#toString) :: acc
+           | None -> acc) [] invs2
+
+  method private shifted (a: numerical_t) (b: numerical_t): numerical_t option =
+    let b = if b#lt numerical_zero then numerical_zero else b in
+    if b#lt maxshift then
+      Some (a#mult (power_of_two b#toInt))
+    else
+      None
+
+  (* ----------------------------- safe ------------------------------------- *)
+
+  (* E1 <= ub1 (justified by deps1, described by src) implies safety *)
+  method private ub_implies_safe
+                   (ub1: numerical_t) (deps1: dependencies_t) (src: string) =
+    if ub1#leq numerical_zero then
+      Some (deps1,
+            "left operand is non-positive (" ^ src ^ ": " ^ ub1#toString
+            ^ "): the shifted value cannot exceed the safe upperbound; a "
+            ^ "negative left operand is undefined behavior and is reported by "
+            ^ "non-negative(" ^ (e2s e1) ^ ")")
+    else
+      List.fold_left (fun acc (ub2, deps2, msg2) ->
+          match acc with
+          | Some _ -> acc
+          | None ->
+             match self#shifted ub1 ub2 with
+             | Some r when r#leq safeub ->
+                let deps = join_dependencies deps1 deps2 in
+                Some (deps,
+                      "maximum value of shifted operand: " ^ r#toString
+                      ^ " (" ^ src ^ ": " ^ ub1#toString
+                      ^ "; " ^ msg2 ^ ") is less than or equal to safe upperbound "
+                      ^ safeub#toString)
+             | _ -> None) None (self#shift_bounds (fun inv -> inv#upper_bound_xpr))
+
+  method private inv_implies_safe (inv1: invariant_int) =
+    match self#const_bound inv1#upper_bound_xpr with
+    | Some ub1 ->
+       self#ub_implies_safe
+         ub1 (DLocal [inv1#index]) ("upper bound of " ^ (e2s e1))
+    | None -> None
+
+  (* E1 is a value-preserving conversion (e.g., an integer promotion) of an
+     expression x of integer type: E1 <= MAX(type of x) (C11 6.3.1.1p2,
+     6.3.1.3p1); used when no invariant bounds E1 (e.g., a memory read). *)
+  method private type_implies_safe =
+    match e1 with
+    | CastE (TInt _, x) ->
+       begin
+         match type_of_exp poq#env#get_fdecls x with
+         | Ok t ->
+            begin
+              match CCHFileEnvironment.file_environment#get_type_unrolled t with
+              | TInt (ikf, _) when ikf <> IBool
+                                   && (get_safe_lowerbound ikf)#geq
+                                        (get_safe_lowerbound k)
+                                   && (get_safe_upperbound ikf)#leq safeub ->
+                 self#ub_implies_safe
+                   (get_safe_upperbound ikf) (DLocal [])
+                   ("maximum value of type " ^ (int_type_to_string ikf)
+                    ^ " of " ^ (e2s x))
+              | _ -> None
+            end
+         | Error _ -> None
+       end
+    | _ -> None
+
+  method check_safe =
+    let record r =
+      match r with
+      | Some (deps, msg) ->
+         begin
+           poq#record_safe_result deps msg;
+           true
+         end
+      | None -> false in
+    (List.fold_left (fun acc inv1 ->
+         acc || record (self#inv_implies_safe inv1)) false invs1)
+    || record self#type_implies_safe
+
+  (* ----------------------- violation -------------------------------------- *)
+
+  (* universal: lb1 > 0, lb2 >= 0 and lb1 * 2^lb2 > MAX *)
+  method private inv_implies_universal_violation (inv1: invariant_int) =
+    match self#const_bound inv1#lower_bound_xpr with
+    | Some lb1 when lb1#gt numerical_zero ->
+       List.fold_left (fun acc (lb2, deps2, msg2) ->
+           match acc with
+           | Some _ -> acc
+           | None ->
+              if lb2#geq numerical_zero then
+                match self#shifted lb1 lb2 with
+                | Some r when r#gt safeub ->
+                   let deps = join_dependencies (DLocal [inv1#index]) deps2 in
+                   Some (deps,
+                         "minimum value of shifted operand: " ^ r#toString
+                         ^ " (lower bound of " ^ (e2s e1) ^ ": " ^ lb1#toString
+                         ^ "; " ^ msg2 ^ ") exceeds safe upperbound "
+                         ^ safeub#toString)
+                | _ -> None
+              else
+                None) None (self#shift_bounds (fun inv -> inv#lower_bound_xpr))
+    | _ -> None
+
+  method check_violation =
+    List.fold_left (fun acc inv1 ->
+        acc ||
+          match self#inv_implies_universal_violation inv1 with
+          | Some (deps, msg) ->
+             begin
+               poq#record_violation_result deps msg;
+               true
+             end
+          | None -> false) false invs1
+
+  (* ----------------------- delegation ------------------------------------- *)
+
+  method private inv_implies_delegation
+                   (inv1: invariant_int) (x2: xpr_t option) (deps2: int list) =
+    match (inv1#expr, x2) with
+    | (Some x1, Some x2) ->
+       begin
+         match (poq#x2api x1, poq#x2api x2) with
+         | (Some a1, Some a2)
+              when poq#is_api_expression x1 || poq#is_api_expression x2 ->
+            let pred = self#get_predicate a1 a2 in
+            let deps = DEnvC (inv1#index :: deps2, [ApiAssumption pred]) in
+            let msg =
+              "condition "
+              ^ (p2s (po_predicate_to_pretty pred))
+              ^ " delegated to api" in
+            Some (deps, msg)
+         | _ -> None
+       end
+    | _ -> None
+
+  method check_delegation =
+    let shiftexprs =
+      match e2 with
+      | Const (CInt (i64, ik, _)) ->
+         [(Some (num_constant_expr
+                   (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))), [])]
+      | _ -> List.map (fun inv -> (inv#expr, [inv#index])) invs2 in
+    List.fold_left (fun acc1 inv1 ->
+        acc1 ||
+          List.fold_left (fun acc2 (x2, deps2) ->
+              acc2 ||
+                match self#inv_implies_delegation inv1 x2 deps2 with
+                | Some (deps, msg) ->
+                   begin
+                     poq#record_safe_result deps msg;
+                     true
+                   end
+                | None -> false) acc1 shiftexprs) false invs1
+
+end
+
+
 class div_checker
         ?(_unsigned=false)
         (_poq:po_query_int)
@@ -1239,6 +1441,7 @@ let check_int_overflow
     | Mult -> new mult_checker ~unsigned poq e1 e2 values2 values3 k
     | MinusA -> new minus_checker ~unsigned poq e1 e2 values2 values3 k
     | Div -> new div_checker ~_unsigned:unsigned poq e1 e2 values2 values3 k
+    | Shiftlt when not unsigned -> new shiftlt_checker poq e1 e2 values2 values3 k
     | _ -> new generic_checker ~_unsigned:unsigned poq e1 e2 values2 values3 k in
   checker#check_safe || checker#check_violation || checker#check_delegation
 
