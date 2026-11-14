@@ -420,6 +420,76 @@ object (self)
             end
        end
 
+  (* e1 >> k, with [x] the value of e1, [p] = 2^k, 0 <= k < N, and [ty] the
+     promoted type of e1: the value is floor (x / 2^k) (C11 6.5.7p5; for
+     negative signed e1 GCC's arithmetic shift); see
+     CCHIntegerSemantics.shiftright_code. *)
+  method private translate_shiftright
+                   (x:xpr_t) (p:numerical_t) (ty:typ):xpr_t =
+    let is_unsigned = Option.is_some (CCHIntegerSemantics.unsigned_ikind ty) in
+    match x with
+    | _ when p#equal numerical_one -> x
+    | XConst (IntConst a) ->
+       (* div_big_int: remainder in [0, p-1], so the quotient is the floor *)
+       num_constant_expr (a#div p)
+    | XConst _ -> random_constant_expr
+    | _ ->
+       match code_acc with
+       | Some acc ->
+          let tmpProvider = fun () -> env#mk_num_temp in
+          let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
+          let tmpx = env#mk_num_temp in
+          let tmp = env#mk_num_temp in
+          let (xcode, numExp) = xpr2numexpr tmpProvider cstProvider x in
+          let cmds =
+            [xcode; make_c_cmd (ASSIGN_NUM (tmpx, numExp))]
+            @ (CCHIntegerSemantics.shiftright_code env tmp (XVar tmpx) p ty) in
+          begin
+            code_acc <- Some (List.rev_append cmds acc);
+            XVar tmp
+          end
+       | None ->
+          (* XDiv is C division: equal to floor (x / p) only if x >= 0 *)
+          if is_unsigned then
+            XOp (XDiv, [x; num_constant_expr p])
+          else
+            random_constant_expr
+
+  (* e1 % e2, with [x] the value of e1, [y] the value of e2, and [ty] the
+     type of the operation: the C remainder (C11 6.5.5p6), with the sign of
+     e1; see CCHIntegerSemantics.remainder_code. XMod is the Euclidean
+     remainder: it coincides with % only for non-negative operands. *)
+  method private translate_remainder (x:xpr_t) (y:xpr_t) (ty:typ):xpr_t =
+    let is_unsigned = Option.is_some (CCHIntegerSemantics.unsigned_ikind ty) in
+    match (x, y) with
+    | (_, XConst (IntConst b)) when b#is_zero ->
+       random_constant_expr    (* undefined, C11 6.5.5p5 *)
+    | (XConst (IntConst a), XConst (IntConst b)) ->
+       num_constant_expr (a#rem_trunc b)
+    | (_, XConst (IntConst b)) when b#abs#equal numerical_one ->
+       zero_constant_expr
+    | (_, XConst (IntConst b)) ->
+       let m = b#abs#sub numerical_one in
+       (match code_acc with
+        | Some acc ->
+           let tmpProvider = fun () -> env#mk_num_temp in
+           let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
+           let tmpx = env#mk_num_temp in
+           let tmp = env#mk_num_temp in
+           let (xcode, numExp) = xpr2numexpr tmpProvider cstProvider x in
+           let cmds =
+             [xcode; make_c_cmd (ASSIGN_NUM (tmpx, numExp))]
+             @ (CCHIntegerSemantics.remainder_code env tmp (XVar tmpx) m ty) in
+           begin
+             code_acc <- Some (List.rev_append cmds acc);
+             XVar tmp
+           end
+        | None ->
+           let lb = if is_unsigned then numerical_zero else m#neg in
+           XOp (XNumRange, [num_constant_expr lb; num_constant_expr m]))
+    | _ when is_unsigned -> XOp (XMod, [x; y])
+    | _ -> random_constant_expr
+
   method private translate_binop_expr op x1 x2 ty =
     (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
@@ -482,9 +552,17 @@ object (self)
          (* let offsetx = XOp (XMult, [elementSize; self#translate_expr x2]) in *)
          let offsetx = self#translate_expr x2 in
 	 XOp (XMinus, [self#translate_expr x1; offsetx])
-      | Mod -> XOp (XMod, [self#translate_expr x1; self#translate_expr x2])
+      | Mod ->
+         self#translate_remainder
+           (self#translate_expr x1) (self#translate_expr x2) ty
       | Shiftlt -> XOp (XShiftlt, [self#translate_expr x1; self#translate_expr x2])
-      | Shiftrt -> XOp (XShiftrt, [self#translate_expr x1; self#translate_expr x2])
+      | Shiftrt ->
+         (match self#translate_expr x2 with
+          | XConst (IntConst k) ->
+             (match CCHIntegerSemantics.shift_factor k ty with
+              | Some p -> self#translate_shiftright (self#translate_expr x1) p ty
+              | None -> random_constant_expr)   (* undefined, C11 6.5.7p3 *)
+          | _ -> random_constant_expr)
       | BAnd -> XOp (XBAnd, [self#translate_expr x1; self#translate_expr x2])
       | BOr -> XOp (XBOr, [self#translate_expr x1; self#translate_expr x2])
       | BXor -> XOp (XBXor, [self#translate_expr x1; self#translate_expr x2])
@@ -754,7 +832,7 @@ object (self)
             end
        end
 
-  method private translate_lhs_binop_expr op x1 x2 _ty =
+  method private translate_lhs_binop_expr op x1 x2 ty =
     (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
       | PlusA ->
@@ -811,8 +889,10 @@ object (self)
          (* let xoffset = XOp (XMult, [elementSize; self#translate_lhs_expr x2]) in *)
          let xoffset = self#translate_lhs_expr x2 in
 	 XOp (XMinus, [self#translate_lhs_expr x1; xoffset])
-      | Mod ->
+      | Mod when Option.is_some (CCHIntegerSemantics.unsigned_ikind ty) ->
+         (* XMod is the Euclidean remainder: equal to % for unsigned *)
          XOp (XMod, [self#translate_lhs_expr x1; self#translate_lhs_expr x2])
+      | Mod -> random_constant_expr
       | Shiftlt ->
          XOp (XShiftlt, [self#translate_lhs_expr x1; self#translate_lhs_expr x2])
       | Shiftrt ->

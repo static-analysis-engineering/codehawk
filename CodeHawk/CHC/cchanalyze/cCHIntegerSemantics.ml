@@ -117,16 +117,86 @@ let rec integer_constant_value (e: exp): numerical_t option =
   | _ -> None
 
 
+(* 2^k if [ty] is an integer type of width N and 0 <= k < N; None otherwise
+   (a shift by k outside [0, N-1] is undefined, C11 6.5.7p3) *)
+let shift_factor (k: numerical_t) (ty: typ): numerical_t option =
+  match CCHFileEnvironment.file_environment#get_type_unrolled ty with
+  | TInt (ik, _) when ik <> IBool ->
+     let m =
+       ((get_safe_upperbound ik)#sub (get_safe_lowerbound ik))#add numerical_one in
+     if k#geq numerical_zero && k#lt (mkNumerical 128) then
+       let p = power_of_two k#toInt in
+       if p#lt m then Some p else None
+     else
+       None
+  | _ -> None
+
+
 let unsigned_shift_factor (e2: exp) (ty: typ): numerical_t option =
-  match unsigned_ikind ty with
-  | Some ik ->
-     let m = (get_safe_upperbound ik)#add numerical_one in   (* 2^N *)
-     (match integer_constant_value e2 with
-      | Some k when k#geq numerical_zero && k#lt (mkNumerical 128) ->
-         let p = power_of_two k#toInt in
-         if p#lt m then Some p else None
-      | _ -> None)
-  | None -> None
+  match (unsigned_ikind ty, integer_constant_value e2) with
+  | (Some _, Some k) -> shift_factor k ty
+  | _ -> None
+
+
+let shiftright_code
+      (env: c_environment_int)
+      (v: variable_t)
+      (x: xpr_t)
+      (p: numerical_t)
+      (ty: typ): c_cmd_t list =
+  let tmpProvider = fun () -> env#mk_num_temp in
+  let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
+  let cst (n: numerical_t) = num_constant_expr n in
+  let guard (b: xpr_t) =
+    let (code, bExp) = xpr2boolexpr tmpProvider cstProvider b in
+    [code; make_c_cmd (make_assert bExp)] in
+  let assign (rhs: xpr_t) =
+    let (code, numExp) = xpr2numexpr tmpProvider cstProvider rhs in
+    [code; make_c_cmd (ASSIGN_NUM (v, numExp))] in
+  (* DIV is C division (truncation toward zero, C11 6.5.5p6) *)
+  let nonneg_cmds = assign (XOp (XDiv, [x; cst p])) in
+  match CCHFileEnvironment.file_environment#get_type_unrolled ty with
+  | TInt (ik, _) when is_signed_type ik ->
+     let zero = zero_constant_expr in
+     let neg_cmds =
+       assign
+         (XOp (XDiv, [XOp (XMinus, [x; cst (p#sub numerical_one)]); cst p])) in
+     [make_c_branch
+        [(guard (XOp (XGe, [x; zero]))) @ nonneg_cmds;
+         (guard (XOp (XLt, [x; zero]))) @ neg_cmds]]
+  | _ -> nonneg_cmds
+
+
+let remainder_code
+      (env: c_environment_int)
+      (v: variable_t)
+      (x: xpr_t)
+      (m: numerical_t)
+      (ty: typ): c_cmd_t list =
+  let tmpProvider = fun () -> env#mk_num_temp in
+  let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
+  let cst (n: numerical_t) = num_constant_expr n in
+  let t = XVar v in
+  let guard (b: xpr_t) =
+    let (code, bExp) = xpr2boolexpr tmpProvider cstProvider b in
+    [code; make_c_cmd (make_assert bExp)] in
+  let abstract = make_c_cmd (ABSTRACT_VARS [v]) in
+  let nonneg_cmds =
+    abstract
+    :: ((guard (XOp (XGe, [t; zero_constant_expr])))
+        @ (guard (XOp (XLe, [t; cst m])))
+        @ (guard (XOp (XLe, [t; x])))) in
+  match CCHFileEnvironment.file_environment#get_type_unrolled ty with
+  | TInt (ik, _) when is_signed_type ik ->
+     let neg_cmds =
+       abstract
+       :: ((guard (XOp (XLe, [t; zero_constant_expr])))
+           @ (guard (XOp (XGe, [t; cst m#neg])))
+           @ (guard (XOp (XGe, [t; x])))) in
+     [make_c_branch
+        [(guard (XOp (XGe, [x; zero_constant_expr]))) @ nonneg_cmds;
+         (guard (XOp (XLt, [x; zero_constant_expr]))) @ neg_cmds]]
+  | _ -> nonneg_cmds
 
 
 (* Drops the corrections that are excluded by a proven proof obligation
