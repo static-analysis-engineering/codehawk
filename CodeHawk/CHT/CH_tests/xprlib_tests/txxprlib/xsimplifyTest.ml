@@ -980,6 +980,74 @@ let reduce_div () =
         let r = XOp (XMult, [adb; x]) in
         XA.equal_xpr r (simplify (XOp (XDiv, [XOp (XMult, [x; a]); b]))));
 
+    (* XDiv truncates toward zero (C11 6.5.5p6): -7 / 2 ==> -3 *)
+    TS.add_simple_test
+      ~title: "constants_neg_dividend"
+      (fun () ->
+        XA.equal_xpr
+          (XG.mk_ix (-3)) (simplify (XOp (XDiv, [XG.mk_ix (-7); XG.mk_ix 2]))));
+
+    (* 7 / -2 ==> -3 *)
+    TS.add_simple_test
+      ~title: "constants_neg_divisor"
+      (fun () ->
+        XA.equal_xpr
+          (XG.mk_ix (-3)) (simplify (XOp (XDiv, [XG.mk_ix 7; XG.mk_ix (-2)]))));
+
+    (* -7 / -2 ==> 3 *)
+    TS.add_simple_test
+      ~title: "constants_neg_both"
+      (fun () ->
+        XA.equal_xpr
+          (XG.mk_ix 3) (simplify (XOp (XDiv, [XG.mk_ix (-7); XG.mk_ix (-2)]))));
+
+    (* x / 4 >= 0 ==> x >= -3 *)
+    TS.add_simple_test
+      ~title: "ge_zero"
+      (fun () ->
+        XA.equal_xpr
+          (XOp (XGe, [x; XG.mk_ix (-3)]))
+          (simplify (XOp (XGe, [XOp (XDiv, [x; XG.mk_ix 4]); XG.xzero]))));
+
+    (* x / 4 < 0 ==> x <= -4 *)
+    TS.add_simple_test
+      ~title: "lt_zero"
+      (fun () ->
+        XA.equal_xpr
+          (XOp (XLe, [x; XG.mk_ix (-4)]))
+          (simplify (XOp (XLt, [XOp (XDiv, [x; XG.mk_ix 4]); XG.xzero]))));
+
+    (* 1 <= x / 4 ==> x >= 4 *)
+    TS.add_simple_test
+      ~title: "le_pos"
+      (fun () ->
+        XA.equal_xpr
+          (XOp (XGe, [x; XG.mk_ix 4]))
+          (simplify (XOp (XLe, [XG.xone; XOp (XDiv, [x; XG.mk_ix 4])]))));
+
+    (* x / 4 <= 0 ==> x <= 3 *)
+    TS.add_simple_test
+      ~title: "le_zero"
+      (fun () ->
+        XA.equal_xpr
+          (XOp (XLe, [x; XG.mk_ix 3]))
+          (simplify (XOp (XLe, [XOp (XDiv, [x; XG.mk_ix 4]); XG.xzero]))));
+
+    (* -1 > x / 4 ==> x / 4 <= -2 ==> x <= -8 (-7 / 4 == -1) *)
+    TS.add_simple_test
+      ~title: "gt_neg"
+      (fun () ->
+        XA.equal_xpr
+          (XOp (XLe, [x; XG.mk_ix (-8)]))
+          (simplify (XOp (XGt, [XG.mk_ix (-1); XOp (XDiv, [x; XG.mk_ix 4])]))));
+
+    (* x / 4 = 1 holds for x in [4, 7]: not rewritten *)
+    TS.add_simple_test
+      ~title: "eq_not_rewritten"
+      (fun () ->
+        let e = XOp (XEq, [XOp (XDiv, [x; XG.mk_ix 4]); XG.xone]) in
+        XA.equal_xpr e (simplify e));
+
     TS.launch_tests ()
   end
 
