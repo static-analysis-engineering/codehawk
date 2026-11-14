@@ -580,6 +580,12 @@ let check_parse_machine_model
               STR "); reparse for the intended target platform"]))
 
 
+let power_of_two (k: int): numerical_t =
+  let two = mkNumerical 2 in
+  let rec aux n acc = if n <= 0 then acc else aux (n - 1) (acc#mult two) in
+  aux k numerical_one
+
+
 let get_safe_upperbound (kind:ikind) =
   try
     let md k =
