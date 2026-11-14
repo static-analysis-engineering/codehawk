@@ -116,6 +116,13 @@ let pwr2 (num: numerical_t): xpr_t =
     XOp (XShiftlt, [int_constant_expr 1; num_constant_expr num])
 
 
+(* 2^k, for k >= 0 *)
+let numerical_power_of_two (k: int): numerical_t =
+  let two = mkNumerical 2 in
+  let rec aux n acc = if n <= 0 then acc else aux (n - 1) (acc#mult two) in
+  aux k numerical_one
+
+
 let rec sim_expr (m:bool) (e:xpr_t):(bool * xpr_t) =
   (* the first three match expressions are patterns created during wide
      operations, where the high word and low word are combined; often the
@@ -1225,13 +1232,9 @@ and reduce_shiftleft (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
          if b#lt numerical_zero || b#geq (mkNumerical 32) then
            default
          else
-           (try
-              let ai = a#toInt in
-              let bi = b#toInt in
-              let shifted = ai lsl bi in
-              (true, ne (mkNumerical shifted))
-            with
-              Failure _ -> default)
+           (* a * 2^b computed exactly; OCaml lsl silently overflows the
+              63-bit int *)
+           (true, ne (a#mult (numerical_power_of_two b#toInt)))
 
     (* (x << a) << b) -> x << (a + b) *)
     | (SRScalar (XShiftlt, x, a), SConst b) ->
@@ -1268,13 +1271,9 @@ and reduce_lsl (m: bool) (e1: xpr_t) (e2: xpr_t): bool * xpr_t =
          if b#lt numerical_zero || b#geq (mkNumerical 32) then
            default
          else
-           (try
-              let ai = a#toInt in
-              let bi = b#toInt in
-              let shifted = ai lsl bi in
-              (true, ne (mkNumerical shifted))
-            with
-              Failure _ -> default)
+           (* a * 2^b computed exactly; OCaml lsl silently overflows the
+              63-bit int *)
+           (true, ne (a#mult (numerical_power_of_two b#toInt)))
     | (SRScalar (XLsl, x, a), SConst b) ->
        rs XLsl [x; XOp (XPlus, [ne a; ne b])]
 
