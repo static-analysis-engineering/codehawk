@@ -845,7 +845,7 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
            STR ")"]
     | PIntOverflow (op, e1, e2, ik) ->
        LBLOCK [
-           STR "uint-overflow(";
+           STR "int-overflow(";
            pr_expr op e1 e2 (TInt (ik, []));
 	   STR ", ";
            STR (int_type_to_string ik);
