@@ -65,6 +65,19 @@ let xconst_2_boolexpr (_reqN:tmp_provider_t) (_reqC:cst_provider_t) (c:xcst_t):c
     (make_nested_nop (), bxpr)
 
 
+(* j if n = 2^j, j >= 0; None otherwise *)
+let exact_log2 (n: numerical_t): int option =
+  let two = mkNumerical 2 in
+  let rec aux (m: numerical_t) (j: int) =
+    if m#equal numerical_one then
+      Some j
+    else if m#gt numerical_one && (m#modulo two)#equal numerical_zero then
+      aux (m#div two) (j + 1)
+    else
+      None in
+  aux n 0
+
+
 let rec xpr_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (xpr:xpr_t):code_num_t =
     match xpr with
       XVar v -> (make_nested_nop (), NUM_VAR v)
@@ -88,63 +101,21 @@ and xop_2_numexpr (reqN:tmp_provider_t) (reqC:cst_provider_t) (op:xop_t) (l:xpr_
        (make_nested_nop (), NUM_VAR (reqN ()))
 
     | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 2) ->
-       (make_nested_nop () , PLUS (v, v))
-
-    | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 4) ->
-       let tmp = reqN () in
-       let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp, PLUS (v,v))) in
-       let asgn2 = make_nested_cmd (ASSIGN_NUM (tmp, PLUS (tmp,tmp))) in
-       (make_nested_cmd_block [asgn1; asgn2], NUM_VAR tmp)
-
-    | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 8) ->
-       let tmp1 = reqN () in
-       let tmp2 = reqN () in
-       let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp1, PLUS (v,v))) in
-       let asgn2 = make_nested_cmd (ASSIGN_NUM (tmp2, PLUS (tmp1,tmp1))) in
-       let asgn3 = make_nested_cmd (ASSIGN_NUM (tmp2, PLUS (tmp2,tmp2))) in
-       (make_nested_cmd_block [asgn1; asgn2; asgn3], NUM_VAR tmp2)
-
-    | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 16) ->
-       let tmp1 = reqN () in
-       let tmp2 = reqN () in
-       let tmp3 = reqN () in
-       let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp1, PLUS (v,v))) in
-       let asgn2 = make_nested_cmd (ASSIGN_NUM (tmp2, PLUS (tmp1,tmp1))) in
-       let asgn3 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp2,tmp2))) in
-       let asgn4 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp3,tmp3))) in
-       (make_nested_cmd_block [asgn1; asgn2; asgn3; asgn4], NUM_VAR tmp3)
-
-    | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 16) ->
-       let tmp1 = reqN () in
-       let tmp2 = reqN () in
-       let tmp3 = reqN () in
-       let tmp4 = reqN () in
-       let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp1, PLUS (v,v))) in
-       let asgn2 = make_nested_cmd (ASSIGN_NUM (tmp2, PLUS (tmp1,tmp1))) in
-       let asgn3 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp2,tmp2))) in
-       let asgn4 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp3,tmp3))) in
-       let asgn5 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp4,tmp4))) in
-       (make_nested_cmd_block [asgn1; asgn2; asgn3; asgn4; asgn5], NUM_VAR tmp4)
-
-    | (XMult, [XConst (IntConst n); XVar v])
-      | (XMult, [XVar v; XConst (IntConst n)]) when n#equal (mkNumerical 32) ->
-       let tmp1 = reqN () in
-       let tmp2 = reqN () in
-       let tmp3 = reqN () in
-       let tmp4 = reqN () in
-       let tmp5 = reqN () in
-       let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp1, PLUS (v,v))) in
-       let asgn2 = make_nested_cmd (ASSIGN_NUM (tmp2, PLUS (tmp1,tmp1))) in
-       let asgn3 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp2,tmp2))) in
-       let asgn4 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp3,tmp3))) in
-       let asgn5 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp4,tmp4))) in
-       let asgn6 = make_nested_cmd (ASSIGN_NUM (tmp3, PLUS (tmp5,tmp5))) in
-       (make_nested_cmd_block [asgn1; asgn2; asgn3; asgn4; asgn5; asgn6], NUM_VAR tmp5)
+      | (XMult, [XVar v; XConst (IntConst n)])
+         when Option.is_some (exact_log2 n) && (Option.get (exact_log2 n)) <= 64 ->
+       (* v * 2^j by repeated doubling (linear, exact in all domains) *)
+       let j = Option.get (exact_log2 n) in
+       if j = 0 then
+         (make_nested_nop (), NUM_VAR v)
+       else if j = 1 then
+         (make_nested_nop (), PLUS (v, v))
+       else
+         let tmp = reqN () in
+         let asgn1 = make_nested_cmd (ASSIGN_NUM (tmp, PLUS (v, v))) in
+         let asgns =
+           List.init (j - 1)
+             (fun _ -> make_nested_cmd (ASSIGN_NUM (tmp, PLUS (tmp, tmp)))) in
+         (make_nested_cmd_block (asgn1 :: asgns), NUM_VAR tmp)
 
     | (XPlus,   [e1; e2])
     | (XMinus,  [e1; e2])
