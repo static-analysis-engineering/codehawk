@@ -97,6 +97,25 @@ let divides x y =
 
 
 let _pos_num x = x#gt numerical_zero
+
+
+(* XDiv is division with truncation toward zero (C99/C11 6.5.5p6, hardware
+   sdiv/idiv/udiv); XMod is the Euclidean remainder (in [0, |b| - 1]). For
+   q = x XDiv b with b > 0:
+     q >= a  iff  x >= div_ge_bound a b
+     q <= a  iff  x <= div_le_bound a b *)
+let div_ge_bound (a: numerical_t) (b: numerical_t): numerical_t =
+  if a#gt numerical_zero then
+    a#mult b
+  else
+    ((a#sub numerical_one)#mult b)#add numerical_one
+
+
+let div_le_bound (a: numerical_t) (b: numerical_t): numerical_t =
+  if a#geq numerical_zero then
+    ((a#add numerical_one)#mult b)#sub numerical_one
+  else
+    a#mult b
 let neg_num x = x#lt numerical_zero
 let zero_num x = x#equal numerical_zero
 
@@ -600,7 +619,7 @@ and reduce_div (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
     | _ ->
        match (get_struct e1, get_struct e2) with
        | (SConst a, SConst b) ->                                       (* a/b *)
-	  (true, ne (a#div b))
+	  (true, ne (a#div_trunc b))
 
        | (SLScalar (XMult, a, x), SConst b)                      (* (a * x)/b *)
 	 | (SRScalar (XMult, x, a), SConst b)                    (* (x * a)/b *)
@@ -610,6 +629,9 @@ and reduce_div (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
        | _ -> default ()
 
 
+(* XMod is the Euclidean remainder (in [0, |b| - 1]; e.g., x mod 2^32 in CHB),
+   not the C remainder %, which has the sign of the dividend (C11 6.5.5p6);
+   C front ends must not translate a signed % into XMod. *)
 and reduce_mod (m: bool) (e1: xpr_t) (e2: xpr_t): (bool * xpr_t) =
   let default () = (m, XOp (XMod, [e1; e2])) in
   let ne (n: numerical_t) = num_constant_expr n in
@@ -777,12 +799,13 @@ and reduce_lt (m: bool) (e1: xpr_t) (e2: xpr_t) =
 	let op = if neg_num a then XGt else XLt in          (* a < 0 ~> [ > ] *)
 	rs op [x; ne (b#div a)]                             (* ~> x [<|>] b/a *)
 
-     | (SConst a, SRScalar (XDiv, x, b)) ->                      (* a < x / b *)
-	if zero_num b then                                 (* b=0 ~~> warning *)
-	  default ()
-	else
-	  let op = if neg_num b then XLt else XGt in        (* b < 0 ~> [ < ] *)
-	  rs op [x; ne (a#mult b)]                          (* ~> x [<|>] a*b *)
+     | (SConst a, SRScalar (XDiv, x, b))                         (* a < x / b *)
+          when b#gt numerical_zero ->
+        rs XGe [x; ne (div_ge_bound (a#add numerical_one) b)]
+
+     | (SRScalar (XDiv, x, b), SConst a)                         (* x / b < a *)
+          when b#gt numerical_zero ->
+        rs XLe [x; ne (div_le_bound (a#sub numerical_one) b)]
 
      | _ -> default ()
 
@@ -865,12 +888,13 @@ and reduce_le m e1 e2 =
 	  let op = if neg_num b then XLe else XGe in                (* b < 0 ~> [ <= ] *)
 	  rs op [x ; ne (a#div b)]                                (* ~> x [<=|>=] a/b *)
 
-       | (SConst a, SRScalar (XDiv, x, b)) ->                (* a <= x / b *)
-	  if zero_num b                                     (* b=0 ~~> warning *)
-	  then default
-	  else
-	    let op = if neg_num b then XLe else XGe in            (* b < 0 ~> [ <= ] *)
-	    rs op [x ; ne (a#mult b)]                           (* ~> x [ <=|>= ] a*b *)
+       | (SConst a, SRScalar (XDiv, x, b))                   (* a <= x / b *)
+            when b#gt numerical_zero ->
+          rs XGe [x; ne (div_ge_bound a b)]
+
+       | (SRScalar (XDiv, x, b), SConst a)                   (* x / b <= a *)
+            when b#gt numerical_zero ->
+          rs XLe [x; ne (div_le_bound a b)]
        | _ -> default
 
 and reduce_gt m e1 e2 =
@@ -919,12 +943,13 @@ and reduce_gt m e1 e2 =
      let op = if neg_num b then XGt else XLt in   (* b < 0 ~> [ > ] *)
      rs op [x ; ne (a#div b)]                     (* ~> x [<|>] a/b *)
 
-  | (SConst a, SRScalar (XDiv, x, b)) ->                (* a > x / b *)
-     if zero_num b                                     (* b=0 ~~> warning *)
-     then default
-     else
-       let op = if neg_num b then XGt else XLt in   (* b < 0 ~> [ > ] *)
-       rs op [x ; ne (a#mult b)]                    (* ~> x [<|>] a*b *)
+  | (SConst a, SRScalar (XDiv, x, b))                   (* a > x / b *)
+       when b#gt numerical_zero ->
+     rs XLe [x; ne (div_le_bound (a#sub numerical_one) b)]
+
+  | (SRScalar (XDiv, x, b), SConst a)                   (* x / b > a *)
+       when b#gt numerical_zero ->
+     rs XGe [x; ne (div_ge_bound (a#add numerical_one) b)]
   | _ -> default
 
 and reduce_ge m e1 e2 =
@@ -984,16 +1009,13 @@ and reduce_ge m e1 e2 =
 	let op = if neg_num b then XLe else XGe in
 	rs op [ x ; ne (a#div b)]
 
-     | (SConst a, SRScalar (XDiv, x, b)) ->                (* a >= x / b *)
-	if zero_num b                                     (* b=0 ~~> warning *)
-	then default
-	else
-	  let op = if neg_num b then XGe else XLe in            (* b < 0 ~> [ >= ] *)
-	  rs op [x ; ne (a#mult b)]                           (* ~> x [ <=|>= ] a*b *)
+     | (SConst a, SRScalar (XDiv, x, b))                   (* a >= x / b *)
+          when b#gt numerical_zero ->
+        rs XLe [x; ne (div_le_bound a b)]
 
-     | (SRScalar (XDiv, x, a), SConst b)                    (* x/a >= 0 with a > 0 ~~> x >= 0 *)
-	  when zero_num b && a#gt numerical_zero ->
-	rs XGe [ x ; ne b ]
+     | (SRScalar (XDiv, x, a), SConst b)                   (* x / a >= b *)
+          when a#gt numerical_zero ->
+        rs XGe [x; ne (div_ge_bound b a)]
 
      | _ -> default
 
@@ -1029,15 +1051,12 @@ and reduce_eq m e1 e2 =
      then (true, be true)                                 (* a=0, b=0  ~~> true *)
      else if zero_num b
      then (true, be false)                                (* a<>0, b=0 ~~> false *)
-     else
-       rs XEq [x ; ne (a#div b)]                          (* b<>0 ~~> x = a/b *)
+     else if divides b a
+     then rs XEq [x ; ne (a#div b)]                    (* b | a ~~> x = a/b *)
+     else default
 
-  | (SConst a, SRScalar (XDiv, x, b))                   (* a = x / b *)
-    | (SRScalar (XDiv, x, b), SConst a) ->                (* x / b = a *)
-     if zero_num b
-     then default                                      (* b=0 ~~> warning *)
-     else
-       rs XEq [x ; ne (a#div b) ]                    (* b<>0 ~~> x = a/b *)
+  (* a = x / b holds for a range of x (b > 0: [div_ge_bound a b,
+     div_le_bound a b]); not rewritten *)
 
   (*  (x != y) ==  0)  -> (x == y)  *)
 
