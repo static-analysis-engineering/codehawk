@@ -100,6 +100,9 @@ val check_parse_machine_model:
 
 val get_safe_upperbound: ikind -> numerical_t
 
+(** [power_of_two k] is [2^k] (for [k >= 0]; [1] otherwise). *)
+val power_of_two: int -> numerical_t
+
 val get_safe_lowerbound: ikind -> numerical_t
 
 val get_safe_bit_width: ikind -> int
