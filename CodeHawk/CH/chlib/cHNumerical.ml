@@ -75,6 +75,36 @@ object (self: 'a)
                  STR " % ";
                  n#toPretty]))
 
+  (* division with truncation toward zero (C99/C11 6.5.5p6, hardware
+     sdiv/idiv); div is Euclidean (remainder in [0, |n| - 1]) *)
+  method div_trunc (n: 'a) =
+    try
+      self#mkNew (Z.div num n#getNum)
+    with
+    | Division_by_zero ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Numerical division by zero (div_trunc): ";
+                 self#toPretty;
+                 STR " / ";
+                 n#toPretty]))
+
+  (* remainder of div_trunc: self = (self#div_trunc n) * n + (self#rem_trunc n),
+     with the sign of self (C11 6.5.5p6); modulo is Euclidean *)
+  method rem_trunc (n: 'a) =
+    try
+      self#mkNew (Z.rem num n#getNum)
+    with
+    | Division_by_zero ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Numerical division by zero (rem_trunc): ";
+                 self#toPretty;
+                 STR " % ";
+                 n#toPretty]))
+
   method quomod (n: 'a) =
     let (quo, modd) = quomod_big_int num n#getNum in
     (self#mkNew quo, self#mkNew modd)
