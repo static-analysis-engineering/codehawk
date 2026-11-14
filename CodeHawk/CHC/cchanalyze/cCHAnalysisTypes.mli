@@ -335,6 +335,15 @@ class type exp_translator_int =
 object
 
   method translate_exp: program_context_int -> exp -> xpr_t
+
+  (** [translate_exp_with_code context e] returns the C value of [e] together
+      with the commands that compute it: integer operations and conversions
+      that may wrap around are evaluated into temporaries, followed by their
+      correction. Without code, [translate_exp] returns an unknown value for
+      such sites. *)
+  method translate_exp_with_code:
+           program_context_int -> exp -> c_cmd_t list * xpr_t
+
   method translate_lhs: program_context_int -> lval -> variable_t
   method translate_condition:
            program_context_int -> exp -> cmd_t * cmd_t  (* then,else *)

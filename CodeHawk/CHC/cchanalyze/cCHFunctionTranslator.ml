@@ -30,7 +30,6 @@
 (* chlib *)
 open CHLanguage
 open CHNumerical
-open CHPretty
 
 (* chutil *)
 open CHLogger
@@ -249,14 +248,16 @@ object
       List.map (fun (_,_,v,vInit) ->
           ASSIGN_NUM (v, NUM_VAR vInit)) (formals @ globals) in
     let _ = env#start_transaction in
+    (* The initial value of an integer parameter or global lies in the range
+       of its type (on every execution). Asserting it lets the interval domain
+       refute the unsigned wrap-around correction branches. *)
     let rangeconstraints =
-      List.fold_left (fun acc (vname, vtype, _, vInit) ->
-          match vtype with
-          | (TInt (IChar, _)) | (TInt (ISChar, _)) ->
-             let _= chlog#add "range constraint"
-                  (LBLOCK [STR vname])  in
+      List.fold_left (fun acc (_vname, vtype, _, vInit) ->
+          match fenv#get_type_unrolled vtype with
+          | TInt (ik, _) ->
              (make_range_assert
-                env vInit (mkNumerical (-128)) (mkNumerical 127)) :: acc
+                env vInit (get_safe_lowerbound ik) (get_safe_upperbound ik))
+             :: acc
           | _ -> acc) [] (formals @ globals)  in
     let (tmps,rangecode) = env#end_transaction  in
     let rangecode = List.map make_c_cmd rangecode in

@@ -88,7 +88,8 @@ object (self)
         let chifVar = exp_translator#translate_lhs context lhs in
         let tmpProvider = fun () -> env#mk_num_temp in
         let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
-        let rhsExpr = exp_translator#translate_exp context rhs in
+        let (wrapCode, rhsExpr) =
+          exp_translator#translate_exp_with_code context rhs in
         let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider rhsExpr in
         let assign =
 	  if chifVar#isTmp then
@@ -111,7 +112,7 @@ object (self)
                 __FILE__ __LINE__
                 (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars) in
-        [rhsCode; assign]
+        wrapCode @ [rhsCode; assign]
       with
       | CCHFailure p ->
          raise (CCHFailure
