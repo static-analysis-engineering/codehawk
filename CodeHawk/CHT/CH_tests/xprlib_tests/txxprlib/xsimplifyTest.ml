@@ -42,7 +42,7 @@ let simplify = S.simplify_xpr
 
 
 let testname = "xsimplifyTest"
-let lastupdated = "2025-02-07"
+let lastupdated = "2026-11-13"
 
 
 let basic () =
@@ -1240,6 +1240,33 @@ let reduce_shiftlt () =
       (fun () ->
         let r = XOp (XShiftlt, [x; c]) in
         XA.equal_xpr r (simplify (XOp (XShiftlt, [XOp (XShiftlt, [x; a]); b]))));
+
+    (* 0xF0000000 << 4 -> 0xF00000000 (mathematical value; any reduction
+       modulo 2^N is the responsibility of the client) *)
+    TS.add_simple_test
+      ~title: "shiftlt_const"
+      (fun () ->
+        XA.equal_xpr
+          (XG.mk_ix 0xF00000000)
+          (simplify (XOp (XShiftlt, [XG.mk_ix 0xF0000000; b]))));
+
+    (* 2^61 << 2 -> 2^63 (exceeds the OCaml 63-bit int) *)
+    TS.add_simple_test
+      ~title: "shiftlt_const_large"
+      (fun () ->
+        let r =
+          Xprt.num_constant_expr
+            ((CHNumerical.mkNumerical (1 lsl 61))#mult (CHNumerical.mkNumerical 4)) in
+        XA.equal_xpr r (simplify (XOp (XShiftlt, [XG.mk_ix (1 lsl 61); a]))));
+
+    (* 2^61 lsl 2 -> 2^63 *)
+    TS.add_simple_test
+      ~title: "lsl_const_large"
+      (fun () ->
+        let r =
+          Xprt.num_constant_expr
+            ((CHNumerical.mkNumerical (1 lsl 61))#mult (CHNumerical.mkNumerical 4)) in
+        XA.equal_xpr r (simplify (XOp (XLsl, [XG.mk_ix (1 lsl 61); a]))));
 
     TS.launch_tests()
   end
