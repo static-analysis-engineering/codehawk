@@ -79,11 +79,61 @@ object (self)
   val mutable context = mk_program_context ()
   val fdecls = env#get_fdecls
 
+  (* Commands (in reverse order) that compute the C value of the integer
+     operations and conversions in the expression being translated, if code
+     is requested (translate_exp_with_code); None otherwise. *)
+  val mutable code_acc: c_cmd_t list option = None
+
   method translate_exp (ctxt:program_context_int) (e:exp):xpr_t =
     begin
       context <- ctxt;
+      code_acc <- None;
       simplify_xpr (self#translate_expr e)
     end
+
+  method translate_exp_with_code
+           (ctxt:program_context_int) (e:exp): c_cmd_t list * xpr_t =
+    let _ = context <- ctxt in
+    let _ = code_acc <- Some [] in
+    let x =
+      try
+        simplify_xpr (self#translate_expr e)
+      with
+      | exn -> begin code_acc <- None; raise exn end in
+    let code = match code_acc with Some l -> List.rev l | None -> [] in
+    begin
+      code_acc <- None;
+      (code, x)
+    end
+
+  (* [x] is the mathematical value of the integer expression [e]; returns an
+     expression for its C value: [x] itself if they coincide on every
+     execution, the reduced constant if [x] is constant, a temporary
+     holding the corrected value if code is requested, and an unknown value
+     otherwise. *)
+  method private integer_semantics (e:exp) (x:xpr_t):xpr_t =
+    match CCHIntegerSemantics.get_correction env context e with
+    | None -> x
+    | Some c ->
+       match x with
+       | XConst (IntConst n) ->
+          num_constant_expr (CCHIntegerSemantics.fold_constant c n)
+       | XConst XRandom -> x
+       | _ ->
+          match code_acc with
+          | None -> random_constant_expr
+          | Some acc ->
+             let tmpProvider = fun () -> env#mk_num_temp in
+             let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
+             let tmp = env#mk_num_temp in
+             let (xcode, numExp) = xpr2numexpr tmpProvider cstProvider x in
+             let cmds =
+               [xcode; make_c_cmd (ASSIGN_NUM (tmp, numExp))]
+               @ (CCHIntegerSemantics.correction_code env tmp c) in
+             begin
+               code_acc <- Some (List.rev_append cmds acc);
+               XVar tmp
+             end
 
   method translate_lhs (ctxt:program_context_int) (lval:lval):variable_t =
     begin context <- ctxt; self#translate_lval lval end
@@ -118,9 +168,11 @@ object (self)
         | SizeOfE e -> size_of_exp_type fdecls e
         | SizeOfStr s ->
            let (_, _, len) = mk_constantstring s in int_constant_expr len
-        | BinOp (op, x1, x2, ty) -> self#translate_binop_expr op x1 x2 ty
-        | UnOp (op, x1, _) -> self#translate_unop_expr op x1
-        | CastE (_, e) -> self#translate_expr e
+        | BinOp (op, x1, x2, ty) ->
+           self#integer_semantics x (self#translate_binop_expr op x1 x2 ty)
+        | UnOp (op, x1, _) ->
+           self#integer_semantics x (self#translate_unop_expr op x1)
+        | CastE (_, e) -> self#integer_semantics x (self#translate_expr e)
         | AddrOf lval
 	  | StartOf lval -> self#translate_address lval ftype
         | CnApp ("ntp", [Some (Const (CStr s))],_)
@@ -368,9 +420,15 @@ object (self)
             end
        end
 
-  method private translate_binop_expr op x1 x2 _ty =
+  method private translate_binop_expr op x1 x2 ty =
     (* let ty = fenv#get_type_unrolled ty in *)
     let result = match op with
+      | Shiftlt when
+             Option.is_some (CCHIntegerSemantics.unsigned_shift_factor x2 ty) ->
+         (* unsigned e1 << k, 0 <= k < N: mathematical value e1 * 2^k (the
+            reduction modulo 2^N is applied by integer_semantics) *)
+         let p = Option.get (CCHIntegerSemantics.unsigned_shift_factor x2 ty) in
+         XOp (XMult, [self#translate_expr x1; num_constant_expr p])
       (* | PlusA when CCHBasicUtil.exp_is_zero x2 -> (self#translate_expr x1) *)
       | PlusA -> XOp (XPlus, [self#translate_expr x1; self#translate_expr x2])
       | MinusA -> XOp (XMinus, [self#translate_expr x1; self#translate_expr x2])
@@ -482,16 +540,16 @@ object (self)
              end)
            (type_of_exp fdecls c) in
     let _ = env#start_transaction in
-    let then_expr = self#translate_exp context c in
-    let then_assert = [make_assume then_expr] in
+    let (then_code, then_expr) = self#translate_exp_with_code context c in
+    let then_assert = then_code @ [make_assume then_expr] in
     let (tmps, constantAssigns) = env#end_transaction in
     let constantAssigns = List.map make_c_cmd constantAssigns in
     let then_cond =
       make_labeled_transaction
         env#get_current_stmt_id tmps (constantAssigns @ then_assert) in
     let _ = env#start_transaction in
-    let else_expr = self#translate_exp context notc in
-    let else_assert = [make_assume else_expr] in
+    let (else_code, else_expr) = self#translate_exp_with_code context notc in
+    let else_assert = else_code @ [make_assume else_expr] in
     let (tmps,constantAssigns) = env#end_transaction in
     let constantAssigns = List.map make_c_cmd constantAssigns in
     let else_cond =
@@ -785,6 +843,10 @@ object (self)
 
   (* --------------------------- rhs translation ---------------------------- *)
 
+  method translate_exp_with_code
+           (ctxt:program_context_int) (e:exp): c_cmd_t list * xpr_t =
+    ([], self#translate_exp ctxt e)
+
   method translate_exp (ctxt:program_context_int) (e:exp): xpr_t =
     let _ = context <- ctxt in
     let result = self#translate_rhs_expr e in
@@ -941,6 +1003,10 @@ object (self)
 
   val mutable context = mk_program_context ()
   val fdecls = env#get_fdecls
+
+  method translate_exp_with_code
+           (ctxt:program_context_int) (e:exp): c_cmd_t list * xpr_t =
+    ([], self#translate_exp ctxt e)
 
   method translate_exp (ctxt:program_context_int) (e:exp) =
     begin context <- ctxt; self#translate_expr e end

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -313,7 +313,7 @@ object (self)
     make_labeled_command stmtId (ops @ [make_branch branches])
 
   method private decompose_loop stmts gotos context =
-    let (terminationTest, loopStmts,ops) =
+    let (terminationTest, loopStmts, ops, testContext) =
       let rec skip_empty l =
 	match l with
 	| [] -> []
@@ -321,22 +321,22 @@ object (self)
 	| _ -> l in
       match skip_empty stmts with
       | ({ skind = If(e, tb, eb, _); labels = []; _ } as s) :: rest ->
-	 let ops =
-           ops_provider#get_cmd_operations (context#add_stmt s.sid)#add_if_expr in
+         let testContext = (context#add_stmt s.sid)#add_if_expr in
+	 let ops = ops_provider#get_cmd_operations testContext in
 	begin
 	  match (skip_empty tb.bstmts, skip_empty eb.bstmts) with
 	  | ([], {skind = Break _; labels = []; _} :: _) ->
-             (e,rest,ops)
+             (e, rest, ops, testContext)
 	  | ({skind = Break _; labels = []; _} :: _, []) ->
-             (UnOp (LNot, e, TInt (IInt, [])), rest, ops)
+             (UnOp (LNot, e, TInt (IInt, [])), rest, ops, testContext)
 	  | _ ->
-             (Const (CInt (Int64.of_int 1, IInt, None)), stmts,ops)
+             (Const (CInt (Int64.of_int 1, IInt, None)), stmts, ops, context)
 	end
-      | _ -> (Const (CInt (Int64.of_int 1, IInt, None)), stmts, []) in
+      | _ -> (Const (CInt (Int64.of_int 1, IInt, None)), stmts, [], context) in
     let bodyStmts =
       List.map (fun s ->
           self#translate_stmt s gotos (context#add_stmt s.sid)) loopStmts in
-    (terminationTest, ops, bodyStmts)
+    (terminationTest, testContext, ops, bodyStmts)
 
   method private translate_stmt (stmt:stmt) gotos context =
     if gotos#is_goto_block stmt then
@@ -364,10 +364,10 @@ object (self)
 	  | _ ->
 	    begin
 	      let _ = env#start_loop in
-	      let (termination_test,ops,loopBody) =
+	      let (termination_test, testContext, ops, loopBody) =
                 self#decompose_loop body.bstmts gotos context#add_loop in
 	      let (whenc, exitc) =
-                exp_translator#translate_condition context termination_test in
+                exp_translator#translate_condition testContext termination_test in
 	      let loopBody = make_breakout_block env#get_continue_label loopBody in
 	      let loopCmd = make_loop (ops @ [whenc]) [exitc] [loopBody] in
 	      let loopCmd = make_breakout_block env#get_break_label [loopCmd] in
