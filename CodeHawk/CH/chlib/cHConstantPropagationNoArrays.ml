@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -96,7 +98,9 @@ class constant_propagation_no_arrays_t system =
       | ASSIGN_NUM (v, DIV (x, y)) ->
 	 begin
 	   match (getNumConst x, getNumConst y) with
-	   | (Some c1, Some c2) -> ASSIGN_NUM (v, NUM (c1#div c2))
+	   (* CHIF DIV truncates toward zero (C, ARM sdiv/udiv, Java idiv) *)
+	   | (Some c1, Some c2) when not c2#is_zero ->
+              ASSIGN_NUM (v, NUM (c1#div_trunc c2))
 	   | _ -> cmd
 	 end
       | ASSIGN_SYM (v, SYM_VAR x) ->
