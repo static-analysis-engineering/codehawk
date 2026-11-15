@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -140,6 +142,19 @@ object (self: 'a)
     in
     self#mkNew r
     
+  method div_trunc (a: 'a) =
+    let r = match (bound, a#getBound) with
+      | (PLUS_INF, PLUS_INF) -> PLUS_INF
+      | (MINUS_INF, MINUS_INF) -> PLUS_INF
+      | (PLUS_INF, MINUS_INF) -> MINUS_INF
+      | (MINUS_INF, PLUS_INF) -> MINUS_INF
+      | (PLUS_INF, NUMBER x) -> if x#geq numerical_zero then PLUS_INF else MINUS_INF
+      | (MINUS_INF, NUMBER x) -> if x#geq numerical_zero then MINUS_INF else PLUS_INF
+      | (NUMBER n, NUMBER d) -> NUMBER (n#div_trunc d)
+      | (NUMBER _, _) -> NUMBER numerical_zero
+    in
+    self#mkNew r
+
   method toPretty =
     match bound with
     | PLUS_INF -> STR "+oo"

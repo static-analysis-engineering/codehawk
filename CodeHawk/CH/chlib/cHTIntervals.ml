@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -212,9 +214,9 @@ object (self : 'a)
        else
 	 let (a, b) = (self#getMin, self#getMax) in
 	    let (a', b') = (i#getMin, i#getMax) in
-	    let min_l = [a#div_floor a'; a#div_floor b'; b#div_floor a'; b#div_floor b'] in
-	    let max_l = [a#div_ceiling a'; a#div_ceiling b'; b#div_ceiling a'; b#div_ceiling b'] in
-	    self#mkInterval (min_in_bounds min_l) (max_in_bounds max_l)
+	    (* truncating division; exact, see CHIntervals.interval_t#div *)
+	    let l = [a#div_trunc a'; a#div_trunc b'; b#div_trunc a'; b#div_trunc b'] in
+	    self#mkInterval (min_in_bounds l) (max_in_bounds l)
             
   method singleton =
     if bottom || not_assigned then

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023      Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -129,6 +129,9 @@ object (self: 'a)
     match (cst, c#getCst) with
     | (NUM_BOTTOM, _) -> {< >}
     | (_, NUM_BOTTOM) -> c
+    (* CHIF DIV truncates toward zero (C, ARM sdiv/udiv, Java idiv) *)
+    | (NUM_CST c1, NUM_CST c2) when not c2#is_zero ->
+       self#mkNew (NUM_CST (c1#div_trunc c2))
     | (_, _) -> self#mkNew NUM_TOP
               
   method toPretty =
