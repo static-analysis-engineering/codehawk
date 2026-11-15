@@ -183,6 +183,18 @@ let get_typ_attributes (t:typ) =
   | TBuiltin_va_list a -> a
 
 
+(* The integer kind of an integer or enumerated type. An object of enumerated
+   type has the representation and range of its compatible integer type
+   (C11 6.7.2.2p4) and may hold any value of that type, not only the
+   enumeration constants; CIL's ekind is gcc's choice (unsigned int if no
+   enumeration constant is negative, a narrower type for packed enums). *)
+let integer_kind_of_type (t: typ): ikind option =
+  match fenv#get_type_unrolled t with
+  | TInt (ik, _) -> Some ik
+  | TEnum (ename, _) -> Some (fenv#get_enum ename).ekind
+  | _ -> None
+
+
 let is_enum_constant (ename:string) (exp:exp) =
   let einfo = fenv#get_enum ename in
   let eexps = List.map (fun (_, _, e, _) -> e) einfo.eitems in
@@ -1061,7 +1073,8 @@ and range_of_type (fdecls:cfundeclarations_int) (t:typ) =
          | XConst (IntConst n) -> get_type_range (8 * n#toInt) signed
          | _ -> get_type_range max_bits signed
        end
-    | TEnum _ -> range_of_type fdecls (TInt (IInt,[]))
+    | TEnum (ename, _) ->
+       range_of_type fdecls (TInt ((fenv#get_enum ename).ekind, []))
     | TPtr _
       | TFun _
       | TArray _ -> get_type_range system_settings#get_wordsize false

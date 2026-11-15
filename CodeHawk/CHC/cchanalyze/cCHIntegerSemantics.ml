@@ -93,18 +93,17 @@ let is_proven_safe_in_context
   | pos -> List.for_all (fun po -> po#is_safe) pos
 
 
+(* Integer kind of the type of [e]; for an enumerated type its compatible
+   integer type. *)
 let integer_kind_of_exp (env: c_environment_int) (e: exp): ikind option =
   match type_of_exp env#get_fdecls e with
-  | Ok t ->
-     (match CCHFileEnvironment.file_environment#get_type_unrolled t with
-      | TInt (ik, _) -> Some ik
-      | _ -> None)
+  | Ok t -> integer_kind_of_type t
   | Error _ -> None
 
 
 let unsigned_ikind (ty: typ): ikind option =
-  match CCHFileEnvironment.file_environment#get_type_unrolled ty with
-  | TInt (ik, _) when (not (is_signed_type ik)) && ik <> IBool -> Some ik
+  match integer_kind_of_type ty with
+  | Some ik when (not (is_signed_type ik)) && ik <> IBool -> Some ik
   | _ -> None
 
 
@@ -271,9 +270,8 @@ let get_correction
          mk_range_correction numerical_zero max max#neg numerical_zero false false
       | None -> None)
   | CastE (ty, e1) ->
-     (match (CCHFileEnvironment.file_environment#get_type_unrolled ty,
-             integer_kind_of_exp env e1) with
-      | (TInt (ikto, _), Some ikfrom) ->
+     (match (integer_kind_of_type ty, integer_kind_of_exp env e1) with
+      | (Some ikto, Some ikfrom) ->
          let slo = get_safe_lowerbound ikfrom in
          let shi = get_safe_upperbound ikfrom in
          if ikto = IBool then
@@ -300,6 +298,38 @@ let get_correction
            mk_range_correction lo hi slo shi no_lb no_ub
       | _ -> None)
   | _ -> None
+
+
+(* Store into a bit-field of width w < N. The value stored is the
+   rhs converted to the declared type of the field (CIL inserts that cast),
+   so it lies in the range of that type; the bit-field keeps its low w bits:
+   reduction modulo 2^w into [0, 2^w - 1] for an unsigned field (C11
+   6.3.1.3p2), and into [-2^(w-1), 2^(w-1) - 1] for a signed field
+   (implementation-defined, 6.3.1.3p3; gcc: modulo 2^w, as for the other
+   conversions to signed types). There is no proof obligation for this
+   value change, so the correction is never dropped. *)
+let bitfield_store_correction (lhs: lval): correction_t option =
+  let rec last_field (off: offset) =
+    match off with
+    | NoOffset -> None
+    | Field ((fname, ckey), NoOffset) -> Some (fname, ckey)
+    | Field (_, o) | Index (_, o) -> last_field o in
+  match last_field (snd lhs) with
+  | None -> None
+  | Some (fname, ckey) ->
+     let finfo =
+       CCHFileEnvironment.file_environment#get_field_info ckey fname in
+     (match (finfo.fbitfield, integer_kind_of_type finfo.ftype) with
+      | (Some w, Some ik) when ik <> IBool && w > 0 && w < get_safe_bit_width ik ->
+         let (lo, hi) =
+           if is_signed_type ik then
+             let p = power_of_two (w - 1) in
+             (p#neg, p#sub numerical_one)
+           else
+             (numerical_zero, (power_of_two w)#sub numerical_one) in
+         mk_range_correction
+           lo hi (get_safe_lowerbound ik) (get_safe_upperbound ik) false false
+      | _ -> None)
 
 
 let fold_constant (c: correction_t) (n: numerical_t): numerical_t =

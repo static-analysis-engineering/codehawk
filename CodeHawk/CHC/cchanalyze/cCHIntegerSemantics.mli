@@ -87,6 +87,14 @@ val get_correction:
   c_environment_int -> program_context_int -> exp -> correction_t option
 
 
+(** [bitfield_store_correction lhs] returns the correction for a store into
+    [lhs] if [lhs] designates a bit-field of width [w] smaller than the width
+    of its declared integer type: the stored value is reduced modulo [2^w]
+    into the range of the bit-field (C11 6.3.1.3p2; for a signed bit-field
+    implementation-defined, 6.3.1.3p3, gcc semantics). [None] otherwise. *)
+val bitfield_store_correction: lval -> correction_t option
+
+
 (** [unsigned_ikind ty] returns the integer kind of [ty] if it is an
     unsigned integer type other than [_Bool]; otherwise [None]. *)
 val unsigned_ikind: typ -> ikind option

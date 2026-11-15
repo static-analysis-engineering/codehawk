@@ -253,12 +253,12 @@ object
        refute the unsigned wrap-around correction branches. *)
     let rangeconstraints =
       List.fold_left (fun acc (_vname, vtype, _, vInit) ->
-          match fenv#get_type_unrolled vtype with
-          | TInt (ik, _) ->
+          match integer_kind_of_type vtype with
+          | Some ik ->
              (make_range_assert
                 env vInit (get_safe_lowerbound ik) (get_safe_upperbound ik))
              :: acc
-          | _ -> acc) [] (formals @ globals)  in
+          | None -> acc) [] (formals @ globals)  in
     let (tmps,rangecode) = env#end_transaction  in
     let rangecode = List.map make_c_cmd rangecode in
     let rangeconstraints =
