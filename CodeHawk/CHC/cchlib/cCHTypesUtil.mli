@@ -183,6 +183,11 @@ val max_size_of_exp_type: cfundeclarations_int -> exp -> xpr_t option
 
 val range_of_type: cfundeclarations_int -> typ -> type_range_int
 
+(** [integer_kind_of_type t] is [Some ik] for an integer type [TInt ik] and
+    for an enumerated type whose compatible integer type (CIL [ekind], gcc's
+    choice) is [ik] (C11 6.7.2.2p4); [None] for other types. *)
+val integer_kind_of_type: typ -> ikind option
+
 val byte_offset_of_field: cfundeclarations_int -> fieldinfo -> xpr_t
 
 val get_pointer_expr_target_type: cfundeclarations_int -> exp -> typ traceresult

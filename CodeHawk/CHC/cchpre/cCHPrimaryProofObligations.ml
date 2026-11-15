@@ -577,6 +577,19 @@ and create_po_exp
     let _ =
       match (exptyp_r, tgttyp)  with
       | (Ok (TInt (ik1, _)), TInt (ik2,_ )) -> add_int_cast ik1 ik2 e
+      (* conversions from or to an enumerated type are conversions from or to
+         its compatible integer type (C11 6.7.2.2p4; a conversion to an
+         enumerated type also gets the enumeration-membership check *)
+      | (Ok (TEnum _ as t1), (TInt _ | TEnum _))
+        | (Ok (TInt _ as t1), TEnum _) ->
+         begin
+           (match (integer_kind_of_type t1, integer_kind_of_type tgttyp) with
+            | (Some ik1, Some ik2) -> add_int_cast ik1 ik2 e
+            | _ -> ());
+           (match tgttyp with
+            | TEnum _ -> add (PCast (t1, tgttyp, e))
+            | _ -> ())
+         end
       | (Ok (TPtr (tt1, _)), TPtr (tt2, _)) ->
          add (PPointerCast (tt1,tt2,e))  (* may need additional int cast *)
       | (Ok exptyp, _) -> add (PCast (exptyp, tgttyp, e))
@@ -994,6 +1007,10 @@ and get_output_format_proofobligations env argspec arg =
   let get_po ty2 =
     match (argtype, ty2) with
     | (Ok (TInt (ik1, _)), TInt (ik2, _)) -> get_int_cast ik1 ik2 arg
+    | (Ok (TEnum _ as t1), TInt (ik2, _)) ->
+       (match integer_kind_of_type t1 with
+        | Some ik1 -> get_int_cast ik1 ik2 arg
+        | None -> [PFormatCast (t1, ty2, arg)])
     | (Ok ty, _) -> [PFormatCast (ty, ty2, arg)]
     | (Error err, _) ->
        begin

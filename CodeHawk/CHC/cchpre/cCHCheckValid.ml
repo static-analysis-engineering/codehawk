@@ -1040,10 +1040,6 @@ let check_ppo_validity
         ^ " belongs to enumeration "
         ^ ename)
 
-  | PCast (TEnum (ename,_), TInt (ik, _), _) when enum_fits_kind ename ik ->
-     let its = int_type_to_string in
-     make ("all enum values in " ^ ename ^ " fit into " ^ (its ik))
-
   | PCast (_, TEnum (ename,_), (UnOp (LNot, _, _)))
        when (is_enum_constant ename zero) && (is_enum_constant ename one) ->
      make ("zero and one belong to enumeration " ^ ename)

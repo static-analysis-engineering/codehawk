@@ -102,7 +102,13 @@ object (self)
                 (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars)
 	  else if env#has_constant_offset chifVar then
-	    make_c_cmd (ASSIGN_NUM (chifVar, numExp))
+            (* a store into a bit-field keeps the low bits *)
+            (match CCHIntegerSemantics.bitfield_store_correction lhs with
+             | Some c ->
+                make_c_cmd_block
+                  ((make_c_cmd (ASSIGN_NUM (chifVar, numExp)))
+                   :: (CCHIntegerSemantics.correction_code env chifVar c))
+             | None -> make_c_cmd (ASSIGN_NUM (chifVar, numExp)))
           else
             let memoryvars = env#get_memory_variables_with_base chifVar in
             let _ =
