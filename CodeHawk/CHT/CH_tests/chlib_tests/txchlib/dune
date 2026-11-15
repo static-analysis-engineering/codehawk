@@ -1,0 +1,3 @@
+(tests
+  (names cHIntervalsTest)
+  (libraries chlib chutil tchlib))
