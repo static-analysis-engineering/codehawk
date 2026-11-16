@@ -72,18 +72,17 @@ object (self)
     let cmd = make_breakout_block env#get_function_break_label cmdList in
     [cmd]
 
+  (* The entire function body is translated as one CFG. Previously the last
+     statement was translated separately after the CFG; edges into it were
+     redirected to the CFG exit and edges out of it were lost, which made
+     the target of a backward goto in the last statement unreachable
+     (issue 41). *)
   method translate_cfg_breakout_block block gotos context =
-    if List.length block.bstmts > 0 then
-      let stmts = List.rev (List.tl (List.rev block.bstmts)) in
-      let lastStmt = List.hd (List.rev block.bstmts) in
-      let cfgCmd = self#translate_unstructured_stmt_group stmts gotos context in
-      let lastCmd =
-        self#translate_stmt lastStmt gotos (context#add_stmt lastStmt.sid) in
-      let cmd =
-        make_breakout_block env#get_function_break_label [cfgCmd; lastCmd] in
-      [cmd]
-    else
-      [SKIP]
+    match block.bstmts with
+    | [] -> [SKIP]
+    | stmts ->
+       let cfgCmd = self#translate_unstructured_stmt_group stmts gotos context in
+       [make_breakout_block env#get_function_break_label [cfgCmd]]
 
   method private translate_unstructured_stmt_group stmts _gotos context =
     if List.length stmts = 0 then SKIP else
@@ -98,12 +97,33 @@ object (self)
       let exitState = EU.mkState exitLabel [] in
       let cfg = EU.mkCFG entryState exitState in
       let descendants = List.concat (List.map get_descendants stmts) in
+      (* A successor outside the group is the statement that follows the
+         group (fall-through), represented by the CFG exit; a statement
+         without successors falls off the end of the function body. Jumps
+         that leave the group otherwise (break/continue of an enclosing loop
+         or switch) are handled separately in aux. *)
       let successors stmt =
-        List.map (fun sid ->
-            if List.mem sid descendants then
-              EU.numbersymbol sid "stmt"
-            else
-              exitLabel) stmt.succs in
+        match stmt.succs with
+        | [] -> [exitLabel]
+        | succs ->
+           List.map (fun sid ->
+               if List.mem sid descendants then
+                 EU.numbersymbol sid "stmt"
+               else
+                 exitLabel) succs in
+      (* in_break: the stmt is inside a loop or switch within the group;
+         in_continue: the stmt is inside a loop within the group *)
+      let in_break = ref false in
+      let in_continue = ref false in
+      let with_scope ~brk ~cont f =
+        let (b, c) = (!in_break, !in_continue) in
+        begin
+          in_break := brk;
+          in_continue := cont;
+          f ();
+          in_break := b;
+          in_continue := c
+        end in
       let rec aux stmt context =
         let _ = env#set_current_stmt_id stmt.sid in
         let sym = env#get_current_stmt_id_label in
@@ -126,6 +146,22 @@ object (self)
 	     | [] -> addEdge sym exitLabel
 	     | _ -> List.iter (fun s -> addEdge sym s) (successors stmt)
 	   end
+
+        (* break/continue of a loop or switch that encloses the group: jump
+           to the break/continue label of that (structurally translated)
+           loop or switch, rather than fall through to the statement after
+           the group (issue 41) *)
+        | Break loc when not !in_break ->
+           begin
+             env#set_current_location loc;
+             cfg#addState (EU.mkState sym [make_break env#get_break_label])
+           end
+
+        | Continue loc when not !in_continue ->
+           begin
+             env#set_current_location loc;
+             cfg#addState (EU.mkState sym [make_break env#get_continue_label])
+           end
 
         | Goto (_,loc)
           | Break loc
@@ -187,7 +223,8 @@ object (self)
 	     env#set_current_location loc;
 	     cfg#addState vacuousState;
 	     List.iter (fun s -> addEdge sym s) (successors stmt);
-	     aux_list b.bstmts context#add_loop
+	     with_scope ~brk:true ~cont:true (fun () ->
+                 aux_list b.bstmts context#add_loop)
 	   end
 
         | Switch (_, b, _, loc) ->
@@ -195,7 +232,8 @@ object (self)
 	     env#set_current_location loc;
 	     cfg#addState vacuousState;
 	     List.iter (fun s -> addEdge sym s) (successors stmt);
-	     aux_list b.bstmts context
+	     with_scope ~brk:true ~cont:!in_continue (fun () ->
+                 aux_list b.bstmts context)
 	   end
 
         | _ ->
