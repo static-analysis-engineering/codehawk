@@ -3,6 +3,7 @@
   <header date="2020-02-23 15:37:07"/>
   <function-summary name="waitpid">
     <parameters>
+      <par name="stat_loc" nr="2"/>
     </parameters>
     <preconditions/>
     <postconditions/>
@@ -11,6 +12,15 @@
 	<math>
 	  <apply>
 	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>stat_loc</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>

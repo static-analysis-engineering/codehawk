@@ -3,6 +3,7 @@
   <header date="2020-02-19 21:52:53"/>
   <function-summary name="prctl">
     <parameters>
+      <par name="arg2" nr="2"/>
     </parameters>
     <preconditions/>
     <postconditions>
@@ -30,6 +31,15 @@
 	<math>
 	  <apply>
 	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>arg2</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>

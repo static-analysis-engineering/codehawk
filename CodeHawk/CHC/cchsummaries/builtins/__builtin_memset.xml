@@ -38,6 +38,15 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>s</ci>
+	    <ci>len</ci>
+	  </apply>
+	</math>
+      </sideeffect>
     </sideeffects>
   </function-summary>
 </codehawk-summary-file>

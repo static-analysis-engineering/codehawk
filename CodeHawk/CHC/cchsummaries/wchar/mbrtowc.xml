@@ -28,6 +28,24 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>pwc</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>ps</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
     </sideeffects>
   </function-summary>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>  
