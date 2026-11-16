@@ -627,67 +627,14 @@ object (self)
     || self#check_safe_lval
 
   (* ----------------------- violation -------------------------------------- *)
-  (* check_violation
-     - inv_implies_violation
-       - xprlist_implies_violation
-         - xpr_implies_violation
-           - var_implies_violation
-   *)
-
-  method private var_implies_violation (invindex: int) (v: variable_t) =
-    let mname = "var_implies_violation" in
-    if poq#env#is_byte_sequence v then
-      let bsv = poq#env#get_byte_sequence_origin v in
-      let callee = poq#env#get_callvar_callee bsv in
-      let deps = DLocal [invindex] in
-      let msg = "value may be tainted by " ^ callee.vname in
-      let site = Some (__FILE__, __LINE__, mname) in
-      Some (deps, msg, site)
-    else
-      None
-
-  method private xpr_implies_violation (invindex: int) (x: xpr_t) =
-    let r = None in
-    let r = match r with
-      | Some _ -> r
-      | _ ->
-         match x with
-         | XVar v -> self#var_implies_violation invindex v
-         | _ -> None in
-    r
-
-  method  private xprlist_implies_violation (invindex: int) (l: xpr_t list) =
-    List.fold_left (fun acc x ->
-        match acc with
-        | Some _ -> acc
-        | _ -> self#xpr_implies_violation invindex x) None l
-
-  method private inv_implies_violation (inv: invariant_int) =
-    let r = None in
-    let r = match r with
-      | Some _ -> r
-      | _ ->
-         match inv#lower_bound_xpr with
-         | Some x ->  self#xpr_implies_violation inv#index x
-         | _ -> None in
-    let r = match r with
-      | Some _ -> r
-      | _ ->
-         match inv#lower_bound_xpr_alternatives with
-         | Some l -> self#xprlist_implies_violation inv#index l
-         | _ -> None in
-    r
-
-  method check_violation =
-    List.fold_left (fun acc inv ->
-        acc ||
-          match self#inv_implies_violation inv with
-          | Some (deps, msg, site) ->
-             begin
-               poq#record_violation_result ~site deps msg;
-               true
-             end
-          |  _ -> false) false invs
+  (* No violation rule. The former rule declared a violation when the value
+     of the location is a byte sequence written by a library function
+     (block-write side effect, "value may be tainted by f"). A block-write
+     writes at most n bytes: a location it does not write keeps its previous
+     value, which may well be initialized (buf[0] = 0; snprintf (buf, ..)),
+     and a location it writes is initialized; neither implies that the
+     location is uninitialized on some execution. *)
+  method check_violation = false
 
   (* ----------------------- delegation ------------------------------------- *)
   (* check_delegation
