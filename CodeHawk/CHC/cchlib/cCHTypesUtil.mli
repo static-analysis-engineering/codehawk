@@ -167,6 +167,26 @@ val is_field_offset: offset -> bool
 
 val is_constant_offset: offset -> bool
 
+(** [shift_last_index off n] returns the offset of a pointer with offset [off]
+    after adding [n] (in units of its target type) within the innermost array:
+    the last constant (integer) index is increased by [n]; a trailing [NoOffset]
+    counts as index 0 (as for memory variables). Returns [None] if the last
+    index is not an integer constant. *)
+val shift_last_index: offset -> numerical_t -> offset option
+
+(** [reachable_region_offset off] returns the offset of the region reachable
+    by pointer arithmetic from a pointer with offset [off]: the enclosing array
+    if [off] ends in an index (the offset without its last index), otherwise
+    the addressed (sub-)object itself. *)
+val reachable_region_offset: offset -> offset
+
+(** [offsets_overlap o1 o2] returns true if the memory denoted by [o1] may
+    overlap with the memory denoted by [o2] within the same object, i.e., if
+    one may be a prefix of the other. Indices are considered distinct only if
+    both are integer constants with different values; offsets of different
+    shapes (field vs index) are considered to overlap. *)
+val offsets_overlap: offset -> offset -> bool
+
 val is_zero_memory_offset: offset -> bool
 
 val is_field_lval_exp: exp -> bool
