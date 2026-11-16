@@ -209,6 +209,14 @@ object
   method get_return_contexts: program_context_int list
   method get_memory_variables: variable_t list
   method get_memory_variables_with_base: variable_t -> variable_t list
+
+  (** [get_global_state_variables] returns all variables that represent (parts
+      of) global variables: the global program variables and the memory
+      variables of global memory references (address-taken globals), each
+      paired with the name of the global variable. Initial values are not
+      included. *)
+  method get_global_state_variables: (string * variable_t) list
+
   method get_parameters: variable_t list
 
   method get_pointer_variables  : variable_type_t -> variable_t list   (* symbolic program variable with type TPtr *)

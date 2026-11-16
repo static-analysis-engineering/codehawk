@@ -733,6 +733,21 @@ object(self)
     else
       memvars
 
+  method get_global_state_variables =
+    let globalvars =
+      List.map (fun v ->
+          let (vinfo, _) = self#get_global_variable v in (vinfo.vname, v))
+        (self#get_variables_filtered vmgr#is_global_variable) in
+    let globalmemvars =
+      List.fold_left (fun acc mv ->
+          let memref = self#get_memory_reference mv in
+          match memref#get_base with
+          | CGlobalAddress gv when self#is_global_variable gv ->
+             let (vinfo, _) = self#get_global_variable gv in
+             (vinfo.vname, mv) :: acc
+          | _ -> acc) [] self#get_memory_variables in
+    globalvars @ globalmemvars
+
   method get_parameters =
     self#get_variables_filtered vmgr#is_fixed_value
 
