@@ -39,6 +39,15 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>ptr</ci>
+	    <runtime-value/>
+	  </apply>
+	</math>
+      </sideeffect>
     </sideeffects>
   </function-summary>
 </codehawk-summary-file>

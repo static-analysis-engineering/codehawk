@@ -3,6 +3,7 @@
   <header date="2020-02-06 13:57:05"/>
   <function-summary name="ioctl">
     <parameters>
+      <par name="arg" nr="3"/>
     </parameters>
     <preconditions/>
     <postconditions>
@@ -30,6 +31,15 @@
 	<math>
 	  <apply>
 	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>arg</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>

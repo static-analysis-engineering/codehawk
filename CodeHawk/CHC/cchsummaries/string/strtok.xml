@@ -66,16 +66,18 @@
       <sideeffect>
 	<math>
 	  <apply>
-	    <functional/>
+	    <initializes-external-state/>
+	    <ci>es__strtok</ci>
+	    <ci>s1</ci>
 	  </apply>
 	</math>
       </sideeffect>
       <sideeffect>
 	<math>
 	  <apply>
-	    <initializes-external-state/>
-	    <ci>es__strtok</ci>
+	    <block-write/>
 	    <ci>s1</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>

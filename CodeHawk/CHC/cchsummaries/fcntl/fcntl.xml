@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
   <header date="2020-02-06 16:40:29"/>
-  <function-summary name="fnctl">
+  <function-summary name="fcntl">
     <parameters>
+      <par name="arg" nr="3"/>
     </parameters>
     <preconditions/>
     <postconditions/>
@@ -11,6 +12,15 @@
 	<math>
 	  <apply>
 	    <preserves-all-memory/>
+	  </apply>
+	</math>
+      </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>arg</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>
