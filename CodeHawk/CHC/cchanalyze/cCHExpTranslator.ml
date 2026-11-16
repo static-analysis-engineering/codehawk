@@ -1179,7 +1179,20 @@ object (self)
       ~ok:(fun ftype ->
         match x with
         | Const c -> self#translate_const_expr c
-        | CastE (_, xx) -> self#translate_expr xx
+        | CastE (_, xx) ->
+           (* An integer conversion that may change the value (C11
+              6.3.1.3p2-3; issue 21) is applied to a constant operand and
+              makes any other operand unknown. Previously every cast was
+              the identity: (uint8_t)x > 100 with x == 300 folded to TRUE
+              and made the else branch unreachable (issue 25). *)
+           let inner = self#translate_expr xx in
+           (match CCHIntegerSemantics.get_correction env context x with
+            | None -> inner
+            | Some c ->
+               match inner with
+               | XConst (IntConst n) ->
+                  num_constant_expr (CCHIntegerSemantics.fold_constant c n)
+               | _ -> random_constant_expr)
         | Lval lval -> self#translate_variable_expr lval ftype
         | AddrOf lval
           | StartOf lval -> self#translate_address lval ftype

@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
    Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -202,10 +202,10 @@ object
 end
 
 
-let is_unreachable facts =
-  List.fold_left (fun acc f ->
-      match acc with Some _ -> acc | _ -> f#is_unreachable)
-    None facts
+(* domains that report the location unreachable *)
+let unreachable_domains facts =
+  List.sort_uniq Stdlib.compare
+    (List.filter_map (fun f -> f#is_unreachable) facts)
 
 let _check_file_assumptions _fenv _file_assumptions _p = false
 
@@ -261,22 +261,42 @@ let check_proof_obligations
         | CCHFailure s -> po_check_failure (msg s)
         | Failure s -> po_check_failure (msg (STR s)) in
 
-      match is_unreachable
+      match unreachable_domains
               (invIO#get_location_invariant
                  p#get_context#project_on_cfg)#get_invariants with
-      | Some domain ->
+      | (domain :: _) as domains ->
          if system_settings#use_unreachability then
            ignore ((make_unreachable p domain))
          else
+           (* Unreachability is rare in real code and usually
+              points to an error or omission in the analysis; it must not
+              silently discharge the proof obligation. The other domains'
+              facts at this location are not used either: they are vacuous
+              if the location is unreachable (a violation would be a false
+              alarm, an api delegation a spurious precondition) and
+              suspect otherwise. Only the statement-local check, which does
+              not use invariants, is performed; if the proof obligation
+              remains open it is marked with an explicit unreachable
+              diagnostic that is reported separately. *)
            begin
 	     chlog#add
                "unreachable"
 	       (LBLOCK [
                     location_to_pretty p#get_location;
-                    STR " (domain: ";
-                    STR domain;
+                    STR " (domains: ";
+                    STR (String.concat ", " domains);
                     STR ")"]);
-             default ()
+             (try
+                check_ppo_validity env#get_functionname env#get_fdecls p
+              with
+              | CCHFailure s -> po_check_failure (msg s)
+              | Failure s -> po_check_failure (msg (STR s)));
+             if p#is_closed then
+               ()
+             else
+               List.iter (fun d ->
+                   p#add_diagnostic_key_msg
+                     "unreachable" ("proven by domain " ^ d)) domains
            end
-      | _ ->
+      | [] ->
          default ()) proofObligations
