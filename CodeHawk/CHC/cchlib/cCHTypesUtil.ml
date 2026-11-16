@@ -247,6 +247,51 @@ and is_constant_index_exp e =
   | _ -> false
 
 
+(* value of an index expression that is an integer constant *)
+let integer_index_value (e: exp): numerical_t option =
+  match e with
+  | Const (CInt (i64, ik, _)) ->
+     Some (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
+  | _ -> None
+
+
+let rec shift_last_index (off: offset) (n: numerical_t): offset option =
+  match off with
+  | NoOffset ->
+     if n#equal numerical_zero then
+       Some NoOffset
+     else
+       Some (mk_constant_index_offset n)
+  | Index (e, NoOffset) ->
+     (match integer_index_value e with
+      | Some c -> Some (mk_constant_index_offset (c#add n))
+      | None -> None)
+  | Index (e, o) ->
+     Option.map (fun o' -> Index (e, o')) (shift_last_index o n)
+  | Field (f, o) ->
+     Option.map (fun o' -> Field (f, o')) (shift_last_index o n)
+
+
+let rec reachable_region_offset (off: offset): offset =
+  match off with
+  | NoOffset -> NoOffset
+  | Index (_, NoOffset) -> NoOffset
+  | Index (e, o) -> Index (e, reachable_region_offset o)
+  | Field (f, o) -> Field (f, reachable_region_offset o)
+
+
+let rec offsets_overlap (o1: offset) (o2: offset): bool =
+  match (o1, o2) with
+  | (NoOffset, _) | (_, NoOffset) -> true
+  | (Field ((f1, k1), r1), Field ((f2, k2), r2)) ->
+     f1 = f2 && k1 = k2 && offsets_overlap r1 r2
+  | (Index (e1, r1), Index (e2, r2)) ->
+     (match (integer_index_value e1, integer_index_value e2) with
+      | (Some n1, Some n2) -> n1#equal n2 && offsets_overlap r1 r2
+      | _ -> true)
+  | _ -> true
+
+
 let rec is_constant_string (e:exp) =
   match e with
   | Const (CStr _) -> true
