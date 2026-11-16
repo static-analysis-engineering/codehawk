@@ -209,6 +209,56 @@ object (self)
     | Field (f, o) -> Field (f, self#externalize_offset o)
     | Index (e, o) -> Index (externalize_exp e, self#externalize_offset o)
 
+  (* The memory variables of the object at [memref] + [off]
+     represent the lvalue *e only if the target type of [e] is the type of
+     the object at that offset; otherwise the access reinterprets the bytes of
+     the object (C11 6.5p7, 6.2.6.1) and its value is not that of a memory
+     variable. Returns the offset of the accessed object, normalized to the
+     first element when [e] points to the first element of an array object
+     (array-to-pointer conversion), or None. A void target type (a block write
+     of the whole object) is accepted, and so is any access to external memory
+     whose base pointer has type void * (its type is not known in this
+     function). Remaining gap: two accesses of different types through the
+     same void * base map to the same memory variables. *)
+  method private consistent_access_offset
+                   (e: exp)
+                   (memref: memory_reference_int)
+                   (off: offset): offset option =
+    let unroll = fenv#get_type_unrolled in
+    let same t1 t2 = CCHTypesCompare.typ_compare (unroll t1) (unroll t2) = 0 in
+    match type_of_exp fdecls e with
+    | Ok ptrtype ->
+       (match unroll ptrtype with
+        | TPtr (tgttype, _) ->
+           (match unroll tgttype with
+            | TVoid _ -> Some off
+            | _ when memref#has_external_base
+                     && (match unroll memref#get_type with
+                         | TVoid _ -> true | _ -> false) ->
+               (* external memory of unknown type (reached through a void
+                  pointer): its type is given by the access *)
+               Some off
+            | _ ->
+               let objtype = type_of_offset fdecls memref#get_type off in
+               if same tgttype objtype then
+                 Some off
+               else
+                 (match unroll objtype with
+                  | TArray (elttype, _, _) when same tgttype elttype ->
+                     Some (add_offset off (mk_constant_index_offset numerical_zero))
+                  | _ -> None))
+        | _ -> None)
+    | Error _ -> None
+
+  method private type_inconsistent_access (lval: lval): variable_t =
+    let _ =
+      log_diagnostics_result
+        ~tag:"translate_lval:type-inconsistent access"
+        ~msg:env#get_functionname
+        __FILE__ __LINE__
+        ["lval: " ^ (p2s (lval_to_pretty lval))] in
+    env#mk_temp NUM_VAR_TYPE
+
   method private translate_lval (lval: lval): variable_t =
     let _ =
       log_diagnostics_result
@@ -251,18 +301,21 @@ object (self)
        match self#translate_exp context e with
        | XVar v when env#is_memory_address v ->
           let (memref, moffset) = env#get_memory_address v in
-          let resultv =
-            env#mk_memory_variable
-              memref#index (add_offset moffset offset) NUM_VAR_TYPE in
-          let _ =
-            log_diagnostics_result
-              ~tag:"translate_lval:Mem:memory_address"
-              ~msg:env#get_functionname
-              __FILE__ __LINE__
-              ["e: " ^ (p2s (exp_to_pretty e));
-               "offset: " ^ (p2s (offset_to_pretty offset));
-               "resultv: " ^ (p2s (resultv#toPretty))] in
-          resultv
+          (match self#consistent_access_offset e memref moffset with
+           | Some moffset ->
+              let resultv =
+                env#mk_memory_variable
+                  memref#index (add_offset moffset offset) NUM_VAR_TYPE in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"translate_lval:Mem:memory_address"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["e: " ^ (p2s (exp_to_pretty e));
+                   "offset: " ^ (p2s (offset_to_pretty offset));
+                   "resultv: " ^ (p2s (resultv#toPretty))] in
+              resultv
+           | None -> self#type_inconsistent_access lval)
        | XVar v when (env#is_initial_value v || env#is_function_return_value v) ->
           let resultv =
             (match type_of_exp fdecls e with
@@ -329,20 +382,29 @@ object (self)
 
        | XOp (XPlus, [XVar base; XConst (IntConst n)])
             when env#is_memory_address base ->
-          let ioffset = CCHTypesUtil.mk_constant_index_offset n in
           let (memref, memoff) = env#get_memory_address base in
-          let v =
-            env#mk_memory_variable memref#index
-              (add_offset memoff ioffset) NUM_VAR_TYPE in
-          let _ =
-            log_diagnostics_result
-              ~tag:"translate_lval"
-              ~msg:env#get_functionname
-              __FILE__ __LINE__
-              ["base: " ^ (p2s base#toPretty);
-               "ioff: " ^ n#toString;
-               "v: " ^ (p2s v#toPretty)] in
-          v
+          (* pointer arithmetic moves within the innermost array (in units of
+             the pointer's target type): shift the last constant index of the
+             address rather than appending an index. *)
+          let accessoff =
+            match shift_last_index memoff n with
+            | Some off -> self#consistent_access_offset e memref off
+            | None -> None in
+          (match accessoff with
+           | Some shiftedoff ->
+              let v =
+                env#mk_memory_variable memref#index
+                  (add_offset shiftedoff offset) NUM_VAR_TYPE in
+              let _ =
+                log_diagnostics_result
+                  ~tag:"translate_lval"
+                  ~msg:env#get_functionname
+                  __FILE__ __LINE__
+                  ["base: " ^ (p2s base#toPretty);
+                   "ioff: " ^ n#toString;
+                   "v: " ^ (p2s v#toPretty)] in
+              v
+           | _ -> self#type_inconsistent_access lval)
        | mem_e ->
           let _ =
             log_diagnostics_result
