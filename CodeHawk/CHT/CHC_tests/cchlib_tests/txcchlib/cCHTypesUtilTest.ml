@@ -27,7 +27,10 @@
    ============================================================================= *)
 
 
-(* Tests for the selection of the target machine model from the word size.
+(* Tests for CCHTypesUtil: machine model selection from the word size, integer
+   constants, and offset operations.
+
+   Machine model: selection of the target machine model from the word size.
 
    Type ranges are used both as facts and as safety bounds, so they must come
    from the machine model the source was parsed for; there is no default.
@@ -45,7 +48,7 @@ module TS = TCHTestSuite
 
 
 let testname = "cCHTypesUtilTest"
-let lastupdated = "2026-11-12"
+let lastupdated = "2026-11-15"
 
 
 let ub (k: ikind) = (get_safe_upperbound k)#toString
@@ -170,10 +173,104 @@ let test_integer_constants () =
   end
 
 
+(* Offsets in memory variables and pointer arithmetic: a
+   trailing NoOffset counts as index 0; pointer arithmetic shifts the last
+   integer index; the region reachable from a pointer to an array element is
+   the enclosing array; overlap is decided conservatively. *)
+let test_offsets () =
+  let n (i: int) = CHNumerical.mkNumerical i in
+  let idx (i: int) (o: offset) =
+    match mk_constant_index_offset (n i) with
+    | Index (e, _) -> Index (e, o)
+    | _ -> A.fail_msg "mk_constant_index_offset" in
+  let fld (f: string) (o: offset) = Field ((f, 1), o) in
+  let varidx (o: offset) = Index (Lval (Var ("i", 7), NoOffset), o) in
+  let sizeofidx (o: offset) = Index (SizeOf (TInt (IChar, [])), o) in
+  let chridx (o: offset) = Index (Const (CChr 'a'), o) in
+  (* printer independent of the implementation *)
+  let rec pr (o: offset) =
+    match o with
+    | NoOffset -> ""
+    | Field ((f, _), r) -> "." ^ f ^ pr r
+    | Index (Const (CInt (i64, _, _)), r) -> "[" ^ Int64.to_string i64 ^ "]" ^ pr r
+    | Index (_, r) -> "[?]" ^ pr r in
+  let shift (o: offset) (k: int) =
+    match shift_last_index o (n k) with
+    | Some o' -> pr o'
+    | None -> "none" in
+  let region (o: offset) = pr (reachable_region_offset o) in
+  let overlap (o1: offset) (o2: offset) = string_of_bool (offsets_overlap o1 o2) in
+  begin
+    TS.new_testsuite (testname ^ "-offsets") lastupdated;
+
+    TS.add_simple_test
+      ~title:"shift-last-index"
+      (fun () ->
+        begin
+          (* *(p + 1) with p = &a[0] is a[1], not a[0][1] *)
+          A.equal_string ~msg:"[0] + 1" "[1]" (shift (idx 0 NoOffset) 1);
+          A.equal_string ~msg:"[2] - 2" "[0]" (shift (idx 2 NoOffset) (-2));
+          (* trailing NoOffset is index 0 *)
+          A.equal_string ~msg:"NoOffset + 3" "[3]" (shift NoOffset 3);
+          A.equal_string ~msg:"NoOffset + 0" "" (shift NoOffset 0);
+          (* the innermost array is shifted *)
+          A.equal_string ~msg:".f[2] + 1" ".f[3]" (shift (fld "f" (idx 2 NoOffset)) 1);
+          A.equal_string ~msg:"[1].f[0] + 4" "[1].f[4]"
+            (shift (idx 1 (fld "f" (idx 0 NoOffset))) 4);
+          (* pointer to a field: trailing NoOffset counts as index 0 *)
+          A.equal_string ~msg:".f + 1" ".f[1]" (shift (fld "f" NoOffset) 1);
+          (* non-integer last index: unknown *)
+          A.equal_string ~msg:"[i] + 1" "none" (shift (varidx NoOffset) 1);
+          A.equal_string ~msg:"[sizeof] + 1" "none" (shift (sizeofidx NoOffset) 1);
+          A.equal_string ~msg:".f[i] + 1" "none" (shift (fld "f" (varidx NoOffset)) 1)
+        end);
+
+    TS.add_simple_test
+      ~title:"reachable-region"
+      (fun () ->
+        begin
+          (* &a[1]: the whole array a (ptr[-1] is legal) *)
+          A.equal_string ~msg:"[1]" "" (region (idx 1 NoOffset));
+          (* &s.f[2]: the array s.f, not s.g *)
+          A.equal_string ~msg:".f[2]" ".f" (region (fld "f" (idx 2 NoOffset)));
+          (* &s.f: the field itself *)
+          A.equal_string ~msg:".f" ".f" (region (fld "f" NoOffset));
+          (* &a[1].f[2]: the array a[1].f *)
+          A.equal_string ~msg:"[1].f[2]" "[1].f" (region (idx 1 (fld "f" (idx 2 NoOffset))));
+          A.equal_string ~msg:"NoOffset" "" (region NoOffset)
+        end);
+
+    TS.add_simple_test
+      ~title:"offsets-overlap"
+      (fun () ->
+        begin
+          A.equal_string ~msg:"whole object" "true" (overlap NoOffset (fld "f" NoOffset));
+          A.equal_string ~msg:"prefix" "true" (overlap (fld "f" NoOffset) (fld "f" (idx 3 NoOffset)));
+          A.equal_string ~msg:"sibling fields" "false" (overlap (fld "f" NoOffset) (fld "g" NoOffset));
+          A.equal_string ~msg:"distinct indices" "false" (overlap (idx 1 NoOffset) (idx 2 NoOffset));
+          A.equal_string ~msg:"same index" "true" (overlap (idx 2 NoOffset) (idx 2 NoOffset));
+          A.equal_string ~msg:"variable index" "true" (overlap (varidx NoOffset) (idx 2 NoOffset));
+          (* only integer constants are compared by value: sizeof(char) and
+             'a' may equal another index, so they must overlap *)
+          A.equal_string ~msg:"sizeof index" "true" (overlap (sizeofidx NoOffset) (idx 1 NoOffset));
+          A.equal_string ~msg:"char index" "true" (overlap (chridx NoOffset) (idx 97 NoOffset));
+          (* different shapes: conservatively overlapping *)
+          A.equal_string ~msg:"index vs field" "true" (overlap (idx 0 NoOffset) (fld "f" NoOffset));
+          A.equal_string ~msg:"nested distinct" "false"
+            (overlap (fld "f" (idx 1 NoOffset)) (fld "f" (idx 2 NoOffset)));
+          A.equal_string ~msg:"nested same field different subfield" "false"
+            (overlap (fld "f" (fld "a" NoOffset)) (fld "f" (fld "b" NoOffset)))
+        end);
+
+    TS.launch_tests ()
+  end
+
+
 let () =
   begin
     TS.new_testfile testname lastupdated;
     test_machine_model ();
     test_integer_constants ();
+    test_offsets ();
     TS.exit_file ()
   end
