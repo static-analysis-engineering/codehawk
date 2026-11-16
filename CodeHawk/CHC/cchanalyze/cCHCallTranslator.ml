@@ -214,6 +214,38 @@ let memory_variables_in_region
     env#get_memory_variables
 
 
+(* Memory variables of the object denoted by region symbol [s] (a pointer
+   value in the symbolic pointer-set domain): all memory variables of the
+   stack or global variable that is the base of the region (the offset is not
+   known). Null and external regions (pointers to external memory, covered by
+   the assumptions on external memory) and string literals have none. For a
+   symbol that is not a known region, all stack memory variables are
+   returned. *)
+let memory_variables_of_region_sym
+      (env: c_environment_int) (s: symbol_t): variable_t list =
+  let memregmgr = env#get_variable_manager#memregmgr in
+  let stack_memory_variables () =
+    List.filter (fun mv ->
+        (env#get_memory_reference mv)#is_stack_reference)
+      env#get_memory_variables in
+  let region =
+    try Some (memregmgr#get_memory_region s#getSeqNumber)
+    with CCHFailure _ -> None in
+  match region with
+  | None -> stack_memory_variables ()
+  | Some r ->
+     match r#get_memory_base with
+     | CNull _ | CBaseVar _ | CStringLiteral _ -> []
+     | CStackAddress v | CGlobalAddress v ->
+        let seqnr = v#getName#getSeqNumber in
+        List.filter (fun mv ->
+            match (env#get_memory_reference mv)#get_base with
+            | CStackAddress w | CGlobalAddress w ->
+               w#getName#getSeqNumber = seqnr
+            | _ -> false) env#get_memory_variables
+     | CUninterpreted _ -> stack_memory_variables ()
+
+
 (* Memory variables that a callee may write through argument [arg] when no
    side effects are known for that argument: the memory variables
    of the region addressed by the argument, that is, the addressed
@@ -265,6 +297,9 @@ let arg_written_memory_variables
       | XVar v
         | XOp ((XPlus | XMinus), [XVar v; _]) when env#is_memory_address v ->
          region_of_memory_address v
+      | XConst (SymSet syms) ->
+         (* symbolic pointer-set domain: the regions the pointer may point to *)
+         List.concat_map (memory_variables_of_region_sym env) syms
       | XConst _ -> []
       | XVar v
         | XOp ((XPlus | XMinus), [XVar v; _])
@@ -2115,7 +2150,9 @@ object (self)
               { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
                             "indirect call";
                 op_args = [] }) in
-       Ok [callop]
+       (* callee unknown (the symbolic domains do not resolve function
+          pointers): lhs, argument regions and globals are abstracted *)
+       Ok (callop :: (unknown_call_abstracts env exp_translator context lhs args))
 
   method private get_post_assigns
                    (fname:string)
@@ -2309,8 +2346,11 @@ object (self)
              match se with
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
                 let arg = List.nth args (n - 1) in
+                let regionabstract =
+                  arg_written_abstract env exp_translator context arg in
                 let lhs =
                   exp_translator#translate_lhs context (Mem arg, NoOffset) in
+                regionabstract @
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
                   let _ =
@@ -2357,7 +2397,18 @@ object (self)
                 effects
 
              | _ -> []) sideeffects) in
-         seeffects
+    (* Without a library summary, the side effects (callsite
+       post-assumptions, if any) need not cover all arguments: the objects
+       addressed by the arguments are abstracted first, as in the numerical
+       call translator. Globals are abstracted unless protected by a
+       contract (see global_abstracts). *)
+    let argabstracts =
+      match get_function_summary fname with
+      | Some _ -> []
+      | None -> arg_written_abstracts env exp_translator context args in
+    argabstracts
+    @ seeffects
+    @ (global_abstracts env (Some fname) context args)
 end
 
 
