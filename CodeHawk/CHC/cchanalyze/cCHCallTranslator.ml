@@ -214,6 +214,31 @@ let memory_variables_in_region
     env#get_memory_variables
 
 
+(* The argument written by a block-write side effect on parameter [n] of a
+   library summary, or None if the write has no effect on the program's
+   memory: the call has no such argument (an optional parameter of a
+   variadic function, e.g., ioctl or fcntl), the argument is a null pointer
+   constant (e.g., strtol (s, NULL, 10), time (NULL)), or it is not a pointer
+   (fcntl (fd, F_SETFL, flags)); casts are stripped for the latter two tests.
+   Without this filter the dereference of such an argument translates to a
+   temporary and all memory variables are abstracted. *)
+let block_write_arg
+      (env: c_environment_int) (args: exp list) (n: int): exp option =
+  let rec strip_casts e = match e with CastE (_, e') -> strip_casts e' | _ -> e in
+  match List.nth_opt args (n - 1) with
+  | None -> None
+  | Some arg ->
+     match strip_casts arg with
+     | Const (CInt (i64, _, _)) when Int64.compare i64 Int64.zero = 0 -> None
+     | e ->
+        match type_of_exp env#get_fdecls e with
+        | Ok t ->
+           (match fenv#get_type_unrolled t with
+            | TPtr _ | TArray _ -> Some arg
+            | _ -> None)
+        | Error _ -> Some arg
+
+
 (* Memory variables of the object denoted by region symbol [s] (a pointer
    value in the symbolic pointer-set domain): all memory variables of the
    stack or global variable that is the base of the region (the offset is not
@@ -921,6 +946,8 @@ object (self)
        let assignments =
          List.fold_left (fun acc (se, _) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env fnargs n) -> acc
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
@@ -1401,6 +1428,8 @@ object (self)
        let assignments =
          List.fold_left (fun acc (se, _) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env fnargs n) -> acc
              | XBlockWrite (ArgValue (ParFormal n,ArgNoOffset), _) ->
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
@@ -1865,84 +1894,18 @@ object (self)
         ([(List.map (fun xsitevar ->
                make_c_cmd (ASSIGN_SYM (xsitevar, SYM sitesym))) xsitevars)]
          @ [[make_c_cmd SKIP]]) in
-    let rec compose_offset base offset =
-      match base with
-      | NoOffset -> offset
-      | Field (fuse, NoOffset) -> Field (fuse,offset)
-      | Field (fuse, foffset) -> Field (fuse, compose_offset foffset offset)
-      | Index _ ->
-         begin
-           ch_error_log#add
-             "compose offset"
-             (LBLOCK [
-                  STR "base: ";
-                  offset_to_pretty base;
-                  STR "; offset: ";
-                  offset_to_pretty offset]);
-           NoOffset
-         end in
-    let rec cancel_se_struct arg baseoffset comp  =
-      List.fold_left (fun acc f ->
-          let foffset = Field ((f.fname,f.fckey),NoOffset)  in
-          let offset = compose_offset baseoffset foffset in
-          let lhs = exp_translator#translate_lhs context (Mem arg,offset) in
-          if lhs#isTmp then
-            let memoryvars = env#get_memory_variables in
-            let _ =
-              log_diagnostics_result
-                ~tag:"abstract memory variables"
-                ~msg:env#get_functionname
-                __FILE__ __LINE__
-                (List.map (fun v -> p2s v#toPretty) memoryvars) in
-            [ make_c_cmd (ABSTRACT_VARS memoryvars)]
-          else
-            let cancel = make_c_cmd (ABSTRACT_VARS [lhs]) in
-            let _ =
-              log_diagnostics_result
-                ~tag:"abstract memory variables"
-                ~msg:env#get_functionname
-                __FILE__ __LINE__
-                [p2s lhs#toPretty] in
-            let subcancels =
-              match fenv#get_type_unrolled f.ftype with
-              | TComp (ckey,_) ->
-                 let comp = fenv#get_comp ckey in
-                 cancel_se_struct arg offset comp
-              | _ -> []  in
-            (cancel :: subcancels) @ acc) [] comp.cfields in
     let seeffects =
     List.concat
       (List.map (fun (se,_) ->
            match se with
-           | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
-              let arg = List.nth args (n - 1) in
-              let lhs = exp_translator#translate_lhs context (Mem arg,NoOffset) in
-              if lhs#isTmp  then
-                let memoryvars = env#get_memory_variables in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                [make_c_cmd (ABSTRACT_VARS memoryvars)]
-              else
-                let ty = fenv#get_type_unrolled (env#get_variable_type lhs)  in
-                let cancel = make_c_cmd  (ABSTRACT_VARS [lhs]) in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    [p2s lhs#toPretty] in
-                let subcancels =
-                  match ty with
-                  | TComp (ckey, _) ->
-                     let comp = fenv#get_comp ckey in
-                     cancel_se_struct arg NoOffset comp
-                  | _ ->
-                     [] in
-                cancel :: subcancels
+           | XBlockWrite _ ->
+              (* Initialization domain: a block write cannot make a location
+                 uninitialized (a location written is initialized, one not
+                 written keeps its state), so nothing is abstracted; in
+                 particular the initialization recorded by an
+                 initializes-range side effect of the same call (memset,
+                 memcpy, read) is kept. *)
+              []
 
            | XFormattedInput (ArgValue (ParFormal n, ArgNoOffset)) ->
               let (assignments, _) =
@@ -2344,6 +2307,8 @@ object (self)
       List.concat
         (List.map (fun (se,_) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env args n) -> []
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
                 let arg = List.nth args (n - 1) in
                 let regionabstract =
