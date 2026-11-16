@@ -115,7 +115,7 @@ end
 
 class minus_checker_t
         (poq:po_query_int)
-        (e1:exp)
+        (_e1:exp)
         (e2:exp)
         (invs1:invariant_int list)
         (invs2:invariant_int list)
@@ -129,14 +129,6 @@ object (self)
     match x with
     | XVar v when poq#env#is_initial_global_value v -> " (global)"
     | _ -> ""
-
-  method private inv_implies_non_negative (e: exp) (inv: invariant_int) =
-    match inv#lower_bound_xpr with
-    | Some (XConst (IntConst n)) when n#geq numerical_zero ->
-       let deps = DLocal [inv#index] in
-       let msg = "value of " ^ (e2s e) ^ " is non-negative: " ^ n#toString in
-       Some (deps, msg)
-    | _ -> None
 
   method private inv_implies_non_positive (e: exp) (inv: invariant_int) =
     match inv#upper_bound_xpr with
@@ -230,9 +222,11 @@ object (self)
                 end
          end
     | (Some x1, _) ->
+       (* e1 - e2 wraps around iff e2 > e1 (C11 6.2.5p9); a lower bound on e1
+          alone does not exclude that. *)
        let _ =
          poq#set_diagnostic_arg 2 ("LB: " ^ (x2s x1) ^ (self#global_str x1)) in
-       self#inv_implies_non_negative e1 inv1
+       None
     | (_, Some x2) ->
        let _ =
          poq#set_diagnostic_arg 3 ("UB: " ^ (x2s x2) ^ (self#global_str x2)) in
@@ -259,15 +253,8 @@ object (self)
     | _ ->
        match invs2 with
        | [] ->
-          List.fold_left (fun acc inv ->
-              acc ||
-                match self#inv_implies_non_negative e1 inv with
-                | Some (deps,msg) ->
-                   begin
-                     poq#record_safe_result deps msg;
-                     true
-                   end
-                | _ -> false) false invs1
+          (* without any information on e2, e1 - e2 may wrap around *)
+          false
        | _ ->
           List.fold_left (fun acc1 inv1 ->
               acc1 ||
