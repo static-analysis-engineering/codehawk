@@ -1,9 +1,9 @@
 (* =============================================================================
-   CodeHawk Binary Analyzer 
+   CodeHawk Binary Analyzer
    Author: Henny Sipma
    ------------------------------------------------------------------------------
    The MIT License (MIT)
- 
+
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny Sipma
    Copyright (c) 2021-2024 Aarno Labs LLC
@@ -14,10 +14,10 @@
    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
- 
+
    The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
-  
+
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -156,6 +156,43 @@ object (self)
              STR ")"] in
        raise (BCH_failure msg)
 
+  method get_value64 (a: doubleword_int):CHNumerical. numerical_t =
+    try
+      if super#includes_VA a then
+        let offset =
+          fail_traceresult
+            "elf_program_section#get_value64 offset"
+            (a#subtract_to_int vaddr) in
+        let ch =
+          make_pushback_stream ~little_endian:system_info#is_little_endian s in
+        begin
+          ch#skip_bytes offset;
+          CHNumerical.mkNumericalFromInt64 ch#read_i64
+        end
+      else
+        raise
+          (BCH_failure
+             (LBLOCK [
+                  STR "Address ";
+                  a#toPretty;
+                  STR " is not included in section"]))
+    with
+    | BCH_failure p ->
+       let msg =
+         LBLOCK [STR "Error in getting value from program section: "; p] in
+       raise (BCH_failure msg)
+    | IO.No_more_input ->
+       let msg =
+         LBLOCK [
+             STR "No more input in getting value from program section: ";
+             a#toPretty;
+             STR " (section va: ";
+             vaddr#toPretty;
+             STR ", section length: ";
+             INT (String.length s);
+             STR ")"] in
+       raise (BCH_failure msg)
+
 end
 
 
@@ -175,4 +212,3 @@ let read_xml_elf_program_section (node:xml_element_int) =
   let psection = new elf_program_section_t ~is_got s vaddr in
   let _ = if is_got then psection#read_got in
   psection
-  

@@ -218,7 +218,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "BIC" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "BIC" c [rd; rn; rm])
     }
   | BitwiseExclusiveOr (s, c, rd, rn, rm, tw) -> {
       mnemonic = "EOR";
@@ -226,7 +226,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "EOR" c [rd;rn;rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "EOR" c [rd; rn; rm])
     }
   | BitwiseNot (s, c, rd, rm, tw) -> {
       mnemonic = "MVN";
@@ -604,7 +604,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "MUL" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~writeback:s "MUL" c [rd; rn; rm])
     }
   | MultiplyAccumulate (s, c, rd, rn, rm, ra) -> {
       mnemonic = "MLA";
@@ -612,7 +612,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "MLA" c [rd; rn; rm; ra])
+      ida_asm = (fun f -> f#opscc ~writeback:s "MLA" c [rd; rn; rm; ra])
     }
   | MultiplySubtract (c, rd, rn, rm, ra) -> {
       mnemonic = "MLS";
@@ -678,7 +678,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc ~thumbw:tw "ROR" c [rd; rn; rm])
+      ida_asm = (fun f -> f#opscc ~thumbw:tw ~writeback:s "ROR" c [rd; rn; rm])
     }
   | RotateRightExtend (s, c, rd, rm) -> {
       mnemonic = "RRX";
@@ -686,7 +686,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z; APSR_C] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "RRX" c [rd; rm])
+      ida_asm = (fun f -> f#opscc ~writeback:s "RRX" c [rd; rm])
     }
   | SaturatingAdd (c, rd, rm, rn) -> {
       mnemonic = "QADD";
@@ -960,7 +960,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       flags_set = if s then [APSR_N; APSR_Z] else [];
       flags_used = [];
       ccode = Some c;
-      ida_asm = (fun f -> f#opscc "SMULL" c [rdlo; rdhi; rn; rm])
+      ida_asm = (fun f -> f#opscc ~writeback:s "SMULL" c [rdlo; rdhi; rn; rm])
     }
   | SignedMultiplyWordB (c, rd, rn, rm) -> {
       mnemonic = "SMULWB";
@@ -1669,6 +1669,14 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = Some c;
       ida_asm = (fun f -> f#opscc ~dt "VSHRN" c [dst; src; imm])
     }
+  | VectorSquareRoot (c, dt, dst, src) -> {
+      mnemonic = "VSQRT";
+      operands = [dst; src];
+      flags_set = [];
+      flags_used = [];
+      ccode = Some c;
+      ida_asm = (fun f -> f#opscc ~dt "VSQRT" c [dst; src])
+    }
   | VStoreRegister (c, src, base, mem) -> {
       mnemonic = "VSTR";
       operands = [src; base; mem];
@@ -1797,6 +1805,7 @@ let get_record (opc:arm_opcode_t): 'a opcode_record_t =
       ccode = None;
       ida_asm = (fun f -> f#no_ops ("unknown " ^ name ^ ": " ^ dw#to_hex_string))
     }
+
 
 class string_formatter_t (width:int): [string] opcode_formatter_int =
 object (self)

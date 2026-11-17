@@ -87,8 +87,8 @@ type dmb_option_t =  (* data memory barrier option *)
 
 type vfp_datatype_t =    (* Advanced SIMD extension A2.6.3 *)
   | VfpNone
-  | VfpSize of int
-  | VfpFloat of int
+  | VfpSize of int     (* size in bits *)
+  | VfpFloat of int    (* size in bits *)
   | VfpInt of int
   | VfpPolynomial of int
   | VfpSignedInt of int
@@ -146,7 +146,7 @@ type arm_operand_kind_t =
   | ARMImmediate of immediate_int
   | ARMFPConstant of float
   | ARMAbsolute of doubleword_int
-  | ARMLiteralAddress of doubleword_int
+  | ARMLiteralAddress of doubleword_int * int (* size in bytes *)
   | ARMMemMultiple of
       arm_reg_t  (* register that holds the memory address *)
       * int   (* alignment, default is 0 *)
@@ -1324,6 +1324,11 @@ type arm_opcode_t =
       * arm_operand_int (* destination *)
       * arm_operand_int (* source register *)
       * arm_operand_int (* source immediate *)
+  | VectorSquareRoot of
+      arm_opcode_cc_t   (* condition *)
+      * vfp_datatype_t  (* data type *)
+      * arm_operand_int (* destination *)
+      * arm_operand_int (* source register *)
   | VStoreRegister of
       arm_opcode_cc_t   (* condition *)
       * arm_operand_int (* floating-point source register *)

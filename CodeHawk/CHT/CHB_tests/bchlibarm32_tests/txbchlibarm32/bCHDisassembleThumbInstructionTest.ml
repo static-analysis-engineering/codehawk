@@ -5,7 +5,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2022-2025  Aarno Labs LLC
+   Copyright (c) 2022-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -337,6 +337,7 @@ let thumb_4_vector () =
       ("VSHR.U32",                    "e6ff1ae0", "VSHR.U32       D30, D10, #0x1a");
       ("VSHR.U64",                    "a6ffda80", "VSHR.U64       Q4, Q5, #0x1a");
       ("VSHRN.I64",                   "e6ef32e8", "VSHRN.I64      D30, Q9, #0x1a");
+      ("VSQRT.F64",                   "b1eeccab", "VSQRT.F64      D10, D12");
       ("VST1.32-1",                   "00f99d07", "VST1.32        {D0}, [R0:64]!");
       ("VST1.32-4",                   "40f99d42", "VST1.32        {D20,D21,D22,D23}, [R0:64]!");
       ("VST1.32-one-lane",            "80f90f28", "VST1.32        {D2[0]}, [R0]");

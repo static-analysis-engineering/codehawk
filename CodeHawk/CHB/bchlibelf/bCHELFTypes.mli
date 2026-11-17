@@ -478,6 +478,7 @@ class type elf_program_section_int =
     method get_xsubstring: doubleword_int -> int -> string
     method get_vaddr: doubleword_int
     method get_value: doubleword_int -> doubleword_int
+    method get_value64: doubleword_int -> numerical_t
     method get_string_reference: doubleword_int -> string option
     method get_got_value: doubleword_int -> doubleword_int
     method get_got_values: (string * doubleword_int) list
@@ -816,6 +817,7 @@ object
   method get_relocation: doubleword_int -> string option
   method get_containing_section: doubleword_int -> elf_raw_section_int option
   method get_program_value: doubleword_int -> doubleword_int
+  method get_program_value64: doubleword_int -> CHNumerical.numerical_t
   method get_global_offset_table_value: doubleword_int -> doubleword_int
 
   (* predicates *)

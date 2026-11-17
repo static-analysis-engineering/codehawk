@@ -4091,11 +4091,15 @@ let translate_arm_instruction
 
   | VectorDuplicate _ -> default []
 
-  | VectorMoveDS (c, _, dd, dm) ->
+  | VectorMoveDS (c, dt, dd, dm) ->
      let vdd = floc#env#mk_register_variable dd#to_register in
      let lhs_r = TR.tmap fst (dd#to_lhs floc) in
      let xdm_r = dm#to_expr floc in
-     let cmds = floc#get_assign_commands_r lhs_r xdm_r in
+     let size =
+       match dt with
+       | VfpFloat s | VfpSize s -> s / 8
+       | _ -> 4 in
+     let cmds = floc#get_assign_commands_r ~size lhs_r xdm_r in
      let usevars = get_register_vars [dm] in
      let usehigh = get_use_high_vars_r [xdm_r] in
      let defcmds =
@@ -4170,7 +4174,7 @@ let translate_arm_instruction
      let lhs_r = TR.tmap fst (rt#to_lhs floc) in
      let xrn_r = rn#to_expr floc in
      let rhs_r = mem#to_expr floc in
-     let cmds = floc#get_assign_commands_r  lhs_r rhs_r in
+     let cmds = floc#get_assign_commands_r ~size:rt#get_size lhs_r rhs_r in
      let usevars = get_register_vars [rn] in
      let usehigh =
        TR.tfold
@@ -4234,6 +4238,21 @@ let translate_arm_instruction
       | _ -> make_conditional_commands c cmds)
 
   | VectorMultiply (c, _, qd, qn, qm) ->
+     let vqd_r = qd#to_variable floc in
+     let vqd = floc#env#mk_register_variable qd#to_register in
+     let xqn_r = qn#to_expr floc in
+     let xqm_r = qm#to_expr floc in
+     let cmds = floc#get_abstract_commands_r vqd_r in
+     let usevars = get_register_vars [qn; qm] in
+     let usehigh = get_use_high_vars_r [xqn_r; xqm_r] in
+     let defcmds =
+       floc#get_vardef_commands ~defs:[vqd] ~use:usevars ~usehigh ctxtiaddr in
+     let cmds = defcmds @ cmds in
+     (match c with
+      | ACCAlways -> default cmds
+      | _ -> make_conditional_commands c cmds)
+
+  | VectorMultiplyAccumulate(c, _, qd, qn, qm) ->
      let vqd_r = qd#to_variable floc in
      let vqd = floc#env#mk_register_variable qd#to_register in
      let xqn_r = qn#to_expr floc in
@@ -4483,6 +4502,8 @@ let translate_arm_instruction
       | _ -> make_conditional_commands c cmds)
 
   | VectorShiftRightNarrow _ -> default []
+
+  | VectorSquareRoot _ -> default []
 
   | VStoreRegister(c, dd, rn, mem) ->
      let xdd_r = dd#to_expr floc in

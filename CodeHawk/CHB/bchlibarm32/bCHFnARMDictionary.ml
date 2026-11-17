@@ -1054,8 +1054,13 @@ object (self)
           (Error [__FILE__ ^ ":" ^ (string_of_int __LINE__) ^ ": "
                    ^ "Parameter type not recognized in call instruction"],
            [], []) in
-      let xx = rewrite_expr ?restrict:(Some 4) x in
       let ptype = get_parameter_type p in
+      let size =
+        match size_of_btype ptype with
+        | Ok size -> size
+        | _ -> 4 in
+      let xx = rewrite_expr ?restrict:(Some size) x in
+
       let xx =
         if is_pointer ptype (* && (not (is_char_pointer ptype)) *) then
           let _ = floc#memrecorder#record_argument xx index in
@@ -2097,14 +2102,14 @@ object (self)
                    ~condloc:floc#l
                    ~testloc:testloc in
                let (tags, args) =
+                 let lhs_r = dstop#to_variable floc in
+                 let uses = [get_def_use_r lhs_r] in
+                 let useshigh = [get_def_use_high_r lhs_r] in
                  (match optpredicate with
                   | Some p ->
                      let p = if inverse then XOp (XLNot, [p]) else p in
-                     let lhs_r = dstop#to_variable floc in
                      let rdefs = get_all_rdefs p in
                      let xp = rewrite_expr p in
-                     let uses = [get_def_use_r lhs_r] in
-                     let useshigh = [get_def_use_high_r lhs_r] in
                      let (tagstring, args) =
                        mk_instrx_data_r
                          ~vars_r:[lhs_r]
@@ -2113,9 +2118,11 @@ object (self)
                          ~uses
                          ~useshigh
                          () in
-                     ([tagstring], args)
+                     ([tagstring; "agg:predassign"], args)
                   | _ ->
-                     ([], [])) in
+                     let (tagstring, args) =
+                       mk_instrx_data_r ~vars_r:[lhs_r] ~uses ~useshigh () in
+                     ([tagstring; "agg:predassign:nd"], args)) in
                let dependents =
                  List.map (fun d ->
                      (make_i_location floc#l d#get_address)#ci) agg#instrs in
@@ -4608,6 +4615,28 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | VectorAdd(c, _, dst, src1, src2) ->
+         let vdst_r = dst#to_variable floc in
+         let xdst_r = dst#to_expr floc in
+         let rxdst_r = TR.tmap rewrite_expr xdst_r in
+         let xsrc1_r = src1#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | VCompare (_, c, _, fdst, src1, src2) ->
          let v_fpscr_r = fdst#to_variable floc in
          let xsrc1_r = src1#to_expr floc in
@@ -4834,6 +4863,50 @@ object (self)
          let (tags, args) = add_optional_instr_condition tagstring args c in
          (tags, args)
 
+      | VectorMultiply(c, _, dst, src1, src2) ->
+         let vdst_r = dst#to_variable floc in
+         let xdst_r = dst#to_expr floc in
+         let rxdst_r = TR.tmap rewrite_expr xdst_r in
+         let xsrc1_r = src1#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorMultiplyAccumulate (c, _, dst, src1, src2) ->
+         let vdst_r = dst#to_variable floc in
+         let xdst_r = dst#to_expr floc in
+         let rxdst_r = TR.tmap rewrite_expr xdst_r in
+         let xsrc1_r = src1#to_expr floc in
+         let rxsrc1_r = TR.tmap rewrite_expr xsrc1_r in
+         let xsrc2_r = src2#to_expr floc in
+         let rxsrc2_r = TR.tmap rewrite_expr xsrc2_r in
+         let rdefs = [get_rdef_r xsrc1_r; get_rdef_r xsrc2_r; get_rdef_r xdst_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
       | VectorMultiplySubtract (c, _, dst, src1, src2) ->
          let vdst_r = dst#to_variable floc in
          let xdst_r = dst#to_expr floc in
@@ -4849,6 +4922,24 @@ object (self)
            mk_instrx_data_r
              ~vars_r:[vdst_r]
              ~xprs_r:[xsrc1_r; xsrc2_r; xdst_r; rxsrc1_r; rxsrc2_r; rxdst_r]
+             ~rdefs
+             ~uses
+             ~useshigh
+             () in
+         let (tags, args) = add_optional_instr_condition tagstring args c in
+         (tags, args)
+
+      | VectorNegate (c, _, dst, src) ->
+         let vdst_r = dst#to_variable floc in
+         let xsrc_r = src#to_expr floc in
+         let rxsrc_r = TR.tmap rewrite_expr xsrc_r in
+         let rdefs = [get_rdef_r xsrc_r] in
+         let uses = [get_def_use_r vdst_r] in
+         let useshigh = [get_def_use_high_r vdst_r] in
+         let (tagstring, args) =
+           mk_instrx_data_r
+             ~vars_r:[vdst_r]
+             ~xprs_r:[xsrc_r; rxsrc_r]
              ~rdefs
              ~uses
              ~useshigh

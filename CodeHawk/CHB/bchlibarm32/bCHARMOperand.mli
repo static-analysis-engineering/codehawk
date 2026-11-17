@@ -123,7 +123,8 @@ val arm_fp_constant_op: float -> arm_operand_int
 val arm_absolute_op: doubleword_int -> arm_operand_mode_t -> arm_operand_int
 
 val arm_literal_op:
-  ?align:int
+  ?size:int
+  -> ?align:int
   -> ?is_add:bool
   -> doubleword_int    (* pc addr *)
   -> int               (* immediate offset *)

@@ -2464,7 +2464,7 @@ object (self)
          TR.tfold
            ~ok:(fun optty ->
              match optty with
-             | Some ty -> Ok ty
+             | LhsResolved ty -> Ok ty
              | _ ->
                 Error [
                     (elocm __LINE__);
@@ -3412,6 +3412,8 @@ object (self)
         (List.length vars) > 0
         && List.for_all is_fixed_type (variables_in_expr x)
 
+   (* Note: the rhs gets reduced by taking the modulo with the operand max size.
+      Default operand width is 32 bits. *)
    method get_assign_commands_r
             ?(signed=false)
             ?(size=4)
@@ -3448,13 +3450,20 @@ object (self)
          if not signed then
            match rhs with
            | XConst (IntConst n) ->
-              let n =
+              let n' =
                 match size with
                 | 1 -> n#modulo numerical_e8
                 | 2 -> n#modulo numerical_e16
                 | 4 -> n#modulo numerical_e32
                 | _ -> n in
-              num_constant_expr n
+              let _ =
+                if not (n#equal n') then
+                  log_diagnostics_result
+                    ~msg:(p2s self#l#toPretty)
+                    ~tag:"get_assign_commands_r: rhs reduced to fit size"
+                    __FILE__ __LINE__
+                    [n#toString ^ " truncated to " ^ n'#toString] in
+              num_constant_expr n'
            | _ -> rhs
          else
            rhs in
