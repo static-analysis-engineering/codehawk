@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -182,11 +182,14 @@ object (self)
     | Some (XVar v) when poq#env#is_function_return_value v ->
        self#xpr_implies_existential_violation inv#index (XVar v)
     | _ ->
+       (* A lower bound of zero does not imply that zero occurs; only a
+          witness (callee postcondition, tainted value) does (issue 22). *)
        match inv#lower_bound_xpr_alternatives with
        | Some l ->
           List.fold_left (fun acc x ->
-              match acc with
-              | Some _ -> acc
+              match (acc, x) with
+              | (Some _, _) -> acc
+              | (_, XConst _) -> None
               | _ -> self#xpr_implies_existential_violation inv#index x) None l
     | _ -> None
 

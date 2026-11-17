@@ -178,9 +178,10 @@ object (self)
       | NUM_VAR_TYPE ->
 	let tmpProvider = (fun () -> env#mk_num_temp) in
 	let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
-	let numExp = exp_translator#translate_exp context e in
+	let (wrapCode, numExp) =
+          exp_translator#translate_exp_with_code context e in
 	let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider numExp in
-	[rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))]
+	wrapCode @ [rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))]
       | SYM_VAR_TYPE ->
          begin
            match e with
@@ -268,9 +269,10 @@ object (self)
     let assign_return_value v e =
       let tmpProvider = (fun () -> env#mk_num_temp) in
       let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
-      let numExp = exp_translator#translate_exp context e in
+      let (wrapCode, numExp) =
+        exp_translator#translate_exp_with_code context e in
       let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider numExp in
-      [rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))] in
+      wrapCode @ [rhsCode; make_c_cmd (ASSIGN_NUM (v,numExp))] in
     let name = self#mk_invariant_label context in
     let rVar = env#get_return_var in
     let assign = make_c_cmd_block (assign_return_value rVar e) in

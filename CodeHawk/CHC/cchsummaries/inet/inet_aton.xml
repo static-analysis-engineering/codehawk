@@ -20,7 +20,9 @@
       <sideeffect>
 	<math>
 	  <apply>
-	    <functional/>
+	    <block-write/>
+	    <ci>addr</ci>
+	    <runtime-value/>
 	  </apply>
 	</math>
       </sideeffect>

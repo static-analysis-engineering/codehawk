@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -428,23 +430,36 @@ object (self : 'a)
        if i#contains numerical_zero then
          self#mkTop  (* Not very helpful! *)
        else
-	 let min_l =
-           [ min#div_floor i#getMin;
-             min#div_floor i#getMax;
-             max#div_floor i#getMin;
-             max#div_floor i#getMax ]
-         and max_l =
-           [ min#div_ceiling i#getMin;
-             min#div_ceiling i#getMax;
-             max#div_ceiling i#getMin;
-             max#div_ceiling i#getMax  ] in
-         let new_min = min_in_bounds min_l
-         and new_max = max_in_bounds max_l in
+         (* truncating division (CHIF DIV); bounds exact, see
+            CHIntervals.interval_t#div *)
+	 let l =
+           [ min#div_trunc i#getMin;
+             min#div_trunc i#getMax;
+             max#div_trunc i#getMin;
+             max#div_trunc i#getMax ] in
+         let new_min = min_in_bounds l
+         and new_max = max_in_bounds l in
+         (* Divisor d with |d| dividing the stride s: if all values have the
+            same sign, v = r + k*s maps to an arithmetic progression with step
+            s/|d| (trunc(v/d) is affine in k on each side of zero). Its residue
+            is that of the quotient of a finite bound. If the range crosses
+            zero the progression breaks: {-7, 1, 9} / 4 = {-1, 0, 2} (except
+            for |d| = 1). *)
+         let zero = bound_of_num numerical_zero in
+         let same_sign = min#geq zero || max#leq zero in
          let (new_stride, new_rem) =
-           if (i#isSingleton && (stride#modulo i#getMin#toNumber)#is_zero) then
-             (stride#div i#getMin#toNumber, rem#div i#getMin#toNumber)
-           else
-             (numerical_one, numerical_zero)                   (* Any other useful cases ? *)
+           match i#singleton with
+           | Some d when (same_sign || d#abs#equal numerical_one)
+                         && (stride#modulo d#abs)#is_zero ->
+              let s' = stride#div d#abs in
+              let q =
+                match (new_min#getBound, new_max#getBound) with
+                | (NUMBER q, _) | (_, NUMBER q) -> Some q
+                | _ -> None in
+              (match q with
+               | Some q -> (s', q#modulo s')
+               | None -> (numerical_one, numerical_zero))
+           | _ -> (numerical_one, numerical_zero)
          in
 	 self#mkInterval new_min new_max new_stride new_rem
       

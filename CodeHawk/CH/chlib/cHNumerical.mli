@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,13 @@ class numerical_t :
     method abs : 'a
     method add : 'a -> 'a
     method compare : 'a -> int
+
+    (** Euclidean division: the quotient for which the remainder
+        ([modulo]) is in [[0, |n| - 1]] (floor division for [n > 0]). *)
     method div : 'a -> 'a
+
+    (** Division with truncation toward zero (C99/C11 6.5.5p6). *)
+    method div_trunc : 'a -> 'a
     method equal : 'a -> bool
     method gcd : 'a -> 'a
     method geq : 'a -> bool
@@ -48,7 +54,13 @@ class numerical_t :
     method leq : 'a -> bool
     method lt : 'a -> bool
     method private mkNew : big_int -> 'a
+
+    (** Euclidean remainder, in [[0, |n| - 1]]. *)
     method modulo : 'a -> 'a
+
+    (** Remainder of [div_trunc], with the sign of the dividend (C11
+        6.5.5p6: [-7 rem_trunc 4 = -3]). *)
+    method rem_trunc : 'a -> 'a
     method quomod : 'a -> 'a * 'a
     method mult : 'a -> 'a
     method neg : 'a

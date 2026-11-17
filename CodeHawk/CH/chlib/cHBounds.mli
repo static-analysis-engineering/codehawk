@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +38,13 @@ class bound_t :
     method add : 'a -> 'a
     method div_ceiling : 'a -> 'a
     method div_floor : 'a -> 'a
+
+    (** [b#div_trunc d] is the quotient of [b] and [d] truncated toward zero
+        (C11 6.5.5p6, ARM sdiv/udiv, Java idiv; the semantics of CHIF [DIV]).
+        Infinite operands: [±oo / n] is [±oo] (sign of the quotient),
+        [n / ±oo] is [0], [±oo / ±oo] is [±oo] (sign of the quotient).
+        The divisor must not be zero. *)
+    method div_trunc : 'a -> 'a
     method equal : 'a -> bool
     method geq : 'a -> bool
     method getBound : bounds_t

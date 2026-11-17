@@ -5,6 +5,8 @@
    The MIT License (MIT)
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +28,6 @@
   ============================================================================== *)
 
 (* chlib *)
-open CHCommon
 open CHIndexedHTable
 open CHNumerical
 open CHPEPRTypes
@@ -57,27 +58,21 @@ object (self)
 
   method reset = List.iter (fun t -> t#reset) tables
 
+  (* The tables are used for hash-consing only (an index identifies a
+     coefficient vector, constraint, or bound); the numerals are not read
+     back. They are keyed by their decimal representation, so that constants
+     outside the range of OCaml int (e.g., 2^64 - 1 for an unsigned 64-bit
+     type) can be indexed; previously such constants raised a domain failure
+     that discarded all pepr invariants of the function. *)
   method index_coefficients (v:numerical_t list) =
-    try
-      coeff_vector_table#add ([],List.map (fun c -> c#toInt) v)
-    with
-    | CHFailure p ->
-       raise (CHDomainFailure
-                ("pepr",
-                 (LBLOCK [ STR "Coefficients or offset too large when indexing: " ; p ])))
+    coeff_vector_table#add (List.map (fun c -> c#toString) v, [])
 
   method index_coeff_vector (v:coeff_vector_int) =
     self#index_coefficients v#get_k
 
   method index_param_constraint_data (k:coeff_vector_int) (n:numerical_t) (pt:param_dep_type_t) =
     let pti = match pt with P_EQ -> 0 | P_INEQ -> 1 in
-    try
-      param_constraint_table#add ([], [ self#index_coeff_vector k ; n#toInt ; pti ])
-    with
-    | CHFailure p ->
-       raise (CHDomainFailure
-                ("pepr",
-                 (LBLOCK [ STR "Coefficients or offset too large when indexing: " ; p ])))
+    param_constraint_table#add ([n#toString], [ self#index_coeff_vector k ; pti ])
 
   method index_param_constraint (p:param_constraint_int) =
     self#index_param_constraint_data p#get_k p#get_n p#get_pt
@@ -90,13 +85,7 @@ object (self)
 
   method index_pex_data (k:coeff_vector_int) (n:numerical_t) (bt:bound_type_t) =
     let bti = match bt with LB -> 0 | UB -> 1 in
-    try
-      pex_table#add ([], [ self#index_coeff_vector k ; n#toInt ; bti ])
-    with
-    | CHFailure p ->
-       raise (CHDomainFailure
-                ("pepr",
-                 (LBLOCK [ STR "Coefficients or offset too large when indexing: " ; p ])))
+    pex_table#add ([n#toString], [ self#index_coeff_vector k ; bti ])
 
   method index_pex (p:pex_int) = self#index_pex_data p#get_k p#get_n p#get_bt
 

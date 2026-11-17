@@ -5,7 +5,8 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
+   Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +76,36 @@ let char_const_to_big c =
      raise
        (CCHFailure
 	  (LBLOCK [ STR "Unable to parse char constant "; STR "CChr " ]))
+
+
+let is_unsigned_ikind (ik: ikind) =
+  match ik with
+  | IBool | IUChar | IUShort | IUInt | IULong | IULongLong | IUInt128 -> true
+  | _ -> false
+
+
+let two_to_64 = B.power_int_positive_int 2 64
+
+let int64_min_big = B.big_int_of_int64 Int64.min_int
+
+let int64_max_big = B.big_int_of_int64 Int64.max_int
+
+
+let cint_to_big (i64: int64) (ik: ikind): B.big_int =
+  let b = B.big_int_of_int64 i64 in
+  if Int64.compare i64 Int64.zero < 0 && is_unsigned_ikind ik then
+    B.add_big_int b two_to_64
+  else
+    b
+
+
+let big_to_cint ?(ik=IInt) (b: B.big_int): (int64 * ikind) option =
+  if B.le_big_int int64_min_big b && B.le_big_int b int64_max_big then
+    Some (B.int64_of_big_int b, ik)
+  else if B.sign_big_int b > 0 && B.lt_big_int b two_to_64 then
+    Some (B.int64_of_big_int (B.sub_big_int b two_to_64), IULongLong)
+  else
+    None
 
 
 let mk_location_string (loc:location) =

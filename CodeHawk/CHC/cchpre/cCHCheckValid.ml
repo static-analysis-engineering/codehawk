@@ -146,10 +146,11 @@ let rec get_num_value (env: cfundeclarations_int) (e: exp): numerical_t option =
       | (PlusA, Some v1, Some v2) -> Some (v1#add v2)
       | (MinusA, Some v1, Some v2) -> Some (v1#sub v2)
       | (Mult, Some v1, Some v2) -> Some (v1#mult v2)
+      (* C11 6.5.5p6: truncation toward zero; remainder with the sign of v1 *)
       | (Div, Some v1, Some v2) when not (v2#equal numerical_zero) ->
-         Some (v1#div v2)
-      | (Mod, Some _, Some _) -> None
-      (* TODO: add some code for mod Some (v1 mod v2) *)
+         Some (v1#div_trunc v2)
+      | (Mod, Some v1, Some v2) when not (v2#equal numerical_zero) ->
+         Some (v1#rem_trunc v2)
       | _ -> None
     end
   | _ -> None
@@ -323,42 +324,58 @@ let rec get_num_range
                (get_lb optlbr, get_ub optubr)
 
             | Mod ->
+               (* C11 6.5.5p6: e1 % e2 has the sign of e1 and
+                  |e1 % e2| <= min (|e1|, |e2| - 1) *)
+               let optm =
+                 match (optlbr2, optubr2) with
+                 | (Some lb2, Some ub2) ->
+                    let (a2, b2) = (lb2#abs, ub2#abs) in
+                    Some ((if a2#geq b2 then a2 else b2)#sub numerical_one)
+                 | _ -> None in
                let optlbr =
-                 match (optlbr1, optubr2) with
+                 match (optlbr1, optm) with
                  | (Some lb1, _) when lb1#geq numerical_zero ->
                     Some numerical_zero
-                 | (Some _lb1, Some lb2) when lb2#gt numerical_zero ->
-                    Some (lb2#neg#add numerical_one)
-                 | (Some _lb1, Some lb2) when lb2#lt numerical_zero ->
-                    Some (lb2#add numerical_one)
+                 | (Some lb1, Some m) ->
+                    Some (if lb1#geq m#neg then lb1 else m#neg)
+                 | (None, Some m) -> Some m#neg
+                 | (Some lb1, None) -> Some lb1
                  | _ -> None in
                let optubr =
-                 match optubr2 with
-                 | Some ub2 -> Some (ub2#sub numerical_one)
+                 match (optubr1, optm) with
+                 | (Some ub1, _) when ub1#leq numerical_zero ->
+                    Some numerical_zero
+                 | (Some ub1, Some m) ->
+                    Some (if ub1#leq m then ub1 else m)
+                 | (None, Some m) -> Some m
+                 | (Some ub1, None) -> Some ub1
                  | _ -> None in
                (get_lb optlbr, get_ub optubr)
             | Div ->
-               let optlbr =
-                 match (optlbr1, optlbr2) with
-                 | (Some lb1, Some lb2)
-                      when lb1#geq numerical_zero && lb2#gt numerical_zero ->
-                    Some numerical_zero
-                 | (Some lb1, Some lb2)
-                      when lb1#lt numerical_zero && lb2#gt numerical_zero ->
-                    Some lb1
-                 | _ -> None in
-               let optubr =
-                 match (optlbr1,optlbr2,optubr1) with
-                 | (Some lb1, Some lb2, Some ub1)
-                      when lb1#geq numerical_zero  && lb2#gt numerical_zero ->
-                    Some ub1
-                 | (Some lb1, Some ub2,_)
-                      when lb1#geq numerical_zero && ub2#lt numerical_zero ->
-                    Some numerical_zero
-                 | (Some ub1, Some lb2,_)
-                      when ub1#leq numerical_zero && lb2#gt numerical_zero ->
-                    Some numerical_zero
-                 | _ -> None in
+               (* C11 6.5.5p6: truncation toward zero, so |e1 / e2| <= |e1|
+                  for e2 != 0; the sign is the product of the signs *)
+               let pos2 =
+                 match optlbr2 with Some lb2 -> lb2#gt numerical_zero | _ -> false in
+               let neg2 =
+                 match optubr2 with Some ub2 -> ub2#lt numerical_zero | _ -> false in
+               let lb_from_lb1 =    (* lower bound of e1 / e2 for e2 > 0 *)
+                 match optlbr1 with
+                 | Some lb1 when lb1#geq numerical_zero -> Some numerical_zero
+                 | Some lb1 -> Some lb1
+                 | None -> None in
+               let ub_from_ub1 =    (* upper bound of e1 / e2 for e2 > 0 *)
+                 match optubr1 with
+                 | Some ub1 when ub1#leq numerical_zero -> Some numerical_zero
+                 | Some ub1 -> Some ub1
+                 | None -> None in
+               let (optlbr, optubr) =
+                 if pos2 then
+                   (lb_from_lb1, ub_from_ub1)
+                 else if neg2 then
+                   (Option.map (fun u -> u#neg) ub_from_ub1,
+                    Option.map (fun l -> l#neg) lb_from_lb1)
+                 else
+                   (None, None) in
                (get_lb optlbr, get_ub optubr)
 
             | Shiftrt ->
@@ -1023,10 +1040,6 @@ let check_ppo_validity
         ^ " belongs to enumeration "
         ^ ename)
 
-  | PCast (TEnum (ename,_), TInt (ik, _), _) when enum_fits_kind ename ik ->
-     let its = int_type_to_string in
-     make ("all enum values in " ^ ename ^ " fit into " ^ (its ik))
-
   | PCast (_, TEnum (ename,_), (UnOp (LNot, _, _)))
        when (is_enum_constant ename zero) && (is_enum_constant ename one) ->
      make ("zero and one belong to enumeration " ^ ename)
@@ -1282,6 +1295,37 @@ let check_ppo_validity
 		upperbound#toPretty])
        end
 
+  (* signed E1 << E2 (C11 6.5.7p4); E1 < 0, E2 < 0 and E2 >= width are
+     covered by separate proof obligations *)
+  | PIntOverflow (Shiftlt, Const (CInt (i64, ik1, _)), Const (CInt (j64, ik2, _)), k) ->
+     let a = mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik1) in
+     let b = mkNumerical_big (CCHBasicUtil.cint_to_big j64 ik2) in
+     let upperbound = get_safe_upperbound k in
+     if a#leq numerical_zero then
+       make
+         ("left operand (" ^ a#toString ^ ") is non-positive: the shifted "
+          ^ "value cannot exceed the safe upperbound; a negative left operand "
+          ^ "is undefined behavior and is reported by non-negative("
+          ^ a#toString ^ ")")
+     else if b#geq numerical_zero && b#lt (mkNumerical 128) then
+       let result = a#mult (power_of_two b#toInt) in
+       if result#leq upperbound then
+         make
+           ("shifted constant ("
+            ^ result#toString
+            ^ ") is less than or equal to safe upperbound ("
+            ^ upperbound#toString
+            ^ ")")
+       else
+         make_violation
+           ("shifted constant ("
+            ^ result#toString
+            ^ ") exceeds safe upperbound ("
+            ^ upperbound#toString
+            ^ ")")
+     else
+       ()
+
   | PIntOverflow (MinusA, _, e, _)
     | PUIntOverflow (MinusA, _, e, _) ->
      begin
@@ -1363,13 +1407,17 @@ let check_ppo_validity
        | _ -> ()
      end
 
-  | PIntOverflow (Div, e1, e2, _)
-    | PUIntOverflow (Div, e1, e2, _) ->
+  (* C11 6.5.5p6: a % b is undefined iff a / b is not representable (only
+     INT_MIN / -1), so the same conditions apply to Mod *)
+  | PIntOverflow ((Div | Mod) as op, e1, e2, _)
+    | PUIntOverflow ((Div | Mod) as op, e1, e2, _) ->
+     let opname = if op = Div then "division" else "remainder" in
      begin
        match get_num_range env e2 with
        | (Some lb, _) when lb#gt numerical_zero ->
           make
-            ("division by positive number (lower bound on "
+            (opname
+             ^ " by positive number (lower bound on "
              ^ (e2s e2)
              ^ ": "
              ^ lb#toString
@@ -1378,7 +1426,8 @@ let check_ppo_validity
           match get_num_range env e1 with
           | (Some lb, _) when lb#gt numerical_zero ->
              make
-               ("division of positive number (lower bound on "
+               (opname
+                ^ " of positive number (lower bound on "
                 ^ (e2s e1)
                 ^ ": "
                 ^ lb#toString

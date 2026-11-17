@@ -47,7 +47,11 @@ object
 
   val mutable verbose = false
   val mutable keep_system_includes = false
-  val mutable wordsize = Some 32
+  (* No default: the word size must match the machine model the source was
+     parsed for (sizeof values, type layouts). It determines the type ranges
+     that are used both as facts (unsound if too narrow) and as safety
+     bounds (unsound if too wide), so no default value is safe. *)
+  val mutable wordsize = None
   val mutable use_unreachability = false
   val mutable analysis_level = ImplementationDefinedBehavior
   val mutable analysis_kind = UndefinedBehaviorAnalysis
@@ -82,7 +86,16 @@ object
   method set_keep_system_includes (v:bool) = keep_system_includes <- v
   method keep_system_includes = keep_system_includes
 
-  method set_wordsize (v:int) = wordsize <- Some v
+  method set_wordsize (v:int) =
+    if List.mem v [16; 32; 64] then
+      wordsize <- Some v
+    else
+      raise
+        (CCHFailure
+           (LBLOCK [
+                STR "Invalid wordsize: ";
+                INT v;
+                STR " (expected 16, 32, or 64)"]))
 
   method set_use_unreachability = use_unreachability <- true
 

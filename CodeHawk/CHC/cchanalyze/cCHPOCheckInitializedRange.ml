@@ -110,16 +110,26 @@ object (self)
            match acc with
            | Some _ -> acc
            | _ ->
-              match inv2#lower_bound_xpr with
-              | Some (XConst (IntConst n)) when n#lt numerical_zero ->
+              (* A violation requires the value to be negative on every
+                 execution (upper bound negative); a negative lower bound
+                 need not be attained. *)
+              match (inv2#lower_bound_xpr, inv2#upper_bound_xpr) with
+              | (_, Some (XConst (IntConst n))) when n#lt numerical_zero ->
                  let deps = DLocal ([inv2#index]) in
                  let msg =
                    Printf.sprintf
-                     ("negative value: %s may be cast to a large positive "
-                        ^^ "value when cast to %s")
+                     ("negative value (upper bound: %s) is cast to a large "
+                        ^^ "positive value when cast to %s")
                      n#toString
                      (p2s (typ_to_pretty t)) in
                  Some (deps, msg)
+              | (Some (XConst (IntConst n)), _) when n#lt numerical_zero ->
+                 begin
+                   poq#set_diagnostic_arg
+                     2 ("value may be negative (lower bound: " ^ n#toString
+                        ^ ") and then cast to a large positive value");
+                   None
+                 end
               | _ -> None)  None invs2
     | _ -> None
 
@@ -364,9 +374,22 @@ object (self)
     | Some x -> self#xpr1_implies_safe inv1#index x
     | _ -> None
 
+  (* The length may be negative (and then cast to a large positive value):
+     no safety proof is attempted, since the numerical value of the length
+     is the uncast value. *)
+  method private unsigned_length_may_be_negative =
+    match e2 with
+    | CastE (t, _) when is_unsigned_integral_type t ->
+       List.exists (fun inv2 ->
+           match inv2#lower_bound_xpr with
+           | Some (XConst (IntConst n)) -> n#lt numerical_zero
+           | _ -> false) invs2
+    | _ -> false
+
   method check_safe =
     match self#unsigned_length_conflict with
     | Some _ -> false
+    | _ when self#unsigned_length_may_be_negative -> false
     | _ ->
        match invs1 with
        | [] -> false

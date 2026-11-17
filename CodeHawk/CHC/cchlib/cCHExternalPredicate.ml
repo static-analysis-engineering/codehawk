@@ -764,7 +764,8 @@ let rec simplify_sterm (t:s_term_t) =
             | PlusA ->  NumConstant (n1#add n2)
             | MinusA -> NumConstant (n1#sub n2)
             | Mult -> NumConstant (n1#mult n2)
-            | Div -> NumConstant (n1#div n2)
+            | Div when not n2#is_zero ->
+               NumConstant (n1#div_trunc n2)    (* C11 6.5.5p6 *)
             | _ -> t
           end
        | _ -> t

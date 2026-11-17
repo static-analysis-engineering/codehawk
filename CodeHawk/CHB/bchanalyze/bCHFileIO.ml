@@ -78,21 +78,6 @@ let xml_error (filename: string) (line: int) (column: int) (p: pretty_t) =
       p]
 
 
-let get_bch_root (info:string):xml_element_int =
-  let exename = system_info#get_filename in
-  let root = xmlElement "codehawk-binary-analysis" in
-  let hNode = xmlElement "header" in
-  let aNode = xmlElement "application" in
-  begin
-    aNode#setAttribute "name" exename ;
-    aNode#setAttribute "info" info ;
-    aNode#setAttribute "time" (current_time_to_string ()) ;
-    root#appendChildren [ hNode ] ;
-    hNode#appendChildren [ aNode ] ;
-    root
-  end
-
-
 (* applies to x86 only *)
 let save_functions_list () =
   let filename = get_functions_filename () in
@@ -276,7 +261,6 @@ let save_disassembly_status () =
   let root = get_bch_root "disassembly-status" in
   let fnode = xmlElement "disassembly-status" in
   begin
-    disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) ;
     disassembly_summary#write_xml fnode ;
     doc#setNode root ;
     root#appendChildren [ fnode ] ;

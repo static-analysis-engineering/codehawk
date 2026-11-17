@@ -88,7 +88,8 @@ object (self)
         let chifVar = exp_translator#translate_lhs context lhs in
         let tmpProvider = fun () -> env#mk_num_temp in
         let cstProvider = fun (n:numerical_t) -> env#mk_num_constant n in
-        let rhsExpr = exp_translator#translate_exp context rhs in
+        let (wrapCode, rhsExpr) =
+          exp_translator#translate_exp_with_code context rhs in
         let (rhsCode,numExp) = xpr2numexpr tmpProvider cstProvider rhsExpr in
         let assign =
 	  if chifVar#isTmp then
@@ -101,7 +102,13 @@ object (self)
                 (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars)
 	  else if env#has_constant_offset chifVar then
-	    make_c_cmd (ASSIGN_NUM (chifVar, numExp))
+            (* a store into a bit-field keeps the low bits *)
+            (match CCHIntegerSemantics.bitfield_store_correction lhs with
+             | Some c ->
+                make_c_cmd_block
+                  ((make_c_cmd (ASSIGN_NUM (chifVar, numExp)))
+                   :: (CCHIntegerSemantics.correction_code env chifVar c))
+             | None -> make_c_cmd (ASSIGN_NUM (chifVar, numExp)))
           else
             let memoryvars = env#get_memory_variables_with_base chifVar in
             let _ =
@@ -111,7 +118,7 @@ object (self)
                 __FILE__ __LINE__
                 (List.map (fun v -> (p2s v#toPretty)) memoryvars) in
             CCMD (ABSTRACT_VARS memoryvars) in
-        [rhsCode; assign]
+        wrapCode @ [rhsCode; assign]
       with
       | CCHFailure p ->
          raise (CCHFailure

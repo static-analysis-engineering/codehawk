@@ -48,6 +48,14 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <formatted-input/>
+	    <ci>format</ci>
+	  </apply>
+	</math>
+      </sideeffect>
     </sideeffects>
   </function-summary>
   <copyright-notice>Copyright 2012-2020, Kestrel Technology LLC, Palo Alto, CA 94304</copyright-notice>

@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2021 Henny Sipma
-   Copyright (c) 2022-2023 Aarno Labs LLC
+   Copyright (c) 2022-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +71,36 @@ object (self: 'a)
          (CHFailure
             (LBLOCK [
                  STR "Numerical division by zero (modulo): ";
+                 self#toPretty;
+                 STR " % ";
+                 n#toPretty]))
+
+  (* division with truncation toward zero (C99/C11 6.5.5p6, hardware
+     sdiv/idiv); div is Euclidean (remainder in [0, |n| - 1]) *)
+  method div_trunc (n: 'a) =
+    try
+      self#mkNew (Z.div num n#getNum)
+    with
+    | Division_by_zero ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Numerical division by zero (div_trunc): ";
+                 self#toPretty;
+                 STR " / ";
+                 n#toPretty]))
+
+  (* remainder of div_trunc: self = (self#div_trunc n) * n + (self#rem_trunc n),
+     with the sign of self (C11 6.5.5p6); modulo is Euclidean *)
+  method rem_trunc (n: 'a) =
+    try
+      self#mkNew (Z.rem num n#getNum)
+    with
+    | Division_by_zero ->
+       raise
+         (CHFailure
+            (LBLOCK [
+                 STR "Numerical division by zero (rem_trunc): ";
                  self#toPretty;
                  STR " % ";
                  n#toPretty]))
@@ -256,10 +286,10 @@ object (self: 'a)
 
   method ceiling:numerical_t =
     let truncated = Q.of_bigint (Q.to_bigint num) in
-    if Q.gt truncated num then
-      new numerical_t (Q.to_bigint truncated)
-    else
+    if Q.lt truncated num then
       new numerical_t (Q.to_bigint (Q.add truncated Q.one))
+    else
+      new numerical_t (Q.to_bigint truncated)
    (* match Q.ceiling num with
       | Q.Big_int n -> new numerical_t n
       | Q.Int n -> new numerical_t (big_int_of_int n)

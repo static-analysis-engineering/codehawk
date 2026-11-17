@@ -145,7 +145,7 @@ let speclist = [
   ("-unreachability", Arg.Unit (fun () -> system_settings#set_use_unreachability),
    "use unreachability as a justification for discharging proof obligations");
   ("-wordsize", Arg.Int system_settings#set_wordsize,
-   "set word size (e.g., 16, 32, or 64)");
+   "set word size: 16, 32, or 64 (required; must match the parse platform)");
   ("-contractpath", Arg.String system_settings#set_contractpath,
    "path to contract files")
 ]
@@ -183,6 +183,12 @@ let main () =
 	pr_debug [garbage_collector_settings_to_pretty (); NL];
 	exit 0
       end
+
+    else if not system_settings#has_wordsize then
+      raise
+        (CCHFailure
+           (STR ("-wordsize must be specified (16, 32, or 64), matching the "
+                 ^ "platform the source was parsed for")))
 
     else if !cmd = "undefined-behavior-primary" then
       begin

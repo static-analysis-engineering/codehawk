@@ -397,6 +397,7 @@ let main () =
 	            ((Unix.gettimeofday ()) -. !t) in
           if !save_xml then
             begin
+              disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) ;
               save_disassembly_status () ;
               exit 0
             end
@@ -447,6 +448,7 @@ let main () =
       let _ =
         disassembly_summary#set_disassembly_metrics (get_disassembly_metrics ()) in
       let _ = pr_debug [disassembly_summary#toPretty; NL] in
+      let _ = save_disassembly_status () in
       begin
         file_output#saveFile
           (get_asm_listing_filename ())
@@ -491,6 +493,7 @@ let main () =
         disassembly_summary#set_disassembly_metrics
           (get_mips_disassembly_metrics ()) in
       let _ = pr_debug [disassembly_summary#toPretty; NL] in
+      let _ = save_disassembly_status () in
       (*
       let _ =
         pr_debug [
@@ -548,6 +551,7 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_pwr_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
+      let _ = save_disassembly_status () in
       let instrs = !BCHPowerAssemblyInstructions.pwr_assembly_instructions in
       begin
         pverbose [STR "Saving asm file ..."; NL];
@@ -585,6 +589,7 @@ let main () =
       let _ = disassembly_summary#set_disassembly_metrics
                 (get_arm_disassembly_metrics ()) in
       let _ = pr_debug [NL; NL; disassembly_summary#toPretty; NL] in
+      let _ = save_disassembly_status () in
       let _ = save_bc_files () in
       (*
       let _ =

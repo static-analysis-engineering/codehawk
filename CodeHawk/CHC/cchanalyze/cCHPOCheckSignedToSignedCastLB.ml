@@ -268,16 +268,20 @@ object (self)
          ^ (x2s safeconstraint) in
        Some (deps, msg)
     | _ ->
-       match inv#lower_bound_xpr with
-       | Some (XConst (IntConst n)) when n#lt safelb ->
-          let msg =
-            "constant lower bound: "
-            ^ n#toString
-            ^ " violates safe lower bound: "
-            ^ safelb#toString in
-          let deps = DLocal [inv#index] in
-          Some (deps, msg)
-       | _ -> None
+       (* A constant lower bound below the safe lower bound does not imply a
+          violation: an interval lower bound is an over-approximation that
+          need not be attained. A universal violation requires the upper bound
+          to be below the safe lower bound (see
+          inv_implies_universal_violation). *)
+       begin
+         (match inv#lower_bound_xpr with
+          | Some (XConst (IntConst n)) when n#lt safelb ->
+             poq#set_diagnostic
+               ("lower bound " ^ n#toString
+                ^ " is below the safe lower bound " ^ safelb#toString)
+          | _ -> ());
+         None
+       end
 
   method private inv_implies_violation (inv: invariant_int) =
     match self#inv_implies_universal_violation inv with

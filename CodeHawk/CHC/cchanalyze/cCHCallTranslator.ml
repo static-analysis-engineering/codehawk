@@ -203,6 +203,278 @@ let get_sideeffects
        end
 
 
+(* Memory variables of [memref] that overlap with the region at [regionoff] *)
+let memory_variables_in_region
+      (env: c_environment_int)
+      (memref: memory_reference_int)
+      (regionoff: offset): variable_t list =
+  List.filter (fun mv ->
+      let (mref, moff) = env#get_memory_variable mv in
+      mref#index = memref#index && offsets_overlap moff regionoff)
+    env#get_memory_variables
+
+
+(* The argument written by a block-write side effect on parameter [n] of a
+   library summary, or None if the write has no effect on the program's
+   memory: the call has no such argument (an optional parameter of a
+   variadic function, e.g., ioctl or fcntl), the argument is a null pointer
+   constant (e.g., strtol (s, NULL, 10), time (NULL)), or it is not a pointer
+   (fcntl (fd, F_SETFL, flags)); casts are stripped for the latter two tests.
+   Without this filter the dereference of such an argument translates to a
+   temporary and all memory variables are abstracted. *)
+let block_write_arg
+      (env: c_environment_int) (args: exp list) (n: int): exp option =
+  let rec strip_casts e = match e with CastE (_, e') -> strip_casts e' | _ -> e in
+  match List.nth_opt args (n - 1) with
+  | None -> None
+  | Some arg ->
+     match strip_casts arg with
+     | Const (CInt (i64, _, _)) when Int64.compare i64 Int64.zero = 0 -> None
+     | e ->
+        match type_of_exp env#get_fdecls e with
+        | Ok t ->
+           (match fenv#get_type_unrolled t with
+            | TPtr _ | TArray _ -> Some arg
+            | _ -> None)
+        | Error _ -> Some arg
+
+
+(* Memory variables of the object denoted by region symbol [s] (a pointer
+   value in the symbolic pointer-set domain): all memory variables of the
+   stack or global variable that is the base of the region (the offset is not
+   known). Null and external regions (pointers to external memory, covered by
+   the assumptions on external memory) and string literals have none. For a
+   symbol that is not a known region, all stack memory variables are
+   returned. *)
+let memory_variables_of_region_sym
+      (env: c_environment_int) (s: symbol_t): variable_t list =
+  let memregmgr = env#get_variable_manager#memregmgr in
+  let stack_memory_variables () =
+    List.filter (fun mv ->
+        (env#get_memory_reference mv)#is_stack_reference)
+      env#get_memory_variables in
+  let region =
+    try Some (memregmgr#get_memory_region s#getSeqNumber)
+    with CCHFailure _ -> None in
+  match region with
+  | None -> stack_memory_variables ()
+  | Some r ->
+     match r#get_memory_base with
+     | CNull _ | CBaseVar _ | CStringLiteral _ -> []
+     | CStackAddress v | CGlobalAddress v ->
+        let seqnr = v#getName#getSeqNumber in
+        List.filter (fun mv ->
+            match (env#get_memory_reference mv)#get_base with
+            | CStackAddress w | CGlobalAddress w ->
+               w#getName#getSeqNumber = seqnr
+            | _ -> false) env#get_memory_variables
+     | CUninterpreted _ -> stack_memory_variables ()
+
+
+(* Memory variables that a callee may write through argument [arg] when no
+   side effects are known for that argument: the memory variables
+   of the region addressed by the argument, that is, the addressed
+   (sub-)object, or the enclosing array if the argument points to an array
+   element, including all their sub-objects (fields, array elements). Casts
+   are stripped, so that (void * )&x and (void * )buf are recognized; a
+   pointer-valued argument whose value is a known memory address (p = &x;
+   f(p)) is treated likewise. If the addressed object cannot be determined (the
+   lhs translates to a temporary) all memory variables are returned; the same
+   for the address of a function (a callback may write any memory). A pointer
+   argument with an external target (e.g., a pointer parameter) yields no
+   variables; its memory is covered by the assumptions on external memory. *)
+let arg_written_memory_variables
+      (env: c_environment_int)
+      (exp_translator: exp_translator_int)
+      (context: program_context_int)
+      (arg: exp): variable_t list =
+  let rec strip_casts e = match e with CastE (_, e') -> strip_casts e' | _ -> e in
+  let region_of_memory_variable (v: variable_t) =
+    let (memref, off) = env#get_memory_variable v in
+    memory_variables_in_region env memref (reachable_region_offset off) in
+  let region_of_memory_address (v: variable_t) =
+    let (memref, off) = env#get_memory_address v in
+    memory_variables_in_region env memref (reachable_region_offset off) in
+  let of_object_var (v: variable_t) =
+    if v#isTmp then
+      env#get_memory_variables
+    else if env#is_memory_variable v then
+      region_of_memory_variable v
+    else if env#is_memory_address v then
+      region_of_memory_address v
+    else
+      [v] in
+  let is_pointer_typed e =
+    match type_of_exp env#get_fdecls e with
+    | Ok t ->
+       (match fenv#get_type_unrolled t with TPtr _ -> true | _ -> false)
+    | _ -> false in
+  let is_function_lval lval =
+    match type_of_lval env#get_fdecls lval with
+    | Ok t -> (match fenv#get_type_unrolled t with TFun _ -> true | _ -> false)
+    | _ -> false in
+  match strip_casts arg with
+  | AddrOf lval when is_function_lval lval -> env#get_memory_variables
+  | AddrOf lval | StartOf lval ->
+     of_object_var (exp_translator#translate_lhs context lval)
+  | e when is_pointer_typed e ->
+     (match exp_translator#translate_exp context e with
+      | XVar v
+        | XOp ((XPlus | XMinus), [XVar v; _]) when env#is_memory_address v ->
+         region_of_memory_address v
+      | XConst (SymSet syms) ->
+         (* symbolic pointer-set domain: the regions the pointer may point to *)
+         List.concat_map (memory_variables_of_region_sym env) syms
+      | XConst _ -> []
+      | XVar v
+        | XOp ((XPlus | XMinus), [XVar v; _])
+           when env#is_initial_value v || env#is_function_return_value v ->
+         (* external memory: covered by the assumptions on external memory *)
+         []
+      | _ ->
+         (* Unknown target (e.g., in the first round, before facts on the
+            pointer value are available): the pointer may hold the address
+            of any address-taken local variable. Facts accumulate over
+            rounds, so every round must be sound by itself. *)
+         List.filter (fun mv ->
+             (env#get_memory_reference mv)#is_stack_reference)
+           env#get_memory_variables)
+  | _ -> []
+
+
+(* ABSTRACT_VARS command (as a list of zero or one commands) for the object
+   addressed by argument [arg], see arg_written_memory_variables. [context] is
+   the (cfg) context of the call, where the facts on the argument values
+   before the call are recorded. *)
+let arg_written_abstract
+      (env: c_environment_int)
+      (exp_translator: exp_translator_int)
+      (context: program_context_int)
+      (arg: exp) =
+  match arg_written_memory_variables env exp_translator context arg with
+  | [] -> []
+  | vars ->
+     let _ =
+       log_diagnostics_result
+         ~tag:"abstract memory variables"
+         ~msg:env#get_functionname
+         __FILE__ __LINE__
+         ((p2s (exp_to_pretty arg))
+          :: (List.map (fun v -> p2s v#toPretty) vars)) in
+     [make_c_cmd (ABSTRACT_VARS vars)]
+
+
+(* ABSTRACT_VARS commands for the objects addressed by all [args]. *)
+let arg_written_abstracts
+      (env: c_environment_int)
+      (exp_translator: exp_translator_int)
+      (context: program_context_int)
+      (args: exp list) =
+  List.concat_map (arg_written_abstract env exp_translator context) args
+
+
+(* true if one of the arguments is the address of a function (a callback) *)
+let has_function_address_arg (env: c_environment_int) (args: exp list): bool =
+  let rec strip_casts e = match e with CastE (_, e') -> strip_casts e' | _ -> e in
+  List.exists (fun arg ->
+      match strip_casts arg with
+      | AddrOf lval ->
+         (match type_of_lval env#get_fdecls lval with
+          | Ok t ->
+             (match fenv#get_type_unrolled t with TFun _ -> true | _ -> false)
+          | _ -> false)
+      | _ -> false) args
+
+
+(* Names of the global variables whose value is protected across a call to
+   [callee] by a contract: globals declared const in the global-variable
+   contracts, and globals that the callee preserves according to its side
+   effects or postconditions (XPreservesValue; a postcondition protects only if
+   it holds on both the normal and the error path). *)
+let protected_globals
+      (caller: string)
+      (callee: string option)
+      (context: program_context_int): string list =
+  let const_globals =
+    List.filter_map (fun gvar ->
+        if gvar#is_const then Some gvar#get_name else None)
+      CCHFileContract.file_contract#get_globalvar_contracts in
+  let preserved (l: annotated_xpredicate_t list) =
+    List.filter_map (fun (p, _) ->
+        match p with
+        | XPreservesValue (ArgValue (ParGlobal name, ArgNoOffset)) -> Some name
+        | _ -> None) l in
+  let callee_preserved =
+    match callee with
+    | None -> []
+    | Some _ ->
+       let (post, errpost) = get_postconditions caller callee context in
+       let sepreserved = preserved (get_sideeffects caller callee context) in
+       let postpreserved =
+         match errpost with
+         | [] -> preserved post
+         | _ ->
+            let errpreserved = preserved errpost in
+            List.filter (fun n -> List.mem n errpreserved) (preserved post) in
+       sepreserved @ postpreserved in
+  const_globals @ callee_preserved
+
+
+(* Global variables are accessible to every function, so a call
+   may modify any global, whether or not its address is taken, unless a
+   contract protects it (see protected_globals). Returns the ABSTRACT_VARS
+   command (as a list of zero or one commands) for the variables representing
+   the unprotected globals. A library function with a summary is trusted to
+   have only the side effects listed in its summary (library code cannot name
+   the program's globals), unless it receives a callback. *)
+let global_abstracts
+      (env: c_environment_int)
+      (callee: string option)
+      (context: program_context_int)
+      (args: exp list) =
+  let summarized_library_call =
+    match callee with
+    | Some fname ->
+       (match get_function_summary fname with Some _ -> true | None -> false)
+    | None -> false in
+  if summarized_library_call && not (has_function_address_arg env args) then
+    []
+  else
+    let protected = protected_globals env#get_functionname callee context in
+    match List.filter (fun (name, _) -> not (List.mem name protected))
+            env#get_global_state_variables with
+    | [] -> []
+    | l ->
+       let vars = List.map snd l in
+       let _ =
+         log_diagnostics_result
+           ~tag:"abstract global variables"
+           ~msg:env#get_functionname
+           __FILE__ __LINE__
+           ((match callee with Some f -> "callee: " ^ f | None -> "unknown callee")
+            :: (List.map (fun v -> p2s v#toPretty) vars)) in
+       [make_c_cmd (ABSTRACT_VARS vars)]
+
+
+(* Commands for a call to an unknown function (an unresolved indirect call):
+   the lhs, the regions addressed by the arguments, and all unprotected
+   globals are abstracted. *)
+let unknown_call_abstracts
+      (env: c_environment_int)
+      (exp_translator: exp_translator_int)
+      (context: program_context_int)
+      (lhs: lval option)
+      (args: exp list) =
+  let lhsabstracts =
+    match lhs with
+    | None -> []
+    | Some lval ->
+       arg_written_abstract env exp_translator context (AddrOf lval) in
+  lhsabstracts
+  @ (arg_written_abstracts env exp_translator context args)
+  @ (global_abstracts env None context args)
+
+
 let make_range_assert env (v:variable_t) (lb:numerical_t) (ub:numerical_t) =
   let tmpProvider = (fun () -> env#mk_num_temp) in
   let cstProvider = (fun (n:numerical_t) -> env#mk_num_constant n) in
@@ -385,7 +657,9 @@ object (self)
         else
           make_c_nop () in
       let sideeffects = self#get_sideeffects fname fvid args fnxargs in
-      Ok (argassigns @ [callop; assertfail; sideeffects] @ rcode)
+      let globalabstracts =
+        make_c_cmd_block (global_abstracts env (Some fname) context args) in
+      Ok (argassigns @ [callop; assertfail; sideeffects; globalabstracts] @ rcode)
 
   method private set_indirect_call vinfo =
     if proof_scaffolding#has_indirect_callsite env#get_functionname context then
@@ -407,10 +681,11 @@ object (self)
                    (e: exp)
                    (args: exp list): nested_cmd_t list traceresult =
     let default =
-      Ok ([make_c_cmd
+      Ok ((make_c_cmd
              (OPERATION
                 { op_name = new symbol_t ~atts:[p2s (exp_to_pretty e)] "indirect call";
-                  op_args = [] })]) in
+                  op_args = [] }))
+          :: (unknown_call_abstracts env exp_translator context lhs args)) in
     let xpr = exp_translator#translate_exp context e in
     match xpr with
     | XVar v when env#is_memory_address v ->
@@ -444,17 +719,18 @@ object (self)
        end
 
   method private translate_indirect_call
-                   (_lhs: lval option)
+                   (lhs: lval option)
                    (f: exp)
-                   (_args: exp list): nested_cmd_t list traceresult =
+                   (args: exp list): nested_cmd_t list traceresult =
     begin
       log_diagnostics_result
         ~tag:"translate_indirect_call"
         ~msg:(env#get_functionname ^ "@" ^ (string_of_int location.line))
         __FILE__ __LINE__
-        ["Indirect call not yet supported. Call not included.";
+        ["Indirect call: callee unknown; lhs, argument regions and globals "
+         ^ "abstracted";
          "f: " ^ (p2s (exp_to_pretty f))];
-      Ok []
+      Ok (unknown_call_abstracts env exp_translator context lhs args)
     end
 
   method private get_external_post_value
@@ -657,66 +933,65 @@ object (self)
 
     match get_sideeffects env#get_functionname (Some fname) context with
     | [] ->
-       let argabstracts =
-         List.fold_left (fun acc arg ->
-             match arg with
-             | AddrOf lval | StartOf lval ->
-                let v = exp_translator#translate_lhs context lval in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    [p2s v#toPretty] in
-                (make_c_cmd (ABSTRACT_VARS [v])) :: acc
-             | _ -> acc) [] fnargs in
-       make_c_cmd_block argabstracts
+       make_c_cmd_block
+         (arg_written_abstracts env exp_translator context fnargs)
     | l ->
+       (* Without a library summary the side effects come from the callsite's
+          post-assumptions and need not cover all arguments, so the objects
+          addressed by the arguments are abstracted first. *)
+       let argabstracts =
+         match get_function_summary fname with
+         | Some _ -> []
+         | None -> arg_written_abstracts env exp_translator context fnargs in
        let assignments =
          List.fold_left (fun acc (se, _) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env fnargs n) -> acc
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
                   exp_translator#translate_lhs context (Mem arg, NoOffset) in
-                if lhs#isTmp then
-                  let memoryvars = env#get_memory_variables in
-                  let _ =
-                    log_diagnostics_result
-                      ~tag:"abstract memory variables"
-                      ~msg:env#get_functionname
-                      __FILE__ __LINE__
-                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                  [CCMD (ABSTRACT_VARS memoryvars)]
-                else
-                  let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
-                  TR.tfold
-                  ~ok:(fun vinfo ->
-                    let sevar =
-                      env#mk_function_sideeffect_value
-                        location context vinfo fnxargs n ty in
-                    let bwvar = env#mk_byte_sequence sevar None in
-                    let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
-                    let subassigns =
-                      match ty with
-                      | TComp (ckey,_) ->
-                         let comp = fenv#get_comp ckey in
-                         assign_se_struct arg NoOffset comp bwvar
-                      | _ ->
-                         [] in
-                    assign :: subassigns)
-                  ~error:(fun e ->
-                    begin
-                      log_error_result
-                        ~tag:"get_sideeffects"
-                        ~msg:env#get_functionname
-                        __FILE__ __LINE__
-                        ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
-                         "Side effect assignment not included";
-                         String.concat "; " e];
-                      []
-                    end)
-                  (fdecls#get_varinfo_by_vid fvid)
+                acc
+                @ (arg_written_abstract env exp_translator context arg)
+                @ (if lhs#isTmp then
+                     let memoryvars = env#get_memory_variables in
+                     let _ =
+                       log_diagnostics_result
+                         ~tag:"abstract memory variables"
+                         ~msg:env#get_functionname
+                         __FILE__ __LINE__
+                         (List.map (fun v -> p2s v#toPretty) memoryvars) in
+                     [CCMD (ABSTRACT_VARS memoryvars)]
+                   else
+                     let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
+                     TR.tfold
+                       ~ok:(fun vinfo ->
+                         let sevar =
+                           env#mk_function_sideeffect_value
+                             location context vinfo fnxargs n ty in
+                         let bwvar = env#mk_byte_sequence sevar None in
+                         let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
+                         let subassigns =
+                           match ty with
+                           | TComp (ckey,_) ->
+                              let comp = fenv#get_comp ckey in
+                              assign_se_struct arg NoOffset comp bwvar
+                           | _ ->
+                              [] in
+                         assign :: subassigns)
+                       ~error:(fun e ->
+                         begin
+                           log_error_result
+                             ~tag:"get_sideeffects"
+                             ~msg:env#get_functionname
+                             __FILE__ __LINE__
+                             ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
+                              "Side effect assignment not included";
+                              String.concat "; " e];
+                           []
+                         end)
+                       (fdecls#get_varinfo_by_vid fvid))
 
              | XInitializesExternalState (ExternalState name,
                                           ArgValue (ParFormal n, ArgNoOffset)) ->
@@ -731,7 +1006,7 @@ object (self)
                      match xarg with
                      | XVar v -> [make_c_cmd (ASSIGN_NUM (lhs, NUM_VAR v))]
                      | _ -> [] in
-                assigns
+                assigns @ acc
 
              | XFormattedInput (ArgValue (ParFormal n,ArgNoOffset)) ->
                 let (assignments,_) =
@@ -820,7 +1095,7 @@ object (self)
                          | _ -> (acc, i + 1)) ([], n) fnargs in
                 assignments @ acc
              | _ -> acc) [] l in
-       make_c_cmd_block assignments
+       make_c_cmd_block (argabstracts @ assignments)
 
   method private get_formatted_input_taintedvar
                    (fvid: int)
@@ -944,7 +1219,9 @@ object (self)
                      | _ -> make_c_nop () in
                    [rcode;  domainop; assign; postassert] in
          let sideeffects = self#get_sideeffects fname fvid args fnxargs in
-         Ok ([callop] @ [sideeffects] @ rcode)
+         let globalabstracts =
+           make_c_cmd_block (global_abstracts env (Some fname) ctxt args) in
+         Ok ([callop] @ [sideeffects; globalabstracts] @ rcode)
     | _ ->
        let callop =
          make_c_cmd
@@ -952,7 +1229,7 @@ object (self)
               { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
                             "indirect call";
                 op_args = [] }) in
-       Ok [callop]
+       Ok (callop :: (unknown_call_abstracts env exp_translator ctxt lhs args))
 
   method private get_arg_post_value
                    (postconditions:
@@ -1138,66 +1415,65 @@ object (self)
 
     match get_sideeffects env#get_functionname (Some fname) context with
     | [] ->
-       let argabstracts =
-         List.fold_left (fun acc arg ->
-             match arg with
-             | AddrOf lval | StartOf lval ->
-                let v = exp_translator#translate_lhs context lval in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    [p2s v#toPretty] in
-                (make_c_cmd (ABSTRACT_VARS [v])) :: acc
-             | _ -> acc) [] fnargs in
-       make_c_cmd_block argabstracts
+       make_c_cmd_block
+         (arg_written_abstracts env exp_translator context fnargs)
     | l ->
+       (* Without a library summary the side effects come from the callsite's
+          post-assumptions and need not cover all arguments, so the objects
+          addressed by the arguments are abstracted first (issue 36). *)
+       let argabstracts =
+         match get_function_summary fname with
+         | Some _ -> []
+         | None -> arg_written_abstracts env exp_translator context fnargs in
        let assignments =
          List.fold_left (fun acc (se, _) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env fnargs n) -> acc
              | XBlockWrite (ArgValue (ParFormal n,ArgNoOffset), _) ->
                 let arg = List.nth fnargs (n - 1) in
                 let lhs =
                   exp_translator#translate_lhs context (Mem arg,NoOffset) in
-                if lhs#isTmp then
-                  let memoryvars = env#get_memory_variables in
-                  let _ =
-                    log_diagnostics_result
-                      ~tag:"abstract memory variables"
-                      ~msg:env#get_functionname
-                      __FILE__ __LINE__
-                      (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                  [CCMD (ABSTRACT_VARS memoryvars)]
-                else
-                  let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
-                  TR.tfold
-                    ~ok:(fun vinfo ->
-                      let sevar =
-                        env#mk_function_sideeffect_value
-                          location context vinfo fnxargs n ty in
-                      let bwvar = env#mk_byte_sequence sevar None in
-                      let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
-                      let subassigns =
-                        match ty with
-                        | TComp (ckey, _) ->
-                           let comp = fenv#get_comp ckey in
-                           assign_se_struct arg NoOffset comp bwvar
-                        | _ ->
-                           [] in
-                      assign :: subassigns)
-                    ~error:(fun e ->
-                    begin
-                      log_error_result
-                        ~tag:"get_sideeffects"
-                        ~msg:env#get_functionname
-                        __FILE__ __LINE__
-                        ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
-                         "Side effect assignment not included";
-                         String.concat "; " e];
-                      []
-                    end)
-                  (fdecls#get_varinfo_by_vid fvid)
+                acc
+                @ (arg_written_abstract env exp_translator context arg)
+                @ (if lhs#isTmp then
+                     let memoryvars = env#get_memory_variables in
+                     let _ =
+                       log_diagnostics_result
+                         ~tag:"abstract memory variables"
+                         ~msg:env#get_functionname
+                         __FILE__ __LINE__
+                         (List.map (fun v -> p2s v#toPretty) memoryvars) in
+                     [CCMD (ABSTRACT_VARS memoryvars)]
+                   else
+                     let ty = fenv#get_type_unrolled (env#get_variable_type lhs) in
+                     TR.tfold
+                       ~ok:(fun vinfo ->
+                         let sevar =
+                           env#mk_function_sideeffect_value
+                             location context vinfo fnxargs n ty in
+                         let bwvar = env#mk_byte_sequence sevar None in
+                         let assign = make_c_cmd  (ASSIGN_NUM (lhs, NUM_VAR bwvar)) in
+                         let subassigns =
+                           match ty with
+                           | TComp (ckey, _) ->
+                              let comp = fenv#get_comp ckey in
+                              assign_se_struct arg NoOffset comp bwvar
+                           | _ ->
+                              [] in
+                         assign :: subassigns)
+                       ~error:(fun e ->
+                         begin
+                           log_error_result
+                             ~tag:"get_sideeffects"
+                             ~msg:env#get_functionname
+                             __FILE__ __LINE__
+                             ["Unable to retrieve varinfo from vid: " ^ (string_of_int fvid);
+                              "Side effect assignment not included";
+                              String.concat "; " e];
+                           []
+                         end)
+                       (fdecls#get_varinfo_by_vid fvid))
 
              | XFormattedInput (ArgValue (ParFormal n, ArgNoOffset)) ->
                 let (assignments, _) =
@@ -1303,7 +1579,7 @@ object (self)
                          | _ -> (acc, i+1)) ([], n) fnargs in
                 assignments @ acc
              | _ -> acc) [] l in
-       make_c_cmd_block assignments
+       make_c_cmd_block (argabstracts @ assignments)
 
   method private get_vs_formatted_input_taintedvar
                    (fvid: int)
@@ -1486,9 +1762,9 @@ object (self)
                    let arg = List.nth args (n-1) in
                    begin
                      match arg with
-                     | Const (CInt (i64,_,_))
-                       | CastE (_, Const (CInt (i64, _, _))) ->
-                        Some (mkNumericalFromString (Int64.to_string i64))
+                     | Const (CInt (i64, ik, _))
+                       | CastE (_, Const (CInt (i64, ik, _))) ->
+                        Some (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik))
                      | _ -> None
                    end
                 | NumConstant n -> Some n
@@ -1618,84 +1894,18 @@ object (self)
         ([(List.map (fun xsitevar ->
                make_c_cmd (ASSIGN_SYM (xsitevar, SYM sitesym))) xsitevars)]
          @ [[make_c_cmd SKIP]]) in
-    let rec compose_offset base offset =
-      match base with
-      | NoOffset -> offset
-      | Field (fuse, NoOffset) -> Field (fuse,offset)
-      | Field (fuse, foffset) -> Field (fuse, compose_offset foffset offset)
-      | Index _ ->
-         begin
-           ch_error_log#add
-             "compose offset"
-             (LBLOCK [
-                  STR "base: ";
-                  offset_to_pretty base;
-                  STR "; offset: ";
-                  offset_to_pretty offset]);
-           NoOffset
-         end in
-    let rec cancel_se_struct arg baseoffset comp  =
-      List.fold_left (fun acc f ->
-          let foffset = Field ((f.fname,f.fckey),NoOffset)  in
-          let offset = compose_offset baseoffset foffset in
-          let lhs = exp_translator#translate_lhs context (Mem arg,offset) in
-          if lhs#isTmp then
-            let memoryvars = env#get_memory_variables in
-            let _ =
-              log_diagnostics_result
-                ~tag:"abstract memory variables"
-                ~msg:env#get_functionname
-                __FILE__ __LINE__
-                (List.map (fun v -> p2s v#toPretty) memoryvars) in
-            [ make_c_cmd (ABSTRACT_VARS memoryvars)]
-          else
-            let cancel = make_c_cmd (ABSTRACT_VARS [lhs]) in
-            let _ =
-              log_diagnostics_result
-                ~tag:"abstract memory variables"
-                ~msg:env#get_functionname
-                __FILE__ __LINE__
-                [p2s lhs#toPretty] in
-            let subcancels =
-              match fenv#get_type_unrolled f.ftype with
-              | TComp (ckey,_) ->
-                 let comp = fenv#get_comp ckey in
-                 cancel_se_struct arg offset comp
-              | _ -> []  in
-            (cancel :: subcancels) @ acc) [] comp.cfields in
     let seeffects =
     List.concat
       (List.map (fun (se,_) ->
            match se with
-           | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
-              let arg = List.nth args (n - 1) in
-              let lhs = exp_translator#translate_lhs context (Mem arg,NoOffset) in
-              if lhs#isTmp  then
-                let memoryvars = env#get_memory_variables in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    (List.map (fun v -> p2s v#toPretty) memoryvars) in
-                [make_c_cmd (ABSTRACT_VARS memoryvars)]
-              else
-                let ty = fenv#get_type_unrolled (env#get_variable_type lhs)  in
-                let cancel = make_c_cmd  (ABSTRACT_VARS [lhs]) in
-                let _ =
-                  log_diagnostics_result
-                    ~tag:"abstract memory variables"
-                    ~msg:env#get_functionname
-                    __FILE__ __LINE__
-                    [p2s lhs#toPretty] in
-                let subcancels =
-                  match ty with
-                  | TComp (ckey, _) ->
-                     let comp = fenv#get_comp ckey in
-                     cancel_se_struct arg NoOffset comp
-                  | _ ->
-                     [] in
-                cancel :: subcancels
+           | XBlockWrite _ ->
+              (* Initialization domain: a block write cannot make a location
+                 uninitialized (a location written is initialized, one not
+                 written keeps its state), so nothing is abstracted; in
+                 particular the initialization recorded by an
+                 initializes-range side effect of the same call (memset,
+                 memcpy, read) is kept. *)
+              []
 
            | XFormattedInput (ArgValue (ParFormal n, ArgNoOffset)) ->
               let (assignments, _) =
@@ -1903,7 +2113,9 @@ object (self)
               { op_name = new symbol_t ~atts:[p2s (exp_to_pretty f)]
                             "indirect call";
                 op_args = [] }) in
-       Ok [callop]
+       (* callee unknown (the symbolic domains do not resolve function
+          pointers): lhs, argument regions and globals are abstracted *)
+       Ok (callop :: (unknown_call_abstracts env exp_translator context lhs args))
 
   method private get_post_assigns
                    (fname:string)
@@ -2095,10 +2307,15 @@ object (self)
       List.concat
         (List.map (fun (se,_) ->
              match se with
+             | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _)
+                  when Option.is_none (block_write_arg env args n) -> []
              | XBlockWrite (ArgValue (ParFormal n, ArgNoOffset), _) ->
                 let arg = List.nth args (n - 1) in
+                let regionabstract =
+                  arg_written_abstract env exp_translator context arg in
                 let lhs =
                   exp_translator#translate_lhs context (Mem arg, NoOffset) in
+                regionabstract @
                 if lhs#isTmp then
                   let memoryvars = env#get_memory_variables in
                   let _ =
@@ -2145,7 +2362,18 @@ object (self)
                 effects
 
              | _ -> []) sideeffects) in
-         seeffects
+    (* Without a library summary, the side effects (callsite
+       post-assumptions, if any) need not cover all arguments: the objects
+       addressed by the arguments are abstracted first, as in the numerical
+       call translator. Globals are abstracted unless protected by a
+       contract (see global_abstracts). *)
+    let argabstracts =
+      match get_function_summary fname with
+      | Some _ -> []
+      | None -> arg_written_abstracts env exp_translator context args in
+    argabstracts
+    @ seeffects
+    @ (global_abstracts env (Some fname) context args)
 end
 
 

@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2025 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -212,11 +212,31 @@ let get_cch_root ():xml_element_int =
   end
 
 
+(* Parse results that record the CIL machine model are checked against the
+   analyzer's word size; older parse results do not record it. *)
+let check_cfile_machine_model (filename: string) (croot: xml_element_int) =
+  if croot#hasOneTaggedChild "header" then
+    let hNode = croot#getTaggedChild "header" in
+    if hNode#hasOneTaggedChild "created" then
+      let cNode = hNode#getTaggedChild "created" in
+      if cNode#hasNamedAttribute "sizeof-long"
+         && cNode#hasNamedAttribute "sizeof-ptr" then
+        CCHTypesUtil.check_parse_machine_model
+          ~filename
+          ~sizeof_long:(cNode#getIntAttribute "sizeof-long")
+          ~sizeof_ptr:(cNode#getIntAttribute "sizeof-ptr")
+      else
+        log_warning
+          "%s: no parser machine model recorded; not checked [%s:%d]"
+          filename __FILE__ __LINE__
+
+
 let read_cfile ():file =
   let filename = get_xml_cfile_name () in
   try
     let cdoc = readXmlDocument filename in
     let croot = cdoc#getRoot in
+    let _ = check_cfile_machine_model filename croot in
     let cNode = croot#getTaggedChild "c-file" in
     read_xml_cfile cNode
   with

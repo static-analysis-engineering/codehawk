@@ -845,7 +845,7 @@ let po_predicate_to_pretty ?(full=false) (p:po_predicate_t) =
            STR ")"]
     | PIntOverflow (op, e1, e2, ik) ->
        LBLOCK [
-           STR "uint-overflow(";
+           STR "int-overflow(";
            pr_expr op e1 e2 (TInt (ik, []));
 	   STR ", ";
            STR (int_type_to_string ik);
@@ -1057,8 +1057,8 @@ let rec exp_to_sterm
           (fdecls:cfundeclarations_int) (e:exp): s_term_t traceresult =
   let es = exp_to_sterm fdecls in
   match e with
-  | Const (CInt (i64,_,_)) ->
-     Ok (NumConstant (mkNumericalFromString (Int64.to_string i64)))
+  | Const (CInt (i64, ik, _)) ->
+     Ok (NumConstant (mkNumerical_big (CCHBasicUtil.cint_to_big i64 ik)))
 
   | Lval (Var (vname,vid),offset) when vid = (-1) ->
      TR.tmap
@@ -1340,7 +1340,13 @@ let rec sterm_to_exp
      let* offset = s_offset_to_offset vinfo.vtype soff in
      Ok (Lval (Var (vinfo.vname, vinfo.vid), offset))
   | NumConstant i ->
-     Ok (Const (CInt (Int64.of_string i#toString, IInt, None)))
+     (match CCHBasicUtil.big_to_cint i#getNum with
+      | Some (i64, ik) -> Ok (Const (CInt (i64, ik, None)))
+      | None ->
+         Error [
+             (elocm __LINE__) ^ fdecls#functionname ^ ":sterm_to_exp";
+             "Integer constant outside the representable range: "
+             ^ i#toString])
   | ArithmeticExpr (op, t1, t2) ->
      TR.tmap2 (fun s1 s2 -> BinOp (op, s1, s2, TInt (IInt,[]))) (te t1) (te t2)
   | ArgAddressedValue (t, soff) ->

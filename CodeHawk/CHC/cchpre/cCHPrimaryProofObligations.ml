@@ -294,7 +294,15 @@ and create_po_binop
            match ty with
            | TInt (ikp,_) ->
 	      addxop (PNonNegative e2) 2;
-	      addxop (PWidthOverflow (e2, ikp)) 2
+	      addxop (PWidthOverflow (e2, ikp)) 2;
+              (* C11 6.5.7p4: if E1 has a signed type, E1 << E2 is defined
+                 only if E1 is non-negative and E1 * 2^E2 is representable
+                 in the result type (the promoted type of E1). *)
+              if binop = Shiftlt && is_signed_type ikp then
+                begin
+                  addxop (PNonNegative e1) 1;
+                  add (PIntOverflow (Shiftlt, e1, e2, ikp))
+                end
            | _ ->
               raise
                 (CCHFailure
@@ -569,6 +577,19 @@ and create_po_exp
     let _ =
       match (exptyp_r, tgttyp)  with
       | (Ok (TInt (ik1, _)), TInt (ik2,_ )) -> add_int_cast ik1 ik2 e
+      (* conversions from or to an enumerated type are conversions from or to
+         its compatible integer type (C11 6.7.2.2p4; a conversion to an
+         enumerated type also gets the enumeration-membership check *)
+      | (Ok (TEnum _ as t1), (TInt _ | TEnum _))
+        | (Ok (TInt _ as t1), TEnum _) ->
+         begin
+           (match (integer_kind_of_type t1, integer_kind_of_type tgttyp) with
+            | (Some ik1, Some ik2) -> add_int_cast ik1 ik2 e
+            | _ -> ());
+           (match tgttyp with
+            | TEnum _ -> add (PCast (t1, tgttyp, e))
+            | _ -> ())
+         end
       | (Ok (TPtr (tt1, _)), TPtr (tt2, _)) ->
          add (PPointerCast (tt1,tt2,e))  (* may need additional int cast *)
       | (Ok exptyp, _) -> add (PCast (exptyp, tgttyp, e))
@@ -735,7 +756,7 @@ and get_arg
                  INT (List.length args)]))
 
   | NumConstant i ->
-     ([], Const (CInt (Int64.of_string i#toString, IInt, None)), [])
+     ([], make_constant_exp i, [])
 
   | NamedConstant s -> ([], CnApp (s,[], TInt (IInt,[])), [])
 
@@ -986,6 +1007,10 @@ and get_output_format_proofobligations env argspec arg =
   let get_po ty2 =
     match (argtype, ty2) with
     | (Ok (TInt (ik1, _)), TInt (ik2, _)) -> get_int_cast ik1 ik2 arg
+    | (Ok (TEnum _ as t1), TInt (ik2, _)) ->
+       (match integer_kind_of_type t1 with
+        | Some ik1 -> get_int_cast ik1 ik2 arg
+        | None -> [PFormatCast (t1, ty2, arg)])
     | (Ok ty, _) -> [PFormatCast (ty, ty2, arg)]
     | (Error err, _) ->
        begin
@@ -1441,7 +1466,7 @@ args
               BinOp
                 (Div,
                  len,
-                 Const (CInt (Int64.of_string n#toString, IUInt, None)),
+                 Const (make_constant ~ik:IUInt n),
                  TInt (IUInt, [])) in
             (addx i1 p1)
             @ (addx i2 p2)

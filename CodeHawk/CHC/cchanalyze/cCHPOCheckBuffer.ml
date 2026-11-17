@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2024 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -126,8 +126,10 @@ object (self)
          None
     | _ -> None
 
+  (* Universal violation: the remaining size is less than every possible
+     length, i.e., less than its lower bound. *)
   method private inv_implies_violation (inv1: invariant_int) (inv2: invariant_int) =
-    match (inv1#expr,inv2#upper_bound_xpr) with
+    match (inv1#expr,inv2#lower_bound_xpr) with
     | (Some x1, Some x2) -> self#xpr_implies_violation inv1#index inv2#index x1 x2
     | _ -> None
 

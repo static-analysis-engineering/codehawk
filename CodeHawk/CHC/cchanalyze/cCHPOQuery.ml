@@ -1605,7 +1605,11 @@ object (self)
 
   method x2global (x:xpr_t):exp option =
     match x with
-    | XConst (IntConst n) -> Some (make_constant_exp n)
+    | XConst (IntConst n) ->
+       (* None if n is not representable as a C integer constant *)
+       (match CCHBasicUtil.big_to_cint n#getNum with
+        | Some (i64, ik) -> Some (Const (CInt (i64, ik, None)))
+        | None -> None)
     | XVar v when env#is_initial_global_value v ->
        (try Some (env#get_global_exp v) with
         | CCHFailure p ->
@@ -1736,7 +1740,11 @@ object (self)
 
   method x2api (x:xpr_t):exp option =
     match x with
-    | XConst (IntConst n) -> Some (make_constant_exp n)
+    | XConst (IntConst n) ->
+       (* None if n is not representable as a C integer constant *)
+       (match CCHBasicUtil.big_to_cint n#getNum with
+        | Some (i64, ik) -> Some (Const (CInt (i64, ik, None)))
+        | None -> None)
     | XVar v
          when env#is_initial_parameter_value v
               || env#is_initial_parameter_deref_value v ->
@@ -1963,7 +1971,7 @@ object (self)
          | FIntervalValue (Some lb, _) -> Some (make_constant_exp lb)
          | _ -> None
     with
-    | Failure _ -> None
+    | Failure _ | CCHFailure _ -> None
 
   method get_eub (e:exp) (v:non_relational_value_t):exp option =
     try
@@ -1975,7 +1983,7 @@ object (self)
          | FIntervalValue (_, Some ub) -> Some (make_constant_exp ub)
          | _ -> None
     with
-    | Failure _ -> None
+    | Failure _ | CCHFailure _ -> None
 
   method get_evb (e:exp) (v:non_relational_value_t):exp option =
     try
@@ -1988,7 +1996,7 @@ object (self)
             Some (make_constant_exp lb)
          | _ -> None
     with
-    | Failure _ -> None
+    | Failure _ | CCHFailure _ -> None
 
   method check_implied_by_assumptions (p:po_predicate_t) =
     let assumptions =

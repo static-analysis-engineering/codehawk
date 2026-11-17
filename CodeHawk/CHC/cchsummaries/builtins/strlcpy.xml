@@ -69,6 +69,15 @@
 	  </apply>
 	</math>
       </sideeffect>
+      <sideeffect>
+	<math>
+	  <apply>
+	    <block-write/>
+	    <ci>destination</ci>
+	    <ci>size</ci>
+	  </apply>
+	</math>
+      </sideeffect>
     </sideeffects>
   </function-summary>
 </codehawk-summary-file>

@@ -140,16 +140,27 @@ object (self)
            match acc with
            | Some _ -> acc
            | _ ->
-              match inv2#lower_bound_xpr with
-              | Some (XConst (IntConst n)) when n#lt numerical_zero ->
+              (* A negative constant lower bound is an over-approximation that
+                 need not be attained; it is a violation only if the value is
+                 negative on every execution, i.e., if the upper bound is
+                 negative (or if a witness exists). *)
+              match (inv2#lower_bound_xpr, inv2#upper_bound_xpr) with
+              | (_, Some (XConst (IntConst n))) when n#lt numerical_zero ->
                  let deps = DLocal ([inv2#index]) in
                  let msg =
-                   "negative value: "
+                   "negative value (upper bound: "
                    ^ n#toString
-                   ^ ", may be cast to a large positive value when cast to: "
+                   ^ ") is cast to a large positive value when cast to: "
                    ^ (p2s (typ_to_pretty t)) in
                  Some (deps, msg)
-              | Some (XVar v) ->
+              | (Some (XConst (IntConst n)), _) when n#lt numerical_zero ->
+                 begin
+                   poq#set_diagnostic_arg
+                     2 ("value may be negative (lower bound: " ^ n#toString
+                        ^ ") and then cast to a large positive value");
+                   None
+                 end
+              | (Some (XVar v), _) ->
                  self#var_implies_unsigned_length_conflict inv2#index v
               | _ -> None) None invs2
     | _ -> None
@@ -549,51 +560,29 @@ object (self)
     else
       None
 
-  method xpr2lst_implies_pluspi_universal_violation
-           (xsize: xpr_t) (xoffset: xpr_t) (inv2index: int) (xlst: xpr_t list) =
-    match xlst with
-    | [] -> None
-    | (h::tl) ->
-       match self#buffer_implies_pluspi_violation inv2index xsize xoffset h with
-       | Some r ->
-          List.fold_left (fun acc x ->
-              match acc with
-              | None -> None
-              | Some (deps,msg) ->
-                 match self#buffer_implies_pluspi_violation
-                         inv2index xsize xoffset x with
-                 | Some (d, m) ->
-                    let deps = join_dependencies deps d in
-                    let msg = msg ^  "; " ^ m in
-                    Some (deps, msg)
-                 | _ -> None) (Some r) tl
-       | _ -> None
-
+  (* Universal violation: every value of the increment violates the upper
+     bound, i.e., its lower bound does. Each lower-bound alternative is a
+     valid lower bound, so one violating alternative suffices. An upper
+     bound that violates the constraint only shows that some value in the
+     over-approximation does; that is not a violation without a witness
+     (see the existential checks). *)
   method private invs2_implies_pluspi_universal_violation
                    (xsize: xpr_t) (xoffset: xpr_t) =
     List.fold_left (fun acc inv2 ->
         match acc with
         | Some _ -> acc
         | _ ->
-           match inv2#upper_bound_xpr with
-           | Some x ->
-              begin
-                match self#buffer_implies_pluspi_violation
-                        inv2#index xsize xoffset x with
-                | Some  r -> Some r
-                | _ ->
-                   match inv2#upper_bound_xpr_alternatives with
-                   | None -> None
-                   | Some l ->
-                      self#xpr2lst_implies_pluspi_universal_violation
-                        xsize xoffset inv2#index l
-              end
-           | _ ->
-              match inv2#upper_bound_xpr_alternatives with
-              | Some l ->
-                 self#xpr2lst_implies_pluspi_universal_violation
-                   xsize xoffset inv2#index l
-              | _ -> None) None invs2
+           let lbs =
+             (match inv2#lower_bound_xpr with Some x -> [x] | _ -> [])
+             @ (match inv2#lower_bound_xpr_alternatives with
+                | Some l -> l
+                | _ -> []) in
+           List.fold_left (fun acc x ->
+               match acc with
+               | Some _ -> acc
+               | _ ->
+                  self#buffer_implies_pluspi_violation
+                    inv2#index xsize xoffset x) None lbs) None invs2
 
   method private var2_implies_pluspi_existential_violation
                    (xsize: xpr_t)
@@ -649,15 +638,15 @@ object (self)
     else
       None
 
+  (* Existential violation: requires a witness, i.e., a value that can be
+     chosen (tainted value, callee postcondition); a constant upper bound
+     alone is not a witness. *)
   method private xpr2_implies_pluspi_existential_violation
                    (xsize: xpr_t) (xoffset: xpr_t) (inv2index: int) (x: xpr_t) =
-    match self#buffer_implies_pluspi_violation inv2index xsize xoffset x with
-    | Some r -> Some r
-    | _ ->
-       match x with
-       | XVar v ->
-          self#var2_implies_pluspi_existential_violation xsize xoffset inv2index v
-       | _ -> None
+    match x with
+    | XVar v ->
+       self#var2_implies_pluspi_existential_violation xsize xoffset inv2index v
+    | _ -> None
 
   method private xpr2lst_implies_pluspi_existential_violation
                    (xsize: xpr_t)
@@ -741,9 +730,25 @@ object (self)
 
   (* ----------------------- delegation ------------------------------------- *)
 
+  (* A request ptr-upperbound(p, n) with constant n > PTRDIFF_MAX cannot be
+     satisfied by any object (C11 6.5.6p9: object sizes are bounded by the
+     range of ptrdiff_t). Such an n is typically the upper bound of the
+     type range of an index, not an actual index value; delegating it would
+     only produce a (false) violation at every call site. *)
+  method private is_unsatisfiable_offset (x: xpr_t) =
+    match x with
+    | XConst (IntConst n) -> n#gt (get_safe_upperbound ILong)
+    | _ -> false
+
   method private xpr_implies_delegation
                    (invindices: int list) (x1: xpr_t) (x2: xpr_t) =
     match (poq#x2api x1, poq#x2api x2) with
+    | _ when self#is_unsatisfiable_offset x2 ->
+       begin
+         poq#set_diagnostic_arg
+           2 ("offset bound " ^ (x2s x2) ^ " exceeds the maximum object size");
+         None
+       end
     | (Some a1, Some a2)
          when poq#is_api_expression x1 || poq#is_api_expression x2 ->
        let pred = self#get_predicate a1 a2 in
@@ -767,7 +772,9 @@ object (self)
 
   method private var_const_implies_delegation
                    (invindices: int list) (v1: variable_t) n =
-    if poq#is_api_expression (XVar v1) then
+    if self#is_unsatisfiable_offset (num_constant_expr n) then
+      None
+    else if poq#is_api_expression (XVar v1) then
       let pred =
         self#get_predicate
           (poq#get_api_expression (XVar v1)) (make_constant_exp n) in

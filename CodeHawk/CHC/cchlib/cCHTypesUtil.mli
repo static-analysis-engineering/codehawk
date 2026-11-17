@@ -47,6 +47,12 @@ open CCHLibTypes
 val zero: exp
 val one: exp
 
+(** [make_constant ~ik n] returns the integer constant with value [n]
+    (see {!CCHBasicUtil.big_to_cint} for the representation of values
+    [>= 2^63]); raises [CCHFailure] if [n] is outside [[-2^63, 2^64 - 1]]. *)
+val make_constant: ?ik:ikind -> numerical_t -> constant
+
+(** [make_constant_exp n] is [Const (make_constant n)]. *)
 val make_constant_exp: numerical_t -> exp
 
 val binop_to_xop: binop -> xop_t
@@ -85,7 +91,17 @@ val is_not_zero: exp -> bool
 
 val is_safe_int_cast: ikind -> ikind -> bool
 
+(** [check_parse_machine_model ~filename ~sizeof_long ~sizeof_ptr] raises
+    CCHFailure if the sizes recorded by the parser for [filename] differ from
+    the machine model for the word size in system_settings (or if no word size
+    is set). *)
+val check_parse_machine_model:
+  filename:string -> sizeof_long:int -> sizeof_ptr:int -> unit
+
 val get_safe_upperbound: ikind -> numerical_t
+
+(** [power_of_two k] is [2^k] (for [k >= 0]; [1] otherwise). *)
+val power_of_two: int -> numerical_t
 
 val get_safe_lowerbound: ikind -> numerical_t
 
@@ -151,6 +167,26 @@ val is_field_offset: offset -> bool
 
 val is_constant_offset: offset -> bool
 
+(** [shift_last_index off n] returns the offset of a pointer with offset [off]
+    after adding [n] (in units of its target type) within the innermost array:
+    the last constant (integer) index is increased by [n]; a trailing [NoOffset]
+    counts as index 0 (as for memory variables). Returns [None] if the last
+    index is not an integer constant. *)
+val shift_last_index: offset -> numerical_t -> offset option
+
+(** [reachable_region_offset off] returns the offset of the region reachable
+    by pointer arithmetic from a pointer with offset [off]: the enclosing array
+    if [off] ends in an index (the offset without its last index), otherwise
+    the addressed (sub-)object itself. *)
+val reachable_region_offset: offset -> offset
+
+(** [offsets_overlap o1 o2] returns true if the memory denoted by [o1] may
+    overlap with the memory denoted by [o2] within the same object, i.e., if
+    one may be a prefix of the other. Indices are considered distinct only if
+    both are integer constants with different values; offsets of different
+    shapes (field vs index) are considered to overlap. *)
+val offsets_overlap: offset -> offset -> bool
+
 val is_zero_memory_offset: offset -> bool
 
 val is_field_lval_exp: exp -> bool
@@ -166,6 +202,11 @@ val max_size_of_type: cfundeclarations_int -> typ -> xpr_t option
 val max_size_of_exp_type: cfundeclarations_int -> exp -> xpr_t option
 
 val range_of_type: cfundeclarations_int -> typ -> type_range_int
+
+(** [integer_kind_of_type t] is [Some ik] for an integer type [TInt ik] and
+    for an enumerated type whose compatible integer type (CIL [ekind], gcc's
+    choice) is [ik] (C11 6.7.2.2p4); [None] for other types. *)
+val integer_kind_of_type: typ -> ikind option
 
 val byte_offset_of_field: cfundeclarations_int -> fieldinfo -> xpr_t
 
