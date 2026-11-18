@@ -217,6 +217,19 @@ object
       included. *)
   method get_global_state_variables: (string * variable_t) list
 
+  (** [get_escaped_locals] returns the vids of the locals (including formals)
+      whose address escapes in this function (syntactic, flow-insensitive):
+      a callee may access them through a stored pointer. *)
+  method get_escaped_locals: int list
+
+  (** [get_call_frame_variables] returns the variables, other than those of
+      globals, whose value a callee can change without receiving their
+      address as an argument: the memory variables with an external base
+      (reached through pointer parameters, return values, pointers stored in
+      memory) or an uninterpreted base, and the program variables and stack
+      memory variables of escaped locals. *)
+  method get_call_frame_variables: variable_t list
+
   method get_parameters: variable_t list
 
   method get_pointer_variables  : variable_type_t -> variable_t list   (* symbolic program variable with type TPtr *)

@@ -456,9 +456,58 @@ let global_abstracts
        [make_c_cmd (ABSTRACT_VARS vars)]
 
 
+(* A callee can change memory that it does not receive as an argument: memory
+   reached through pointer parameters, return values or pointers stored in
+   memory (external memory), and locals whose address escaped (stored in
+   memory or passed to an earlier call). Returns the ABSTRACT_VARS command (as
+   a list of zero or one commands) for these variables
+   (c_environment#get_call_frame_variables); globals are handled by
+   global_abstracts. Not abstracted for a library function with a summary
+   (trusted to have only the listed side effects) unless it receives a
+   callback, nor for a callee declared functional (no observable side
+   effects) by its side effects or postconditions. To be applied before the
+   recorded side effects of the call, so that these are not overwritten.
+   Remaining gap: a summarized library function that writes through pointers
+   stored in an argument (inflate: strm->next_out) cannot express this. *)
+let frame_abstracts
+      (env: c_environment_int)
+      (callee: string option)
+      (context: program_context_int)
+      (args: exp list) =
+  let summarized_library_call =
+    match callee with
+    | Some fname ->
+       (match get_function_summary fname with Some _ -> true | None -> false)
+    | None -> false in
+  let declared_functional =
+    match callee with
+    | Some _ ->
+       let caller = env#get_functionname in
+       let (post, errpost) = get_postconditions caller callee context in
+       List.exists (fun (p, _) -> p = XFunctional)
+         ((get_sideeffects caller callee context) @ post @ errpost)
+    | None -> false in
+  if (summarized_library_call && not (has_function_address_arg env args))
+     || declared_functional then
+    []
+  else
+    match env#get_call_frame_variables with
+    | [] -> []
+    | vars ->
+       let _ =
+         log_diagnostics_result
+           ~tag:"abstract call frame variables"
+           ~msg:env#get_functionname
+           __FILE__ __LINE__
+           ((match callee with Some f -> "callee: " ^ f | None -> "unknown callee")
+            :: (List.map (fun v -> p2s v#toPretty) vars)) in
+       [make_c_cmd (ABSTRACT_VARS vars)]
+
+
 (* Commands for a call to an unknown function (an unresolved indirect call):
-   the lhs, the regions addressed by the arguments, and all unprotected
-   globals are abstracted. *)
+   the lhs, the regions addressed by the arguments, the call frame variables
+   (external memory, escaped locals) and all unprotected globals are
+   abstracted. *)
 let unknown_call_abstracts
       (env: c_environment_int)
       (exp_translator: exp_translator_int)
@@ -472,6 +521,7 @@ let unknown_call_abstracts
        arg_written_abstract env exp_translator context (AddrOf lval) in
   lhsabstracts
   @ (arg_written_abstracts env exp_translator context args)
+  @ (frame_abstracts env None context args)
   @ (global_abstracts env None context args)
 
 
@@ -656,10 +706,14 @@ object (self)
           make_c_cmd (ASSERT FALSE)
         else
           make_c_nop () in
+      let frameabstracts =
+        make_c_cmd_block (frame_abstracts env (Some fname) context args) in
       let sideeffects = self#get_sideeffects fname fvid args fnxargs in
       let globalabstracts =
         make_c_cmd_block (global_abstracts env (Some fname) context args) in
-      Ok (argassigns @ [callop; assertfail; sideeffects; globalabstracts] @ rcode)
+      Ok (argassigns
+          @ [callop; assertfail; frameabstracts; sideeffects; globalabstracts]
+          @ rcode)
 
   method private set_indirect_call vinfo =
     if proof_scaffolding#has_indirect_callsite env#get_functionname context then
@@ -1218,10 +1272,12 @@ object (self)
                                              READ)]}))
                      | _ -> make_c_nop () in
                    [rcode;  domainop; assign; postassert] in
+         let frameabstracts =
+           make_c_cmd_block (frame_abstracts env (Some fname) ctxt args) in
          let sideeffects = self#get_sideeffects fname fvid args fnxargs in
          let globalabstracts =
            make_c_cmd_block (global_abstracts env (Some fname) ctxt args) in
-         Ok ([callop] @ [sideeffects; globalabstracts] @ rcode)
+         Ok ([callop] @ [frameabstracts; sideeffects; globalabstracts] @ rcode)
     | _ ->
        let callop =
          make_c_cmd
@@ -2372,6 +2428,7 @@ object (self)
       | Some _ -> []
       | None -> arg_written_abstracts env exp_translator context args in
     argabstracts
+    @ (frame_abstracts env (Some fname) context args)
     @ seeffects
     @ (global_abstracts env (Some fname) context args)
 end
