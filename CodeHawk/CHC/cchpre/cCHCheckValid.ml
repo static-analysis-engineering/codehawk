@@ -630,7 +630,8 @@ let check_ppo_validity
     end in
 
   let make = make_record Green DStmt in
-  let make_violation = make_record Red DStmt in
+  let make_violation =
+    make_record (CCHPOPredicate.violation_status ppo#get_predicate) DStmt in
   let make_warning _s = make_record Green DStmt in   (* TBD *)
   let _ = pd#index_po_predicate ppo#get_predicate in
   try

@@ -50,6 +50,18 @@ val has_global_vars_in_exp: cfundeclarations_int -> exp -> bool
 
 val is_opaque: po_predicate_t -> bool
 
+
+(** [violation_status p] is the status recorded for a proof obligation with
+    predicate [p] whose condition fails on every execution that reaches it
+    (or for which a witness exists): [Purple] if the failure results in
+    implementation-defined behavior (conversion to a signed type of a value
+    that is not representable, C11 6.3.1.3p3), [Blue] if it results in
+    well-defined value wrap-around (unsigned arithmetic, C11 6.2.5p9;
+    conversion to an unsigned type, 6.3.1.3p2), and [Red] (undefined
+    behavior) otherwise. The analysis level only determines which of these
+    are reported (issue 15). *)
+val violation_status: po_predicate_t -> po_status_t
+
 val check_assumption_predicates:
   po_predicate_t list -> po_predicate_t -> po_predicate_t option
 
