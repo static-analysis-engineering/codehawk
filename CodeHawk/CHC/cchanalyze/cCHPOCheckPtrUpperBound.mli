@@ -36,3 +36,11 @@ open CCHAnalysisTypes
 
 val check_ptr_upper_bound:
   ?strict:bool -> po_query_int -> typ -> binop -> exp -> exp -> bool
+
+
+(** [check_ptr_upper_bound_min poq typ op e1 a b] checks ptr-upper-bound with
+    length min(a, b), where b is expected to be ntp(e1) + 1: safe if the
+    bound holds for length [a], or if [e1] is null-terminated; otherwise the
+    condition with the min length is delegated to the api, if possible. *)
+val check_ptr_upper_bound_min:
+  po_query_int -> typ -> binop -> exp -> exp -> exp -> bool

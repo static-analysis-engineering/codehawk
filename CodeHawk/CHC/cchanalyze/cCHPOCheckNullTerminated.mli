@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,3 +35,10 @@ open CCHAnalysisTypes
 
 
 val check_null_terminated: po_query_int -> exp -> bool
+
+(** [check_null_terminated_safe poq e invs] records a safe result for the
+    current proof obligation if [e] can be shown to be null-terminated (within
+    the bounds of its object) using the invariants [invs] for [e]; it does not
+    check for violations or delegate. *)
+val check_null_terminated_safe:
+  po_query_int -> exp -> CCHPreTypes.invariant_int list -> bool

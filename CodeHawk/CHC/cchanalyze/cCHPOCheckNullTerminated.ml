@@ -241,3 +241,9 @@ let check_null_terminated (poq: po_query_int) (e: exp) =
       "DomainRef:string:null-termination" "ability to track null-terminator" in
   let checker = new null_terminated_checker_t poq e invs in
   checker#check_safe || checker#check_violation || checker#check_delegation
+
+
+let check_null_terminated_safe
+      (poq: po_query_int) (e: exp) (invs: invariant_int list) =
+  let checker = new null_terminated_checker_t poq e invs in
+  checker#check_safe

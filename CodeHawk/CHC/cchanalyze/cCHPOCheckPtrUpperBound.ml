@@ -998,3 +998,73 @@ let check_ptr_upper_bound
   let checker =
     new ptr_upper_bound_checker_t ~strict poq typ op e1 e2 invs1 invs2 in
   checker#check_safe || checker#check_violation || checker#check_delegation
+
+
+(* The length is min(a, b) with b = ntp(e1) + 1, e.g., the number of bytes
+   read by strncpy from its source (C11 7.24.2.4p2). The access is within
+   bounds if e1 + a is within bounds, or if e1 is null-terminated within its
+   object (then e1 + ntp(e1) + 1 is at most one past the end of the object).
+   No violation is reported: that would require both alternatives to fail.
+   If neither alternative can be proven the condition is delegated as a whole,
+   with its min length, so that callers are not held to the stronger
+   condition on a alone. *)
+let check_ptr_upper_bound_min
+      (poq: po_query_int)
+      (typ: typ)
+      (op: binop)
+      (e1: exp)
+      (a: exp)
+      (b: exp) =
+  let (ia, _) = ptr_upper_bound_min_indices in
+  let invs1 = poq#get_invariants 3 in
+  let invsa = poq#get_invariants ia in
+  let _ = poq#set_diagnostic_invariants 3 in
+  let _ = poq#set_diagnostic_invariants ia in
+  let checker_a = new ptr_upper_bound_checker_t poq typ op e1 a invs1 invsa in
+  let nt_alternative () =
+    is_ntp_successor e1 b
+    && CCHPOCheckNullTerminated.check_null_terminated_safe poq e1 invs1 in
+  let delegation () =
+    let a2s =
+      List.fold_left (fun acc inv ->
+          match inv#expr with
+          | Some x ->
+             (match poq#x2api x with
+              | Some a2 -> (inv#index, x, a2) :: acc
+              | _ -> acc)
+          | _ -> acc) [] invsa in
+    let a2s =
+      match (a2s, a) with
+      | ([], Const (CInt _)) -> [(-1, XConst (IntConst numerical_zero), a)]
+      | _ -> a2s in
+    List.exists (fun inv1 ->
+        match inv1#expr with
+        | Some x1 ->
+           (match poq#x2api x1 with
+            | Some a1 ->
+               List.exists (fun (ia2, x2, a2) ->
+                   if poq#is_api_expression x1 || poq#is_api_expression x2 then
+                     let ntp1 =
+                       BinOp
+                         (PlusA,
+                          CnApp ("ntp", [Some a1], TInt (IInt, [])),
+                          Const (CInt (Int64.one, IInt, None)),
+                          TInt (IInt, [])) in
+                     let len = CnApp ("min", [Some a2; Some ntp1], TInt (IInt, [])) in
+                     let pred = PPtrUpperBound (typ, op, a1, len) in
+                     let invindices =
+                       if ia2 < 0 then [inv1#index] else [inv1#index; ia2] in
+                     let deps = DEnvC (invindices, [ApiAssumption pred]) in
+                     let msg =
+                       "condition "
+                       ^ (p2s (po_predicate_to_pretty pred))
+                       ^ " delegated to the api" in
+                     begin
+                       poq#record_safe_result deps msg;
+                       true
+                     end
+                   else
+                     false) a2s
+            | _ -> false)
+        | _ -> false) invs1 in
+  checker_a#check_safe || nt_alternative () || delegation ()

@@ -476,3 +476,72 @@ let check_initialized_range (poq: po_query_int) (e1: exp) (e2: exp) =
       "DomainRef:initialized-range" "ability to track ranges of memory" in
   let checker = new initialized_range_checker_t poq e1 e2 invs1 invs2 in
   checker#check_safe || checker#check_violation || checker#check_delegation
+
+
+(* The length is min(a, b) with b = ntp(e1) + 1, e.g., the number of bytes
+   read by strncpy from its source (C11 7.24.2.4p2). The range is initialized
+   if the first a bytes are initialized, or if the bytes up to the null
+   terminator are initialized (the null terminator itself is initialized).
+   No violation is reported. Delegation, as for ntp lengths, is limited to
+   exclusive references, with the condition delegated with its min length. *)
+let check_initialized_range_min
+      (poq: po_query_int) (e1: exp) (a: exp) (b: exp) =
+  let (ia, _) = initialized_range_min_indices in
+  let invs1 = poq#get_invariants 1 in
+  let invsa = poq#get_invariants ia in
+  let _ = poq#set_diagnostic_invariants 1 in
+  let _ = poq#set_diagnostic_invariants ia in
+  let _ =
+    poq#set_key_diagnostic
+      "DomainRef:initialized-range" "ability to track ranges of memory" in
+  let ntp1 = CnApp ("ntp", [Some e1], TInt (IInt, [])) in
+  let checker_a = new initialized_range_checker_t poq e1 a invs1 invsa in
+  let ntp_alternative () =
+    is_ntp_successor e1 b
+    && (let checker_b = new initialized_range_checker_t poq e1 ntp1 invs1 [] in
+        checker_b#check_safe) in
+  let delegation () =
+    is_ntp_successor e1 b
+    && List.exists (fun inv ->
+           match inv#expr with
+           | Some (XVar v) when
+                  poq#env#is_mut_memory_address v
+                  || poq#env#is_ref_memory_address v ->
+              (match poq#x2api (XVar v) with
+               | Some a1 when poq#is_api_expression (XVar v) ->
+                  let a2s =
+                    List.fold_left (fun acc inva ->
+                        match inva#expr with
+                        | Some x ->
+                           (match poq#x2api x with
+                            | Some a2 -> (inva#index, a2) :: acc
+                            | _ -> acc)
+                        | _ -> acc) [] invsa in
+                  let a2s =
+                    match (a2s, a) with
+                    | ([], Const (CInt _)) -> [(-1, a)]
+                    | _ -> a2s in
+                  List.exists (fun (ia2, a2) ->
+                      let ntpa1 =
+                        BinOp
+                          (PlusA,
+                           CnApp ("ntp", [Some a1], TInt (IInt, [])),
+                           Const (CInt (Int64.one, IInt, None)),
+                           TInt (IInt, [])) in
+                      let len =
+                        CnApp ("min", [Some a2; Some ntpa1], TInt (IInt, [])) in
+                      let pred = PInitializedRange (a1, len) in
+                      let invindices =
+                        if ia2 < 0 then [inv#index] else [inv#index; ia2] in
+                      let deps = DEnvC (invindices, [ApiAssumption pred]) in
+                      let msg =
+                        "exclusive reference " ^ (p2s v#toPretty)
+                        ^ "; condition " ^ (p2s (po_predicate_to_pretty pred))
+                        ^ " delegated to the api" in
+                      begin
+                        poq#record_safe_result deps msg;
+                        true
+                      end) a2s
+               | _ -> false)
+           | _ -> false) invs1 in
+  checker_a#check_safe || ntp_alternative () || delegation ()

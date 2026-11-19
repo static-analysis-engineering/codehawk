@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2023 Henny B. Sipma
-   Copyright (c) 2024      Aarno Labs LLC
+   Copyright (c) 2024-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -35,3 +35,9 @@ open CCHAnalysisTypes
 
 
 val check_initialized_range: po_query_int -> exp -> exp -> bool
+
+
+(** [check_initialized_range_min poq e1 a b] checks initialized-range with
+    length min(a, b), where b is expected to be ntp(e1) + 1: safe if the
+    range is initialized for length [a] or up to the null terminator. *)
+val check_initialized_range_min: po_query_int -> exp -> exp -> exp -> bool
