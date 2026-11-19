@@ -865,6 +865,12 @@ and get_arg
 
   | RuntimeValue ->
      ([], CnApp ("runtime-value", [], TInt (IInt, [])), [])
+
+  | MinValue (t1, t2) ->
+     let (p1, a1, i) = get_length_arg env t1 args in
+     let (p2, a2, j) = get_length_arg env t2 args in
+     (p1 @ p2, CnApp ("min", [Some a1; Some a2], TInt (IInt, [])), i @ j)
+
   | _ ->
      raise
        (CCHFailure
@@ -872,6 +878,21 @@ and get_arg
                STR "Argument ";
 	       s_term_to_pretty s;
                STR " not recognized"]))
+
+
+(* Length terms denote mathematical quantities (e.g., ntp(s) + 1 in a min
+   length), not C expressions evaluated by the callee; no overflow or pointer
+   arithmetic obligations are generated for their arithmetic. *)
+and get_length_arg
+      (env: cfundeclarations_int)
+      (s: s_term_t)
+      (args: exp list): (po_predicate_t list * exp * int list) =
+  match s with
+  | ArithmeticExpr (op, t1, t2) ->
+     let (p1, a1, i) = get_length_arg env t1 args in
+     let (p2, a2, j) = get_length_arg env t2 args in
+     (p1 @ p2, BinOp (op, a1, a2, TInt (IInt, [])), i @ j)
+  | _ -> get_arg env s args
 
 
 and get_input_format_proofobligations env argspec arg =
