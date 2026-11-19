@@ -464,6 +464,10 @@ type s_term_t =
   | Region of s_term_t     (* memory region that is pointed to by s_term *)
   | RuntimeValue
   | ChoiceValue of s_term_t option * s_term_t option (* free to choose between bounds *)
+  | MinValue of s_term_t * s_term_t
+  (** [MinValue (t1, t2)]: the minimum of the values of [t1] and [t2]; used,
+      e.g., for the number of bytes read by strncpy from its source:
+      min(n, nullterminator-pos(s2) + 1) (C11 7.24.2.4p2) *)
 
 (** predicate used in representation of external conditions *)
 type xpredicate_t =

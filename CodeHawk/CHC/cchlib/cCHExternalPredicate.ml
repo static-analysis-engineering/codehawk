@@ -254,6 +254,7 @@ object (self)
     | ArgNullTerminatorPos t -> tt t
     | ArgSizeOfType t -> tt t
     | ArithmeticExpr (_,t1,t2) -> begin tt t1; tt t2 end
+    | MinValue (t1, t2) -> begin tt t1; tt t2 end
     | FormattedOutputSize t -> tt t
     | Region t -> tt t
     | ChoiceValue (optt1,optt2) ->
@@ -408,6 +409,13 @@ let rec s_term_to_pretty s =
      LBLOCK [STR "formatted-output-size("; s_term_to_pretty t; STR ")"]
   | Region t -> LBLOCK [STR "region("; s_term_to_pretty t; STR ")"]
   | RuntimeValue -> LBLOCK [STR "runtime-value"]
+  | MinValue (t1, t2) ->
+     LBLOCK [
+         STR "min(";
+         s_term_to_pretty t1;
+         STR ", ";
+         s_term_to_pretty t2;
+         STR ")"]
   | ChoiceValue (opt1,opt2) ->
      LBLOCK [
          STR "choice(";
@@ -533,7 +541,8 @@ let rec get_term_parameters (t:s_term_t) =
     | ArgNullTerminatorPos t
     | ArgSizeOfType t -> get_term_parameters t
   | ArgAddressedValue (t,_) -> get_term_parameters t
-  | ArithmeticExpr (_,t1,t2) ->
+  | ArithmeticExpr (_,t1, t2)
+    | MinValue (t1, t2) ->
      (get_term_parameters t1) @ (get_term_parameters t2)
   | ChoiceValue (opt1,opt2) ->
      (get_optterm_parameters opt1) @ (get_optterm_parameters opt2)
@@ -552,7 +561,8 @@ let rec get_term_global_variables (t:s_term_t) =
     | ArgNullTerminatorPos t
     | ArgSizeOfType t
     | ArgAddressedValue (t,_) -> get_term_global_variables t
-  | ArithmeticExpr (_,t1,t2) ->
+  | ArithmeticExpr (_,t1, t2)
+    | MinValue (t1, t2) ->
      (get_term_global_variables t1) @ (get_term_global_variables t2)
   | ChoiceValue (opt1,opt2) ->
      (get_optterm_global_variables opt1) @ (get_optterm_global_variables opt2)
@@ -695,6 +705,7 @@ let rec s_term_to_dfs_string (t:s_term_t) =
   | Region t -> tag ^ "," ^ (tdfs t)
   | RuntimeValue -> tag
   | ChoiceValue (opt1,opt2) -> tag ^ "," ^ (optdfs opt1) ^ "," ^ (optdfs opt2)
+  | MinValue (t1, t2) -> String.concat "," [tag; tdfs t1; tdfs t2]
 
 
 let xpredicate_to_dfs_string (p:xpredicate_t) =
@@ -870,6 +881,7 @@ let rec read_xml_term
 	    (LBLOCK [STR "read_xml_term: "; STR s;
 		      STR " not recognized as term function "])
 	end
+      | [t1; t2] when op = "min" -> MinValue (t1, t2)
       | [t1; t2] ->
          begin
            try
@@ -1198,6 +1210,7 @@ let s_term_to_xmlx (params:(string * int) list) (t:s_term_t) =
     | FormattedOutputSize t -> apply_term "formatted-output-size" [t]
     | Region t -> apply_term "region" [t]
     | RuntimeValue -> xmlElement "runtime-value"
+    | MinValue (t1, t2) -> apply_term "min" [t1; t2]
     | ChoiceValue  (opt1,opt2)  ->
        let tnode = xmlElement "choice" in
        begin
