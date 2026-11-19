@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -489,20 +489,17 @@ object (self:'a)
     | AugmentationVariable _ -> true
     | _ -> false
 
+  (* True if the variable denotes a single memory location: every index in
+     its offset is a constant. A non-constant index is either externalized as
+     "variable-index" (CnApp), denoting all elements, or (in a memory variable
+     created from a dereference) kept as the index expression itself, which
+     denotes different elements at different program points. Neither kind of
+     variable can be read or constrained as a single value. *)
   method has_constant_offset =
-    let rec is_constant_offset offset result =
-      result &&
-        match offset with
-        | NoOffset -> true
-        | Field (_, o) -> is_constant_offset o result
-        | Index (e, o) ->
-           match e with
-           | CnApp _ -> false
-           | _ -> is_constant_offset o result in
     match denotation with
     | LocalVariable (_, offset)
       | GlobalVariable (_, offset)
-      | MemoryVariable (_, offset) -> is_constant_offset offset true
+      | MemoryVariable (_, offset) -> CCHTypesUtil.is_constant_offset offset
     | _ -> true
 
   method applies_to_po ?(argindex=(-1)) (isppo:bool) (po_id:int) =
