@@ -108,6 +108,137 @@ object
     | _ -> ()
 end
 
+
+(* Library functions that may keep a pointer argument beyond the call, so that
+   the pointed-to object can be read or written by later calls (strtok writes
+   into the string of an earlier call, stdio writes into a setbuf buffer, a
+   thread receives its argument). The address of a local passed to one of
+   them escapes. *)
+let capturing_library_functions = [
+    "strtok"; "strtok_r"; "setbuf"; "setvbuf"; "setbuffer"; "setlinebuf";
+    "pthread_create"; "pthread_setspecific"; "putenv"; "aio_read";
+    "aio_write"; "lio_listio"; "atexit"; "on_exit"; "signal"; "sigaction";
+    "makecontext"; "setcontext"; "swapcontext"; "longjmp"; "siglongjmp"]
+
+
+(* A library function with a summary is trusted not to keep its pointer
+   arguments beyond the call, except for the functions listed above. *)
+let is_noncapturing_library_function (fname: string): bool =
+  let has_summary =
+    if file_environment#has_external_header fname then
+      let header = file_environment#get_external_header fname in
+      CCHFunctionSummary.function_summary_library#has_summary header fname
+    else
+      CCHFunctionSummary.function_summary_library#has_builtin_summary fname in
+  has_summary && not (List.mem fname capturing_library_functions)
+
+
+(* Escape analysis (flow-insensitive, syntactic): collects the locals
+   (including formals) whose address may be stored where a callee can reach
+   it. The address of a local does not escape when it is dereferenced
+   directly (possibly after pointer arithmetic or casts), occurs only in an
+   unevaluated sizeof/alignof operand, or is passed as an argument to a
+   non-capturing library function with a summary. Every other occurrence
+   (assignment, argument of any other call, return, comparison, inline
+   assembly operand) is an escape. *)
+class escape_collector_t (localvids: int list) =
+object (self)
+  inherit CCHTypesTransformer.block_walker_t as super
+
+  val escaped = new CHUtils.IntCollections.set_t
+
+  method escaped = escaped#toList
+
+  method private escape (vid: int) =
+    if List.mem vid localvids then escaped#add vid
+
+  method private exp (e: exp) =
+    match e with
+    | AddrOf (Var (_, vid), off) | StartOf (Var (_, vid), off) ->
+       begin
+         self#escape vid;
+         self#offset off
+       end
+    | Lval lv | AddrOf lv | StartOf lv -> self#lval lv
+    | SizeOf _ | SizeOfE _ | SizeOfStr _ | AlignOf _ | AlignOfE _ -> ()
+    | UnOp (_, e, _) | CastE (_, e) -> self#exp e
+    | BinOp (_, e1, e2, _) ->
+       begin
+         self#exp e1;
+         self#exp e2
+       end
+    | Question (e1, e2, e3, _) ->
+       begin
+         self#exp e1;
+         self#exp e2;
+         self#exp e3
+       end
+    | FnApp (_, e, el) ->
+       begin
+         self#exp e;
+         List.iter (fun o -> match o with Some e -> self#exp e | _ -> ()) el
+       end
+    | CnApp (_, el, _) ->
+       List.iter (fun o -> match o with Some e -> self#exp e | _ -> ()) el
+    | _ -> ()
+
+  (* [e] is used as an address that is dereferenced (or passed to a
+     non-capturing function): a direct address of a local does not escape *)
+  method private deref (e: exp) =
+    match e with
+    | AddrOf (Var _, off) | StartOf (Var _, off) -> self#offset off
+    | CastE (_, e) -> self#deref e
+    | BinOp ((PlusPI | IndexPI | MinusPI), e1, e2, _) ->
+       begin
+         self#deref e1;
+         self#exp e2
+       end
+    | _ -> self#exp e
+
+  method private lval ((lhost, off): lval) =
+    begin
+      (match lhost with
+       | Var _ -> ()
+       | Mem e -> self#deref e);
+      self#offset off
+    end
+
+  method private offset (off: offset) =
+    match off with
+    | Index (e, o) ->
+       begin
+         self#exp e;
+         self#offset o
+       end
+    | Field (_, o) -> self#offset o
+    | NoOffset -> ()
+
+  method! walk_rhs (e: exp) = self#exp e
+
+  method! walk_lhs (lv: lval) = self#lval lv
+
+  method! walk_arg (e: exp) = self#exp e
+
+  method! walk_calltarget (e: exp) = self#exp e
+
+  method! walk_instr (i: instr) =
+    match i with
+    | Call (lhs, (Lval (Var (fname, _), NoOffset) as f), args, _)
+         when is_noncapturing_library_function fname ->
+       begin
+         (match lhs with Some lv -> self#lval lv | None -> ());
+         self#exp f;
+         List.iter self#deref args
+       end
+    | Asm (_, _, outputs, inputs, _, _) ->
+       begin
+         List.iter (fun (_, _, lv) -> self#exp (AddrOf lv)) outputs;
+         List.iter (fun (_, _, e) -> self#exp e) inputs
+       end
+    | _ -> super#walk_instr i
+end
+
+
 class c_environment_t (f:fundec) (varmgr:variable_manager_int):c_environment_int =
 object(self)
 
@@ -124,6 +255,15 @@ object(self)
     let coll = new errno_collector_t in
     coll#walk_block (f.sbody);
     coll#errno_pointers
+
+  val escaped_locals =
+    let localvids =
+      List.map (fun v -> v.vid) (f.sdecls#get_formals @ f.sdecls#get_locals) in
+    let coll = new escape_collector_t localvids in
+    begin
+      coll#walk_block f.sbody;
+      coll#escaped
+    end
 
   val mutable current_stmt_id: int = 0
   val mutable return_var: varinfo option = None
@@ -733,6 +873,51 @@ object(self)
     else
       memvars
 
+  method get_variables_with_same_base (v:variable_t) =
+    (* false only if the locations at offsets o1 and o2 from the same base
+       are disjoint: different fields of the same struct (C11 6.7.2.1p15;
+       not a union). The non-constant index of the written lval is assumed
+       to be in bounds: an out-of-bounds access is undefined behavior and
+       has its own proof obligation. Anything else may overlap, including
+       different constant indices (the same base may be accessed with
+       different types). *)
+    let rec may_overlap (o1: offset) (o2: offset) =
+      match (o1, o2) with
+      | (Field ((f1, k1), r1), Field ((f2, k2), r2)) when k1 = k2 ->
+         if f1 = f2 then
+           may_overlap r1 r2
+         else
+           (try not (fenv#get_comp k1).cstruct with _ -> true)
+      | (Index (e1, r1), Index (e2, r2))
+           when e1 = e2 && is_constant_offset (Index (e1, NoOffset)) ->
+         may_overlap r1 r2
+      | _ -> true in
+    let same_vinfo
+          (isvar: variable_t -> bool)
+          (getvar: variable_t -> (varinfo * offset)) =
+      let (vinfo, voffset) = getvar v in
+      List.filter (fun pv ->
+          isvar pv
+          && (let (pvinfo, pvoffset) = getvar pv in
+              pvinfo.vid = vinfo.vid && may_overlap voffset pvoffset))
+        (self#get_variables_filtered vmgr#is_program_variable) in
+    if self#is_memory_variable v then
+      let (_, voffset) = self#get_memory_variable v in
+      List.filter (fun mv ->
+          let (_, mvoffset) = self#get_memory_variable mv in
+          may_overlap voffset mvoffset)
+        (self#get_memory_variables_with_base v)
+    else if self#is_memory_address v then
+      self#get_memory_variables_with_base v
+    else if self#is_local_variable v then
+      (same_vinfo self#is_local_variable self#get_local_variable)
+      @ self#get_memory_variables
+    else if self#is_global_variable v then
+      (same_vinfo self#is_global_variable self#get_global_variable)
+      @ self#get_memory_variables
+    else
+      self#get_memory_variables
+
   method get_global_state_variables =
     let globalvars =
       List.map (fun v ->
@@ -747,6 +932,24 @@ object(self)
              (vinfo.vname, mv) :: acc
           | _ -> acc) [] self#get_memory_variables in
     globalvars @ globalmemvars
+
+  method get_escaped_locals = escaped_locals
+
+  method get_call_frame_variables =
+    let is_escaped (v: variable_t) =
+      let (vinfo, _) = self#get_local_variable v in
+      List.mem vinfo.vid escaped_locals in
+    let escapedlocalvars =
+      List.filter is_escaped
+        (self#get_variables_filtered vmgr#is_local_variable) in
+    let memvars =
+      List.filter (fun mv ->
+          match (self#get_memory_reference mv)#get_base with
+          | CBaseVar _ | CUninterpreted _ -> true
+          | CStackAddress v -> is_escaped v
+          | CGlobalAddress _ | CNull _ | CStringLiteral _ -> false)
+        self#get_memory_variables in
+    escapedlocalvars @ memvars
 
   method get_parameters =
     self#get_variables_filtered vmgr#is_fixed_value

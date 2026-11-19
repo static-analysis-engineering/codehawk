@@ -830,7 +830,8 @@ object (self)
            ?(site: (string * int * string) option = None)
            (deps:dependencies_t)
            (expl:string) =
-    self#record_proof_result ~site Red deps expl
+    self#record_proof_result
+      ~site (CCHPOPredicate.violation_status po#get_predicate) deps expl
 
   method delegate_to_api
            ?(site: (string * int * string) option = None)

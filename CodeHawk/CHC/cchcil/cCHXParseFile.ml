@@ -177,9 +177,48 @@ let create_directory dir =
     (List.rev directories)
 
 
+(* Return the name of the source file relative to the project path, with a
+   leading '/' (e.g., "/src/foo.i" for project path "/home/x/proj" and
+   filename "/home/x/proj/src/foo.i"). The project path must be a directory
+   prefix of the filename: taking the suffix of the filename by length alone
+   produces a garbage name (or a crash in chop_extension) for a file outside
+   the project directory, e.g., a CMake build directory used as project path
+   with the sources in its parent directory. If no project path is given the
+   filename is returned unchanged. *)
+let project_relative_filename () =
+  let fail msg =
+    raise
+      (CHFailure
+         (LBLOCK [
+              STR msg; NL;
+              STR "  project path: "; STR !projectpath; NL;
+              STR "  file        : "; STR !filename])) in
+  let suffix =
+    if !projectpath = "" then
+      !filename
+    else
+      (* strip trailing '/' from the project path ("/" becomes "") *)
+      let pp =
+        let len = ref (String.length !projectpath) in
+        begin
+          while !len > 0 && !projectpath.[!len - 1] = '/' do decr len done;
+          String.sub !projectpath 0 !len
+        end in
+      if String.starts_with ~prefix:(pp ^ "/") !filename then
+        string_suffix !filename (String.length pp)
+      else
+        fail
+          ("Source file is not in the project directory (the project path "
+           ^ "must be a common ancestor directory of all source files)") in
+  if Filename.extension suffix = "" then
+    fail "Source file name has no extension (expected a .i or .c file)"
+  else
+    suffix
+
+
 let get_target_name () =
   let _ = check_targetdirectory () in
-  let suffix = string_suffix !filename (String.length !projectpath) in
+  let suffix = project_relative_filename () in
   let target = Filename.chop_extension suffix in
   let target = sanitize_targetfilename target in
   let absoluteTarget = !targetdirectory ^ target in
@@ -296,6 +335,8 @@ let main () =
   try
     let _ = read_args () in
     let _ = select_machine () in
+    (* fail before parsing if the file is not in the project directory *)
+    let _ = project_relative_filename () in
     let _ = cildeclarations#set_filename !filename in
     let cilfile = Frontc.parse !filename () in
     let _ = log_info "Parsed %s [%s:%d]" !filename __FILE__ __LINE__ in

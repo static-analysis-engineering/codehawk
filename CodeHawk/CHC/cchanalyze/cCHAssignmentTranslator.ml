@@ -110,7 +110,9 @@ object (self)
                    :: (CCHIntegerSemantics.correction_code env chifVar c))
              | None -> make_c_cmd (ASSIGN_NUM (chifVar, numExp)))
           else
-            let memoryvars = env#get_memory_variables_with_base chifVar in
+            (* a write to an element with a non-constant index may change
+               any element of the same variable or memory region *)
+            let memoryvars = env#get_variables_with_same_base chifVar in
             let _ =
               log_diagnostics_result
                 ~tag:"abstract memory variables"
@@ -336,6 +338,21 @@ object (self)
                  String.concat "; " e];
               make_c_cmd (ABSTRACT_VARS ptrvars)
             end)
+          (type_of_lval fdecls lhs)
+      else if not (env#has_constant_offset chifVar) then
+        (* the lhs has a non-constant offset: it does not denote a single
+           location, so no variable can be updated strongly; the write may
+           change any element with the same base *)
+        TR.tfold
+          ~ok:(fun lvalty ->
+            if is_pointer_type lvalty then
+              make_c_cmd
+                (ABSTRACT_VARS (env#get_variables_with_same_base chifVar))
+            else
+              make_c_cmd SKIP)
+          ~error:(fun _ ->
+            make_c_cmd
+              (ABSTRACT_VARS (env#get_variables_with_same_base chifVar)))
           (type_of_lval fdecls lhs)
       else
         TR.tfold

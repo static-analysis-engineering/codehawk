@@ -124,7 +124,24 @@ object (self)
     | Some x -> self#xpr_implies_safe_ub inv#index x
     | _ -> None
 
+  (* every value of the source type is representable in the target type
+     (C11 6.3.1.3p1), e.g., unsigned short to int *)
+  method private type_implies_safe =
+    let fromub = get_safe_upperbound kfrom in
+    if fromub#leq safeub then
+      begin
+        poq#record_safe_result
+          (DLocal [])
+          ("all values of the source type (max: " ^ fromub#toString
+           ^ ") are representable in the target type (max: "
+           ^ safeub#toString ^ ")");
+        true
+      end
+    else
+      false
+
   method check_safe =
+    self#type_implies_safe ||
     match invs with
     | [] ->
        begin

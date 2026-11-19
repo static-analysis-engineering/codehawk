@@ -197,7 +197,13 @@ object (self)
       | Some vx -> vx
       | _ -> XVar lvar
     else
-      XVar lvar
+      (* A variable with a non-constant offset (e.g., incs[hp]) stands for
+         more than one memory location: using it as a value would
+         make two reads of different elements equal, and a condition on one
+         element (incs[hp] >= bigN at a loop exit) would hold for every
+         element, also after hp changes. Writes to such an lval abstract all
+         variables with the same base (num_assignment_translator). *)
+      random_constant_expr
 
   method private translate_expr (x:exp):xpr_t =
     TR.tfold
@@ -788,7 +794,8 @@ object (self)
       | Some vx -> vx
       | _ -> XVar lvar
     else
-      XVar lvar
+      (* non-constant offset: more than one location *)
+      random_constant_expr
 
   method private translate_lhs_expr (x:exp):xpr_t =
     try
@@ -1016,8 +1023,9 @@ object (self)
     let null_sym = memregmgr#mk_null_sym (-1) in
     let null_constant_expr = XConst (SymSet [null_sym]) in
     let default () =
+      (* an unknown pointer value may be null *)
       let s = memregmgr#mk_uninterpreted_sym (p2s (exp_to_pretty x)) in
-      sym_constant_expr s in
+      self#with_null_sym s in
     TR.tfold
       ~ok:(fun typ ->
         let xpr =
@@ -1084,20 +1092,41 @@ object (self)
         end)
       (TR.tmap fenv#get_type_unrolled (type_of_exp fdecls x))
 
+  (* The region symbol s together with its null symbol: the value of a
+     pointer that points into region s or is null, as for a pointer
+     parameter at function entry (sym_pointersets_function_translator). *)
+  method private with_null_sym (s: symbol_t): xpr_t =
+    XConst (SymSet [s; memregmgr#mk_null_sym s#getSeqNumber])
+
+  (* The regions a pointer with value [base + offset] may point to. The
+     address of a variable or a string literal is not null; an address held
+     by an externally controlled variable (e.g., the initial value of a
+     pointer parameter) may be null unless it is known not to be, and an
+     uninterpreted address may be null. *)
+  method private base_region_syms (base: memory_base_t): xpr_t =
+    let regionsym = memregmgr#mk_base_region_sym base in
+    match base with
+    | CNull _ | CStringLiteral _ | CStackAddress _ | CGlobalAddress _
+      | CBaseVar (_, NotNull) -> sym_constant_expr regionsym
+    | CBaseVar (_, CanBeNull) | CUninterpreted _ ->
+       self#with_null_sym regionsym
+
   method private translate_rhs_variable_expr (lval:lval) =
     let lvar = self#translate_lhs_lval lval in
-    match orakel#get_external_value context (XVar lvar) with
-    | Some vx ->
-       begin
-         match vx with
-         | XVar v when env#is_memory_address v ->
-            let memref = env#get_memory_reference v in
-            let base = memref#get_base in
-            let regionsym = memregmgr#mk_base_region_sym base in
-            sym_constant_expr regionsym
-         | _ -> XVar lvar
-       end
-    | _ -> XVar lvar
+    if lvar#isTmp || not (env#has_constant_offset lvar) then
+      (* no variable, or more than one location: unknown *)
+      random_constant_expr
+    else
+      match orakel#get_external_value context (XVar lvar) with
+      | Some vx ->
+         begin
+           match vx with
+           | XVar v when env#is_memory_address v ->
+              let memref = env#get_memory_reference v in
+              self#base_region_syms memref#get_base
+           | _ -> XVar lvar
+         end
+      | _ -> XVar lvar
 
   method private translate_rhs_binop_expr op x1 _x2 _ty =
     match op with
@@ -1113,11 +1142,15 @@ object (self)
       | Const (CInt (i64, _, _)) -> (Int64.compare i64 Int64.zero) = 0
       | CastE (_, e) -> is_zero e
       | _ -> false in
+    (* no single variable to constrain: a temporary, or a variable with a
+       non-constant offset, which stands for more than one location *)
+    let no_single_var (v: variable_t) =
+      v#isTmp || not (env#has_constant_offset v) in
     match cond with
     | UnOp (LNot, (Lval lval as e), _)
          when (TR.tfold_default is_pointer_type false (type_of_exp fdecls e)) ->
        let symvar = self#translate_lhs_lval lval in
-       if symvar#isTmp then
+       if no_single_var symvar then
          (SKIP, SKIP)
        else
          let tcond = ASSERT (SUBSET (symvar, nullsyms)) in
@@ -1125,7 +1158,7 @@ object (self)
          (tcond, fcond)
     | BinOp (Ne, CastE(_, (Lval lval)), e, _) when is_zero e ->
        let symvar = self#translate_lhs_lval lval in
-       if symvar#isTmp then
+       if no_single_var symvar then
          (SKIP, SKIP)
        else
          let tcond = ASSERT (DISJOINT (symvar, nullsyms)) in
@@ -1133,7 +1166,7 @@ object (self)
          (tcond,fcond)
     | BinOp (Eq, CastE(_,(Lval lval)), e, _) when is_zero e ->
        let symvar = self#translate_lhs_lval lval in
-       if symvar#isTmp then
+       if no_single_var symvar then
          (SKIP, SKIP)
        else
          let tcond = ASSERT (SUBSET (symvar, nullsyms)) in
@@ -1310,7 +1343,8 @@ object (self)
          vx
       | _ -> XVar lvar
     else
-      XVar lvar
+      (* non-constant offset: more than one location (issue #50) *)
+      random_constant_expr
 
   method private externalize_offset offset =
     let default = CnApp ("variable-index", [], TInt (IInt, [])) in

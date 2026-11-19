@@ -989,6 +989,19 @@ let has_global_vars_in_exp (env:cfundeclarations_int) (e:exp) =
   match get_global_vars_in_exp env e with [] -> false | _ -> true
 
 
+let violation_status (p: po_predicate_t): po_status_t =
+  match p with
+  | PUnsignedToSignedCast _
+    | PSignedToSignedCastLB _
+    | PSignedToSignedCastUB _ -> Purple
+  | PUIntOverflow _
+    | PUIntUnderflow _
+    | PSignedToUnsignedCastLB _
+    | PSignedToUnsignedCastUB _
+    | PUnsignedToUnsignedCast _ -> Blue
+  | _ -> Red
+
+
 let is_opaque (p:po_predicate_t) =
   let is_opaque_var e =
       match e with
