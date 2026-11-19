@@ -320,14 +320,60 @@ object
 end
 
 
-class collect_predicate_expressions_t =
-object
+(* Argument indices of the components a, b of a min(a, b) length; they
+   follow the fixed argument indices of the predicate: ptr-upper-bound(-deref)
+   (t: 1, e1: 3, e2: 4) and initialized-range (e1: 1, e2: 2). *)
+let ptr_upper_bound_min_indices = (5, 6)
 
-  inherit po_predicate_walker_t
+let initialized_range_min_indices = (3, 4)
+
+
+let rec strip_casts (e: exp) =
+  match e with
+  | CastE (_, ee) -> strip_casts ee
+  | _ -> e
+
+
+let is_ntp_successor (e: exp) (b: exp) =
+  match strip_casts b with
+  | BinOp (PlusA, ntp, Const (CInt (i64, _, _)), _)
+       when Int64.equal i64 Int64.one ->
+     (match strip_casts ntp with
+      | CnApp ("ntp", [Some x], _) ->
+         (exp_compare (strip_casts x) (strip_casts e)) = 0
+      | _ -> false)
+  | _ -> false
+
+
+class collect_predicate_expressions_t =
+object (self)
+
+  inherit po_predicate_walker_t as super
 
   val mutable exps = []
 
   method! walk_exp index e = exps <- (index, e) :: exps
+
+  (* The components of a min length, min(a, b), get their own check
+     variables, at the argument indices that follow the fixed ones of the
+     predicate, so that each alternative can be checked with its own
+     invariants. *)
+  method! walk_predicate (p: po_predicate_t) =
+    let walk_min (ia, ib) a b =
+      begin
+        self#walk_exp ia a;
+        self#walk_exp ib b
+      end in
+    begin
+      super#walk_predicate p;
+      match p with
+      | PPtrUpperBound (_, _, _, CnApp ("min", [Some a; Some b], _))
+        | PPtrUpperBoundDeref (_, _, _, CnApp ("min", [Some a; Some b], _)) ->
+         walk_min ptr_upper_bound_min_indices a b
+      | PInitializedRange (_, CnApp ("min", [Some a; Some b], _)) ->
+         walk_min initialized_range_min_indices a b
+      | _ -> ()
+    end
 
   method! walk_lval index l = exps <- (index, Lval l) :: exps
 
@@ -1135,6 +1181,12 @@ let rec exp_to_sterm
   | BinOp (op, e1, e2, _) ->
      TR.tbind2 (fun s1 s2 -> Ok (ArithmeticExpr (op, s1, s2))) (es e1) (es e2)
 
+  | CnApp ("ntp", [Some e1], _) ->
+     TR.tmap (fun s -> ArgNullTerminatorPos s) (es e1)
+
+  | CnApp ("min", [Some e1; Some e2], _) ->
+     TR.tbind2 (fun s1 s2 -> Ok (MinValue (s1, s2))) (es e1) (es e2)
+
   | _ ->
      Error [(elocm __LINE__) ^ "exp_to_sterm";
             "Expression cannot be converted to s_term: "
@@ -1362,6 +1414,12 @@ let rec sterm_to_exp
              ^ i#toString])
   | ArithmeticExpr (op, t1, t2) ->
      TR.tmap2 (fun s1 s2 -> BinOp (op, s1, s2, TInt (IInt,[]))) (te t1) (te t2)
+  | ArgNullTerminatorPos t1 ->
+     TR.tmap (fun s1 -> CnApp ("ntp", [Some s1], TInt (IInt, []))) (te t1)
+  | MinValue (t1, t2) ->
+     TR.tmap2
+       (fun s1 s2 -> CnApp ("min", [Some s1; Some s2], TInt (IInt, [])))
+       (te t1) (te t2)
   | ArgAddressedValue (t, soff) ->
      let* base = te t in
      let* tgttype = type_of_tgt_exp fdecls base in
