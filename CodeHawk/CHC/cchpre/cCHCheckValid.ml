@@ -102,6 +102,15 @@ let rec is_constant_string e = match e with
   | _ -> false
 
 
+(* true if offsets with target type t are byte offsets: character types
+   (size 1) and void (byte-size lengths, e.g., memcpy) *)
+let is_character_target_type (t: typ) =
+  match t with
+  | TInt (ik, _) -> is_character_type ik
+  | TVoid _ -> true
+  | _ -> false
+
+
 let rec is_constant_wide_string e = match e with
   | Const (CWStr _) -> true
   | CastE (_, e) -> is_constant_wide_string e
@@ -1668,8 +1677,10 @@ let rec check_validity
        | _ -> ()
      end
 
-  | PPtrUpperBound (_, PlusPI, e1, CnApp ("min", [Some _; Some b], _))
-       when is_constant_string e1 && CCHPOPredicate.is_ntp_successor e1 b ->
+  | PPtrUpperBound (t, PlusPI, e1, CnApp ("min", [Some _; Some b], _))
+       when is_character_target_type t
+            && is_constant_string e1
+            && CCHPOPredicate.is_ntp_successor e1 b ->
      make
        ("string literal is null-terminated: at most strlen + 1 bytes are "
         ^ "accessed, all within the literal")
@@ -1875,24 +1886,35 @@ let rec check_validity
        when (List.length s1) = (List.length s2) ->
      make ("upperbound of constant wide string argument")
 
-  | PPtrUpperBound(_, PlusPI, CastE(_,Const (CStr s)), e)
-       when (match get_num_value env e with
-             | Some _ -> true | _ -> false) ->
+  (* The array of a string literal has strlen + 1 elements, including the null
+     terminator (C11 6.4.5p6); ptr-upper-bound allows a pointer one past the
+     end (C11 6.5.6p8): valid iff offset <= strlen + 1. *)
+  | PPtrUpperBound(t, PlusPI, CastE(_,Const (CStr s)), e)
+       when is_character_target_type t
+            && (match get_num_value env e with
+                | Some _ -> true | _ -> false) ->
      (match get_num_value env e with
       | Some num ->
          let (_, _, strlen) = mk_constantstring s in
-         if num#leq (mkNumerical strlen) then
+         let arraylen = mkNumerical (strlen + 1) in
+         if num#leq arraylen then
            make
              ("pointer upper bound offset of "
               ^ num#toString
-              ^ " is within constant string of length "
-              ^ (stri strlen))
+              ^ " is within or one past the end of constant string of length "
+              ^ (stri strlen)
+              ^ " (array of size "
+              ^ arraylen#toString
+              ^ ")")
          else
            make_violation
              ("pointer upper bound offset of "
               ^ num#toString
-              ^ " lies outside constant string of length "
-              ^ (stri strlen))
+              ^ " lies beyond one past the end of constant string of length "
+              ^ (stri strlen)
+              ^ " (array of size "
+              ^ arraylen#toString
+              ^ ")")
       | _ -> ())
 
   | PPtrUpperBound(_, PlusPI, (CastE(_, Lval (Var (vname1, _), NoOffset))),
@@ -2303,24 +2325,31 @@ let rec check_validity
        when (exp_compare e1 e2) = 0 && is_constant_wide_string e1 ->
      make ("constant wide string")
 
+  (* All strlen + 1 elements of a string literal's array, including the null
+     terminator, are initialized (C11 6.4.5p6). *)
   | PInitializedRange (CastE (_, Const (CStr s)), len)
        when (match get_num_value env len with
              | Some _ -> true | _ -> false) ->
      (match get_num_value env len with
       | Some num ->
          let (_, _, strlen) = mk_constantstring s in
-         if num#leq (mkNumerical strlen) then
+         let arraylen = mkNumerical (strlen + 1) in
+         if num#leq arraylen then
            make
              ("constant string with length "
               ^ (stri strlen)
-              ^ " has "
+              ^ " (including null terminator: "
+              ^ arraylen#toString
+              ^ " bytes) has "
               ^ num#toString
               ^ " initialized bytes")
          else
            make_violation
              ("constant string with length "
               ^ (stri strlen)
-              ^ " does not have "
+              ^ " (including null terminator: "
+              ^ arraylen#toString
+              ^ " bytes) does not have "
               ^ num#toString
               ^ " initialized bytes")
       | _ -> ())
