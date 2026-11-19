@@ -210,6 +210,16 @@ object
   method get_memory_variables: variable_t list
   method get_memory_variables_with_base: variable_t -> variable_t list
 
+  (** [get_variables_with_same_base v] returns the variables that a write
+      through [v] may change if [v] does not denote a single location (a
+      non-constant offset): for a memory variable the memory variables with
+      the same base whose offset may overlap; for a program variable the
+      program variables of the same C variable whose offset may overlap, and
+      all memory variables (an array whose address is not taken may still be
+      accessed through a pointer after array-to-pointer conversion). Offsets
+      overlap unless they select different fields of the same struct. *)
+  method get_variables_with_same_base: variable_t -> variable_t list
+
   (** [get_global_state_variables] returns all variables that represent (parts
       of) global variables: the global program variables and the memory
       variables of global memory references (address-taken globals), each

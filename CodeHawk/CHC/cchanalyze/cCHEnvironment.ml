@@ -873,6 +873,51 @@ object(self)
     else
       memvars
 
+  method get_variables_with_same_base (v:variable_t) =
+    (* false only if the locations at offsets o1 and o2 from the same base
+       are disjoint: different fields of the same struct (C11 6.7.2.1p15;
+       not a union). The non-constant index of the written lval is assumed
+       to be in bounds: an out-of-bounds access is undefined behavior and
+       has its own proof obligation. Anything else may overlap, including
+       different constant indices (the same base may be accessed with
+       different types). *)
+    let rec may_overlap (o1: offset) (o2: offset) =
+      match (o1, o2) with
+      | (Field ((f1, k1), r1), Field ((f2, k2), r2)) when k1 = k2 ->
+         if f1 = f2 then
+           may_overlap r1 r2
+         else
+           (try not (fenv#get_comp k1).cstruct with _ -> true)
+      | (Index (e1, r1), Index (e2, r2))
+           when e1 = e2 && is_constant_offset (Index (e1, NoOffset)) ->
+         may_overlap r1 r2
+      | _ -> true in
+    let same_vinfo
+          (isvar: variable_t -> bool)
+          (getvar: variable_t -> (varinfo * offset)) =
+      let (vinfo, voffset) = getvar v in
+      List.filter (fun pv ->
+          isvar pv
+          && (let (pvinfo, pvoffset) = getvar pv in
+              pvinfo.vid = vinfo.vid && may_overlap voffset pvoffset))
+        (self#get_variables_filtered vmgr#is_program_variable) in
+    if self#is_memory_variable v then
+      let (_, voffset) = self#get_memory_variable v in
+      List.filter (fun mv ->
+          let (_, mvoffset) = self#get_memory_variable mv in
+          may_overlap voffset mvoffset)
+        (self#get_memory_variables_with_base v)
+    else if self#is_memory_address v then
+      self#get_memory_variables_with_base v
+    else if self#is_local_variable v then
+      (same_vinfo self#is_local_variable self#get_local_variable)
+      @ self#get_memory_variables
+    else if self#is_global_variable v then
+      (same_vinfo self#is_global_variable self#get_global_variable)
+      @ self#get_memory_variables
+    else
+      self#get_memory_variables
+
   method get_global_state_variables =
     let globalvars =
       List.map (fun v ->
