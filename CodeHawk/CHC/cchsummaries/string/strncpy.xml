@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <codehawk-summary-file>
   <header date="2020-02-05 08:30:35"/>
+  <!-- strncpy reads characters from s2 up to and including the null
+       character, at most n (C11 7.24.2.4p2): s2 need not have n readable
+       bytes if it is null-terminated. -->
   <function-summary name="strncpy">
     <parameters>
       <par name="s1" nr="1"></par>
@@ -36,7 +39,18 @@
 	    <ci>s2</ci>
 	    <apply>
 	      <index-size/>
-	      <ci>n</ci>
+	      <apply>
+		<min/>
+		<ci>n</ci>
+		<apply>
+		  <plus/>
+		  <apply>
+		    <nullterminator-pos/>
+		    <ci>s2</ci>
+		  </apply>
+		  <cn>1</cn>
+		</apply>
+	      </apply>
 	    </apply>
 	  </apply>
 	</math>
