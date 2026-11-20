@@ -157,6 +157,8 @@ object
     | PIndexUpperBound (e1,e2) -> check_index_upper_bound poq e1 e2
     | PInitialized lval -> check_initialized poq lval
     | PLocallyInitialized (vinfo, lval) -> check_locally_initialized poq vinfo lval
+    | PInitializedRange (e1, CnApp ("min", [Some a; Some b], _)) ->
+       check_initialized_range_min poq e1 a b
     | PInitializedRange (e1,e2) -> check_initialized_range poq e1 e2
     | PIntOverflow (op,e1,e2,k) -> check_signed_int_overflow poq op e1 e2 k
     | PUIntOverflow (op,e1,e2,k) -> check_unsigned_int_overflow poq op e1 e2 k
@@ -170,6 +172,8 @@ object
     | PWidthOverflow (e,k) -> check_width_overflow poq e k
     | PNullTerminated e -> check_null_terminated poq e
     | PPtrLowerBound (t,op,e1,e2) -> check_ptr_lower_bound poq t op e1 e2
+    | PPtrUpperBound (t, op, e1, CnApp ("min", [Some a; Some b], _)) ->
+       check_ptr_upper_bound_min poq t op e1 a b
     | PPtrUpperBound (t,op,e1,e2) -> check_ptr_upper_bound poq t op e1 e2
     | PPtrUpperBoundDeref (t,op,e1,e2) ->
        check_ptr_upper_bound ~strict:true poq t op e1 e2

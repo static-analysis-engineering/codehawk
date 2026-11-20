@@ -5,7 +5,7 @@
    The MIT License (MIT)
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
-   Copyright (c) 2020-2023 Henny B. Sipma
+   Copyright (c) 2020-2025 Henny B. Sipma
    Copyright (c) 2026      Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -144,7 +144,8 @@ object (self)
       | FormattedOutputSize t -> (tags, [self#index_s_term t])
       | Region t -> (tags, [self#index_s_term t])
       | RuntimeValue -> (tags,[])
-      | ChoiceValue (opt1,opt2) -> (tags, [optterm opt1; optterm opt2]) in
+      | ChoiceValue (opt1, opt2) -> (tags, [optterm opt1; optterm opt2])
+      | MinValue (t1, t2) -> (tags, [self#index_s_term t1; self#index_s_term t2]) in
     s_term_table#add key
 
   method get_s_term (index:int) =
@@ -173,6 +174,7 @@ object (self)
     | "rg" -> Region (self#get_s_term (a 0))
     | "rt" -> RuntimeValue
     | "cv" -> ChoiceValue (optterm 0, optterm 1)
+    | "mn" -> MinValue (self#get_s_term (a 0), self#get_s_term (a 1))
     | s -> raise_tag_error name s s_term_mcts#tags
 
   method index_xpredicate (p:xpredicate_t) =

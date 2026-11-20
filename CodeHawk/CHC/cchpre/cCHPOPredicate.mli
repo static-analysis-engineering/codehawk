@@ -46,6 +46,20 @@ val po_predicate_to_pretty: ?full:bool -> po_predicate_t -> pretty_t
 
 val collect_indexed_predicate_expressions: po_predicate_t -> (int * exp) list
 
+(** Argument indices (a, b) of the components of a length min(a, b) in
+    ptr-upper-bound and ptr-upper-bound-deref (fixed indices 1, 3, 4); the
+    components are collected as separate predicate expressions, so that they
+    get their own check variables and invariants. *)
+val ptr_upper_bound_min_indices: int * int
+
+(** Argument indices (a, b) of the components of a length min(a, b) in
+    initialized-range (fixed indices 1, 2). *)
+val initialized_range_min_indices: int * int
+
+(** [is_ntp_successor e b] is true if [b] is ntp(e) + 1 (modulo casts), the
+    number of bytes of [e] up to and including its null terminator. *)
+val is_ntp_successor: exp -> exp -> bool
+
 val has_global_vars_in_exp: cfundeclarations_int -> exp -> bool
 
 val is_opaque: po_predicate_t -> bool
