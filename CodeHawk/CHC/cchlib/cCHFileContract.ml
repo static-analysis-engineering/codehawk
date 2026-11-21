@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -682,11 +682,65 @@ object (self)
     | _ ->
        ()
 
+  (* Attributes on functions defined in this file (application functions).
+     Their pre- and postconditions are conjectures that are checked:
+     a precondition becomes an api (contract) assumption of the function,
+     checked by the callers' call-site proof obligations; a postcondition
+     becomes a return-site proof obligation in the function. Side effects
+     of a function with code are used by callers but never checked, so they
+     are not taken from attributes (e.g., GCC pure -> preserves-all-memory);
+     they are logged instead. A contract is created only if there is at least
+     one pre- or postcondition, because the presence of a function contract
+     makes callers use its postconditions and side effects instead of the
+     call-site postcondition assumptions. *)
+  method private get_application_function_attributes (fn: varinfo) =
+    let typeattrs =
+      match fn.vtype with
+      | TFun (_, _, _, attrs) -> attrs
+      | _ -> [] in
+    let attrs = typeattrs @ fn.vattr in
+    let conditions =
+      List.map (convert_attribute_to_function_conditions fn.vname) attrs in
+    let xpre = List.concat (List.map (fun (p, _, _) -> p) conditions) in
+    let xpost = List.concat (List.map (fun (_, p, _) -> p) conditions) in
+    let xside = List.concat (List.map (fun (_, _, s) -> s) conditions) in
+    let logx kind x =
+      log_diagnostics_result
+        ~tag:("get_application_function_attributes:" ^ kind)
+        ~msg:fn.vname
+        __FILE__ __LINE__
+        [p2s (xpredicate_to_pretty x)] in
+    begin
+      List.iter (logx "side effect not used (not checked)") xside;
+      match (xpre, xpost) with
+      | ([], []) -> ()
+      | _ ->
+         let pars =
+           match fn.vtype with
+           | TFun (_, Some plist, _, _) ->
+              List.map (fun (name, _, _) -> name) plist
+           | _ -> [] in
+         begin
+           (if not (self#has_function_contract fn.vname) then
+              self#add_function_contract fn.vname pars);
+           List.iter (logx "pre") xpre;
+           List.iter (logx "post") xpost;
+           List.iter (self#add_precondition fn.vname) xpre;
+           List.iter (self#add_postcondition fn.vname) xpost
+         end
+    end
+
   method collect_file_attributes =
-    let xfuns = file_environment#get_external_functions in
+    let appfns = file_environment#get_application_functions in
+    let is_defined (v: varinfo) =
+      List.exists (fun (f: varinfo) -> f.vname = v.vname) appfns in
+    let xfuns =
+      List.filter (fun v -> not (is_defined v))
+        file_environment#get_external_functions in
     let gvars = file_environment#get_globalvars in
     begin
       List.iter self#get_function_attributes xfuns;
+      List.iter self#get_application_function_attributes appfns;
       List.iter self#get_globalvar_attributes gvars
     end
 
