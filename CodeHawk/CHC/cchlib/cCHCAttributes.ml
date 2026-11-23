@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
  
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,7 @@ let convert_attribute_to_function_conditions
   | Attr ("aconst", []) ->
      ([], [XFunctional], [XFunctional])
 
-  | Attr ("format", attrparams) ->
+  | Attr (("format" | "chkc_format"), attrparams) ->
      let pre =
        (match attrparams with
         | [ACons ("printf", []); AInt stringindex; AInt _firsttocheck] ->
@@ -115,7 +115,7 @@ let convert_attribute_to_function_conditions
            end) in
      ([], post, [])
 
-  | Attr ("nonnull", attrparams) ->
+  | Attr (("nonnull" | "chkc_nonnull"), attrparams) ->
      let pre =
        List.fold_left (fun acc attrparam ->
            match attrparam with
@@ -135,7 +135,8 @@ let convert_attribute_to_function_conditions
   | Attr ("noreturn", []) ->
      ([], [XFalse], [])
 
-  | Attr ("null_terminated_string_arg", attrparams) ->
+  | Attr (("null_terminated_string_arg"
+          | "chkc_null_terminated_string_arg"), attrparams) ->
      let pre =
        List.fold_left (fun acc attrparam ->
            match attrparam with
@@ -185,6 +186,18 @@ let convert_attribute_to_function_conditions
      ([], [], se)
           
   | _ -> ([], [], [])
+
+
+let is_contract_marker_attribute (attr: attribute): bool =
+  match attr with
+  | Attr (("chkc_requires_none" | "chkc_effects_unknown"), []) -> true
+  | _ -> false
+
+
+let is_exported_attribute (attr: attribute): bool =
+  match attr with
+  | Attr ("chkc_exported", []) -> true
+  | _ -> false
 
 
 let attribute_update_globalvar_contract
