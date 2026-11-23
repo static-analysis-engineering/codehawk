@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,14 @@ object (self)
            (loc:location) (ctxt:program_context_int) (p:po_predicate_t)
            (fname:string) (pre:xpredicate_t) =
     let ppotype = PPOlib (loc,ctxt,p,fname,pre) in
+    let index = pod#index_ppo_type ppotype in
+    let ppo = mk_ppo pod ppotype in
+    H.add table index ppo
+
+  method add_guarantee_ppo
+           (loc: location) (ctxt: program_context_int) (p: po_predicate_t)
+           (post: xpredicate_t) =
+    let ppotype = PPOguarantee (loc, ctxt, p, post) in
     let index = pod#index_ppo_type ppotype in
     let ppo = mk_ppo pod ppotype in
     H.add table index ppo

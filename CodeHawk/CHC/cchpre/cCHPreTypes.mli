@@ -1007,6 +1007,12 @@ type ppo_type_t =
   | PPOprog of location * program_context_int * po_predicate_t
   | PPOlib of
       location * program_context_int * po_predicate_t * string * xpredicate_t
+  | PPOguarantee of
+      location * program_context_int * po_predicate_t * xpredicate_t
+  (** postcondition guarantee of an exported function (declared
+      chkc_exported in its external unit), at a return site: a hard
+      requirement of the system boundary, hence a primary proof obligation
+      rather than a supporting one *)
 
 
 type spo_type_t =
@@ -1226,6 +1232,12 @@ class type ppo_manager_int =
   object
 
     method add_ppo: location -> program_context_int -> po_predicate_t -> unit
+    method add_guarantee_ppo:
+             location
+             -> program_context_int
+             -> po_predicate_t
+             -> xpredicate_t
+             -> unit
     method add_lib_ppo:
              location
              -> program_context_int
@@ -1397,6 +1409,10 @@ object
   method get_predicate: po_predicate_t
   method get_dependent_ppos: int list
   method get_dependent_spos: int list
+
+  (** true if the assumption is a declared (contract) precondition of the
+      function, rather than derived by delegation *)
+  method is_contract: bool
   method toPretty: pretty_t
 
   (* xml *)
@@ -1558,6 +1574,12 @@ object
   method add_missing_summary: string -> unit
   method add_unevaluated: po_predicate_t -> int -> unit
   method add_contract_precondition: cfundeclarations_int -> int -> unit
+
+  (** Returns false if the function is exported (chkc_exported) and the
+      predicate is not one of its declared preconditions: an exported
+      function may delegate only its declared preconditions to its callers,
+      because the client modules check only those. *)
+  method is_api_assumption_allowed: po_predicate_t -> bool
   method add_contract_condition_failure: string -> string -> unit
 
   (* accessors *)

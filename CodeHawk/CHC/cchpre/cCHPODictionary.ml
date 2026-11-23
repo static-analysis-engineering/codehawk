@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2025 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -203,7 +203,13 @@ object (self)
           [cdecls#index_location loc;
            contexts#index_context ctxt;
            pd#index_po_predicate pred;
-           id#index_xpredicate pre]) in
+           id#index_xpredicate pre])
+      | PPOguarantee (loc, ctxt, pred, post) ->
+         (tags,
+          [cdecls#index_location loc;
+           contexts#index_context ctxt;
+           pd#index_po_predicate pred;
+           id#index_xpredicate post]) in
     ppo_type_table#add key
 
   method get_ppo_type (index:int):ppo_type_t =
@@ -223,6 +229,12 @@ object (self)
           contexts#get_context (a 1),
           pd#get_po_predicate (a  2),
           t 1,
+          id#get_xpredicate (a 3))
+    | "pg" ->
+       PPOguarantee
+         (cdecls#get_location (a 0),
+          contexts#get_context (a 1),
+          pd#get_po_predicate (a 2),
           id#get_xpredicate (a 3))
     | s -> raise_tag_error name s ppo_type_mcts#tags
 

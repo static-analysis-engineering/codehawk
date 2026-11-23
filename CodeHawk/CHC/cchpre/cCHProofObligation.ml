@@ -155,6 +155,7 @@ let get_po_type_location (pt:po_type_t) =
   match pt with
   | PPO (PPOprog (loc, _, _))
     | PPO (PPOlib (loc , _, _, _, _))
+    | PPO (PPOguarantee (loc, _, _, _))
     | SPO (CallsiteSPO (loc, _, _, _))
     | SPO (ReturnsiteSPO (loc, _, _, _))
     | SPO (LocalSPO (loc, _, _)) -> loc
@@ -164,6 +165,7 @@ let get_po_type_context (pt:po_type_t) =
   match pt with
   | PPO (PPOprog (_, ctxt, _))
     | PPO (PPOlib (_, ctxt, _, _, _))
+    | PPO (PPOguarantee (_, ctxt, _, _))
     | SPO (CallsiteSPO (_, ctxt, _, _))
     | SPO (ReturnsiteSPO (_, ctxt, _, _))
     | SPO (LocalSPO (_, ctxt, _)) -> ctxt
@@ -173,6 +175,7 @@ let get_po_type_predicate (pt:po_type_t) =
   match pt with
   | PPO (PPOprog (_, _, pred))
     | PPO (PPOlib (_, _, pred, _, _))
+    | PPO (PPOguarantee (_, _, pred, _))
     | SPO (CallsiteSPO (_, _, pred, _))
     | SPO (ReturnsiteSPO (_, _, pred, _))
     | SPO (LocalSPO (_, _, pred)) -> pred
