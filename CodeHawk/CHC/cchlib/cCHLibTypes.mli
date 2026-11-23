@@ -783,6 +783,19 @@ class type file_contract_int =
     method ignore_function: string -> bool
     method read_xml: xml_element_int -> unit
     method write_xmlx: xml_element_int -> unit
+
+    (** Writes the contracts of the external functions of the file, with the
+        attributes (and conditions per attribute) and/or contract file they
+        come from. *)
+    method write_xml_external_contracts: xml_element_int -> unit
+
+    (** Returns true if the function is defined in this file and declared
+        chkc_exported. *)
+    method is_exported_function: string -> bool
+
+    (** Writes the exported functions of the file with their declared
+        contract. *)
+    method write_xml_exported_functions: xml_element_int -> unit
     method toPretty: pretty_t
   end
 
