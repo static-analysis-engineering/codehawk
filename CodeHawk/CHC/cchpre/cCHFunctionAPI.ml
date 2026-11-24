@@ -97,9 +97,22 @@ object (self)
     TR.titer
       ~ok:(fun predid ->
         if H.mem api_assumptions predid then
-          ()
+          let a = H.find api_assumptions predid in
+          if a#is_contract then
+            ()
+          else
+            (* derived earlier by delegation; it is now declared *)
+            H.replace
+              api_assumptions
+              predid
+              (mk_api_assumption
+                 ~isglobal:true
+                 ~iscontract:true
+                 ~ppos:a#get_dependent_ppos
+                 ~spos:a#get_dependent_spos
+                 predid)
         else
-          let a = mk_api_assumption ~isglobal:true predid in
+          let a = mk_api_assumption ~isglobal:true ~iscontract:true predid in
           H.add api_assumptions predid a)
       ~error:(fun e ->
         log_error_result
@@ -108,6 +121,13 @@ object (self)
           __FILE__ __LINE__
           [(String.concat "; " e)])
       predid_r
+
+  method is_api_assumption_allowed (p: po_predicate_t) =
+    if CCHFileContract.file_contract#is_exported_function fname then
+      let index = pd#index_po_predicate p in
+      H.mem api_assumptions index && (H.find api_assumptions index)#is_contract
+    else
+      true
 
   method add_contract_condition_failure (name:string) (desc:string) =
     contractcondition_failures <- (name,desc) :: contractcondition_failures

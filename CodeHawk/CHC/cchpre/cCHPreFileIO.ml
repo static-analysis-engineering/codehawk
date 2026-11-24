@@ -175,6 +175,10 @@ let get_xml_interface_dictionary_name () =
   (get_cfile_stem ()) ^ "_ixf.xml"
 
 
+let get_xml_external_contracts_name () =
+  (get_cfile_stem ()) ^ "_xc.xml"
+
+
 let _get_xml_user_assumptions_name () =
   (get_cfile_stem ()) ^ "_usr.xml"
 
@@ -373,6 +377,21 @@ let read_cfile_interface_dictionary () =
     | XmlDocumentError (line,col,p)
       | XmlParseError (line,col,p) ->
        raise (CCHFailure (xml_error filename line col p))
+
+
+let save_cfile_external_contracts () =
+  let filename = get_xml_external_contracts_name () in
+  let doc = xmlDocument () in
+  let root = get_cch_root () in
+  let xNode = xmlElement "external-contracts" in
+  let eNode = xmlElement "exported-functions" in
+  begin
+    file_contract#write_xml_external_contracts xNode;
+    file_contract#write_xml_exported_functions eNode;
+    doc#setNode root;
+    root#appendChildren [xNode; eNode];
+    file_output#saveFile filename doc#toPretty
+  end
 
 
 let save_cfile_context () =

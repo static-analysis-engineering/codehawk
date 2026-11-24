@@ -4,7 +4,7 @@
    ------------------------------------------------------------------------------
    The MIT License (MIT)
 
-   Copyright (c) 2024-2025  Aarno Labs LLC
+   Copyright (c) 2024-2026  Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -297,6 +297,32 @@ open CCHLibTypes
 
     Note: the [XNullTerminated] postcondition is currently not used in the
     discharge of proof obligations.
+
+    {3 chkc_access, chkc_format, chkc_nonnull, chkc_null_terminated_string_arg}
+
+    These have the same syntax and generate the same conditions as the
+    corresponding gcc attributes. They are the attributes for preconditions
+    in CodeHawk specifications (companions): the verification report counts
+    the preconditions of an external function as declared only if they come
+    from a [chkc_] attribute (or [chkc_requires_none]) or from a contract
+    file, because gcc attributes in source headers are written for the
+    compiler and do not claim to list all preconditions.
+
+    {3 chkc_requires_none}
+
+    The [chkc_requires_none] attribute states that the function has no
+    preconditions: callers do not need to establish anything. Without it, a
+    specification that lists no preconditions does not say whether there are
+    none or whether they were not declared (e.g., a GCC [const] or [pure]
+    attribute specifies the frame only, not the preconditions).
+    It generates no conditions.
+
+    {3 chkc_effects_unknown}
+
+    The [chkc_effects_unknown] attribute states that the side effects of the
+    function are deliberately left unspecified: the analyzer havocs memory
+    at its calls, and the report lists this as an assumption rather than as
+    missing information. It generates no conditions.
  *)
 
 
@@ -304,6 +330,20 @@ val convert_attribute_to_function_conditions:
   string
   -> attribute
   -> (xpredicate_t list * xpredicate_t list * xpredicate_t list)
+
+
+(** Returns true if the attribute is a contract marker
+    ([chkc_requires_none], [chkc_effects_unknown]): it generates no
+    conditions, but states that an axis of the specification is complete. *)
+val is_contract_marker_attribute: attribute -> bool
+
+
+(** Returns true if the attribute is [chkc_exported]: the function belongs
+    to the external unit of its module (it is declared in the companion of a
+    public header). In the module that defines it, its postconditions are
+    guarantees, checked by primary proof obligations at its return sites; in
+    the modules that call it, the attribute has no effect. *)
+val is_exported_attribute: attribute -> bool
 
 
 (** {1 Global Variable Attributes}

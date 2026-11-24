@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 HennyB.  Sipma
-   Coprygith (c) 2023-2025 Aarno Labs LLC
+   Coprygith (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -146,6 +146,11 @@ val read_cfile_interface_dictionary: unit -> unit
 val save_cfile_interface_dictionary: unit -> unit
 
 val read_cfile_context: unit -> unit
+
+(** Saves the contracts of the external functions as used by the analysis,
+    with their origin (attributes, contract file), in [<file>_xc.xml] in the
+    analysis results directory. *)
+val save_cfile_external_contracts: unit -> unit
 
 val save_cfile_context: unit -> unit
 

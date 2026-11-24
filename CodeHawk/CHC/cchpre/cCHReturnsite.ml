@@ -256,7 +256,10 @@ object
         "create contract postcondition proof obligations [%s:%d]"
         __FILE__ __LINE__ in
     begin
-      if file_contract#has_function_contract fname then
+      (* exported functions: the postconditions are checked by primary
+         proof obligations (create_po_return) *)
+      if file_contract#has_function_contract fname
+         && not (file_contract#is_exported_function fname) then
         begin
           postconditions#addList
             (file_contract#get_function_contract fname)#get_postcondition_ixs;

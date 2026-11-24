@@ -118,6 +118,30 @@ let add_proof_obligation pred loc (ctxt:program_context_int) =
     (proof_scaffolding#get_ppo_manager fname)#add_ppo loc ctxt pred
 
 
+(* the base of CIL's translation of __builtin_offsetof: (size_t) &((T * ) 0)->m *)
+let is_cil_offsetof (t: typ) (base: exp) =
+  let rec is_zero_const e =
+    match e with
+    | Const (CInt (i64, _, _)) -> Int64.equal i64 Int64.zero
+    | CastE (_, x) -> is_zero_const x
+    | _ -> false in
+  (match fenv#get_type_unrolled t with TInt _ -> true | _ -> false)
+  && (match base with
+      | CastE (bt, z) ->
+         (match fenv#get_type_unrolled bt with TPtr _ -> true | _ -> false)
+         && is_zero_const z
+      | _ -> false)
+
+
+(* postcondition guarantee of an exported function at a return site *)
+let add_guarantee_proof_obligation
+      pred loc (ctxt: program_context_int) (post: xpredicate_t) =
+  if !createppos then
+    let fname = (get_current_function ()).svar.vname in
+    (proof_scaffolding#get_ppo_manager fname)#add_guarantee_ppo
+      loc ctxt pred post
+
+
 let add_lib_proof_obligation
       pred
       loc
@@ -570,6 +594,13 @@ and create_po_exp
       create_po_exp ~deref env (context#add_question 2) e2 loc;
       create_po_exp ~deref env (context#add_question 3) e3 loc
     end
+
+  (* CIL translates __builtin_offsetof (T, m), the expansion of offsetof in
+     gcc's stddef.h, into (size_t) &((T * ) 0)->m. The source has no null
+     pointer dereference: offsetof is an integer constant expression
+     (C11 7.19p3), so no proof obligations are generated for the translated
+     form (they used to be discharged as absolute addresses). *)
+  | CastE (t, AddrOf (Mem base, _)) when is_cil_offsetof t base -> ()
 
   | CastE (t, e) ->
     let exptyp_r = TR.tmap fenv#get_type_unrolled (type_of_exp env e) in
@@ -1817,6 +1848,23 @@ and create_po_call env
 	else if function_summary_library#has_builtin_summary vname then
           add_library_call "builtins" vname vid
         else
+          let _ =
+            (* call to an exported function defined in this file: its
+               declared preconditions are part of the interface of the
+               module, checked by primary proof obligations at every call
+               site (as at the call sites in the other files and modules,
+               where the function is external); the corresponding call-site
+               supporting proof obligations are not created (python,
+               CFunctionCallsiteSPOs.update) *)
+            if file_contract#is_exported_function vname
+               && file_contract#has_function_contract vname then
+              let fncontract = file_contract#get_function_contract vname in
+              List.iter (fun xpred ->
+                  let ctxtpl =
+                    get_precondition_po_predicates env xpred el context loc in
+                  List.iter (fun (ctxt, p) ->
+                      add_lib_proof_obligation p loc ctxt vname xpred) ctxtpl)
+                fncontract#get_preconditions in
 	  TR.tfold
             ~ok:(fun vinfo -> spomanager#add_direct_call loc context vinfo el)
             ~error:(fun err ->
@@ -1868,6 +1916,29 @@ and create_po_return
   let fname = (get_current_function ()).svar.vname in
   let spomanager = proof_scaffolding#get_spo_manager fname in
   let _ = spomanager#add_return loc context#add_return e in
+  (* the postconditions of an exported function are guarantees of the
+     module: primary proof obligations (the return-site supporting proof
+     obligations are not created for this function, see
+     returnsite_manager_t#create_contract_proof_obligations) *)
+  let _ =
+    if file_contract#is_exported_function fname
+       && file_contract#has_function_contract fname then
+      List.iter (fun post ->
+          match post with
+          | XTainted _ -> ()
+          | _ ->
+             TR.tfold
+               ~ok:(fun pred ->
+                 add_guarantee_proof_obligation
+                   pred loc context#add_return post)
+               ~error:(fun err ->
+                 log_error_result
+                   ~tag:"create_po_return: guarantee"
+                   ~msg:fname
+                   __FILE__ __LINE__
+                   ((p2s (xpredicate_to_pretty post)) :: err))
+               (xpredicate_to_po_predicate ~returnexp:e env post))
+        (file_contract#get_function_contract fname)#get_postconditions in
   match e with
   | Some x ->
      begin

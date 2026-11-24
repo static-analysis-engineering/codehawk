@@ -803,10 +803,39 @@ object (self)
   method private record_unevaluated (x:xpr_t) =
     fApi#add_unevaluated po#get_predicate (xd#index_xpr x)
 
+  (* an exported function may delegate only its declared preconditions
+     (verification pass); the predicates it would need otherwise are
+     reported as missing preconditions *)
+  method private missing_preconditions (deps: dependencies_t) =
+    match deps with
+    | DEnvC (_, assumptions) ->
+       List.fold_left (fun acc a ->
+           match a with
+           | ApiAssumption pred
+             | GlobalApiAssumption pred
+                when not (fApi#is_api_assumption_allowed pred) -> pred :: acc
+           | _ -> acc) [] assumptions
+    | _ -> []
+
+  method private set_missing_precondition_diagnostic
+                   ?(site: (string * int * string) option = None)
+                   (preds: po_predicate_t list) =
+    List.iter (fun pred ->
+        self#set_diagnostic
+          ~site
+          ("missing precondition of exported function "
+           ^ self#fname
+           ^ ": "
+           ^ (p2s (po_predicate_to_pretty pred)))) preds
+
   method record_safe_result
            ?(site: (string * int * string) option = None)
            (deps: dependencies_t)
            (expl: string) =
+    match self#missing_preconditions deps with
+    | (_ :: _) as missing ->
+       self#set_missing_precondition_diagnostic ~site missing
+    | [] ->
     let _ = match deps with
       | DEnvC (_, assumptions) ->
          let (ppos, spos) = self#get_ppos_spos in
@@ -839,6 +868,12 @@ object (self)
            ?(isglobal=false)
            (pred:po_predicate_t)
            (invs:int list): bool =
+    if not (fApi#is_api_assumption_allowed pred) then
+      begin
+        self#set_missing_precondition_diagnostic ~site [pred];
+        false
+      end
+    else
     let (ppos, spos) = self#get_ppos_spos in
     let apred' = fApi#add_api_assumption ~isfile ~isglobal ~ppos ~spos pred in
     match apred' with

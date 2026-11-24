@@ -505,8 +505,31 @@ let is_bitwise_ops_on_constants env e =
   aux e false
 
 
+(* Evidence that an integer converted to a pointer is not a null pointer
+   (issue 60): the integer is a nonzero constant, or its range excludes zero.
+   An integer constant expression with value 0 converted to a pointer is a
+   null pointer constant (C11 6.3.2.3p3), and an integer variable may have
+   the value 0, so a conversion from an integer to a pointer is not by itself
+   evidence of an absolute (non-null) address. *)
+let get_nonnull_absolute_memory_address env e =
+  let describe x =
+    match get_scalar_value env x with
+    | Some s -> Some s
+    | _ -> Some (e2s x) in
+  match e with
+  | CastE (ty, x) when
+         is_pointer_type ty
+         && TR.tfold_default is_integral_type false (type_of_exp env x) ->
+     (match get_num_range env x with
+      | (Some lb, _) when lb#gt numerical_zero -> describe x
+      | (_, Some ub) when ub#lt numerical_zero -> describe x
+      | _ -> None)
+  | _ -> None
+
+
 let rec is_null_pointer e = match e with
   | CastE (TPtr _, e) when is_zero e -> true
+  | CastE (t, e) when is_zero e && is_pointer_type t -> true
   | CastE (_, e) when is_null_pointer e -> true
   | _ -> false
 
@@ -694,19 +717,28 @@ let rec check_validity
     | PNotNull (CastE (_, StartOf _)) ->
      make ("address of a location cannot be null")
 
-  | PNotNull e when is_absolute_memory_address env e ->
-     (match get_absolute_memory_address env e with
+  (* a null pointer constant must be checked before the absolute-address
+     rules: 0 converted to a pointer is not an absolute address (issue 60) *)
+  | PNotNull e when is_null_pointer e ->
+     make_violation "expression is a null pointer"
+
+  | PNotNull e when
+         (match get_nonnull_absolute_memory_address env e with
+          | Some _ -> true | _ -> false) ->
+     (match get_nonnull_absolute_memory_address env e with
       | Some s -> make ("absolute address in memory: " ^ s)
       | _ -> ())
 
-  | PNotNull (CastE (_, Const (CInt (i64, _, _)))) ->
+  | PNotNull (CastE (_, Const (CInt (i64, _, _))))
+       when not (Int64.equal i64 Int64.zero) ->
      let _ =
        chlog#add
          "absolute address pointer"
          (LBLOCK [STR "Not null: "; STR (i64_to_hex_string i64)]) in
      make ("absolute address in memory: " ^ (i64_to_hex_string i64))
 
-  | PNotNull (CastE(_,CastE (_,Const (CInt (i64,_,_))))) ->
+  | PNotNull (CastE(_,CastE (_,Const (CInt (i64,_,_)))))
+       when not (Int64.equal i64 Int64.zero) ->
      let _ =
        chlog#add
          "absolute address pointer"
@@ -733,9 +765,6 @@ let rec check_validity
                      (Var ((("stdin"|"stdout"|"stderr") as vname),_),
                       NoOffset))) ->
      make ("library variable " ^ vname ^ " is not null")
-
-  | PNotNull e when is_null_pointer e ->
-     make_violation "expression is a null pointer"
 
   | PNotNull e when has_embedded_null_dereference e ->
      make (

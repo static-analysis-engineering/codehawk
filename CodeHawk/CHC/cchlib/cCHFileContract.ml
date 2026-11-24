@@ -6,7 +6,7 @@
 
    Copyright (c) 2005-2020 Kestrel Technology LLC
    Copyright (c) 2020      Henny B. Sipma
-   Copyright (c) 2021-2024 Aarno Labs LLC
+   Copyright (c) 2021-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -480,10 +480,32 @@ object (self)
   val globalvars = H.create 3   (* name -> globalvar_contraint_int *)
   val functioncontracts = H.create 3   (* name -> function_contract_int *)
 
+  (* name -> attributes that contributed to the function contract, in
+     reverse order: (attribute, recognized, pre, post, side effects); an
+     attribute is recognized if it generates conditions or is a contract
+     marker *)
+  val attributeorigins = H.create 3
+
+  (* names of the functions whose contract was read from the contract file *)
+  val contractfilefunctions = H.create 3
+
+  (* names of the application functions declared chkc_exported: their
+     postconditions are guarantees of the module (primary proof obligations
+     at return sites) *)
+  val exportedfunctions = H.create 3
+
+  (* name -> side effects declared on an application function: not used and
+     not checked (reported for exported functions) *)
+  val declaredsideeffects = H.create 3
+
   method reset =
     begin
       H.clear globalvars;
-      H.clear functioncontracts
+      H.clear functioncontracts;
+      H.clear attributeorigins;
+      H.clear contractfilefunctions;
+      H.clear exportedfunctions;
+      H.clear declaredsideeffects
     end
 
   method add_function_contract (name:string) (parameters:string list) =
@@ -609,7 +631,8 @@ object (self)
               c#read_xml
                 n
                 (List.map (fun gvc -> gvc#get_name) self#get_globalvar_contracts);
-              H.add functioncontracts name c
+              H.add functioncontracts name c;
+              H.replace contractfilefunctions name ()
             end) ((node#getTaggedChild "functions")#getTaggedChildren "function")
       end
     with
@@ -643,7 +666,20 @@ object (self)
         ~msg:vinfo.vname
         __FILE__ __LINE__
         [p2s (xpredicate_to_pretty x)] in
+    let recognized =
+      (match (xpre, xpost, xside) with
+       | ([], [], []) -> is_contract_marker_attribute attr
+       | _ -> true) in
+    let origins =
+      if H.mem attributeorigins vinfo.vname then
+        H.find attributeorigins vinfo.vname
+      else
+        [] in
     begin
+      H.replace
+        attributeorigins
+        vinfo.vname
+        ((attr, recognized, xpre, xpost, xside) :: origins);
       List.iter (logx "pre") xpre;
       List.iter (logx "post") xpost;
       List.iter (logx "side") xside;
@@ -682,11 +718,71 @@ object (self)
     | _ ->
        ()
 
+  (* Attributes on functions defined in this file (application functions).
+     Their pre- and postconditions are conjectures that are checked:
+     a precondition becomes an api (contract) assumption of the function,
+     checked by the callers' call-site proof obligations; a postcondition
+     becomes a return-site proof obligation in the function. Side effects
+     of a function with code are used by callers but never checked, so they
+     are not taken from attributes (e.g., GCC pure -> preserves-all-memory);
+     they are logged instead. A contract is created only if there is at least
+     one pre- or postcondition, because the presence of a function contract
+     makes callers use its postconditions and side effects instead of the
+     call-site postcondition assumptions. *)
+  method private get_application_function_attributes (fn: varinfo) =
+    let typeattrs =
+      match fn.vtype with
+      | TFun (_, _, _, attrs) -> attrs
+      | _ -> [] in
+    let attrs = typeattrs @ fn.vattr in
+    let _ =
+      if List.exists is_exported_attribute attrs then
+        H.replace exportedfunctions fn.vname () in
+    let conditions =
+      List.map (convert_attribute_to_function_conditions fn.vname) attrs in
+    let xpre = List.concat (List.map (fun (p, _, _) -> p) conditions) in
+    let xpost = List.concat (List.map (fun (_, p, _) -> p) conditions) in
+    let xside = List.concat (List.map (fun (_, _, s) -> s) conditions) in
+    let logx kind x =
+      log_diagnostics_result
+        ~tag:("get_application_function_attributes:" ^ kind)
+        ~msg:fn.vname
+        __FILE__ __LINE__
+        [p2s (xpredicate_to_pretty x)] in
+    begin
+      List.iter (logx "side effect not used (not checked)") xside;
+      (match xside with
+       | [] -> ()
+       | _ -> H.replace declaredsideeffects fn.vname xside);
+      match (xpre, xpost) with
+      | ([], []) -> ()
+      | _ ->
+         let pars =
+           match fn.vtype with
+           | TFun (_, Some plist, _, _) ->
+              List.map (fun (name, _, _) -> name) plist
+           | _ -> [] in
+         begin
+           (if not (self#has_function_contract fn.vname) then
+              self#add_function_contract fn.vname pars);
+           List.iter (logx "pre") xpre;
+           List.iter (logx "post") xpost;
+           List.iter (self#add_precondition fn.vname) xpre;
+           List.iter (self#add_postcondition fn.vname) xpost
+         end
+    end
+
   method collect_file_attributes =
-    let xfuns = file_environment#get_external_functions in
+    let appfns = file_environment#get_application_functions in
+    let is_defined (v: varinfo) =
+      List.exists (fun (f: varinfo) -> f.vname = v.vname) appfns in
+    let xfuns =
+      List.filter (fun v -> not (is_defined v))
+        file_environment#get_external_functions in
     let gvars = file_environment#get_globalvars in
     begin
       List.iter self#get_function_attributes xfuns;
+      List.iter self#get_application_function_attributes appfns;
       List.iter self#get_globalvar_attributes gvars
     end
 
@@ -711,6 +807,106 @@ object (self)
              fnode#setAttribute "name" fn#get_name;
              fnode
            end) fncontracts)
+
+  (* The contracts of the external functions (declared, not defined in this
+     file) as used by the analysis, with their origin: the attributes on the
+     declaration (each with the conditions it generates) and/or the contract
+     file. Read by the python front end to classify the specification of
+     external functions as complete or partial. A library summary, if present,
+     takes precedence over the contract at call sites (create_po_call); this
+     is recorded in the summary attribute. *)
+  method write_xml_external_contracts (node: xml_element_int) =
+    let appfns = file_environment#get_application_functions in
+    let is_defined (v: varinfo) =
+      List.exists (fun (f: varinfo) -> f.vname = v.vname) appfns in
+    let xfuns =
+      List.filter (fun v ->
+          (not (is_defined v)) && H.mem functioncontracts v.vname)
+        file_environment#get_external_functions in
+    let xfuns =
+      List.sort_uniq (fun v1 v2 -> Stdlib.compare v1.vname v2.vname) xfuns in
+    let pnodes tag (preds: xpredicate_t list) =
+      List.map (fun p ->
+          let pnode = xmlElement tag in
+          begin
+            pnode#setAttribute "p" (p2s (xpredicate_to_pretty p));
+            pnode
+          end) preds in
+    node#appendChildren
+      (List.map (fun (v: varinfo) ->
+           let fnode = xmlElement "function" in
+           let fncontract = H.find functioncontracts v.vname in
+           let origins =
+             if H.mem attributeorigins v.vname then
+               List.rev (H.find attributeorigins v.vname)
+             else
+               [] in
+           let anodes =
+             List.map (fun (attr, recognized, xpre, xpost, xside) ->
+                 let anode = xmlElement "attribute" in
+                 begin
+                   anode#setAttribute "a" (CCHTypesToPretty.attribute_to_string attr);
+                   (match attr with
+                    | Attr (name, _) -> anode#setAttribute "name" name);
+                   (if not recognized then
+                      anode#setAttribute "recognized" "no");
+                   (if is_contract_marker_attribute attr then
+                      anode#setAttribute "marker" "yes");
+                   anode#appendChildren
+                     ((pnodes "pre" xpre)
+                      @ (pnodes "post" xpost)
+                      @ (pnodes "side" xside));
+                   anode
+                 end) origins in
+           let cnode = xmlElement "contract" in
+           begin
+             fnode#setAttribute "name" v.vname;
+             (if H.mem contractfilefunctions v.vname then
+                fnode#setAttribute "contract-file" "yes");
+             (if file_environment#has_external_header v.vname
+                 && function_summary_library#has_summary
+                      (file_environment#get_external_header v.vname) v.vname then
+                fnode#setAttribute "summary" "yes");
+             cnode#appendChildren
+               ((pnodes "pre" fncontract#get_preconditions)
+                @ (pnodes "post" fncontract#get_postconditions)
+                @ (pnodes "side" fncontract#get_sideeffects));
+             fnode#appendChildren (anodes @ [cnode]);
+             fnode
+           end) xfuns)
+
+  method is_exported_function (name: string) = H.mem exportedfunctions name
+
+  (* The exported application functions of this file with their declared
+     contract: postconditions are guarantees (primary proof obligations),
+     preconditions are assumed in this module and checked at the call sites
+     in the client modules, side effects are declared but not checked. *)
+  method write_xml_exported_functions (node: xml_element_int) =
+    let names =
+      List.sort Stdlib.compare
+        (H.fold (fun k _ a -> k :: a) exportedfunctions []) in
+    let pnodes tag (preds: xpredicate_t list) =
+      List.map (fun p ->
+          let pnode = xmlElement tag in
+          begin
+            pnode#setAttribute "p" (p2s (xpredicate_to_pretty p));
+            pnode
+          end) preds in
+    node#appendChildren
+      (List.map (fun name ->
+           let fnode = xmlElement "function" in
+           begin
+             fnode#setAttribute "name" name;
+             (if H.mem functioncontracts name then
+                let c = H.find functioncontracts name in
+                fnode#appendChildren
+                  ((pnodes "pre" c#get_preconditions)
+                   @ (pnodes "post" c#get_postconditions)));
+             (if H.mem declaredsideeffects name then
+                fnode#appendChildren
+                  (pnodes "side" (H.find declaredsideeffects name)));
+             fnode
+           end) names)
 
   method write_xmlx (node:xml_element_int) =
     let gnode = xmlElement "global-variables" in

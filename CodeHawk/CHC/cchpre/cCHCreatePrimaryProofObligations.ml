@@ -107,6 +107,7 @@ let primary_process_file () =
         __FILE__ __LINE__ in
     let _ = read_cfile_contract () in
     let _ = file_contract#collect_file_attributes in
+    let _ = save_cfile_external_contracts () in
     begin
       List.iter (fun f -> process_function f.vname) functions;
       List.iter process_global cfile.globals;

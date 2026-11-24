@@ -6,7 +6,7 @@
  
    Copyright (c) 2005-2019 Kestrel Technology LLC
    Copyright (c) 2020-2022 Henny B. Sipma
-   Copyright (c) 2023-2024 Aarno Labs LLC
+   Copyright (c) 2023-2026 Aarno Labs LLC
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,7 @@ class api_assumption_t
         ?(isfile=false)
         ?(ppos=[])
         ?(isglobal=false)
+        ?(iscontract=false)
         ?(spos=[])
         (index:int):api_assumption_int =
 object
@@ -78,6 +79,8 @@ object
 
   method get_dependent_spos = dependent_spos
 
+  method is_contract = iscontract
+
   method toPretty = po_predicate_to_pretty (pd#get_po_predicate index)
 
   method write_xml (node:xml_element_int) =
@@ -90,7 +93,8 @@ object
          set "spos" (String.concat "," (List.map string_of_int dependent_spos)));
       seti "ipr" index;
       (if isglobal then set "global" "yes");
-      (if isfile then set "file" "yes")
+      (if isfile then set "file" "yes");
+      (if iscontract then set "contract" "yes")
     end
    
 end
@@ -99,10 +103,11 @@ end
 let mk_api_assumption
       ?(isfile=false)
       ?(isglobal=false)
+      ?(iscontract=false)
       ?(ppos=[])
       ?(spos=[])
       (index:int):api_assumption_int =
-  new api_assumption_t ~isfile ~isglobal ~ppos ~spos index
+  new api_assumption_t ~isfile ~isglobal ~iscontract ~ppos ~spos index
 
 
 let read_xml_api_assumption (node:xml_element_int) =
@@ -119,7 +124,8 @@ let read_xml_api_assumption (node:xml_element_int) =
         List.map int_of_string (nsplit ',' (get "spos")) else [] in
     let isglobal = has "global" &&  (get "global") = "yes"  in
     let isfile = has "file" && (get "file") = "yes" in
-    mk_api_assumption ~isfile ~isglobal ~ppos ~spos index
+    let iscontract = has "contract" && (get "contract") = "yes" in
+    mk_api_assumption ~isfile ~isglobal ~iscontract ~ppos ~spos index
   with
   | Failure _ ->
      raise

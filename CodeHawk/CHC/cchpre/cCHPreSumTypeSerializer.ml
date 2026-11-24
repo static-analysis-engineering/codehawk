@@ -288,8 +288,9 @@ object
     match p with
     | PPOprog _ -> "p"
     | PPOlib _ -> "pl"
+    | PPOguarantee _ -> "pg"
 
-  method! tags = ["p"; "pl"]
+  method! tags = ["p"; "pl"; "pg"]
 
 end
 
