@@ -149,10 +149,12 @@ object (self)
       | Some fs -> (fs.fs_postconditions, fs.fs_error_postconditions)
       | _ ->
          if file_contract#has_function_contract callee.vname then
-           let pcs =
-             (file_contract#get_function_contract callee.vname)#get_postconditions in
+           let fncontract = file_contract#get_function_contract callee.vname in
+           let pcs = fncontract#get_postconditions in
            let pcs = List.map (fun pc -> (pc, NoAnnotation)) pcs in
-           (pcs, [])
+           let epcs = fncontract#get_error_postconditions in
+           let epcs = List.map (fun pc -> (pc, NoAnnotation)) epcs in
+           (pcs, epcs)
          else
            let callcontext = env#get_callsym_context s in
            if proof_scaffolding#has_direct_callsite fname callcontext then
@@ -929,6 +931,20 @@ object (self)
         match inv#get_fact with
         | NonRelationalFact (v, _) when env#is_call_var v -> inv :: acc
         | _ -> acc) [] invs
+
+  method get_function_return_value_invariants: invariant_int list =
+    let locinvio = invio#get_location_invariant cfgcontext in
+    List.filter (fun inv ->
+        match inv#get_fact with
+        | NonRelationalFact (v, _) -> env#is_function_return_value v
+        | _ -> false) locinvio#get_invariants
+
+  method get_initialized_set_invariants: invariant_int list =
+    let locinvio = invio#get_location_invariant cfgcontext in
+    List.filter (fun inv ->
+        match inv#get_fact with
+        | NonRelationalFact (_, FInitializedSet _) -> true
+        | _ -> false) locinvio#get_invariants
 
   method get_var_invariants (var: variable_t): invariant_int list =
     let locinvio = invio#get_location_invariant cfgcontext in
