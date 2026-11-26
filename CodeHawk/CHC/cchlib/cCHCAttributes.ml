@@ -168,6 +168,28 @@ let convert_attribute_to_function_conditions
   | Attr ("chkc_preserves_all_memory", []) ->
      ([], [], [XPreservesAllMemory])
 
+  (* out-parameter postcondition: the object pointed to by argument i is
+     initialized on return. If the function declares an error discriminator
+     (chkc_error_returns_*, see convert_attribute_to_error_postconditions),
+     it holds in the success outcome only. *)
+  | Attr ("chkc_initializes", attrparams) ->
+     let post =
+       List.fold_left (fun acc attrparam ->
+           match attrparam with
+           | AInt i ->
+              (XInitialized (ArgAddressedValue (arg i, ArgNoOffset))) :: acc
+           | _ ->
+              begin
+                log_info
+                  ("attribute conversion for %s: parameter %s not recognized "
+                   ^^ "(excluded) [%s:%d]")
+                  name
+                  (attrparam_to_string attrparam)
+                  __FILE__ __LINE__;
+                acc
+              end) [] attrparams in
+     ([], post, [])
+
   | Attr ("chkc_preserves_memory", attrparams) ->
      let se =
        List.fold_left (fun acc attrparam ->
@@ -186,6 +208,53 @@ let convert_attribute_to_function_conditions
      ([], [], se)
           
   | _ -> ([], [], [])
+
+
+(* Error discriminators: the condition on the return value that
+   characterizes the error outcome of a function. As in the library
+   summaries, the error postconditions and the (out-parameter)
+   postconditions describe mutually exclusive outcomes: the success outcome
+   is the complement of the discriminator.
+
+   chkc_error_returns_lt(c)   error iff return <  c
+   chkc_error_returns_le(c)   error iff return <= c
+   chkc_error_returns_gt(c)   error iff return >  c
+   chkc_error_returns_ge(c)   error iff return >= c
+   chkc_error_returns_eq(c)   error iff return == c
+   chkc_error_returns_ne(c)   error iff return != c
+   chkc_error_returns_null    error iff return == NULL *)
+let convert_attribute_to_error_postconditions
+      (name: string) (attr: attribute): xpredicate_t list =
+  let intparam (p: attrparam): int option =
+    match p with
+    | AInt i -> Some i
+    | AUnOp (Neg, AInt i) -> Some (-i)
+    | _ -> None in
+  let relational (op: binop) (params: attrparam list) =
+    match params with
+    | [p] ->
+       (match intparam p with
+        | Some c ->
+           [XRelationalExpr
+              (op, ReturnValue, NumConstant (CHNumerical.mkNumerical c))]
+        | None ->
+           begin
+             log_info
+               ("attribute conversion for %s: error discriminator parameter "
+                ^^ "%s not recognized [%s:%d]")
+               name (attrparam_to_string p) __FILE__ __LINE__;
+             []
+           end)
+    | _ -> [] in
+  match attr with
+  | Attr ("chkc_error_returns_lt", params) -> relational Lt params
+  | Attr ("chkc_error_returns_le", params) -> relational Le params
+  | Attr ("chkc_error_returns_gt", params) -> relational Gt params
+  | Attr ("chkc_error_returns_ge", params) -> relational Ge params
+  | Attr ("chkc_error_returns_eq", params) -> relational Eq params
+  | Attr ("chkc_error_returns_ne", params) -> relational Ne params
+  | Attr ("chkc_error_returns_null", []) -> [XNull ReturnValue]
+  | _ -> []
 
 
 let is_contract_marker_attribute (attr: attribute): bool =
