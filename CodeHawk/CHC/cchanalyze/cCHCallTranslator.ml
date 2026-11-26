@@ -1682,7 +1682,7 @@ end
 
 class sym_call_translator_t
         (env:c_environment_int)
-        (_orakel:orakel_int)
+        (orakel:orakel_int)
         (exp_translator:exp_translator_int):call_translator_int =
 object (self)
 
@@ -1739,7 +1739,8 @@ object (self)
                     new symbol_t ~atts ("assignedAt#" ^ (string_of_int loc.line)) in
                   Some rvar, [make_c_cmd (ASSIGN_SYM (rvar, SYM sym))] in
        let sideeffect = self#get_sideeffect fname fvid args fnargs rvar in
-       Ok (callop :: (sideeffect @ postconditions @ rcode))
+       let outparams = self#get_outparam_post_assigns fname fvid args fnargs in
+       Ok (callop :: (sideeffect @ postconditions @ rcode @ outparams))
 
     | _ ->                                             (* indirect call *)
        let callop =
@@ -1857,6 +1858,124 @@ object (self)
               else
                 None
            | _ -> acc) (Some []) sideeffects
+
+  (* Out-parameter postconditions XInitialized (ArgAddressedValue (arg n,
+     ArgNoOffset)) of the callee (library summary, or contract of an external
+     function, e.g., from chkc_initializes): the (scalar) locations of the
+     object addressed by argument n (&lval) are assigned a post-initialized
+     symbol (CCHPostInitializedSymbol). If the callee has an error
+     discriminator (error postcondition on the return value), the
+     postcondition holds only in the success outcome; the symbol then carries
+     the success condition on the call's function-return-value variable,
+     resolved by the initialization checker with the facts at the proof
+     obligation. Arrays and unions are not covered (their locations are not
+     made initialized). *)
+  method private get_outparam_post_assigns
+                   (fname: string)
+                   (fvid: int)
+                   (args: exp list)
+                   (fnargs: xpr_t list): nested_cmd_t list =
+    let (pcs, epcs) =
+      match get_function_summary fname with
+      | Some fs ->
+         (List.map fst fs.fs_postconditions,
+          List.map fst fs.fs_error_postconditions)
+      | None ->
+         if CCHFileContract.file_contract#has_function_contract fname then
+           let fc = CCHFileContract.file_contract#get_function_contract fname in
+           (fc#get_postconditions, fc#get_error_postconditions)
+         else
+           ([], []) in
+    let outparams =
+      List.filter_map (fun pc ->
+          match pc with
+          | XInitialized
+            (ArgAddressedValue (ArgValue (ParFormal n, ArgNoOffset), ArgNoOffset))
+               when n >= 1 && n <= List.length args -> Some (n, pc)
+          | _ -> None) pcs in
+    match outparams with
+    | [] -> []
+    | _ ->
+       match CCHPostInitializedSymbol.success_condition epcs with
+       | None ->
+          begin
+            log_diagnostics_result
+              ~tag:"get_outparam_post_assigns"
+              ~msg:env#get_functionname
+              __FILE__ __LINE__
+              ["error postconditions of " ^ fname ^ " not supported: "
+               ^ "out-parameter postconditions not applied"];
+            []
+          end
+       | Some cond ->
+          let vinfo = TR.tget_ok (fdecls#get_varinfo_by_vid fvid) in
+          let rvindex =
+            match cond with
+            | CCHPostInitializedSymbol.Always -> -1
+            | _ ->
+               let fnxargs = List.map (orakel#get_external_value context) fnargs in
+               let frVar =
+                 env#mk_function_return_value location context vinfo fnxargs in
+               frVar#getName#getSeqNumber in
+          let rec strip_casts e =
+            match e with CastE (_, e') -> strip_casts e' | _ -> e in
+          (* the scalar locations of the object designated by lval *)
+          let rec leaves (depth: int) ((host, off) as lval: lval): lval list =
+            if depth > 4 then
+              []
+            else
+              match type_of_lval fdecls lval with
+              | Ok ty ->
+                 (match fenv#get_type_unrolled ty with
+                  | TInt _ | TFloat _ | TPtr _ | TEnum _ -> [lval]
+                  | TComp (ckey, _) ->
+                     let cinfo = fenv#get_comp ckey in
+                     if cinfo.cstruct then
+                       List.concat_map (fun (f: fieldinfo) ->
+                           leaves
+                             (depth + 1)
+                             (host,
+                              add_offset off
+                                (Field ((f.fname, f.fckey), NoOffset))))
+                         cinfo.cfields
+                     else
+                       []
+                  | _ -> [])
+              | Error _ -> [] in
+          let ictxt = ccontexts#index_context context in
+          List.concat_map (fun (n, _) ->
+              match strip_casts (List.nth args (n - 1)) with
+              | AddrOf lval ->
+                 List.concat_map (fun lv ->
+                     let v = exp_translator#translate_lhs context lv in
+                     if v#isTmp then
+                       []
+                     else
+                       let (priorindex, priorcopy) =
+                         match cond with
+                         | CCHPostInitializedSymbol.Always -> (-1, [])
+                         | _ ->
+                            (* the state of the location before the call,
+                               kept for the error outcome *)
+                            let prior =
+                              env#mk_augmentation_variable
+                                ("$outparam-prior$"
+                                 ^ (string_of_int v#getName#getSeqNumber))
+                                "outparam_prior" ictxt SYM_VAR_TYPE in
+                            (prior#getName#getSeqNumber,
+                             [make_c_cmd (ASSIGN_SYM (prior, SYM_VAR v))]) in
+                       let sym =
+                         CCHPostInitializedSymbol.to_symbol {
+                             pi_callee = fname;
+                             pi_callee_vid = fvid;
+                             pi_line = location.line;
+                             pi_arg = n;
+                             pi_rv_index = rvindex;
+                             pi_prior_index = priorindex;
+                             pi_condition = cond } in
+                       priorcopy @ [make_c_cmd (ASSIGN_SYM (v, SYM sym))])
+                   (leaves 0 lval)
+              | _ -> []) outparams
 
   method private havoc_errno_write =
       let unknownSym = CCHErrnoWritePredicateSymbol.to_symbol CCHErrnoWritePredicateSymbol.Unknown in
