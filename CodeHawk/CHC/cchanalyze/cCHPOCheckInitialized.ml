@@ -134,22 +134,185 @@ object (self)
                  Some (deps, msg, site)
               | _ -> None) None pcs
 
+  (* The interval of the function-return-value variable with index [rvix]
+     at the proof obligation location (all call invariants on a variable
+     that denotes the same function return value), with the indices of the
+     invariants used. *)
+  method private return_value_bounds (rvix: int) =
+    let vmgr = poq#env#get_variable_manager in
+    let canonical =
+      try Some (vmgr#get_canonical_fnvar_index rvix) with _ -> None in
+    match canonical with
+    | None -> ([], None, None)
+    | Some cix ->
+       List.fold_left (fun (deps, lb, ub) inv ->
+           match inv#get_fact with
+           | NonRelationalFact (v, _)
+                when poq#env#is_function_return_value v
+                     && poq#get_canonical_fnvar_index v = cix ->
+              let maxo a b =
+                match (a, b) with
+                | (Some x, Some y) -> Some (if x#gt y then x else y)
+                | (Some _, None) -> a
+                | _ -> b in
+              let mino a b =
+                match (a, b) with
+                | (Some x, Some y) -> Some (if x#lt y then x else y)
+                | (Some _, None) -> a
+                | _ -> b in
+              let lb' = maxo lb inv#lower_bound in
+              let ub' = mino ub inv#upper_bound in
+              if lb' = lb && ub' = ub then
+                (deps, lb, ub)
+              else
+                (inv#index :: deps, lb', ub')
+           | _ -> (deps, lb, ub))
+         ([], None, None) poq#get_function_return_value_invariants
+
+  (* A post-initialized symbol (CCHPostInitializedSymbol): the location was
+     written by the callee as an out-parameter postcondition; it holds if
+     the success condition holds for the return value of the call. Returns
+     the invariants used and the postcondition assumed. *)
+  (* The prior-state variable of a conditional post-initialized symbol: the
+     location was initialized before the call on every path (all symbols are
+     local assignments); then it is initialized in the error outcome too. *)
+  method private prior_state_initialized (priorindex: int): int list option =
+    if priorindex < 0 then
+      None
+    else
+      List.fold_left (fun acc inv ->
+          match acc with
+          | Some _ -> acc
+          | None ->
+             match inv#get_fact with
+             | NonRelationalFact (v, FInitializedSet l)
+                  when v#getName#getSeqNumber = priorindex ->
+                if l <> []
+                   && List.for_all (fun s ->
+                          s#getBaseName <> "parameter"
+                          && not (CCHPostInitializedSymbol.is_post_initialized_symbol s)) l
+                then
+                  Some [inv#index]
+                else
+                  None
+             | _ -> None) None poq#get_initialized_set_invariants
+
+  method private post_initialized_holds (sym: symbol_t) =
+    let module P = CCHPostInitializedSymbol in
+    match P.from_symbol sym with
+    | None -> None
+    | Some p ->
+       let assumption (deps: int list) = Some (deps, p, true) in
+       let r =
+       match p.P.pi_condition with
+       | P.Always -> assumption []
+       | P.InRange (lb, ub) ->
+          let (deps, vlb, vub) = self#return_value_bounds p.P.pi_rv_index in
+          let lbok =
+            match (lb, vlb) with
+            | (None, _) -> true
+            | (Some c, Some v) -> v#geq (mkNumerical c)
+            | (Some _, None) -> false in
+          let ubok =
+            match (ub, vub) with
+            | (None, _) -> true
+            | (Some c, Some v) -> v#leq (mkNumerical c)
+            | (Some _, None) -> false in
+          if lbok && ubok then assumption deps else None
+       | P.NotEqual c ->
+          let (deps, vlb, vub) = self#return_value_bounds p.P.pi_rv_index in
+          let c = mkNumerical c in
+          let excluded =
+            (match vub with Some v -> v#lt c | None -> false)
+            || (match vlb with Some v -> v#gt c | None -> false) in
+          if excluded then assumption deps else None in
+       match r with
+       | Some _ -> r
+       | None ->
+          (* error outcome not excluded: initialized if it was before *)
+          (match self#prior_state_initialized p.P.pi_prior_index with
+           | Some deps -> Some (deps, p, false)
+           | None -> None)
+
   method private inv_implies_safe (inv: invariant_int) =
     let mname = "inv_implies_safe" in
     match inv#get_fact with
     | NonRelationalFact (_, FInitializedSet l) ->
        let localAssigns =
          List.filter (fun s -> not (s#getBaseName = "parameter")) l in
+       let (postAssigns, localAssigns) =
+         List.partition
+           CCHPostInitializedSymbol.is_post_initialized_symbol localAssigns in
        begin
-         match localAssigns with
-         | [] -> None
-         | _ ->
+         match (localAssigns, postAssigns) with
+         | ([], []) -> None
+         | (_, []) ->
             let deps = DLocal [inv#index] in
             let msg =
               (String.concat
                  "_xx_" (List.map self#get_symbol_name localAssigns)) in
             let site = Some (__FILE__, __LINE__, mname) in
             Some (deps, msg, site)
+         | _ ->
+            (* every path that last wrote the location through a callee's
+               out-parameter postcondition must be in the success outcome *)
+            let results =
+              List.map (fun sym -> (sym, self#post_initialized_holds sym))
+                postAssigns in
+            if List.for_all (fun (_, r) -> Option.is_some r) results then
+              let results = List.filter_map snd results in
+              let invdeps =
+                inv#index :: (List.concat_map (fun (d, _, _) -> d) results) in
+              let assumptions =
+                List.sort_uniq Stdlib.compare
+                  (List.filter_map (fun (_, p, usedpost) ->
+                       if usedpost then
+                         Some (PostAssumption
+                                 (p.CCHPostInitializedSymbol.pi_callee_vid,
+                                  CCHPostInitializedSymbol.postcondition p))
+                       else
+                         None) results) in
+              let invdeps = List.sort_uniq Stdlib.compare invdeps in
+              let deps =
+                match assumptions with
+                | [] -> DLocal invdeps
+                | _ -> DEnvC (invdeps, assumptions) in
+              let msg =
+                "initialized by out-parameter postcondition of "
+                ^ (String.concat
+                     ", "
+                     (List.map (fun (_, p, usedpost) ->
+                          (p2s (CCHPostInitializedSymbol.to_pretty p))
+                          ^ (if usedpost then
+                               ""
+                             else
+                               " (error outcome: initialized before the call)"))
+                         results))
+                ^ (match localAssigns with
+                   | [] -> ""
+                   | _ ->
+                      " or locally: "
+                      ^ (String.concat
+                           "_xx_" (List.map self#get_symbol_name localAssigns))) in
+              let site = Some (__FILE__, __LINE__, mname) in
+              Some (deps, msg, site)
+            else
+              begin
+                List.iter (fun (sym, r) ->
+                    match (r, CCHPostInitializedSymbol.from_symbol sym) with
+                    | (None, Some p) ->
+                       poq#set_diagnostic
+                         ("out-parameter postcondition of "
+                          ^ p.CCHPostInitializedSymbol.pi_callee
+                          ^ " (line "
+                          ^ (string_of_int p.CCHPostInitializedSymbol.pi_line)
+                          ^ ") holds only if its return value satisfies "
+                          ^ (CCHPostInitializedSymbol.condition_to_string
+                               p.CCHPostInitializedSymbol.pi_condition)
+                          ^ ": not established")
+                    | _ -> ()) results;
+                None
+              end
        end
     | _ ->
        match inv#expr with

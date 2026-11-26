@@ -506,6 +506,14 @@ class type po_query_int =
         PO.*)
     method get_call_invariants: invariant_int list
 
+    (** Returns the invariants at the proof obligation location on
+        function-return-value variables. *)
+    method get_function_return_value_invariants: invariant_int list
+
+    (** Returns the initialized-set invariants (symbolic sets domain) at the
+        proof obligation location. *)
+    method get_initialized_set_invariants: invariant_int list
+
     method get_errno_write_invariants: invariant_int list
 
     (** Returns a list of constraints created by the PEPR domain.
