@@ -153,6 +153,7 @@ object (self)
 
   val ignorefn = ignorefn
   val postconditions = new CHUtils.IntCollections.set_t
+  val errorpostconditions = new CHUtils.IntCollections.set_t
   val preconditions = new CHUtils.IntCollections.set_t
   val sideeffects = new CHUtils.IntCollections.set_t
   val notes = H.create 3
@@ -175,6 +176,20 @@ object (self)
           name
           __FILE__ __LINE__;
         postconditions#add ix
+      end
+
+  method add_error_postcondition (pc: xpredicate_t) =
+    let ix = id#index_xpredicate pc in
+    if errorpostconditions#has ix then
+      ()
+    else
+      begin
+        log_info
+          "add error postcondition %s to %s function contract [%s:%d]"
+          (p2s (xpredicate_to_pretty pc))
+          name
+          __FILE__ __LINE__;
+        errorpostconditions#add ix
       end
 
   method add_precondition (pre:xpredicate_t) =
@@ -220,6 +235,9 @@ object (self)
   method get_sideeffect_ixs = sideeffects#toList
 
   method get_postconditions = List.map id#get_xpredicate postconditions#toList
+
+  method get_error_postconditions =
+    List.map id#get_xpredicate errorpostconditions#toList
 
   method get_preconditions = List.map id#get_xpredicate preconditions#toList
 
@@ -292,17 +310,17 @@ object (self)
                    (node:xml_element_int) (gvars:string list) =
     let (post, errorpost) =
       read_xml_postcondition_list node ~gvars self#get_params in
-    let _ = match errorpost with
-      | [] -> ()
-      | _ ->
-         raise
-           (CCHFailure
-              (STR "Error postconditions not supported in function contract")) in
     let _ =
-      log_info "function contract: read %d postconditions [%s:%d]"
+      log_info
+        "function contract: read %d postconditions, %d error postconditions [%s:%d]"
         (List.length post)
+        (List.length errorpost)
         __FILE__ __LINE__ in
-    List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post
+    begin
+      List.iter (fun (p, _) -> postconditions#add (id#index_xpredicate p)) post;
+      List.iter (fun (p, _) ->
+          errorpostconditions#add (id#index_xpredicate p)) errorpost
+    end
 
   method private write_xml_postconditions (node:xml_element_int) =
     let _ =
@@ -311,12 +329,20 @@ object (self)
         (List.length postconditions#toList)
         __FILE__ __LINE__ in
     node#appendChildren
-      (List.map (fun ipost ->
-           let pnode = xmlElement "post" in
-           begin
-             write_xmlx_xpredicate pnode self#get_params (id#get_xpredicate ipost);
-             pnode
-           end) postconditions#toList)
+      ((List.map (fun ipost ->
+            let pnode = xmlElement "post" in
+            begin
+              write_xmlx_xpredicate
+                pnode self#get_params (id#get_xpredicate ipost);
+              pnode
+            end) postconditions#toList)
+       @ (List.map (fun ipost ->
+              let pnode = xmlElement "error-post" in
+              begin
+                write_xmlx_xpredicate
+                  pnode self#get_params (id#get_xpredicate ipost);
+                pnode
+              end) errorpostconditions#toList))
 
   method private read_xml_preconditions
                    (node:xml_element_int) (gvars:string list) =
@@ -440,7 +466,7 @@ object (self)
            self#write_xml_preconditions pnode;
            node#appendChildren [pnode]
          end);
-      (if postconditions#size > 0  then
+      (if postconditions#size > 0 || errorpostconditions#size > 0 then
          let pnode = xmlElement "postconditions" in
          begin
            self#write_xml_postconditions pnode;
@@ -556,6 +582,17 @@ object (self)
         (p2s (xpredicate_to_pretty post))
         __FILE__ __LINE__
 
+  method add_error_postcondition (fname: string) (post: xpredicate_t) =
+    if H.mem functioncontracts fname then
+      let fncontract = H.find functioncontracts fname in
+      fncontract#add_error_postcondition post
+    else
+      log_warning
+        "No function contract for %s; unable to add error postcondition %s [%s:%d]"
+        fname
+        (p2s (xpredicate_to_pretty post))
+        __FILE__ __LINE__
+
   method add_sideeffect (fname: string) (s: xpredicate_t) =
     if H.mem functioncontracts fname then
       let fncontract = H.find functioncontracts fname in
@@ -660,6 +697,7 @@ object (self)
                    (vinfo: varinfo) (attr: attribute) =
     let (xpre, xpost, xside) =
       convert_attribute_to_function_conditions vinfo.vname attr in
+    let xerr = convert_attribute_to_error_postconditions vinfo.vname attr in
     let logx kind x =
       log_diagnostics_result
         ~tag:("add_function_attribute_conditions:" ^ kind)
@@ -667,8 +705,8 @@ object (self)
         __FILE__ __LINE__
         [p2s (xpredicate_to_pretty x)] in
     let recognized =
-      (match (xpre, xpost, xside) with
-       | ([], [], []) -> is_contract_marker_attribute attr
+      (match (xpre, xpost, xside, xerr) with
+       | ([], [], [], []) -> is_contract_marker_attribute attr
        | _ -> true) in
     let origins =
       if H.mem attributeorigins vinfo.vname then
@@ -679,12 +717,14 @@ object (self)
       H.replace
         attributeorigins
         vinfo.vname
-        ((attr, recognized, xpre, xpost, xside) :: origins);
+        ((attr, recognized, xpre, xpost @ xerr, xside) :: origins);
       List.iter (logx "pre") xpre;
       List.iter (logx "post") xpost;
+      List.iter (logx "error-post") xerr;
       List.iter (logx "side") xside;
       List.iter (self#add_precondition vinfo.vname) xpre;
       List.iter (self#add_postcondition vinfo.vname) xpost;
+      List.iter (self#add_error_postcondition vinfo.vname) xerr;
       List.iter (self#add_sideeffect vinfo.vname) xside
     end
 
@@ -742,6 +782,17 @@ object (self)
       List.map (convert_attribute_to_function_conditions fn.vname) attrs in
     let xpre = List.concat (List.map (fun (p, _, _) -> p) conditions) in
     let xpost = List.concat (List.map (fun (_, p, _) -> p) conditions) in
+    (* Out-parameter postconditions (chkc_initializes) of a function with
+       code are not checked at its return sites yet (with an error
+       discriminator they hold only in the success outcome); they are not
+       used, so that callers in this file do not rely on unchecked
+       conditions. Callers in other files use them from the declaration
+       (external function). *)
+    let is_outparam_post (p: xpredicate_t) =
+      match p with
+      | XInitialized (ArgAddressedValue (ArgValue (ParFormal _, _), _)) -> true
+      | _ -> false in
+    let (outposts, xpost) = List.partition is_outparam_post xpost in
     let xside = List.concat (List.map (fun (_, _, s) -> s) conditions) in
     let logx kind x =
       log_diagnostics_result
@@ -751,6 +802,8 @@ object (self)
         [p2s (xpredicate_to_pretty x)] in
     begin
       List.iter (logx "side effect not used (not checked)") xside;
+      List.iter (logx "out-parameter postcondition not used (not checked)")
+        outposts;
       (match xside with
        | [] -> ()
        | _ -> H.replace declaredsideeffects fn.vname xside);

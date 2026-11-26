@@ -716,6 +716,14 @@ type contract_note_t = {
 class type function_contract_int =
   object
     method add_postcondition: xpredicate_t -> unit
+
+    (** [add_error_postcondition p] adds [p] to the error postconditions:
+        the conditions that hold when the function returns in the error
+        outcome, which excludes the success outcome described by the
+        out-parameter postconditions (as in the library summaries). The
+        error outcome is characterized by a condition on the return value
+        (the error discriminator), e.g., [return < 0]. *)
+    method add_error_postcondition: xpredicate_t -> unit
     method add_precondition: xpredicate_t -> unit
     method add_sideeffect: xpredicate_t -> unit
     method get_name: string
@@ -723,6 +731,7 @@ class type function_contract_int =
     method get_precondition_ixs: int list            (* xpredicate indices *)
     method get_sideeffect_ixs: int list              (* xpredicate indices *)
     method get_postconditions: xpredicate_t list
+    method get_error_postconditions: xpredicate_t list
     method get_preconditions: xpredicate_t list
     method get_sideeffects: xpredicate_t list
     method get_notes: contract_note_t list
@@ -773,6 +782,7 @@ class type file_contract_int =
     method add_globalvar_contract: string -> globalvar_contract_int
     method add_precondition: string -> xpredicate_t -> unit
     method add_postcondition: string -> xpredicate_t -> unit
+    method add_error_postcondition: string -> xpredicate_t -> unit
     method add_sideeffect: string -> xpredicate_t -> unit
     method collect_file_attributes: unit
     method get_function_contract: string -> function_contract_int
